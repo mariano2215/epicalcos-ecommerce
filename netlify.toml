@@ -1,0 +1,10 @@
+[build]
+  base    = "frontend"
+  publish = "frontend/dist"
+  command = "npm run build"
+
+# SPA fallback (extra al _redirects, por las dudas)
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
