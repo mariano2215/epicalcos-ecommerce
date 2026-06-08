@@ -157,6 +157,25 @@ export const products = [
     stock: 50,
     tags: ['memes', 'frases', 'humor'],
     featured: false
+  },
+
+  // ─── TEST PRODUCT ──────────────────────────────────────────────────────────
+  // Producto creado únicamente para validar la integración con Mercado Pago
+  // gastando lo mínimo (10 ARS). BORRAR después de terminar las pruebas.
+  // ───────────────────────────────────────────────────────────────────────────
+  {
+    id: 'test-mp-10-ars',
+    name: 'Calco de prueba',
+    category: 'stickers',
+    categoryLabel: 'Stickers',
+    price: 10,
+    image: ph('TEST $10', '#555555'),
+    description:
+      'Producto de prueba para validar la integración con Mercado Pago. No es un producto a la venta — se usa solo para confirmar el flujo de pago end-to-end con el monto mínimo.',
+    stock: 999,
+    tags: ['test', 'integración'],
+    featured: false,
+    badge: 'TEST'
   }
 ];
 
