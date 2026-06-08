@@ -1,13 +1,20 @@
 import { Link, useNavigate } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
 import Benefits from '../components/Benefits.jsx';
+import HowToBuy from '../components/HowToBuy.jsx';
 import ProductGrid from '../components/ProductGrid.jsx';
 import FAQ from '../components/FAQ.jsx';
 import { categories, getFeaturedProducts } from '../data/products.js';
+import { useSeo } from '../lib/seo.js';
 
 export default function Home() {
   const navigate = useNavigate();
   const featured = getFeaturedProducts();
+
+  useSeo({
+    title: undefined, // usa el default
+    description: undefined
+  });
 
   return (
     <>
@@ -29,7 +36,7 @@ export default function Home() {
             {categories.filter((c) => c.slug !== 'todas').slice(0, 10).map((c, i) => (
               <button
                 key={c.slug}
-                onClick={() => navigate(`/productos?cat=${c.slug}`)}
+                onClick={() => navigate(`/categoria/${c.slug}`)}
                 className="card-glass card-glass-hover p-5 text-left"
               >
                 <div className="text-2xl mb-2">{['🎌','⚽','🎬','🎨','📸','🪧','🏷️','🚗','💬','✨'][i] || '✨'}</div>
@@ -73,6 +80,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <HowToBuy />
 
       {/* Personalizados */}
       <section className="py-14">

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { shippingMethods, shipping as shippingCfg } from '../config/site.js';
 
 const initial = {
   name: '',
@@ -12,12 +13,6 @@ const initial = {
   shippingMethod: 'envio-rosario',
   comments: ''
 };
-
-const shippingOptions = [
-  { value: 'retiro', label: 'Retiro en Rosario' },
-  { value: 'envio-rosario', label: 'Envío en Rosario' },
-  { value: 'envio-otra', label: 'Envío a otra ciudad' }
-];
 
 function validate(form) {
   const errors = {};
@@ -33,9 +28,14 @@ function validate(form) {
   return errors;
 }
 
-export default function CheckoutForm({ onSubmit, submitting, errorMsg }) {
+export default function CheckoutForm({ onSubmit, onMethodChange, submitting, errorMsg }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
+
+  // Notificar cambios de método al parent (para recalcular total)
+  useEffect(() => {
+    onMethodChange?.(form.shippingMethod);
+  }, [form.shippingMethod, onMethodChange]);
 
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -44,6 +44,7 @@ export default function CheckoutForm({ onSubmit, submitting, errorMsg }) {
     const errs = validate(form);
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
+      const methodLabel = shippingMethods.find((s) => s.value === form.shippingMethod)?.label;
       onSubmit({
         payer: {
           name: form.name.trim(),
@@ -53,7 +54,8 @@ export default function CheckoutForm({ onSubmit, submitting, errorMsg }) {
           address: form.address.trim()
         },
         shipping: {
-          method: shippingOptions.find((s) => s.value === form.shippingMethod)?.label,
+          methodValue: form.shippingMethod,
+          method: methodLabel,
           city: form.city.trim(),
           province: form.province.trim(),
           zipCode: form.zipCode.trim(),
@@ -78,6 +80,8 @@ export default function CheckoutForm({ onSubmit, submitting, errorMsg }) {
     </label>
   );
 
+  const needsAddress = form.shippingMethod !== 'retiro';
+
   return (
     <form onSubmit={submit} className="card-glass p-6 md:p-8 space-y-5">
       <h3 className="font-display font-extrabold text-xl">Datos del comprador</h3>
@@ -94,19 +98,30 @@ export default function CheckoutForm({ onSubmit, submitting, errorMsg }) {
       <label className="block">
         <span className="text-sm text-white/70 mb-1.5 block">Método de entrega</span>
         <select value={form.shippingMethod} onChange={change('shippingMethod')} className="input-dark">
-          {shippingOptions.map((s) => (
+          {shippingMethods.map((s) => (
             <option key={s.value} value={s.value} className="bg-bg-deep">{s.label}</option>
           ))}
         </select>
       </label>
 
-      {form.shippingMethod !== 'retiro' && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Dirección *" name="address" placeholder="Calle 1234" />
-          <Field label="Ciudad *" name="city" />
-          <Field label="Provincia *" name="province" />
-          <Field label="Código postal *" name="zipCode" placeholder="2000" />
+      {form.shippingMethod === 'retiro' && (
+        <div className="rounded-xl p-3 text-sm border border-white/10 bg-white/5 text-white/70">
+          📍 {shippingCfg.pickupLabel}. Te contactamos al teléfono que dejes acá.
         </div>
+      )}
+
+      {needsAddress && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Dirección *" name="address" placeholder="Calle 1234, depto 2B" />
+            <Field label="Ciudad *" name="city" />
+            <Field label="Provincia *" name="province" />
+            <Field label="Código postal *" name="zipCode" placeholder="2000" />
+          </div>
+          <p className="text-xs text-white/50">
+            ⏱️ Plazos: <strong className="text-white/70">{form.shippingMethod === 'envio-rosario' ? shippingCfg.productionDaysRosario : shippingCfg.productionDaysInterior}</strong>
+          </p>
+        </>
       )}
 
       <label className="block">

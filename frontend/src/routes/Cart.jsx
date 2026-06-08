@@ -1,9 +1,20 @@
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
+import { trackViewCart } from '../lib/analytics.js';
+import { useSeo } from '../lib/seo.js';
+import Breadcrumbs from '../components/Breadcrumbs.jsx';
 
 export default function Cart() {
   const { items, setQty, removeItem, subtotal, clear } = useCart();
   const navigate = useNavigate();
+
+  useSeo({ title: 'Carrito', description: 'Revisá tu pedido antes de pagar con Mercado Pago.' });
+
+  useEffect(() => {
+    if (items.length > 0) trackViewCart(items);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (items.length === 0) {
     return (
@@ -21,6 +32,7 @@ export default function Cart() {
   return (
     <div className="page-gradient min-h-screen">
       <div className="container-app py-10">
+        <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Carrito' }]} />
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Tu carrito</h1>
 
         <div className="grid lg:grid-cols-3 gap-6 mt-8">
@@ -34,7 +46,7 @@ export default function Cart() {
                       <div className="text-xs text-white/50 uppercase tracking-wider">{it.categoryLabel}</div>
                       <h3 className="font-semibold">{it.name}</h3>
                     </div>
-                    <button onClick={() => removeItem(it.id)} className="text-white/40 hover:text-white">✕</button>
+                    <button onClick={() => removeItem(it.id)} className="text-white/40 hover:text-white" aria-label="Quitar">✕</button>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between">
@@ -42,11 +54,13 @@ export default function Cart() {
                       <button
                         className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
                         onClick={() => setQty(it.id, it.quantity - 1)}
+                        aria-label="Restar"
                       >–</button>
                       <span className="w-10 text-center font-semibold">{it.quantity}</span>
                       <button
                         className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
                         onClick={() => setQty(it.id, it.quantity + 1)}
+                        aria-label="Sumar"
                       >+</button>
                     </div>
                     <span className="font-display font-extrabold">
@@ -60,13 +74,13 @@ export default function Cart() {
             <button onClick={clear} className="btn-ghost">Vaciar carrito</button>
           </div>
 
-          <aside className="card-glass p-6 h-fit sticky top-24">
+          <aside className="card-glass p-6 h-fit lg:sticky lg:top-24">
             <h3 className="font-display font-extrabold text-xl mb-4">Resumen</h3>
             <div className="flex justify-between text-white/70 mb-2">
               <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between text-white/70 mb-2">
-              <span>Envío</span><span>A coordinar</span>
+              <span>Envío</span><span className="text-white/50">Se calcula en el checkout</span>
             </div>
             <div className="border-t border-white/10 my-3" />
             <div className="flex justify-between font-display font-extrabold text-lg">
@@ -76,7 +90,7 @@ export default function Cart() {
               Ir al checkout →
             </button>
             <p className="text-xs text-white/50 mt-3 text-center">
-              Vas a poder revisar el pedido antes de pagar.
+              🔒 Vas a pagar de forma segura con Mercado Pago.
             </p>
           </aside>
         </div>

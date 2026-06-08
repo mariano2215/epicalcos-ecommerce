@@ -1,15 +1,21 @@
 import { Link } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
+import { trackSelectItem } from '../lib/analytics.js';
 
 export default function ProductCard({ product }) {
   const { addItem } = useCart();
 
   return (
     <article className="card-glass card-glass-hover overflow-hidden flex flex-col">
-      <Link to={`/producto/${product.id}`} className="block relative aspect-square overflow-hidden">
+      <Link
+        to={`/producto/${product.id}`}
+        onClick={() => trackSelectItem(product)}
+        className="block relative aspect-square overflow-hidden"
+      >
         <img
           src={product.image}
           alt={product.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
         />
         {product.badge && (
@@ -18,11 +24,15 @@ export default function ProductCard({ product }) {
       </Link>
 
       <div className="p-5 flex-1 flex flex-col">
-        <span className="text-xs uppercase tracking-wider text-white/50 mb-1">
+        <Link to={`/categoria/${product.category}`} className="text-xs uppercase tracking-wider text-white/50 mb-1 hover:text-white/80 transition-colors">
           {product.categoryLabel}
-        </span>
+        </Link>
         <h3 className="font-semibold text-white text-lg leading-snug">
-          <Link to={`/producto/${product.id}`} className="hover:text-brand-pink transition-colors">
+          <Link
+            to={`/producto/${product.id}`}
+            onClick={() => trackSelectItem(product)}
+            className="hover:text-brand-pink transition-colors"
+          >
             {product.name}
           </Link>
         </h3>
@@ -41,7 +51,11 @@ export default function ProductCard({ product }) {
           <button onClick={() => addItem(product)} className="btn-primary !py-2.5 !px-4 text-sm flex-1">
             Agregar
           </button>
-          <Link to={`/producto/${product.id}`} className="btn-secondary !py-2.5 !px-4 text-sm">
+          <Link
+            to={`/producto/${product.id}`}
+            onClick={() => trackSelectItem(product)}
+            className="btn-secondary !py-2.5 !px-4 text-sm"
+          >
             Ver
           </Link>
         </div>

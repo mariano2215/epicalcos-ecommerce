@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState, useCallback } from 'react';
+import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
 
 const CartContext = createContext(null);
 const STORAGE_KEY = 'epicalcos.cart.v1';
@@ -68,10 +69,17 @@ export function CartProvider({ children }) {
   const addItem = useCallback((product, quantity = 1) => {
     dispatch({ type: 'ADD', product, quantity });
     setToast(`${product.name} agregado al carrito`);
-    // TODO analytics: add_to_cart
+    trackAddToCart(product, quantity);
   }, []);
 
-  const removeItem = useCallback((id) => dispatch({ type: 'REMOVE', id }), []);
+  const removeItem = useCallback(
+    (id) => {
+      const item = state.items.find((i) => i.id === id);
+      if (item) trackRemoveFromCart(item);
+      dispatch({ type: 'REMOVE', id });
+    },
+    [state.items]
+  );
   const setQty = useCallback((id, quantity) => dispatch({ type: 'SET_QTY', id, quantity }), []);
   const clear = useCallback(() => dispatch({ type: 'CLEAR' }), []);
   const openDrawer = useCallback(() => dispatch({ type: 'OPEN_DRAWER' }), []);

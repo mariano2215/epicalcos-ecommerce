@@ -1,13 +1,8 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
-
-const links = [
-  { to: '/', label: 'Inicio' },
-  { to: '/productos', label: 'Productos' },
-  { to: '/productos?cat=personalizadas', label: 'Personalizados' },
-  { to: '/contacto', label: 'Contacto' }
-];
+import AnnouncementBar from './AnnouncementBar.jsx';
+import { navLinks, site } from '../config/site.js';
 
 export default function Header() {
   const { totalItems, openDrawer } = useCart();
@@ -15,23 +10,25 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
+      <AnnouncementBar />
       <div className="container-app flex items-center justify-between py-4">
-        <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+        <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)} aria-label={site.name}>
           <span className="grid place-items-center w-9 h-9 rounded-xl text-black font-black text-lg"
             style={{ background: 'linear-gradient(135deg,#FF1B8D,#FF5A1F)' }}>
             E
           </span>
-          <span className="font-display font-extrabold tracking-tight text-lg">EPICALCOS</span>
+          <span className="font-display font-extrabold tracking-tight text-lg">{site.name}</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
+          {navLinks.map((l) => (
             <NavLink
               key={l.to}
               to={l.to}
               className={({ isActive }) =>
                 `btn-ghost ${isActive ? 'text-white bg-white/10' : ''}`
               }
+              end={l.to === '/'}
             >
               {l.label}
             </NavLink>
@@ -62,11 +59,12 @@ export default function Header() {
       {open && (
         <div className="md:hidden border-t border-white/10 bg-black/80">
           <div className="container-app py-3 flex flex-col gap-1">
-            {links.map((l) => (
+            {navLinks.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
                 onClick={() => setOpen(false)}
+                end={l.to === '/'}
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded-lg ${isActive ? 'bg-white/10 text-white' : 'text-white/80'}`
                 }

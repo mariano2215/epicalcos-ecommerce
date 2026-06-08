@@ -29,14 +29,29 @@ router.post('/create-preference', async (req, res, next) => {
     const frontend = process.env.FRONTEND_URL || 'http://localhost:5173';
     const backend = process.env.BACKEND_URL || 'http://localhost:3001';
 
-    const body = {
-      items: items.map((item) => ({
-        id: String(item.id),
-        title: String(item.title),
-        quantity: Number(item.quantity),
-        unit_price: Number(item.unit_price),
+    // Items principales del carrito
+    const mpItems = items.map((item) => ({
+      id: String(item.id),
+      title: String(item.title),
+      quantity: Number(item.quantity),
+      unit_price: Number(item.unit_price),
+      currency_id: 'ARS'
+    }));
+
+    // Si hay costo de envío, agregarlo como item separado (mejor breakdown en MP)
+    const shippingCost = Number(shipping?.cost) || 0;
+    if (shippingCost > 0) {
+      mpItems.push({
+        id: 'shipping',
+        title: `Envío — ${shipping?.method || 'a coordinar'}`,
+        quantity: 1,
+        unit_price: shippingCost,
         currency_id: 'ARS'
-      })),
+      });
+    }
+
+    const body = {
+      items: mpItems,
       payer: {
         name: payer.name,
         email: payer.email
@@ -53,9 +68,11 @@ router.post('/create-preference', async (req, res, next) => {
         buyer_phone: payer.phone,
         buyer_dni: payer.dni,
         shipping_method: shipping?.method,
+        shipping_cost: shippingCost,
         shipping_city: shipping?.city,
         shipping_province: shipping?.province,
         shipping_zip_code: shipping?.zipCode,
+        shipping_address: payer?.address,
         comments: shipping?.comments
       },
       notification_url: `${backend}/api/webhooks/mercadopago`

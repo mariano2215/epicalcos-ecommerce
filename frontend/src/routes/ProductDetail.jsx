@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { getProductById } from '../data/products.js';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
+import Breadcrumbs from '../components/Breadcrumbs.jsx';
+import RelatedProducts from '../components/RelatedProducts.jsx';
+import StickyMobileBar from '../components/StickyMobileBar.jsx';
+import { trackViewItem } from '../lib/analytics.js';
+import { useSeo, productJsonLd, breadcrumbJsonLd } from '../lib/seo.js';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -9,6 +14,32 @@ export default function ProductDetail() {
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
+
+  // SEO siempre se llama (con product undefined entrega defaults)
+  useSeo({
+    title: product?.name,
+    description: product?.description,
+    image: product?.image,
+    type: 'product',
+    jsonLd: product
+      ? {
+          '@context': 'https://schema.org',
+          '@graph': [
+            productJsonLd(product),
+            breadcrumbJsonLd([
+              { name: 'Inicio', url: '/' },
+              { name: 'Tienda', url: '/productos' },
+              { name: product.categoryLabel, url: `/categoria/${product.category}` },
+              { name: product.name, url: `/producto/${product.id}` }
+            ])
+          ]
+        }
+      : undefined
+  });
+
+  useEffect(() => {
+    if (product) trackViewItem(product);
+  }, [product?.id]);
 
   if (!product) {
     return (
@@ -27,9 +58,16 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="page-gradient min-h-screen">
+    <div className="page-gradient min-h-screen pb-24 sm:pb-0">
       <div className="container-app py-10">
-        <Link to="/productos" className="btn-ghost mb-6 inline-flex">← Volver al catálogo</Link>
+        <Breadcrumbs
+          items={[
+            { name: 'Inicio', to: '/' },
+            { name: 'Tienda', to: '/productos' },
+            { name: product.categoryLabel, to: `/categoria/${product.category}` },
+            { name: product.name }
+          ]}
+        />
 
         <div className="grid lg:grid-cols-2 gap-10">
           <div className="card-glass overflow-hidden">
@@ -37,7 +75,9 @@ export default function ProductDetail() {
           </div>
 
           <div>
-            <span className="text-xs uppercase tracking-wider text-white/50">{product.categoryLabel}</span>
+            <Link to={`/categoria/${product.category}`} className="text-xs uppercase tracking-wider text-white/50 hover:text-white/80">
+              {product.categoryLabel}
+            </Link>
             <h1 className="font-display font-extrabold text-3xl md:text-5xl mt-2">{product.name}</h1>
 
             <div className="mt-4">
@@ -65,11 +105,13 @@ export default function ProductDetail() {
                   <button
                     className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10"
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    aria-label="Restar"
                   >–</button>
                   <span className="w-10 text-center font-semibold">{qty}</span>
                   <button
                     className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10"
                     onClick={() => setQty((q) => q + 1)}
+                    aria-label="Sumar"
                   >+</button>
                 </div>
               </div>
@@ -92,7 +134,11 @@ export default function ProductDetail() {
             </ul>
           </div>
         </div>
+
+        <RelatedProducts currentProduct={product} />
       </div>
+
+      <StickyMobileBar product={product} onAdd={() => addItem(product, qty)} onBuyNow={buyNow} />
     </div>
   );
 }

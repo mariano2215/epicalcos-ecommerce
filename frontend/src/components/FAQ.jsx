@@ -1,14 +1,42 @@
 import { useState } from 'react';
 
 const faqs = [
-  { q: '¿Cuál es el pedido mínimo?', a: 'El pedido mínimo es de 10 calcos.' },
-  { q: '¿Son resistentes al agua?', a: 'Sí, trabajamos con vinilo premium resistente al agua.' },
-  { q: '¿Resisten el sol?', a: 'Sí, están pensadas para uso cotidiano y exposición normal al sol.' },
-  { q: '¿Hacen diseños personalizados?', a: 'Sí, podés comprar packs personalizados y luego coordinamos el diseño.' },
-  { q: '¿Cómo pago?', a: 'Podés pagar online de forma segura a través de Mercado Pago.' },
-  { q: '¿Cuánto tarda la producción?', a: 'Entre 2 y 3 días hábiles después de recibido el pago.' },
-  { q: '¿Hacen envíos?', a: 'Sí, coordinamos entregas en Rosario y envíos según zona.' },
-  { q: '¿Qué pasa después de pagar?', a: 'Recibimos el pedido, te contactamos para coordinar diseño si corresponde, y entrega.' }
+  {
+    q: '¿Cuál es el pedido mínimo?',
+    a: 'El pedido mínimo es de 10 calcos. Todos nuestros packs ya cumplen ese mínimo, así que con cualquier pack vas a estar listo.'
+  },
+  {
+    q: '¿Son resistentes al agua?',
+    a: 'Sí, trabajamos con vinilo premium resistente al agua. Podés pegarlos en termo, mate, botellas y objetos de uso diario.'
+  },
+  {
+    q: '¿Resisten el sol?',
+    a: 'Sí, están pensadas para uso cotidiano y exposición normal al sol. Para autos y motos también van perfectos.'
+  },
+  {
+    q: '¿Hacen diseños personalizados?',
+    a: 'Sí. Comprás el pack personalizado y después coordinamos por WhatsApp el diseño, logo, frase o referencia que quieras imprimir. Te enviamos vista previa antes de producir.'
+  },
+  {
+    q: '¿Cómo pago?',
+    a: 'Pagás online de forma segura con Mercado Pago: tarjeta de crédito, débito, dinero en cuenta, Rapipago o Pago Fácil. También aceptamos transferencia bancaria coordinada por WhatsApp.'
+  },
+  {
+    q: '¿Cuánto tarda la producción?',
+    a: 'En Rosario, 2 a 3 días hábiles desde la confirmación del pago. Al resto del país, 7 a 10 días hábiles incluyendo el tiempo del correo.'
+  },
+  {
+    q: '¿Hacen envíos?',
+    a: 'Sí. En Rosario: $3.500, gratis desde $50.000. Al resto del país: $8.000. También podés retirar en mano sin costo, coordinamos por WhatsApp.'
+  },
+  {
+    q: '¿Puedo cambiar o devolver el pedido?',
+    a: 'Por tratarse de productos personalizados de uso único, no aceptamos cambios ni devoluciones. Si hay un desperfecto de fábrica, mandanos foto/video y lo solucionamos.'
+  },
+  {
+    q: '¿Qué pasa después de pagar?',
+    a: 'Recibimos el aviso de Mercado Pago, te escribimos por WhatsApp al número que dejaste en el checkout para coordinar diseño (si corresponde), producción y entrega.'
+  }
 ];
 
 export default function FAQ() {
@@ -29,15 +57,32 @@ export default function FAQ() {
                 <button
                   onClick={() => setOpen(isOpen ? -1 : i)}
                   className="w-full p-5 flex items-center justify-between text-left"
+                  aria-expanded={isOpen}
                 >
                   <span className="font-semibold">{f.q}</span>
-                  <span className={`text-xl transition-transform ${isOpen ? 'rotate-45' : ''}`}>+</span>
+                  <span className={`text-xl transition-transform ${isOpen ? 'rotate-45' : ''}`} aria-hidden>+</span>
                 </button>
                 {isOpen && <div className="px-5 pb-5 text-white/70">{f.a}</div>}
               </div>
             );
           })}
         </div>
+
+        {/* JSON-LD FAQPage */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: faqs.map((f) => ({
+                '@type': 'Question',
+                name: f.q,
+                acceptedAnswer: { '@type': 'Answer', text: f.a }
+              }))
+            })
+          }}
+        />
       </div>
     </section>
   );

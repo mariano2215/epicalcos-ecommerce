@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /pago-exitoso
+Disallow: /pago-pendiente
+Disallow: /pago-error
+Disallow: /checkout
+
+Sitemap: https://epicalcos-ecommerce.netlify.app/sitemap.xml

@@ -1,13 +1,33 @@
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import CheckoutForm from '../components/CheckoutForm.jsx';
+import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import { createPreference } from '../services/paymentService.js';
+import { calculateShipping } from '../config/site.js';
+import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
+import { useSeo } from '../lib/seo.js';
 
 export default function Checkout() {
   const { items, subtotal } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [shippingMethod, setShippingMethod] = useState('envio-rosario');
+  const shippingCost = calculateShipping(shippingMethod, subtotal);
+  const total = subtotal + shippingCost;
+
+  useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago.' });
+
+  useEffect(() => {
+    if (items.length > 0) trackBeginCheckout(items);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onMethodChange = useCallback((method) => {
+    setShippingMethod(method);
+    trackAddShippingInfo(items, method);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
   if (items.length === 0) {
     return (
@@ -23,9 +43,12 @@ export default function Checkout() {
   const handleSubmit = async ({ payer, shipping }) => {
     setSubmitting(true);
     setErrorMsg('');
-    // TODO analytics: begin_checkout
     try {
-      const { init_point } = await createPreference({ items, payer, shipping });
+      const { init_point } = await createPreference({
+        items,
+        payer,
+        shipping: { ...shipping, cost: shippingCost }
+      });
       if (!init_point) throw new Error('Respuesta inválida del backend');
       window.location.href = init_point;
     } catch (err) {
@@ -40,12 +63,18 @@ export default function Checkout() {
   return (
     <div className="page-gradient min-h-screen">
       <div className="container-app py-10">
+        <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Carrito', to: '/carrito' }, { name: 'Checkout' }]} />
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Checkout</h1>
         <p className="text-white/60 mt-2">Revisá tu pedido y completá tus datos para pagar online.</p>
 
         <div className="grid lg:grid-cols-3 gap-6 mt-8">
           <div className="lg:col-span-2">
-            <CheckoutForm onSubmit={handleSubmit} submitting={submitting} errorMsg={errorMsg} />
+            <CheckoutForm
+              onSubmit={handleSubmit}
+              onMethodChange={onMethodChange}
+              submitting={submitting}
+              errorMsg={errorMsg}
+            />
           </div>
 
           <aside className="card-glass p-6 h-fit lg:sticky lg:top-24">
@@ -69,10 +98,18 @@ export default function Checkout() {
               <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
             </div>
             <div className="flex justify-between text-white/70 text-sm mb-3">
-              <span>Envío</span><span>A coordinar</span>
+              <span>Envío</span>
+              <span className={shippingCost === 0 ? 'text-emerald-400 font-semibold' : ''}>
+                {shippingCost === 0 ? 'Gratis' : formatPrice(shippingCost)}
+              </span>
             </div>
             <div className="flex justify-between font-display font-extrabold text-lg">
-              <span>Total</span><span>{formatPrice(subtotal)}</span>
+              <span>Total</span><span>{formatPrice(total)}</span>
+            </div>
+
+            <div className="mt-5 space-y-2 text-xs text-white/50">
+              <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
+              <div>📦 Pedido mínimo 10 calcos. Todos nuestros packs ya cumplen.</div>
             </div>
           </aside>
         </div>
