@@ -1,0 +1,10 @@
+{
+  "name": "epicalcos-ecommerce",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Root package — solo contiene las dependencias de Netlify Functions. El frontend tiene su propio package.json en /frontend.",
+  "dependencies": {
+    "mercadopago": "^2.0.15"
+  }
+}

@@ -1,9 +1,9 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
 /**
- * Crea una preferencia de pago en el backend y devuelve { init_point }.
- * El backend valida y firma con MERCADOPAGO_ACCESS_TOKEN — nunca lo expongas en el frontend.
+ * En producción (Netlify) usa ruta relativa: /api/create-preference → Netlify Function.
+ * En dev local podés setear VITE_API_URL=http://localhost:3001 para apuntar al backend Express.
  */
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export async function createPreference({ items, payer, shipping }) {
   const payload = {
     items: items.map((i) => ({
@@ -23,8 +23,14 @@ export async function createPreference({ items, payer, shipping }) {
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`No se pudo crear la preferencia (${res.status}): ${text}`);
+    let detail = '';
+    try {
+      const data = await res.json();
+      detail = data?.message || data?.error || '';
+    } catch {
+      detail = await res.text().catch(() => '');
+    }
+    throw new Error(`No se pudo crear la preferencia (${res.status})${detail ? ': ' + detail : ''}`);
   }
 
   return res.json();

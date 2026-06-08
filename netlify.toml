@@ -3,7 +3,23 @@
   publish = "dist"
   command = "npm run build"
 
-# SPA fallback (extra al _redirects, por las dudas)
+[functions]
+  # Carpeta de funciones relativa a la raíz del repo (NO al `base`).
+  directory = "../netlify/functions"
+  node_bundler = "esbuild"
+
+# Redirects /api/* → /.netlify/functions/* (URLs limpias en el frontend)
+[[redirects]]
+  from   = "/api/create-preference"
+  to     = "/.netlify/functions/create-preference"
+  status = 200
+
+[[redirects]]
+  from   = "/api/mercadopago-webhook"
+  to     = "/.netlify/functions/mercadopago-webhook"
+  status = 200
+
+# SPA fallback (debe ir DESPUÉS de los redirects de /api/*)
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
