@@ -79,6 +79,21 @@ export default function Category() {
           </p>
         </header>
 
+        {/* Ficha técnica */}
+        <dl className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { label: 'Material', value: 'Vinilo premium' },
+            { label: 'Resistencia', value: 'Agua y sol' },
+            { label: 'Tamaños', value: '4 · 6 · 9 cm' },
+            { label: 'Producción', value: '2-3 días hábiles' },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2">
+              <dt className="text-[10px] uppercase tracking-widest text-white/40 mb-0.5">{label}</dt>
+              <dd className="text-sm font-semibold text-white">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
         {/* Otras categorías */}
         <div className="mb-6 flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
           {CATEGORIES.map((c) => (

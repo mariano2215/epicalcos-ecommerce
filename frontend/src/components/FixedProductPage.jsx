@@ -5,9 +5,9 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 /**
  * Página de producto de precio fijo (tatuajes / polaroid) con stepper de cantidad.
  * @param {{ product:{id,name,price}, emoji:string, badge:string, title:string,
- *           subtitle:string, bullets:string[], breadcrumb:string }} props
+ *           subtitle:string, bullets:string[], specs?:{label:string,value:string}[], breadcrumb:string }} props
  */
-export default function FixedProductPage({ product, emoji, badge, title, subtitle, bullets, breadcrumb }) {
+export default function FixedProductPage({ product, emoji, badge, title, subtitle, bullets, specs, breadcrumb }) {
   const { addFixed } = useCart();
   const [qty, setQty] = useState(1);
 
@@ -38,6 +38,17 @@ export default function FixedProductPage({ product, emoji, badge, title, subtitl
             <ul className="mt-5 space-y-2 text-sm text-white/70">
               {bullets.map((b) => <li key={b}>✅ {b}</li>)}
             </ul>
+
+            {specs && specs.length > 0 && (
+              <dl className="mt-5 grid grid-cols-2 gap-2">
+                {specs.map(({ label, value }) => (
+                  <div key={label} className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2">
+                    <dt className="text-[10px] uppercase tracking-widest text-white/40 mb-0.5">{label}</dt>
+                    <dd className="text-sm font-semibold text-white">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
 
             <div className="mt-6 flex items-center gap-3">
               <div className="flex items-center gap-2">

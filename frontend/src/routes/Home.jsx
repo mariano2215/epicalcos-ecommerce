@@ -31,6 +31,57 @@ export default function Home() {
   return (
     <>
       <Hero />
+
+      {/* Caminos de compra — segmentación de intención */}
+      <section className="py-12">
+        <div className="container-app">
+          <div className="text-center mb-8">
+            <span className="badge badge-soft mb-3">¿Qué estás buscando?</span>
+            <h2 className="font-display font-extrabold text-3xl md:text-4xl">Encontrá tu camino</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Catálogo */}
+            <Link to="/categorias" className="card-glass card-glass-hover p-7 flex flex-col gap-4 relative overflow-hidden group">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-brand-blue to-brand-fuchsia" />
+              <div className="text-4xl">🏷️</div>
+              <div>
+                <div className="font-display font-extrabold text-xl mb-1">Comprar del catálogo</div>
+                <div className="text-white/60 text-sm leading-relaxed">
+                  Más de 1.000 diseños en 37 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
+                </div>
+              </div>
+              <span className="btn-primary self-start mt-auto">Ver categorías →</span>
+            </Link>
+
+            {/* Personalizados */}
+            <Link to="/personalizados" className="card-glass card-glass-hover p-7 flex flex-col gap-4 relative overflow-hidden group">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-brand-fuchsia to-brand-orange" />
+              <div className="text-4xl">✏️</div>
+              <div>
+                <div className="font-display font-extrabold text-xl mb-1">Calco personalizado</div>
+                <div className="text-white/60 text-sm leading-relaxed">
+                  Traé tu diseño o tu foto y lo imprimimos. Ideal para regalar, tu mascota, tu banda o lo que se te ocurra.
+                </div>
+              </div>
+              <span className="btn-secondary self-start mt-auto">Personalizar →</span>
+            </Link>
+
+            {/* Negocio / mayorista */}
+            <Link to="/negocio" className="card-glass card-glass-hover p-7 flex flex-col gap-4 relative overflow-hidden group">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-brand-orange to-brand-blue" />
+              <div className="text-4xl">🏢</div>
+              <div>
+                <div className="font-display font-extrabold text-xl mb-1">Para tu marca o negocio</div>
+                <div className="text-white/60 text-sm leading-relaxed">
+                  Calcos con tu logo para merch, packaging o reventa. Cotización por volumen sin compromiso.
+                </div>
+              </div>
+              <span className="btn-ghost self-start mt-auto border border-white/20">Cotizar →</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <Benefits />
 
       {/* Categorías destacadas */}

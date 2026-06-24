@@ -21,6 +21,12 @@ export default function Tatuajes() {
         'Aplicación con agua, sin dolor.',
         'Ideal para eventos, fiestas y regalos.'
       ]}
+      specs={[
+        { label: 'Material', value: 'Papel transfer' },
+        { label: 'Duración', value: '3-5 días' },
+        { label: 'Aplicación', value: 'Con agua' },
+        { label: 'Producción', value: '2-3 días hábiles' },
+      ]}
     />
   );
 }

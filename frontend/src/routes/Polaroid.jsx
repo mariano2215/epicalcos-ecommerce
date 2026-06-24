@@ -21,6 +21,12 @@ export default function Polaroid() {
         'Impresión premium con marco blanco.',
         'Ideales para regalar o decorar.'
       ]}
+      specs={[
+        { label: 'Cantidad', value: '10 fotos' },
+        { label: 'Tamaño', value: '10 × 15 cm' },
+        { label: 'Papel', value: 'Fotográfico mate' },
+        { label: 'Producción', value: '2-3 días hábiles' },
+      ]}
     />
   );
 }
