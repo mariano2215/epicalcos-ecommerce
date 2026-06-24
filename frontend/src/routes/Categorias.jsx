@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
+import StickerField from '../components/StickerField.jsx';
 import { CATEGORIES, SPECIALS } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
 
@@ -45,18 +46,23 @@ export default function Categorias() {
       <div className="container-app py-10">
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Categorías' }]} />
 
-        <header className="mb-8">
-          <span className="badge badge-soft mb-3">Catálogo</span>
-          <h1 className="font-display font-extrabold text-4xl md:text-5xl">Categorías</h1>
-          <p className="text-white/60 mt-3 max-w-xl">
-            Elegí una categoría y armá tu pedido calco por calco. Desde 10 calcos, 10% off automático.
-          </p>
+        <header className="mb-8 relative overflow-hidden rounded-3xl">
+          <StickerField count={9} opacity={0.22} />
+          <div className="relative z-10 py-2">
+            <span className="badge badge-soft mb-3">Catálogo</span>
+            <h1 className="font-display font-extrabold text-4xl md:text-5xl">
+              <span className="gradient-text">Categorías</span>
+            </h1>
+            <p className="text-white/60 mt-3 max-w-xl">
+              Elegí una categoría y armá tu pedido calco por calco. Desde 10 calcos, 10% off automático.
+            </p>
+          </div>
         </header>
 
         {/* Especiales */}
         <section className="mb-10">
           <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Destacados</h2>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             {SPECIALS.map((s) => (
               <Link
                 key={s.slug}
@@ -94,7 +100,7 @@ export default function Categorias() {
               : 'No encontramos categorías con ese nombre.'}
           </p>
         ) : (
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {filtered.map((c) => (
               <CategoryCard
                 key={c.slug}

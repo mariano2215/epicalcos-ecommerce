@@ -11,7 +11,6 @@ export const CATEGORIES = [
   { slug: 'bob-esponja', name: 'Bob Esponja', emoji: '🧽' },
   { slug: 'buenas-vibras', name: 'Buenas Vibras', emoji: '✨' },
   { slug: 'calcos-especiales', name: 'Calcos Especiales', emoji: '💎' },
-  { slug: 'calcos-xl', name: 'Calcos XL', emoji: '🔳' },
   { slug: 'campeones', name: 'Campeones', emoji: '🏆' },
   { slug: 'cats', name: 'Gatitos', emoji: '🐱' },
   { slug: 'ciencia', name: 'Ciencia', emoji: '🔬' },

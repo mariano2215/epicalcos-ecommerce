@@ -45,7 +45,7 @@ export default function Home() {
           </div>
 
           {featured.length === 0 ? (
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               {CATEGORIES.slice(0, 10).map((c) => (
                 <Link key={c.slug} to={`/categoria/${c.slug}`} className="card-glass card-glass-hover p-5">
                   <div className="text-2xl mb-2">{c.emoji}</div>
@@ -54,7 +54,7 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {featured.map((c) => (
                 <CategoryCard key={c.slug} slug={c.slug} name={c.name} emoji={c.emoji} cover={catalog[c.slug]?.cover} count={catalog[c.slug]?.count} />
               ))}
@@ -70,7 +70,7 @@ export default function Home() {
             <span className="badge badge-soft mb-2">Más opciones</span>
             <h2 className="font-display font-extrabold text-3xl md:text-4xl">Packs y servicios</h2>
           </div>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             {SPECIALS.map((s) => (
               <Link key={s.slug} to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] relative overflow-hidden">
                 <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />

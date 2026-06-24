@@ -182,3 +182,134 @@ a { color: inherit; text-decoration: none; }
   from { opacity: 0; transform: translate(-50%, 12px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+
+/* ============================================================
+   Motion graphics
+   ============================================================ */
+
+/* Fondo animado (aurora) que respira detrás del hero y las páginas */
+.hero-gradient { position: relative; overflow: hidden; }
+.page-gradient {
+  position: relative;
+  background-size: 200% 200%, 200% 200%, auto;
+  animation: bg-drift 30s ease-in-out infinite alternate;
+}
+@keyframes bg-drift {
+  from { background-position: 0% 0%, 100% 100%, 0 0; }
+  to   { background-position: 100% 50%, 0% 50%, 0 0; }
+}
+
+.hero-aurora {
+  position: absolute;
+  inset: -25%;
+  z-index: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    rgba(58, 134, 255, 0.30),
+    rgba(139, 92, 246, 0.30),
+    rgba(255, 77, 202, 0.30),
+    rgba(255, 90, 31, 0.30),
+    rgba(255, 216, 77, 0.30),
+    rgba(58, 134, 255, 0.30)
+  );
+  filter: blur(90px);
+  opacity: 0.55;
+  animation: aurora-spin 28s linear infinite;
+}
+@keyframes aurora-spin { to { transform: rotate(360deg); } }
+
+/* Campo de stickers flotantes */
+.sticker-field {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.sticker-float {
+  position: absolute;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 30px rgba(0, 0, 0, 0.45)) saturate(1.05);
+  rotate: var(--rot, 0deg);
+  transform: translate3d(
+    calc(var(--px, 0) * 42px * var(--depth, 1)),
+    calc(var(--py, 0) * 42px * var(--depth, 1)),
+    0
+  );
+  transition: transform 0.4s ease-out;
+  animation: floaty var(--dur, 20s) ease-in-out var(--delay, 0s) infinite;
+  will-change: transform, translate;
+}
+@keyframes floaty {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -26px; }
+}
+
+/* Texto con degradé animado */
+.gradient-text {
+  background-image: linear-gradient(135deg, #FF1B8D 0%, #FF5A1F 50%, #FFD84D 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 220% 220%;
+  animation: gradient-pan 6s ease infinite;
+}
+@keyframes gradient-pan {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* Titular rotativo: frases apiladas en la misma celda (sin salto de layout) */
+.rotating-headline { display: grid; }
+.rotating-headline__item {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(0.4em) rotateX(-35deg);
+  transform-origin: 50% 100%;
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+.rotating-headline__item.is-active {
+  opacity: 1;
+  transform: none;
+}
+
+/* Reveal al hacer scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.reveal--in { opacity: 1; transform: none; }
+
+/* Entrada escalonada de las cards dentro de una grilla */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+.grid-rise > * { animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.grid-rise > *:nth-child(1)  { animation-delay: 0.02s; }
+.grid-rise > *:nth-child(2)  { animation-delay: 0.06s; }
+.grid-rise > *:nth-child(3)  { animation-delay: 0.10s; }
+.grid-rise > *:nth-child(4)  { animation-delay: 0.14s; }
+.grid-rise > *:nth-child(5)  { animation-delay: 0.18s; }
+.grid-rise > *:nth-child(6)  { animation-delay: 0.22s; }
+.grid-rise > *:nth-child(7)  { animation-delay: 0.26s; }
+.grid-rise > *:nth-child(8)  { animation-delay: 0.30s; }
+.grid-rise > *:nth-child(9)  { animation-delay: 0.34s; }
+.grid-rise > *:nth-child(10) { animation-delay: 0.38s; }
+.grid-rise > *:nth-child(n+11) { animation-delay: 0.42s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora,
+  .page-gradient,
+  .sticker-float,
+  .gradient-text,
+  .grid-rise > * {
+    animation: none !important;
+  }
+  .sticker-float { transition: none !important; transform: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .rotating-headline__item { transition: none !important; }
+}

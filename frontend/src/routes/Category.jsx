@@ -69,7 +69,9 @@ export default function Category() {
 
         <header className="mb-6">
           <span className="badge badge-soft mb-3">{category.emoji} Categoría</span>
-          <h1 className="font-display font-extrabold text-4xl md:text-5xl">{category.name}</h1>
+          <h1 className="font-display font-extrabold text-4xl md:text-5xl">
+            <span className="gradient-text">{category.name}</span>
+          </h1>
           <p className="text-white/60 mt-3 max-w-xl">
             {items === null
               ? 'Cargando diseños…'
@@ -111,7 +113,7 @@ export default function Category() {
           <p className="text-white/50 py-10 text-center">No hay diseños para mostrar.</p>
         ) : (
           <>
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {stickers.slice(0, visible).map((s) => (
                 <StickerCard key={s.id} sticker={s} />
               ))}

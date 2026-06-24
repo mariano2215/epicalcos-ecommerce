@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { trackSearch } from '../lib/analytics.js';
+import StickerField from './StickerField.jsx';
+import RotatingHeadline from './RotatingHeadline.jsx';
 
 const quickTags = [
   { label: 'Anime', slug: 'anime' },
@@ -25,21 +27,18 @@ export default function Hero() {
 
   return (
     <section className="hero-gradient relative">
-      <div className="container-app pt-20 pb-28 md:pt-28 md:pb-36 text-center">
+      <div className="hero-aurora" aria-hidden="true" />
+      <StickerField count={14} opacity={0.34} />
+
+      <div className="container-app pt-20 pb-28 md:pt-28 md:pb-36 text-center relative z-10">
         <span className="badge badge-soft mb-6">🔥 Calcos premium · Resistentes al agua y al sol</span>
 
         <h1 className="font-display font-black text-4xl md:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
-          Elegí tus calcos, <br />
-          <span style={{
-            backgroundImage: 'linear-gradient(135deg,#FF1B8D 0%,#FF5A1F 100%)',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            color: 'transparent'
-          }}>uno por uno</span>
+          <RotatingHeadline />
         </h1>
 
         <p className="mt-5 max-w-2xl mx-auto text-white/70 text-lg">
-          Miles de diseños en 38 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad.
+          Miles de diseños en 37 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad.
           Desde 10 calcos, 10% off. Pagá online con Mercado Pago.
         </p>
 
