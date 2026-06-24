@@ -3,6 +3,9 @@
   publish = "dist"
   command = "npm run build"
 
+[build.environment]
+  NODE_VERSION = "20"
+
 [functions]
   # Carpeta de funciones relativa a la raíz del repo (NO al `base`).
   directory = "../netlify/functions"
