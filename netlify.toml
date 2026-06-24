@@ -1,7 +1,9 @@
 [build]
   base    = "frontend"
   publish = "dist"
-  command = "npm run build"
+  # Instala deps del frontend (vite) Y de la raíz (mercadopago para las Functions).
+  # Necesario porque, al haber package.json en la raíz, Netlify no instala solo el de frontend.
+  command = "npm ci && npm ci --prefix .. && npm run build"
 
 [build.environment]
   NODE_VERSION = "20"
