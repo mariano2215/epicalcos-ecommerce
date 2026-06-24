@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useReducedMotion } from '../lib/motion.js';
 
-/**
- * Fondo de "motion graphics": stickers reales del catálogo flotando suavemente
- * detrás del contenido. Respeta prefers-reduced-motion y reacciona al puntero
- * (parallax sutil). Es 100% decorativo (aria-hidden, pointer-events:none).
- */
-
-// Posiciones repartidas hacia los bordes para no tapar el texto central.
 const SLOTS = [
   { top: '6%',  left: '4%',   size: 104, dur: 19, delay: 0,   depth: 0.9, rot: -8 },
   { top: '14%', left: '84%',  size: 120, dur: 23, delay: 1.5, depth: 1.2, rot: 10 },
@@ -25,39 +19,70 @@ const SLOTS = [
   { top: '10%', left: '64%',  size: 68,  dur: 28, delay: 0.9, depth: 0.6, rot: -5 }
 ];
 
-export default function StickerField({ count = 14, opacity = 0.2, className = '' }) {
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let allSources = null;
+
+async function loadSources() {
+  if (allSources) return allSources;
+  try {
+    const r = await fetch('/data/nuevas-catalogo.json');
+    if (r.ok) {
+      const list = await r.json();
+      if (Array.isArray(list) && list.length) {
+        allSources = list;
+        return list;
+      }
+    }
+  } catch (_) {}
+  // fallback to cutouts
+  try {
+    const r = await fetch('/data/cutouts.json');
+    if (r.ok) {
+      const list = await r.json();
+      allSources = list;
+      return list;
+    }
+  } catch (_) {}
+  return [];
+}
+
+export default function StickerField({ count = 14, opacity = 0.34, className = '' }) {
   const reduced = useReducedMotion();
+  const location = useLocation();
   const ref = useRef(null);
   const [imgs, setImgs] = useState([]);
+  const [visible, setVisible] = useState(true);
 
-  // Stickers recortados (PNG con transparencia) generados por build-cutouts.py.
-  // Fallback: portadas del catálogo si todavía no existe el manifest.
+  // Initial load
   useEffect(() => {
     let alive = true;
-    const shuffle = (arr) => {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    };
-    fetch('/data/cutouts.json')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list) => {
-        if (Array.isArray(list) && list.length) return list;
-        return fetch('/data/catalog.json')
-          .then((r) => (r.ok ? r.json() : []))
-          .then((cats) => cats.map((c) => c.cover).filter(Boolean));
-      })
-      .then((sources) => {
-        if (!alive) return;
-        setImgs(shuffle([...sources]).slice(0, count));
-      })
-      .catch(() => {});
+    loadSources().then((sources) => {
+      if (!alive || !sources.length) return;
+      setImgs(shuffle(sources).slice(0, count));
+    });
     return () => { alive = false; };
   }, [count]);
 
-  // Parallax sutil siguiendo el puntero (apagado con reduced-motion).
+  // Rotate stickers on route change with fade transition
+  useEffect(() => {
+    if (!allSources || !allSources.length) return;
+    setVisible(false);
+    const t = setTimeout(() => {
+      setImgs(shuffle(allSources).slice(0, count));
+      setVisible(true);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [location.pathname, count]);
+
+  // Parallax on pointer move
   useEffect(() => {
     const el = ref.current;
     if (!el || reduced) return;
@@ -82,12 +107,17 @@ export default function StickerField({ count = 14, opacity = 0.2, className = ''
   if (imgs.length === 0) return null;
 
   return (
-    <div ref={ref} aria-hidden="true" className={`sticker-field ${className}`}>
+    <div
+      ref={ref}
+      aria-hidden="true"
+      className={`sticker-field ${className}`}
+      style={{ transition: 'opacity 0.4s ease', opacity: visible ? 1 : 0 }}
+    >
       {imgs.map((src, i) => {
         const s = SLOTS[i % SLOTS.length];
         return (
           <img
-            key={i}
+            key={`${src}-${i}`}
             src={src}
             alt=""
             loading="lazy"

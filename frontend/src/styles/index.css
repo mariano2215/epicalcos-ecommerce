@@ -301,6 +301,23 @@ a { color: inherit; text-decoration: none; }
 .grid-rise > *:nth-child(10) { animation-delay: 0.38s; }
 .grid-rise > *:nth-child(n+11) { animation-delay: 0.42s; }
 
+/* Announcement ticker marquee */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.announcement-ticker {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 18s linear infinite;
+  white-space: nowrap;
+}
+
+.announcement-ticker span {
+  padding-right: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora,
   .page-gradient,
@@ -309,6 +326,7 @@ a { color: inherit; text-decoration: none; }
   .grid-rise > * {
     animation: none !important;
   }
+  .announcement-ticker { animation: none !important; }
   .sticker-float { transition: none !important; transform: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
   .rotating-headline__item { transition: none !important; }
