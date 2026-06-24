@@ -5,6 +5,6 @@
   "type": "module",
   "description": "Root package — solo contiene las dependencias de Netlify Functions. El frontend tiene su propio package.json en /frontend.",
   "dependencies": {
-    "mercadopago": "^2.0.15"
+    "mercadopago": "^2.13.0"
   }
 }
