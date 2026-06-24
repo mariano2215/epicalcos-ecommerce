@@ -73,17 +73,18 @@ export const announcements = [
 
 export const navLinks = [
   { to: '/', label: 'Inicio' },
-  { to: '/productos', label: 'Tienda' },
-  { to: '/productos?cat=personalizadas', label: 'Personalizados' },
+  { to: '/categorias', label: 'Categorías' },
   { to: '/contacto', label: 'Contacto' }
 ];
 
 export const footerLinks = {
   tienda: [
-    { to: '/productos', label: 'Todos los productos' },
-    { to: '/productos?cat=personalizadas', label: 'Personalizadas' },
-    { to: '/productos?cat=polaroids', label: 'Polaroids' },
-    { to: '/productos?cat=vinilos', label: 'Vinilos' }
+    { to: '/categorias', label: 'Todas las categorías' },
+    { to: '/personalizados', label: 'Personalizados' },
+    { to: '/mayorista', label: 'Pack Mayorista x100' },
+    { to: '/negocio', label: 'Negocio' },
+    { to: '/tatuajes', label: 'Tatuajes temporales' },
+    { to: '/polaroid', label: 'Fotos Polaroid' }
   ],
   ayuda: [
     { to: '/contacto', label: 'Contacto' },

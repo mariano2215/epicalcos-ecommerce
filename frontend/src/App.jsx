@@ -1,14 +1,18 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import CartDrawer from './components/CartDrawer.jsx';
 import Home from './routes/Home.jsx'; // Home eager (LCP)
 
-// Resto lazy: bajan el initial bundle ~50%
-const Products = lazy(() => import('./routes/Products.jsx'));
+// Resto lazy: bajan el initial bundle
+const Categorias = lazy(() => import('./routes/Categorias.jsx'));
 const Category = lazy(() => import('./routes/Category.jsx'));
-const ProductDetail = lazy(() => import('./routes/ProductDetail.jsx'));
+const Personalizados = lazy(() => import('./routes/Personalizados.jsx'));
+const Mayorista = lazy(() => import('./routes/Mayorista.jsx'));
+const Negocio = lazy(() => import('./routes/Negocio.jsx'));
+const Tatuajes = lazy(() => import('./routes/Tatuajes.jsx'));
+const Polaroid = lazy(() => import('./routes/Polaroid.jsx'));
 const Cart = lazy(() => import('./routes/Cart.jsx'));
 const Checkout = lazy(() => import('./routes/Checkout.jsx'));
 const PaymentSuccess = lazy(() => import('./routes/PaymentSuccess.jsx'));
@@ -37,9 +41,13 @@ export default function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/productos" element={<Products />} />
+            <Route path="/categorias" element={<Categorias />} />
             <Route path="/categoria/:slug" element={<Category />} />
-            <Route path="/producto/:id" element={<ProductDetail />} />
+            <Route path="/personalizados" element={<Personalizados />} />
+            <Route path="/mayorista" element={<Mayorista />} />
+            <Route path="/negocio" element={<Negocio />} />
+            <Route path="/tatuajes" element={<Tatuajes />} />
+            <Route path="/polaroid" element={<Polaroid />} />
             <Route path="/carrito" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/pago-exitoso" element={<PaymentSuccess />} />
@@ -50,6 +58,9 @@ export default function App() {
             <Route path="/politicas/cambios" element={<Cambios />} />
             <Route path="/politicas/privacidad" element={<Privacidad />} />
             <Route path="/terminos-y-condiciones" element={<Terminos />} />
+            {/* Redirects de rutas viejas */}
+            <Route path="/productos" element={<Navigate to="/categorias" replace />} />
+            <Route path="/producto/:id" element={<Navigate to="/categorias" replace />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </Suspense>

@@ -1,8 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 
+const EDITABLE = new Set(['sticker', 'fixed']);
+
 export default function CartDrawer() {
-  const { drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear } = useCart();
+  const { drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear, bulkActive, unitsToBulk } = useCart();
   const navigate = useNavigate();
 
   if (!drawerOpen) return null;
@@ -26,15 +28,15 @@ export default function CartDrawer() {
             <div className="text-center text-white/60 py-10">
               <div className="text-5xl mb-2">🛒</div>
               <p>Tu carrito está vacío.</p>
-              <Link to="/productos" onClick={closeDrawer} className="btn-primary mt-5 inline-flex">
-                Ver productos
+              <Link to="/categorias" onClick={closeDrawer} className="btn-primary mt-5 inline-flex">
+                Ver categorías
               </Link>
             </div>
           )}
 
           {items.map((item) => (
             <div key={item.id} className="card-glass p-3 flex gap-3">
-              <img src={item.image} alt={item.name} className="w-20 h-20 rounded-xl object-cover" />
+              <img src={item.image} alt={item.name} className="w-20 h-20 rounded-xl object-contain bg-white/5 p-1" />
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="font-semibold text-sm leading-snug">{item.name}</h4>
@@ -43,15 +45,15 @@ export default function CartDrawer() {
                   </button>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <button
-                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
-                    onClick={() => setQty(item.id, item.quantity - 1)}
-                  >–</button>
-                  <span className="w-8 text-center text-sm">{item.quantity}</span>
-                  <button
-                    className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
-                    onClick={() => setQty(item.id, item.quantity + 1)}
-                  >+</button>
+                  {EDITABLE.has(item.type) ? (
+                    <>
+                      <button className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity - 1)}>–</button>
+                      <span className="w-8 text-center text-sm">{item.quantity}</span>
+                      <button className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity + 1)}>+</button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-white/50">x{item.quantity}</span>
+                  )}
                   <span className="ml-auto font-semibold text-sm">
                     {formatPrice(item.price * item.quantity)}
                   </span>
@@ -63,6 +65,11 @@ export default function CartDrawer() {
 
         {items.length > 0 && (
           <div className="p-5 border-t border-white/10 space-y-3">
+            {bulkActive ? (
+              <div className="text-xs text-emerald-400">🎉 10% off por volumen aplicado.</div>
+            ) : unitsToBulk > 0 ? (
+              <div className="text-xs text-white/50">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off.</div>
+            ) : null}
             <div className="flex justify-between text-white/70 text-sm">
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>

@@ -1,34 +1,60 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
-import ProductGrid from '../components/ProductGrid.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
-import { categories, getProductsByCategory } from '../data/products.js';
+import StickerCard from '../components/StickerCard.jsx';
+import { CATEGORIES, getCategory } from '../data/categories.js';
 import { useSeo, breadcrumbJsonLd } from '../lib/seo.js';
+
+const PAGE = 48;
 
 export default function Category() {
   const { slug } = useParams();
-  const category = categories.find((c) => c.slug === slug);
+  const category = getCategory(slug);
 
-  const products = useMemo(() => getProductsByCategory(slug), [slug]);
+  const [items, setItems] = useState(null); // null = cargando
+  const [visible, setVisible] = useState(PAGE);
+  const [q, setQ] = useState('');
 
-  // SEO siempre antes de cualquier return condicional
   useSeo({
-    title: category ? `${category.name} · Stickers premium` : 'Categoría',
+    title: category ? `${category.name} · Calcos premium` : 'Categoría',
     description: category
-      ? `Stickers y calcos de ${category.name.toLowerCase()} en Rosario. Vinilo premium resistente al agua y al sol. Pagá online con Mercado Pago.`
+      ? `Calcos de ${category.name.toLowerCase()} en Rosario. Elegí cada sticker, su tamaño (4/6/9 cm) y cantidad. Vinilo premium, pagás con Mercado Pago.`
       : undefined,
     jsonLd: category
       ? breadcrumbJsonLd([
           { name: 'Inicio', url: '/' },
-          { name: 'Tienda', url: '/productos' },
+          { name: 'Categorías', url: '/categorias' },
           { name: category.name, url: `/categoria/${slug}` }
         ])
       : undefined
   });
 
-  if (!category || category.slug === 'todas') {
-    return <Navigate to="/productos" replace />;
-  }
+  useEffect(() => {
+    if (!category) return;
+    setItems(null);
+    setVisible(PAGE);
+    setQ('');
+    fetch(`/data/${slug}.json`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setItems)
+      .catch(() => setItems([]));
+  }, [slug, category]);
+
+  const stickers = useMemo(() => {
+    if (!items) return [];
+    const mapped = items.map((it) => ({
+      id: it.id,
+      image: it.file,
+      name: `${category.name} #${it.id.split('-').pop()}`,
+      category: slug,
+      categoryLabel: category.name
+    }));
+    if (!q.trim()) return mapped;
+    const term = q.trim().toLowerCase();
+    return mapped.filter((s) => s.name.toLowerCase().includes(term) || s.id.includes(term));
+  }, [items, category, slug, q]);
+
+  if (!category) return <Navigate to="/categorias" replace />;
 
   return (
     <div className="page-gradient min-h-screen">
@@ -36,38 +62,69 @@ export default function Category() {
         <Breadcrumbs
           items={[
             { name: 'Inicio', to: '/' },
-            { name: 'Tienda', to: '/productos' },
+            { name: 'Categorías', to: '/categorias' },
             { name: category.name }
           ]}
         />
 
-        <header className="mb-8">
-          <span className="badge badge-soft mb-3">Categoría</span>
+        <header className="mb-6">
+          <span className="badge badge-soft mb-3">{category.emoji} Categoría</span>
           <h1 className="font-display font-extrabold text-4xl md:text-5xl">{category.name}</h1>
           <p className="text-white/60 mt-3 max-w-xl">
-            {products.length} {products.length === 1 ? 'producto' : 'productos'} en esta categoría.
+            {items === null
+              ? 'Cargando diseños…'
+              : `${stickers.length} ${stickers.length === 1 ? 'diseño' : 'diseños'}. Elegí tamaño y cantidad en cada calco. Desde 10 calcos, 10% off.`}
           </p>
         </header>
 
-        <div className="mb-8 flex flex-wrap gap-2">
-          {categories
-            .filter((c) => c.slug !== 'todas')
-            .map((c) => (
-              <Link
-                key={c.slug}
-                to={`/categoria/${c.slug}`}
-                className={
-                  c.slug === slug
-                    ? 'btn-primary !py-2 !px-4 text-sm'
-                    : 'btn-secondary !py-2 !px-4 text-sm'
-                }
-              >
-                {c.name}
-              </Link>
-            ))}
+        {/* Otras categorías */}
+        <div className="mb-6 flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
+          {CATEGORIES.map((c) => (
+            <Link
+              key={c.slug}
+              to={`/categoria/${c.slug}`}
+              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs border transition-colors ${
+                c.slug === slug
+                  ? 'border-brand-fuchsia bg-brand-fuchsia/15 text-white'
+                  : 'border-white/10 text-white/60 hover:border-white/25'
+              }`}
+            >
+              {c.name}
+            </Link>
+          ))}
         </div>
 
-        <ProductGrid products={products} />
+        {/* Buscador dentro de la categoría */}
+        <div className="card-glass p-4 mb-6 flex items-center gap-3 max-w-md">
+          <span className="text-white/50" aria-hidden>🔎</span>
+          <input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setVisible(PAGE); }}
+            placeholder="Buscar por número de diseño…"
+            className="flex-1 bg-transparent outline-none py-1.5 text-white placeholder:text-white/40"
+            aria-label="Buscar diseño"
+          />
+        </div>
+
+        {/* Grilla de calcos */}
+        {items !== null && stickers.length === 0 ? (
+          <p className="text-white/50 py-10 text-center">No hay diseños para mostrar.</p>
+        ) : (
+          <>
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {stickers.slice(0, visible).map((s) => (
+                <StickerCard key={s.id} sticker={s} />
+              ))}
+            </div>
+            {visible < stickers.length && (
+              <div className="text-center mt-8">
+                <button onClick={() => setVisible((v) => v + PAGE)} className="btn-secondary">
+                  Ver más diseños ({stickers.length - visible} restantes)
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

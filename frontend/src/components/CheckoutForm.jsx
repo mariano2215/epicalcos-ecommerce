@@ -65,21 +65,6 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
     }
   };
 
-  const Field = ({ label, name, type = 'text', placeholder, ...rest }) => (
-    <label className="block">
-      <span className="text-sm text-white/70 mb-1.5 block">{label}</span>
-      <input
-        type={type}
-        value={form[name]}
-        onChange={change(name)}
-        placeholder={placeholder}
-        className="input-dark"
-        {...rest}
-      />
-      {errors[name] && <span className="text-xs text-brand-pink mt-1 block">{errors[name]}</span>}
-    </label>
-  );
-
   const needsAddress = form.shippingMethod !== 'retiro';
 
   return (
@@ -87,10 +72,26 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
       <h3 className="font-display font-extrabold text-xl">Datos del comprador</h3>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nombre completo *" name="name" placeholder="Juan Pérez" />
-        <Field label="Email *" name="email" type="email" placeholder="tu@email.com" />
-        <Field label="Teléfono *" name="phone" placeholder="3410000000" />
-        <Field label="DNI (opcional)" name="dni" placeholder="00.000.000" />
+        <label className="block">
+          <span className="text-sm text-white/70 mb-1.5 block">Nombre completo *</span>
+          <input type="text" value={form.name} onChange={change('name')} placeholder="Juan Pérez" className="input-dark" />
+          {errors.name && <span className="text-xs text-brand-pink mt-1 block">{errors.name}</span>}
+        </label>
+        <label className="block">
+          <span className="text-sm text-white/70 mb-1.5 block">Email *</span>
+          <input type="email" value={form.email} onChange={change('email')} placeholder="tu@email.com" className="input-dark" />
+          {errors.email && <span className="text-xs text-brand-pink mt-1 block">{errors.email}</span>}
+        </label>
+        <label className="block">
+          <span className="text-sm text-white/70 mb-1.5 block">Teléfono *</span>
+          <input type="text" value={form.phone} onChange={change('phone')} placeholder="3410000000" className="input-dark" />
+          {errors.phone && <span className="text-xs text-brand-pink mt-1 block">{errors.phone}</span>}
+        </label>
+        <label className="block">
+          <span className="text-sm text-white/70 mb-1.5 block">DNI (opcional)</span>
+          <input type="text" value={form.dni} onChange={change('dni')} placeholder="00.000.000" className="input-dark" />
+          {errors.dni && <span className="text-xs text-brand-pink mt-1 block">{errors.dni}</span>}
+        </label>
       </div>
 
       <h3 className="font-display font-extrabold text-xl pt-2">Entrega</h3>
@@ -113,10 +114,26 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
       {needsAddress && (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Dirección *" name="address" placeholder="Calle 1234, depto 2B" />
-            <Field label="Ciudad *" name="city" />
-            <Field label="Provincia *" name="province" />
-            <Field label="Código postal *" name="zipCode" placeholder="2000" />
+            <label className="block">
+              <span className="text-sm text-white/70 mb-1.5 block">Dirección *</span>
+              <input type="text" value={form.address} onChange={change('address')} placeholder="Calle 1234, depto 2B" className="input-dark" />
+              {errors.address && <span className="text-xs text-brand-pink mt-1 block">{errors.address}</span>}
+            </label>
+            <label className="block">
+              <span className="text-sm text-white/70 mb-1.5 block">Ciudad *</span>
+              <input type="text" value={form.city} onChange={change('city')} className="input-dark" />
+              {errors.city && <span className="text-xs text-brand-pink mt-1 block">{errors.city}</span>}
+            </label>
+            <label className="block">
+              <span className="text-sm text-white/70 mb-1.5 block">Provincia *</span>
+              <input type="text" value={form.province} onChange={change('province')} className="input-dark" />
+              {errors.province && <span className="text-xs text-brand-pink mt-1 block">{errors.province}</span>}
+            </label>
+            <label className="block">
+              <span className="text-sm text-white/70 mb-1.5 block">Código postal *</span>
+              <input type="text" value={form.zipCode} onChange={change('zipCode')} placeholder="2000" className="input-dark" />
+              {errors.zipCode && <span className="text-xs text-brand-pink mt-1 block">{errors.zipCode}</span>}
+            </label>
           </div>
           <p className="text-xs text-white/50">
             ⏱️ Plazos: <strong className="text-white/70">{form.shippingMethod === 'envio-rosario' ? shippingCfg.productionDaysRosario : shippingCfg.productionDaysInterior}</strong>

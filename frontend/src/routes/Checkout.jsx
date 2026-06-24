@@ -8,6 +8,21 @@ import { calculateShipping } from '../config/site.js';
 import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
 import { useSeo } from '../lib/seo.js';
 
+/** Resumen legible de packs/personalizados/negocio para que le llegue al vendedor. */
+function buildDesignSummary(items) {
+  const parts = [];
+  for (const it of items) {
+    if (it.type === 'pack' && it.meta) {
+      const designs = (it.meta.items || []).map((d) => `${d.name} x${d.qty}`).join(', ');
+      const custom = it.meta.customCount ? ` + ${it.meta.customCount} diseño(s) propio(s)` : '';
+      parts.push(`${it.name} → ${designs || 'sin catálogo'}${custom}`);
+    } else if (it.type === 'negocio' && it.meta) {
+      parts.push(`Negocio "${it.meta.business}": ${it.meta.qty}u ${it.meta.size} (logo por WhatsApp)`);
+    }
+  }
+  return parts.length ? `PEDIDO: ${parts.join(' ; ')}` : '';
+}
+
 export default function Checkout() {
   const { items, subtotal } = useCart();
   const [submitting, setSubmitting] = useState(false);
@@ -44,10 +59,12 @@ export default function Checkout() {
     setSubmitting(true);
     setErrorMsg('');
     try {
+      const designSummary = buildDesignSummary(items);
+      const comments = [shipping.comments, designSummary].filter(Boolean).join(' || ');
       const { init_point } = await createPreference({
         items,
         payer,
-        shipping: { ...shipping, cost: shippingCost }
+        shipping: { ...shipping, comments: comments || undefined, cost: shippingCost }
       });
       if (!init_point) throw new Error('Respuesta inválida del backend');
       window.location.href = init_point;
@@ -83,7 +100,7 @@ export default function Checkout() {
             <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
               {items.map((it) => (
                 <div key={it.id} className="flex gap-3">
-                  <img src={it.image} alt={it.name} className="w-14 h-14 rounded-xl object-cover" />
+                  <img src={it.image} alt={it.name} className="w-14 h-14 rounded-xl object-contain bg-white/5 p-0.5" />
                   <div className="flex-1 text-sm">
                     <div className="font-semibold leading-snug">{it.name}</div>
                     <div className="text-white/50">x{it.quantity} · {formatPrice(it.price)}</div>
@@ -109,7 +126,7 @@ export default function Checkout() {
 
             <div className="mt-5 space-y-2 text-xs text-white/50">
               <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
-              <div>📦 Pedido mínimo 10 calcos. Todos nuestros packs ya cumplen.</div>
+              <div>🏷️ Desde 10 calcos sueltos se aplica 10% off automático.</div>
             </div>
           </aside>
         </div>
