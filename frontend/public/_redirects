@@ -1,1 +1,3 @@
+/api/create-preference      /.netlify/functions/create-preference      200
+/api/mercadopago-webhook    /.netlify/functions/mercadopago-webhook    200
 /*  /index.html  200
