@@ -310,12 +310,15 @@ a { color: inherit; text-decoration: none; }
 .announcement-ticker {
   display: flex;
   width: max-content;
-  animation: ticker-scroll 18s linear infinite;
+  min-width: 200%;
+  animation: ticker-scroll 45s linear infinite;
   white-space: nowrap;
+  will-change: transform;
 }
 
 .announcement-ticker span {
   padding-right: 0;
+  flex-shrink: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

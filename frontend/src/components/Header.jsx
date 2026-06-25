@@ -12,12 +12,8 @@ export default function Header() {
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
       <AnnouncementBar />
       <div className="container-app flex items-center justify-between py-4">
-        <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)} aria-label={site.name}>
-          <span className="grid place-items-center w-9 h-9 rounded-xl text-black font-black text-lg"
-            style={{ background: 'linear-gradient(135deg,#FF1B8D,#FF5A1F)' }}>
-            E
-          </span>
-          <span className="font-display font-extrabold tracking-tight text-lg">{site.name}</span>
+        <Link to="/" className="flex items-center" onClick={() => setOpen(false)} aria-label={site.name}>
+          <img src="/favicon.png" alt={site.name} className="h-11 w-11 rounded-lg" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">

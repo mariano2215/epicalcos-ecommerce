@@ -1,8 +1,8 @@
 const items = [
-  { icon: '💧', title: 'Resistentes al agua', text: 'Vinilo premium pensado para uso cotidiano.' },
-  { icon: '☀️', title: 'Resistentes al sol', text: 'No se descoloran con exposición normal.' },
-  { icon: '🎨', title: 'Diseños personalizados', text: 'Tu logo, frase o referencia, en pack a medida.' },
-  { icon: '🔒', title: 'Pago seguro', text: 'Checkout con Mercado Pago. Sin compartir datos.' }
+  { icon: '💧', title: 'Resistentes al agua', text: 'A diferencia de los calcos genéricos, los nuestros no se despegan ni descoloran con el uso diario.' },
+  { icon: '☀️', title: 'Vinilo premium al sol', text: 'Pensados para autos, motos, termos y objetos de uso cotidiano — no para el cajón.' },
+  { icon: '🎨', title: 'Diseños personalizados', text: 'Tu logo, foto o frase. Te mandamos vista previa antes de producir.' },
+  { icon: '🔒', title: 'Pago seguro', text: 'Checkout con Mercado Pago. Sin compartir datos de tarjeta.' }
 ];
 
 export default function Benefits() {

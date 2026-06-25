@@ -9,7 +9,7 @@ export const site = {
   description:
     'Calcomanías personalizadas, stickers premium, vinilos decorativos y fotos Polaroid en Rosario. Resistentes al agua y al sol. Comprá online con Mercado Pago.',
   city: 'Rosario, Santa Fe, Argentina',
-  url: 'https://epicalcos-ecommerce.netlify.app', // TODO: cambiar cuando tengan dominio propio
+  url: 'https://epicalcos.com',
   legalName: 'EPICALCOS — Mariano Calandra',
   taxIdType: 'CUIL', // personal, no monotributo/SRL
   founded: 2024
@@ -67,7 +67,11 @@ export const order = {
 
 export const announcements = [
   '🚚 Envío gratis en Rosario desde $50.000',
+  '👥 +5.000 clientes',
+  '🇦🇷 Envíos a todo el país',
+  '🎉 +120.000 calcos vendidas',
   '⚡ Producción 2 a 3 días hábiles',
+  '✏️ Diseños personalizados',
   '🔒 Pagá seguro con Mercado Pago'
 ];
 

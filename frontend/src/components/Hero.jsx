@@ -38,8 +38,8 @@ export default function Hero() {
         </h1>
 
         <p className="mt-5 max-w-2xl mx-auto text-white/70 text-lg">
-          Miles de diseños en 37 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad.
-          Desde 10 calcos, 10% off. Pagá online con Mercado Pago.
+          Para fans de anime, fútbol, series y todo lo que te gusta personalizar. Miles de diseños en
+          37 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
         </p>
 
         {/* Search card */}

@@ -1,21 +1,25 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-/**
- * Card de categoría para la grilla (portada + nombre + cantidad).
- * @param {{ slug:string, name:string, emoji?:string, cover?:string, count?:number }} props
- */
 export default function CategoryCard({ slug, name, emoji, cover, count }) {
+  const [src, setSrc] = useState(() => {
+    if (!count || count <= 1 || !slug) return cover;
+    const n = Math.floor(Math.random() * count) + 1;
+    return `/stickers/${slug}/${n}.webp`;
+  });
+
   return (
     <Link
       to={`/categoria/${slug}`}
       className="card-glass card-glass-hover overflow-hidden flex flex-col group"
     >
       <div className="relative aspect-square overflow-hidden bg-white/[0.03] grid place-items-center p-4">
-        {cover ? (
+        {src || cover ? (
           <img
-            src={cover}
+            src={src || cover}
             alt={name}
             loading="lazy"
+            onError={() => { if (src !== cover) setSrc(cover); }}
             className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-110"
           />
         ) : (

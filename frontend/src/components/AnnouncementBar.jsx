@@ -2,6 +2,8 @@ import { announcements } from '../config/site.js';
 
 const SEP = '   ·   ';
 const ticker = announcements.join(SEP) + SEP;
+// 6 copias: la animación mueve -50% (3 copias), las otras 3 actúan de relleno invisible
+const COPIES = 6;
 
 export default function AnnouncementBar() {
   if (!announcements.length) return null;
@@ -16,8 +18,9 @@ export default function AnnouncementBar() {
       aria-label={announcements.join(' · ')}
     >
       <div className="announcement-ticker">
-        <span>{ticker}</span>
-        <span aria-hidden="true">{ticker}</span>
+        {Array.from({ length: COPIES }, (_, i) => (
+          <span key={i} aria-hidden={i > 0 ? 'true' : undefined}>{ticker}</span>
+        ))}
       </div>
     </div>
   );

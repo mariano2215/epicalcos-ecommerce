@@ -4,12 +4,14 @@ import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import StickerCard from '../components/StickerCard.jsx';
 import { CATEGORIES, getCategory } from '../data/categories.js';
 import { useSeo, breadcrumbJsonLd } from '../lib/seo.js';
+import { useCart } from '../context/CartContext.jsx';
 
 const PAGE = 48;
 
 export default function Category() {
   const { slug } = useParams();
   const category = getCategory(slug);
+  const { bulkActive, unitsToBulk } = useCart();
 
   const [items, setItems] = useState(null); // null = cargando
   const [visible, setVisible] = useState(PAGE);
@@ -110,6 +112,21 @@ export default function Category() {
             </Link>
           ))}
         </div>
+
+        {/* Nudge de descuento por volumen */}
+        {bulkActive ? (
+          <div className="mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-2.5 text-sm text-emerald-400 flex items-center gap-2">
+            🎉 <span>10% off por volumen aplicado al carrito.</span>
+          </div>
+        ) : unitsToBulk > 0 ? (
+          <div className="mb-4 rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white/60 flex items-center gap-2">
+            🏷️ <span>Sumá <strong className="text-white">{unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más</strong> al carrito para el 10% off.</span>
+          </div>
+        ) : (
+          <div className="mb-4 rounded-xl bg-white/5 border border-white/10 px-4 py-2.5 text-sm text-white/60 flex items-center gap-2">
+            🏷️ <span>Desde <strong className="text-white">10 calcos</strong>, 10% off — mezclá categorías como quieras.</span>
+          </div>
+        )}
 
         {/* Buscador dentro de la categoría */}
         <div className="card-glass p-4 mb-6 flex items-center gap-3 max-w-md">

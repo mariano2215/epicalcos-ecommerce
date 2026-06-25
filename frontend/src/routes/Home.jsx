@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
 import Benefits from '../components/Benefits.jsx';
+import FeaturedStickers from '../components/FeaturedStickers.jsx';
+import Testimonials from '../components/Testimonials.jsx';
 import HowToBuy from '../components/HowToBuy.jsx';
 import FAQ from '../components/FAQ.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
@@ -60,7 +62,7 @@ export default function Home() {
               <div>
                 <div className="font-display font-extrabold text-xl mb-1">Calco personalizado</div>
                 <div className="text-white/60 text-sm leading-relaxed">
-                  Traé tu diseño o tu foto y lo imprimimos. Ideal para regalar, tu mascota, tu banda o lo que se te ocurra.
+                  Traé tu diseño o tu foto y lo imprimimos. Listo en 48-72 hs. Ideal para regalar, tu mascota, tu banda o lo que se te ocurra.
                 </div>
               </div>
               <span className="btn-secondary self-start mt-auto">Personalizar →</span>
@@ -73,7 +75,7 @@ export default function Home() {
               <div>
                 <div className="font-display font-extrabold text-xl mb-1">Para tu marca o negocio</div>
                 <div className="text-white/60 text-sm leading-relaxed">
-                  Calcos con tu logo para merch, packaging o reventa. Cotización por volumen sin compromiso.
+                  Calcos con tu logo para merch, packaging o reventa. Desde <strong className="text-white">$400/unidad en volumen</strong>. Cotización sin compromiso.
                 </div>
               </div>
               <span className="btn-ghost self-start mt-auto border border-white/20">Cotizar →</span>
@@ -83,6 +85,10 @@ export default function Home() {
       </section>
 
       <Benefits />
+
+      <FeaturedStickers />
+
+      <Testimonials />
 
       {/* Categorías destacadas */}
       <section className="py-10">
@@ -114,24 +120,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Especiales */}
+      {/* Especiales — dividido en B2C y B2B */}
       <section className="py-10">
-        <div className="container-app">
-          <div className="mb-6">
-            <span className="badge badge-soft mb-2">Más opciones</span>
-            <h2 className="font-display font-extrabold text-3xl md:text-4xl">Packs y servicios</h2>
+        <div className="container-app space-y-8">
+          {/* Para vos */}
+          <div>
+            <div className="mb-4">
+              <span className="badge badge-soft mb-2">Para vos</span>
+              <h2 className="font-display font-extrabold text-3xl md:text-4xl">Packs y servicios</h2>
+            </div>
+            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3">
+              {SPECIALS.filter((s) => ['personalizados', 'tatuajes', 'polaroid'].includes(s.slug)).map((s) => (
+                <Link key={s.slug} to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] relative overflow-hidden">
+                  <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
+                  <div className="relative text-3xl">{s.emoji}</div>
+                  <div className="relative">
+                    <div className="font-display font-extrabold leading-tight">{s.name}</div>
+                    <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            {SPECIALS.map((s) => (
-              <Link key={s.slug} to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] relative overflow-hidden">
-                <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
-                <div className="relative text-3xl">{s.emoji}</div>
-                <div className="relative">
-                  <div className="font-display font-extrabold leading-tight">{s.name}</div>
-                  <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
-                </div>
-              </Link>
-            ))}
+
+          {/* Para tu marca o negocio */}
+          <div>
+            <div className="mb-4">
+              <span className="badge badge-soft mb-2">Para tu marca o negocio</span>
+              <h2 className="font-display font-extrabold text-2xl md:text-3xl">Volumen y B2B</h2>
+            </div>
+            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3">
+              {SPECIALS.filter((s) => ['mayorista', 'negocio'].includes(s.slug)).map((s) => (
+                <Link key={s.slug} to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] relative overflow-hidden">
+                  <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
+                  <div className="relative text-3xl">{s.emoji}</div>
+                  <div className="relative">
+                    <div className="font-display font-extrabold leading-tight">{s.name}</div>
+                    <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>

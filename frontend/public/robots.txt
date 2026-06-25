@@ -5,4 +5,4 @@ Disallow: /pago-pendiente
 Disallow: /pago-error
 Disallow: /checkout
 
-Sitemap: https://epicalcos-ecommerce.netlify.app/sitemap.xml
+Sitemap: https://epicalcos.com/sitemap.xml

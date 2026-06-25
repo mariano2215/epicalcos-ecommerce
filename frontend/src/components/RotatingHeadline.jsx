@@ -10,8 +10,7 @@ const PHRASES = [
   'Calcos para el termo',
   'Calcos personalizados',
   'Bienvenido a EPICALCOS',
-  'Resistentes al agua y al sol',
-  'Elegí tus calcos, de a uno'
+  'Resistentes al agua y al sol'
 ];
 
 export default function RotatingHeadline({ interval = 2800 }) {
