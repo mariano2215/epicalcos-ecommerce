@@ -5,22 +5,22 @@
  */
 const testimonials = [
   {
-    name: 'Sol M.',
-    text: 'Compré 20 calcos de anime y quedaron perfectos en mi termo. Ya van 3 meses y ninguno se despegó ni perdió color. Re recomendados.',
-    image: null, // reemplazar con ruta real: '/testimonials/sol.jpg'
-    label: 'Calcos anime · Rosario'
+    name: 'Martin C.',
+    text: 'Me encantó la calidad, esta calco de Gokú es genial',
+    image: '/testimonials/anime-1.png',
+    label: 'Calcos anime'
   },
   {
-    name: 'Lucas R.',
-    text: 'Pedí el pack personalizado con el logo de mi banda. Me mandaron vista previa antes de imprimir, quedó exactamente como lo quería. Servicio 10.',
-    image: null,
-    label: 'Pack personalizado · Buenos Aires'
+    name: 'Sofía M.',
+    text: 'Tenia que hacer un sticker para la puerta de mi local de mascotas y me quedó re lindo',
+    image: '/testimonials/logo-1.png',
+    label: 'Logo personalizado'
   },
   {
-    name: 'Caro V.',
-    text: 'Los calcos de Pokémon para la laptop de mi hijo son una locura. Resistentes, bien cortados y llegaron rapidísimo. Voy a pedir más.',
-    image: null,
-    label: 'Calcos Pokémon · Córdoba'
+    name: 'Giuliana S.',
+    text: 'Lo lindo que es tomar mates con un termo así de decorado',
+    image: '/testimonials/personalizados-1.png',
+    label: 'Termo personalizado'
   }
 ];
 
