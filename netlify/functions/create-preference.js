@@ -9,6 +9,7 @@
  * Mientras MERCADOPAGO_ACCESS_TOKEN no esté seteado, devuelve 503 con mensaje claro.
  */
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { saveOrder } from './lib/orderStore.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,6 +95,7 @@ export const handler = async (event) => {
         external_reference: orderId,
         metadata: {
           buyer_name: payer.name,
+          buyer_email: payer.email,
           buyer_phone: payer.phone,
           buyer_dni: payer.dni,
           shipping_method: shipping?.method,
@@ -106,6 +108,38 @@ export const handler = async (event) => {
         },
         notification_url: `${siteUrl}/api/mercadopago-webhook`
       }
+    });
+
+    // Persistimos el pedido completo (datos del formulario) keyed por orderId.
+    // El webhook lo recupera cuando MP confirma el pago, así el mail/CRM recibe
+    // TODO lo que cargó el cliente y no solo lo que viaja en la notificación.
+    const itemsTotal = mpItems
+      .filter((i) => i.id !== 'shipping')
+      .reduce((acc, i) => acc + i.unit_price * i.quantity, 0);
+
+    await saveOrder(orderId, {
+      orderId,
+      createdAt: new Date().toISOString(),
+      preferenceId: preference.id,
+      payer: {
+        name: payer.name,
+        email: payer.email,
+        phone: payer.phone,
+        dni: payer.dni,
+        address: payer.address
+      },
+      shipping: {
+        method: shipping?.method,
+        methodValue: shipping?.methodValue,
+        city: shipping?.city,
+        province: shipping?.province,
+        zipCode: shipping?.zipCode,
+        comments: shipping?.comments,
+        cost: shippingCost
+      },
+      items: mpItems,
+      itemsTotal,
+      total: itemsTotal + shippingCost
     });
 
     return json(200, {
