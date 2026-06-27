@@ -49,7 +49,7 @@ export default function Home() {
               <div>
                 <div className="font-display font-extrabold text-xl mb-1">Comprar del catálogo</div>
                 <div className="text-white/60 text-sm leading-relaxed">
-                  Más de 1.000 diseños en 37 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
+                  Más de 6.000 diseños en 99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
                 </div>
               </div>
               <span className="btn-primary self-start mt-auto">Ver categorías →</span>

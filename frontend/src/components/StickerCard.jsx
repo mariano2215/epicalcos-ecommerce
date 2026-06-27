@@ -53,18 +53,18 @@ export default function StickerCard({ sticker }) {
         </div>
 
         {/* Cantidad + agregar */}
-        <div className="mt-3 flex items-center gap-2 mt-auto pt-3">
-          <div className="flex items-center gap-1.5">
+        <div className="mt-auto pt-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03]">
             <button
               type="button"
-              className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
+              className="w-9 h-9 grid place-items-center rounded-l-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               aria-label="Restar"
             >–</button>
-            <span className="w-7 text-center text-sm font-semibold">{qty}</span>
+            <span className="text-sm font-semibold tabular-nums">{qty}</span>
             <button
               type="button"
-              className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10"
+              className="w-9 h-9 grid place-items-center rounded-r-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
               onClick={() => setQty((q) => q + 1)}
               aria-label="Sumar"
             >+</button>
@@ -72,7 +72,7 @@ export default function StickerCard({ sticker }) {
           <button
             type="button"
             onClick={() => addSticker(sticker, size, qty)}
-            className="btn-primary !py-2 !px-3 text-xs flex-1"
+            className="btn-primary w-full !py-2.5 !px-3 text-xs"
           >
             Agregar · {formatPrice(unit * qty)}
           </button>

@@ -39,7 +39,7 @@ export default function Hero() {
 
         <p className="mt-5 max-w-2xl mx-auto text-white/70 text-lg">
           Para fans de anime, fútbol, series y todo lo que te gusta personalizar. Miles de diseños en
-          37 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
+          99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
         </p>
 
         {/* Search card */}
@@ -49,10 +49,10 @@ export default function Hero() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscá una categoría: anime, fútbol, memes…"
-            className="flex-1 bg-transparent outline-none px-2 py-3 text-white placeholder:text-white/40"
+            className="flex-1 min-w-0 bg-transparent outline-none px-2 py-3 text-white placeholder:text-white/40"
             aria-label="Buscar categorías"
           />
-          <button type="submit" className="btn-primary !py-3 !px-5">Buscar</button>
+          <button type="submit" className="btn-primary shrink-0 !py-3 !px-4 sm:!px-5">Buscar</button>
         </form>
 
         <div className="mt-5 flex flex-wrap justify-center gap-2">
