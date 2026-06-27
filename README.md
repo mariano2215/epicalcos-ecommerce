@@ -64,9 +64,34 @@ Abre `http://localhost:3001/health` para verificar.
 2. Crear una aplicación tipo **Checkout Pro**.
 3. Copiar el **Access Token** (de test al inicio, de producción cuando quieras vender).
 4. Pegarlo en `backend/.env` como `MERCADOPAGO_ACCESS_TOKEN`.
-5. (Opcional) Configurar la URL pública del webhook en el panel de Mercado Pago para que `POST /api/webhooks/mercadopago` reciba notificaciones.
+5. (Opcional) Configurar la URL pública del webhook en el panel de Mercado Pago para que `POST /api/mercadopago-webhook` reciba notificaciones.
 
 ⚠️ El `ACCESS_TOKEN` **nunca** va al frontend. Vive solo en el backend.
+
+---
+
+## Notificaciones de pedidos (mail a EPICALCOS + CRM)
+
+Cuando un pago se **aprueba**, la tienda envía automáticamente un mail a
+`epicalcos@gmail.com` con **todos los datos del cliente, el pedido y el monto
+pagado**, y/o crea una fila en un CRM de **Notion**.
+
+- El pedido completo se guarda al crear la preferencia (con **Netlify Blobs**,
+  sin servicios externos) y se recupera en el webhook cuando MP confirma el pago.
+- El mail usa [Resend](https://resend.com) (gratis) y el CRM usa Notion. Ambos
+  son opcionales y se activan con variables de entorno.
+
+👉 **Guía paso a paso:** [`docs/NOTIFICACIONES.md`](docs/NOTIFICACIONES.md).
+
+Variables de entorno (Netlify → Environment variables):
+
+| Variable | Para qué |
+|---|---|
+| `RESEND_API_KEY` | Enviar el mail (clave de Resend) |
+| `NOTIFY_EMAIL_TO` | Destino del mail (default `epicalcos@gmail.com`) |
+| `NOTIFY_EMAIL_FROM` | Remitente (default `onboarding@resend.dev`) |
+| `NOTION_TOKEN` | CRM en Notion (token de integración) |
+| `NOTION_DATABASE_ID` | CRM en Notion (id de la base de datos) |
 
 ---
 
@@ -126,8 +151,8 @@ Variable de entorno en producción: `VITE_API_URL=https://tu-backend.onrender.co
 
 - [ ] Cargar credenciales reales de Mercado Pago y validar end-to-end.
 - [ ] Reemplazar imágenes placeholder por fotos reales.
-- [ ] Persistir órdenes en base de datos (Supabase, PlanetScale o similar).
-- [ ] Webhook completo: validar pago consultando a Mercado Pago + email + notificación interna.
+- [x] Persistir órdenes (Netlify Blobs) y webhook completo: valida el pago en MP + manda mail a EPICALCOS + carga el CRM en Notion. Ver [`docs/NOTIFICACIONES.md`](docs/NOTIFICACIONES.md).
+- [ ] Migrar a base de datos completa (Supabase, PlanetScale o similar) si se necesita panel/reportes.
 - [ ] Permitir subida de archivos para productos personalizados.
 - [ ] Integrar Google Tag Manager / GA4 / Meta Pixel (eventos ya marcados con `TODO analytics`).
 - [ ] Panel admin para gestión de pedidos.
