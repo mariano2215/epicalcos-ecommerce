@@ -51,7 +51,6 @@ export function buildOrderView(order, payment) {
     email:
       payer.email || payment?.payer?.email || meta.buyer_email || '—',
     phone: payer.phone || meta.buyer_phone || '—',
-    dni: payer.dni || meta.buyer_dni || '—',
     address: payer.address || meta.shipping_address || '—',
     city: shipping.city || meta.shipping_city || '—',
     province: shipping.province || meta.shipping_province || '—',
@@ -121,8 +120,7 @@ function buildEmailHtml(o) {
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <tr><td style="padding:3px 0;width:140px;color:#666">Nombre</td><td><strong>${esc(o.name)}</strong></td></tr>
       <tr><td style="padding:3px 0;color:#666">Email</td><td>${esc(o.email)}</td></tr>
-      <tr><td style="padding:3px 0;color:#666">Teléfono</td><td>${esc(o.phone)}</td></tr>
-      <tr><td style="padding:3px 0;color:#666">DNI</td><td>${esc(o.dni)}</td></tr>
+      <tr><td style="padding:3px 0;color:#666">Teléfono / WhatsApp</td><td>${esc(o.phone)}</td></tr>
     </table>
 
     <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Entrega</h3>
@@ -179,8 +177,7 @@ Estado del pago: ${o.paymentStatus || '—'}
 CLIENTE
   Nombre: ${o.name}
   Email: ${o.email}
-  Teléfono: ${o.phone}
-  DNI: ${o.dni}
+  Teléfono / WhatsApp: ${o.phone}
 
 ENTREGA
   Método: ${o.shippingMethod}

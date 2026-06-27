@@ -97,7 +97,6 @@ export const handler = async (event) => {
           buyer_name: payer.name,
           buyer_email: payer.email,
           buyer_phone: payer.phone,
-          buyer_dni: payer.dni,
           shipping_method: shipping?.method,
           shipping_cost: shippingCost,
           shipping_city: shipping?.city,
@@ -125,7 +124,6 @@ export const handler = async (event) => {
         name: payer.name,
         email: payer.email,
         phone: payer.phone,
-        dni: payer.dni,
         address: payer.address
       },
       shipping: {

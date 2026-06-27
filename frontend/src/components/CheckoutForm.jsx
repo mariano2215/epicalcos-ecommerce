@@ -5,7 +5,6 @@ const initial = {
   name: '',
   email: '',
   phone: '',
-  dni: '',
   address: '',
   city: 'Rosario',
   province: 'Santa Fe',
@@ -50,7 +49,6 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
           name: form.name.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
-          dni: form.dni.trim() || undefined,
           address: form.address.trim()
         },
         shipping: {
@@ -73,7 +71,7 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">Nombre completo *</span>
+          <span className="text-sm text-white/70 mb-1.5 block">Nombre y Apellido *</span>
           <input type="text" value={form.name} onChange={change('name')} placeholder="Juan Pérez" className="input-dark" />
           {errors.name && <span className="text-xs text-brand-pink mt-1 block">{errors.name}</span>}
         </label>
@@ -82,15 +80,10 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
           <input type="email" value={form.email} onChange={change('email')} placeholder="tu@email.com" className="input-dark" />
           {errors.email && <span className="text-xs text-brand-pink mt-1 block">{errors.email}</span>}
         </label>
-        <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">Teléfono *</span>
-          <input type="text" value={form.phone} onChange={change('phone')} placeholder="3410000000" className="input-dark" />
+        <label className="block sm:col-span-2">
+          <span className="text-sm text-white/70 mb-1.5 block">Teléfono de contacto (WhatsApp) *</span>
+          <input type="tel" value={form.phone} onChange={change('phone')} placeholder="341 000 0000" className="input-dark" />
           {errors.phone && <span className="text-xs text-brand-pink mt-1 block">{errors.phone}</span>}
-        </label>
-        <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">DNI (opcional)</span>
-          <input type="text" value={form.dni} onChange={change('dni')} placeholder="00.000.000" className="input-dark" />
-          {errors.dni && <span className="text-xs text-brand-pink mt-1 block">{errors.dni}</span>}
         </label>
       </div>
 
@@ -142,7 +135,7 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
       )}
 
       <label className="block">
-        <span className="text-sm text-white/70 mb-1.5 block">Comentarios (opcional)</span>
+        <span className="text-sm text-white/70 mb-1.5 block">Notas del pedido (opcional)</span>
         <textarea
           rows={3}
           value={form.comments}
