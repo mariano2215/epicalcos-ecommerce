@@ -100,7 +100,7 @@ la página, el detalle completo.
 
 ## Qué datos se envían
 
-- **Cliente:** nombre, email, teléfono, DNI.
+- **Cliente:** nombre, email, teléfono.
 - **Entrega:** método, dirección, ciudad, provincia, código postal, costo de envío.
 - **Pedido:** cada producto/pack con cantidad y subtotal + comentarios/detalle.
 - **Pago:** monto pagado, estado, medio de pago, ID de pago de MP y fecha.

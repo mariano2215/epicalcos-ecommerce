@@ -66,7 +66,6 @@ router.post('/create-preference', async (req, res, next) => {
       metadata: {
         buyer_name: payer.name,
         buyer_phone: payer.phone,
-        buyer_dni: payer.dni,
         shipping_method: shipping?.method,
         shipping_cost: shippingCost,
         shipping_city: shipping?.city,

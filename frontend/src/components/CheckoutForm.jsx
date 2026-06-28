@@ -5,7 +5,6 @@ const initial = {
   name: '',
   email: '',
   phone: '',
-  dni: '',
   address: '',
   city: 'Rosario',
   province: 'Santa Fe',
@@ -50,7 +49,6 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
           name: form.name.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
-          dni: form.dni.trim() || undefined,
           address: form.address.trim()
         },
         shipping: {
@@ -86,11 +84,6 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
           <span className="text-sm text-white/70 mb-1.5 block">Teléfono *</span>
           <input type="text" value={form.phone} onChange={change('phone')} placeholder="3410000000" className="input-dark" />
           {errors.phone && <span className="text-xs text-brand-pink mt-1 block">{errors.phone}</span>}
-        </label>
-        <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">DNI (opcional)</span>
-          <input type="text" value={form.dni} onChange={change('dni')} placeholder="00.000.000" className="input-dark" />
-          {errors.dni && <span className="text-xs text-brand-pink mt-1 block">{errors.dni}</span>}
         </label>
       </div>
 
