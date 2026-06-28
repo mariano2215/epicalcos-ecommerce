@@ -23,9 +23,10 @@ export const ESTADOS = {
   rechazado: 'Rechazado',
 };
 
-/** Devuelve el token solo si está configurado de verdad (no el placeholder). */
+/** Devuelve el token solo si está configurado de verdad (no el placeholder).
+ *  Acepta NOTION_TOKEN o el alias NOTION_KEY (el que está cargado en Netlify). */
 function getToken() {
-  const raw = process.env.NOTION_TOKEN;
+  const raw = process.env.NOTION_TOKEN || process.env.NOTION_KEY;
   if (!raw || raw.includes('xxxx')) return null;
   return raw;
 }

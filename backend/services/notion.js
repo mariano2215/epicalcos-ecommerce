@@ -3,8 +3,10 @@ import { Client } from '@notionhq/client';
 let _client = null;
 
 function getClient() {
-  if (!process.env.NOTION_TOKEN) return null;
-  if (!_client) _client = new Client({ auth: process.env.NOTION_TOKEN });
+  // Acepta NOTION_TOKEN o el alias NOTION_KEY (el que está cargado en Netlify).
+  const token = process.env.NOTION_TOKEN || process.env.NOTION_KEY;
+  if (!token) return null;
+  if (!_client) _client = new Client({ auth: token });
   return _client;
 }
 
