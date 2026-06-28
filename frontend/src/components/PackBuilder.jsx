@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { SIZES, DEFAULT_SIZE, priceForSize, round } from '../config/pricing.js';
 import { categoryName } from '../data/categories.js';
+import CategoryMenu from './CategoryMenu.jsx';
 
 const CUSTOM_IMG =
   'data:image/svg+xml;utf8,' +
@@ -113,9 +114,9 @@ export default function PackBuilder({ packType, target, min, discount, title, su
   };
 
   return (
-    <div className="grid lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Panel de armado */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-2 min-w-0 space-y-6">
         <header>
           <span className="badge badge-hot mb-3">{Math.round(discount * 100)}% OFF</span>
           <h1 className="font-display font-extrabold text-3xl md:text-4xl">{title}</h1>
@@ -163,25 +164,15 @@ export default function PackBuilder({ packType, target, min, discount, title, su
             )}
           </div>
 
-          {/* Tabs de categoría */}
-          <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
-            {cats.map((c) => (
-              <button
-                key={c.slug}
-                onClick={() => setActiveCat(c.slug)}
-                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs border transition-colors ${
-                  c.slug === activeCat
-                    ? 'border-brand-fuchsia bg-brand-fuchsia/15 text-white'
-                    : 'border-white/10 text-white/60 hover:border-white/25'
-                }`}
-              >
-                {categoryName(c.slug)}
-              </button>
-            ))}
-          </div>
+          {/* Menú de categorías colapsable (hamburguesa) */}
+          <CategoryMenu
+            slugs={cats.map((c) => c.slug)}
+            activeSlug={activeCat}
+            onSelect={setActiveCat}
+          />
 
           {/* Grilla de stickers */}
-          <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
             {catItems.slice(0, visible).map((it) => {
               const id = it.id;
               const name = `${categoryName(activeCat)} #${id.split('-').pop()}`;

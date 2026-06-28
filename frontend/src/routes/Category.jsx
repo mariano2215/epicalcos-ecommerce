@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import StickerCard from '../components/StickerCard.jsx';
+import CategoryMenu from '../components/CategoryMenu.jsx';
 import { CATEGORIES, getCategory } from '../data/categories.js';
 import { useSeo, breadcrumbJsonLd } from '../lib/seo.js';
 import { useCart } from '../context/CartContext.jsx';
@@ -96,21 +97,13 @@ export default function Category() {
           ))}
         </dl>
 
-        {/* Otras categorías */}
-        <div className="mb-6 flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
-          {CATEGORIES.map((c) => (
-            <Link
-              key={c.slug}
-              to={`/categoria/${c.slug}`}
-              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs border transition-colors ${
-                c.slug === slug
-                  ? 'border-brand-fuchsia bg-brand-fuchsia/15 text-white'
-                  : 'border-white/10 text-white/60 hover:border-white/25'
-              }`}
-            >
-              {c.name}
-            </Link>
-          ))}
+        {/* Otras categorías (menú colapsable) */}
+        <div className="mb-6 max-w-md">
+          <CategoryMenu
+            slugs={CATEGORIES.map((c) => c.slug)}
+            activeSlug={slug}
+            to={(s) => `/categoria/${s}`}
+          />
         </div>
 
         {/* Nudge de descuento por volumen */}
