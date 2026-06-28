@@ -11,6 +11,10 @@
   # Instala deps del frontend (vite) Y de la raíz (mercadopago para las Functions).
   # Necesario porque, al haber package.json en la raíz, Netlify no instala solo el de frontend.
   command = "npm ci && npm ci --prefix .. && npm run build"
+  # exit ≠ 0 ⇒ Netlify NO saltea el build, aunque el push solo toque archivos
+  # fuera de base="frontend" (p. ej. netlify/functions/* o la raíz). Sin esto,
+  # un cambio function-only queda "Canceled — no content change" y no se deploya.
+  ignore = "exit 1"
 
 [build.environment]
   NODE_VERSION = "20"
