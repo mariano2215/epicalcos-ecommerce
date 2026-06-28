@@ -1,22 +1,26 @@
 /**
  * Netlify Function: POST /api/mercadopago-webhook
- * Recibe notificaciones IPN/Webhook de Mercado Pago y, cuando un pago se
- * aprueba, envía un mail a EPICALCOS con TODOS los datos del pedido y/o crea
- * una fila en el CRM (Notion).
+ * Recibe notificaciones IPN/Webhook de Mercado Pago. En cada cambio de estado:
+ *   - Actualiza el CRM de Notion: el lead "Checkout iniciado" pasa a
+ *     Pagado / Pendiente / Rechazado (ver _notion.js).
+ *   - Cuando el pago queda APROBADO, manda el mail del pedido a EPICALCOS con
+ *     TODOS los datos (recuperados de Netlify Blobs) y con dedup para no repetir
+ *     el aviso si Mercado Pago reintenta el webhook (ver lib/notify.js).
  *
  * Para activar en MP:
  *   Panel Mercado Pago → Tu app → Webhooks → URL:
  *   https://epicalcos-ecommerce.netlify.app/api/mercadopago-webhook
  *   Eventos a escuchar: payment
  *
- * Variables de entorno (ver netlify/functions/lib/notify.js para el detalle):
- *   MERCADOPAGO_ACCESS_TOKEN   (obligatoria)
- *   RESEND_API_KEY + NOTIFY_EMAIL_TO          → mail
- *   NOTION_TOKEN + NOTION_DATABASE_ID         → CRM Notion
+ * Variables de entorno:
+ *   MERCADOPAGO_ACCESS_TOKEN                  (obligatoria)
+ *   RESEND_API_KEY + NOTIFY_EMAIL_TO/FROM     → mail (ver lib/notify.js)
+ *   NOTION_TOKEN + NOTION_CRM_DATABASE_ID     → CRM Notion (ver _notion.js)
  */
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getOrder, markNotified } from './lib/orderStore.js';
-import { buildOrderView, notifyOrder } from './lib/notify.js';
+import { buildOrderView, sendOrderEmail } from './lib/notify.js';
+import { actualizarEstadoPedido, mapEstado } from './_notion.js';
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -26,9 +30,7 @@ export const handler = async (event) => {
   let payload = {};
   try {
     payload = JSON.parse(event.body || '{}');
-  } catch {
-    /* tolerar body raro */
-  }
+  } catch { /* tolerar body raro */ }
 
   console.log('[mp-webhook]', JSON.stringify({ query: event.queryStringParameters, body: payload }));
 
@@ -57,18 +59,56 @@ export const handler = async (event) => {
         amount: payment.transaction_amount
       });
 
-      // Solo notificamos pagos aprobados (evita avisos por intentos rechazados).
-      if (payment.status === 'approved') {
-        const orderId = payment.external_reference;
-        const stored = await getOrder(orderId);
+      const orderId = payment.external_reference;
+      const meta = payment.metadata || {};
+      const items = payment.additional_info?.items || [];
 
-        // Evitar mails duplicados: MP reintenta el webhook varias veces.
+      // 1) CRM Notion: reflejar el estado en cualquier cambio de pago.
+      //    Si tenemos el pageId (guardado en el metadata al iniciar el checkout)
+      //    actualizamos esa fila; si no, la creamos desde los datos del pago.
+      //    actualizarEstadoPedido nunca lanza, pero lo envolvemos por las dudas.
+      try {
+        const notionPageId = meta.notion_page_id;
+        await actualizarEstadoPedido({
+          pageId: notionPageId,
+          estado: mapEstado(payment.status),
+          total: payment.transaction_amount,
+          fallback: notionPageId
+            ? null
+            : {
+                orderId,
+                total: payment.transaction_amount,
+                items,
+                payer: {
+                  name: meta.buyer_name || payment.payer?.first_name,
+                  email: payment.payer?.email,
+                  phone: meta.buyer_phone,
+                  dni: meta.buyer_dni,
+                  address: meta.shipping_address
+                },
+                shipping: {
+                  method: meta.shipping_method,
+                  city: meta.shipping_city,
+                  province: meta.shipping_province,
+                  zipCode: meta.shipping_zip_code,
+                  comments: meta.comments
+                }
+              }
+        });
+      } catch (notionErr) {
+        console.error('[mp-webhook] notion sync error:', notionErr);
+      }
+
+      // 2) Mail: solo cuando el pago queda aprobado. Recupera el pedido completo
+      //    de Blobs y evita duplicados (MP reintenta el webhook varias veces).
+      if (payment.status === 'approved') {
+        const stored = await getOrder(orderId);
         if (stored?.notifiedAt) {
           console.log('[mp-webhook] pedido ya notificado, se omite:', orderId);
         } else {
           const view = buildOrderView(stored, payment);
-          const result = await notifyOrder(view);
-          console.log('[mp-webhook] notificaciones:', JSON.stringify(result));
+          const result = await sendOrderEmail(view);
+          console.log('[mp-webhook] mail:', JSON.stringify(result));
           await markNotified(orderId, {
             id: payment.id,
             status: payment.status,

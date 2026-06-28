@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { registrarPedidoEnCRM } from '../services/notion.js';
 
 const router = Router();
 
@@ -79,6 +80,10 @@ router.post('/create-preference', async (req, res, next) => {
     };
 
     const preference = await preferenceClient.create({ body });
+
+    // Registrar en Notion CRM (sin bloquear la respuesta si falla)
+    const total = items.reduce((sum, it) => sum + it.unit_price * it.quantity, 0) + shippingCost;
+    registrarPedidoEnCRM({ payer, shipping, items, total, orderId }).catch(() => {});
 
     res.json({
       id: preference.id,

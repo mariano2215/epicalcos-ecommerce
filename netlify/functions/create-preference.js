@@ -10,6 +10,7 @@
  */
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { saveOrder } from './lib/orderStore.js';
+import { crearLeadEnCRM } from './_notion.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,6 +83,13 @@ export const handler = async (event) => {
       });
     }
 
+    // Registrar el lead en el CRM de Notion ("Checkout iniciado") y guardar el
+    // pageId para que el webhook actualice esa misma fila al confirmarse el pago.
+    // crearLeadEnCRM nunca lanza: si Notion falla, el checkout sigue igual.
+    const total =
+      items.reduce((sum, it) => sum + Number(it.unit_price) * Number(it.quantity), 0) + shippingCost;
+    const notionPageId = await crearLeadEnCRM({ payer, shipping, items, total, orderId });
+
     const preference = await preferenceClient.create({
       body: {
         items: mpItems,
@@ -91,7 +99,7 @@ export const handler = async (event) => {
           failure: `${siteUrl}/pago-error`,
           pending: `${siteUrl}/pago-pendiente`
         },
-        auto_return: 'approved',
+        ...(siteUrl.startsWith('https://') ? { auto_return: 'approved' } : {}),
         external_reference: orderId,
         metadata: {
           buyer_name: payer.name,
@@ -104,7 +112,8 @@ export const handler = async (event) => {
           shipping_province: shipping?.province,
           shipping_zip_code: shipping?.zipCode,
           shipping_address: payer?.address,
-          comments: shipping?.comments
+          comments: shipping?.comments,
+          notion_page_id: notionPageId || undefined
         },
         notification_url: `${siteUrl}/api/mercadopago-webhook`
       }
