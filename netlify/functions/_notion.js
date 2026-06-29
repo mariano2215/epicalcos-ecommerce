@@ -85,7 +85,6 @@ function buildObservaciones({ orderId, shipping, payer, items }) {
     `Envío: ${shipping?.method || '-'} — ${shipping?.city || ''}${shipping?.province ? `, ${shipping.province}` : ''}`,
     shipping?.zipCode ? `CP: ${shipping.zipCode}` : null,
     direccion ? `Dirección: ${direccion}` : null,
-    payer?.dni ? `DNI: ${payer.dni}` : null,
     shipping?.comments ? `Nota: ${shipping.comments}` : null,
     '',
     itemsTexto,

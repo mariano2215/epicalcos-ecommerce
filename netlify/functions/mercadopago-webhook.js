@@ -83,7 +83,6 @@ export const handler = async (event) => {
                   name: meta.buyer_name || payment.payer?.first_name,
                   email: payment.payer?.email,
                   phone: meta.buyer_phone,
-                  dni: meta.buyer_dni,
                   address: meta.shipping_address
                 },
                 shipping: {

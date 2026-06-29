@@ -27,8 +27,14 @@ export default function Checkout() {
   const { items, subtotal } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [shippingMethod, setShippingMethod] = useState('envio-rosario');
-  const shippingCost = calculateShipping(shippingMethod, subtotal);
+  const [ship, setShip] = useState({ method: 'envio', city: 'Rosario', province: 'Santa Fe' });
+  const isPickup = ship.method === 'retiro';
+  const shippingCost = calculateShipping({
+    method: ship.method,
+    subtotal,
+    city: ship.city,
+    province: ship.province
+  });
   const total = subtotal + shippingCost;
 
   useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago.' });
@@ -38,11 +44,15 @@ export default function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onMethodChange = useCallback((method) => {
-    setShippingMethod(method);
-    trackAddShippingInfo(items, method);
+  const onShippingChange = useCallback((next) => {
+    setShip(next);
+  }, []);
+
+  // Disparamos el evento de envío solo cuando cambia el método (no en cada tecla de la ciudad).
+  useEffect(() => {
+    trackAddShippingInfo(items, ship.method);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.length]);
+  }, [ship.method]);
 
   if (items.length === 0) {
     return (
@@ -88,7 +98,7 @@ export default function Checkout() {
           <div className="lg:col-span-2">
             <CheckoutForm
               onSubmit={handleSubmit}
-              onMethodChange={onMethodChange}
+              onShippingChange={onShippingChange}
               submitting={submitting}
               errorMsg={errorMsg}
             />
@@ -114,12 +124,19 @@ export default function Checkout() {
             <div className="flex justify-between text-white/70 text-sm mb-1.5">
               <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-white/70 text-sm mb-3">
-              <span>Envío</span>
-              <span className={shippingCost === 0 ? 'text-emerald-400 font-semibold' : ''}>
-                {shippingCost === 0 ? 'Gratis' : formatPrice(shippingCost)}
-              </span>
-            </div>
+            {isPickup ? (
+              <div className="flex justify-between text-white/70 text-sm mb-3">
+                <span>Retiro en Rosario</span>
+                <span className="text-emerald-400 font-semibold">Gratis</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-white/70 text-sm mb-3">
+                <span>Envío</span>
+                <span className={shippingCost === 0 ? 'text-emerald-400 font-semibold' : ''}>
+                  {shippingCost === 0 ? 'Gratis' : formatPrice(shippingCost)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between font-display font-extrabold text-lg">
               <span>Total</span><span>{formatPrice(total)}</span>
             </div>

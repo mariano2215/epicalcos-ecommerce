@@ -20,6 +20,9 @@ export default function Envios() {
           <strong>Envío en Rosario:</strong> $3.500. <strong>Gratis</strong> en compras desde $50.000.
         </li>
         <li>
+          <strong>Ciudades próximas:</strong> $5.000 (Funes, Granadero Baigorria y Villa Gobernador Gálvez).
+        </li>
+        <li>
           <strong>Resto del país:</strong> $8.000 a domicilio (vía correo o plataforma logística).
         </li>
         <li>

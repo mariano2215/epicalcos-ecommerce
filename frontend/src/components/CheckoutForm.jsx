@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
-import { shippingMethods, shipping as shippingCfg } from '../config/site.js';
+import {
+  shippingMethods,
+  shipping as shippingCfg,
+  provinces,
+  shippingZone,
+  shippingMethodLabel
+} from '../config/site.js';
 
 const initial = {
   name: '',
   email: '',
   phone: '',
-  dni: '',
   address: '',
   city: 'Rosario',
   province: 'Santa Fe',
   zipCode: '',
-  shippingMethod: 'envio-rosario',
+  shippingMethod: 'envio',
   comments: ''
 };
 
@@ -28,14 +33,14 @@ function validate(form) {
   return errors;
 }
 
-export default function CheckoutForm({ onSubmit, onMethodChange, submitting, errorMsg }) {
+export default function CheckoutForm({ onSubmit, onShippingChange, submitting, errorMsg }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
 
-  // Notificar cambios de método al parent (para recalcular total)
+  // Notificar al parent método + destino (ciudad/provincia) para recalcular el envío automático.
   useEffect(() => {
-    onMethodChange?.(form.shippingMethod);
-  }, [form.shippingMethod, onMethodChange]);
+    onShippingChange?.({ method: form.shippingMethod, city: form.city, province: form.province });
+  }, [form.shippingMethod, form.city, form.province, onShippingChange]);
 
   const change = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -44,13 +49,12 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
     const errs = validate(form);
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
-      const methodLabel = shippingMethods.find((s) => s.value === form.shippingMethod)?.label;
+      const methodLabel = shippingMethodLabel(form.shippingMethod, form.city, form.province);
       onSubmit({
         payer: {
           name: form.name.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
-          dni: form.dni.trim() || undefined,
           address: form.address.trim()
         },
         shipping: {
@@ -66,6 +70,7 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
   };
 
   const needsAddress = form.shippingMethod !== 'retiro';
+  const zone = shippingZone(form.city, form.province);
 
   return (
     <form onSubmit={submit} className="card-glass p-6 md:p-8 space-y-5">
@@ -86,11 +91,6 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
           <span className="text-sm text-white/70 mb-1.5 block">Teléfono *</span>
           <input type="text" value={form.phone} onChange={change('phone')} placeholder="3410000000" className="input-dark" />
           {errors.phone && <span className="text-xs text-brand-pink mt-1 block">{errors.phone}</span>}
-        </label>
-        <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">DNI (opcional)</span>
-          <input type="text" value={form.dni} onChange={change('dni')} placeholder="00.000.000" className="input-dark" />
-          {errors.dni && <span className="text-xs text-brand-pink mt-1 block">{errors.dni}</span>}
         </label>
       </div>
 
@@ -126,7 +126,11 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
             </label>
             <label className="block">
               <span className="text-sm text-white/70 mb-1.5 block">Provincia *</span>
-              <input type="text" value={form.province} onChange={change('province')} className="input-dark" />
+              <select value={form.province} onChange={change('province')} className="input-dark">
+                {provinces.map((p) => (
+                  <option key={p} value={p} className="bg-bg-deep">{p}</option>
+                ))}
+              </select>
               {errors.province && <span className="text-xs text-brand-pink mt-1 block">{errors.province}</span>}
             </label>
             <label className="block">
@@ -136,7 +140,10 @@ export default function CheckoutForm({ onSubmit, onMethodChange, submitting, err
             </label>
           </div>
           <p className="text-xs text-white/50">
-            ⏱️ Plazos: <strong className="text-white/70">{form.shippingMethod === 'envio-rosario' ? shippingCfg.productionDaysRosario : shippingCfg.productionDaysInterior}</strong>
+            📦 Calculamos el envío automáticamente según tu ciudad y provincia — lo ves en el resumen del pedido.
+          </p>
+          <p className="text-xs text-white/50">
+            ⏱️ Plazos: <strong className="text-white/70">{zone === 'interior' ? shippingCfg.productionDaysInterior : shippingCfg.productionDaysRosario}</strong>
           </p>
         </>
       )}
