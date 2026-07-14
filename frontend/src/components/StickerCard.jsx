@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
 
@@ -14,20 +15,27 @@ export default function StickerCard({ sticker }) {
   const [qty, setQty] = useState(1);
 
   const unit = priceForSize(size);
+  const href = `/producto/${sticker.category}/${sticker.id.split('-').pop()}`;
 
   return (
     <article className="card-glass card-glass-hover overflow-hidden flex flex-col">
-      <div className="relative aspect-square overflow-hidden bg-white/[0.03] grid place-items-center p-3">
+      <Link
+        to={href}
+        aria-label={`Ver ${sticker.name}`}
+        className="relative aspect-square overflow-hidden bg-white/[0.03] grid place-items-center p-3"
+      >
         <img
           src={sticker.image}
           alt={sticker.name}
           loading="lazy"
           className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
         />
-      </div>
+      </Link>
 
       <div className="p-4 flex-1 flex flex-col">
-        <h3 className="font-semibold text-white text-sm leading-snug truncate">{sticker.name}</h3>
+        <h3 className="font-semibold text-white text-sm leading-snug truncate">
+          <Link to={href} className="hover:text-brand-fuchsia transition-colors">{sticker.name}</Link>
+        </h3>
 
         {/* Selector de tamaño */}
         <div className="mt-3 grid grid-cols-3 gap-1.5" role="group" aria-label="Elegir tamaño">

@@ -8,6 +8,7 @@ import Home from './routes/Home.jsx'; // Home eager (LCP)
 // Resto lazy: bajan el initial bundle
 const Categorias = lazy(() => import('./routes/Categorias.jsx'));
 const Category = lazy(() => import('./routes/Category.jsx'));
+const Producto = lazy(() => import('./routes/Producto.jsx'));
 const Personalizados = lazy(() => import('./routes/Personalizados.jsx'));
 const Mayorista = lazy(() => import('./routes/Mayorista.jsx'));
 const Negocio = lazy(() => import('./routes/Negocio.jsx'));
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/categorias" element={<Categorias />} />
             <Route path="/categoria/:slug" element={<Category />} />
+            <Route path="/producto/:slug/:num" element={<Producto />} />
             <Route path="/personalizados" element={<Personalizados />} />
             <Route path="/mayorista" element={<Mayorista />} />
             <Route path="/negocio" element={<Negocio />} />
