@@ -1,5 +1,6 @@
 /**
- * Notificaciones de pedidos: envío de mail a EPICALCOS y/o alta en un CRM (Notion).
+ * Notificaciones de pedidos: mail a EPICALCOS, mail de confirmación al cliente
+ * y/o alta en un CRM (Notion).
  *
  * Todo es opcional y se activa por variables de entorno. Si no hay nada
  * configurado, simplemente no notifica (y lo deja logueado). Ninguna de estas
@@ -9,8 +10,13 @@
  *
  *   --- Mail (Resend, https://resend.com — gratis hasta 3000 mails/mes) ---
  *   RESEND_API_KEY      → API key de Resend (empieza con "re_")
- *   NOTIFY_EMAIL_TO     → destino (default: epicalcos@gmail.com)
+ *   NOTIFY_EMAIL_TO     → destino interno (default: epicalcos@gmail.com)
  *   NOTIFY_EMAIL_FROM   → remitente verificado (default: onboarding@resend.dev)
+ *
+ *   ⚠️ Para el mail al CLIENTE, NOTIFY_EMAIL_FROM tiene que ser una dirección
+ *   de un dominio verificado en Resend (ej: EPICALCOS <pedidos@epicalcos.com>).
+ *   Con el default onboarding@resend.dev, Resend solo permite enviar a la
+ *   casilla del dueño de la cuenta, así que el mail al cliente se omite.
  *
  *   --- CRM (Notion, opcional) ---
  *   NOTION_TOKEN        → token de integración interna de Notion (empieza con "ntn_" o "secret_")
@@ -19,6 +25,15 @@
 
 const DEFAULT_TO = 'epicalcos@gmail.com';
 const DEFAULT_FROM = 'EPICALCOS <onboarding@resend.dev>';
+
+// Datos de contacto que van en el mail al cliente (espejo de frontend/src/config/site.js).
+const CONTACT = {
+  email: 'epicalcos@gmail.com',
+  whatsappDisplay: '+54 9 341 680-6675',
+  whatsappUrl: 'https://wa.me/5493416806675',
+  instagram: '@epicalcos',
+  instagramUrl: 'https://instagram.com/epicalcos'
+};
 
 const money = (n) =>
   typeof n === 'number' && !Number.isNaN(n)
@@ -198,6 +213,120 @@ PAGO
 }
 
 /**
+ * Plazo estimado según el método/zona de entrega (etiqueta de shippingMethodLabel).
+ * Espejo de shipping.productionDays* en frontend/src/config/site.js.
+ */
+function customerTimeline(o) {
+  const method = String(o.shippingMethod || '');
+  if (/retiro/i.test(method)) {
+    return 'Tu pedido va a estar listo en 2 a 3 días hábiles. Te escribimos por WhatsApp para coordinar el retiro.';
+  }
+  if (/resto del país/i.test(method)) {
+    return 'Tu pedido llega en 7 a 10 días hábiles. Te avisamos cuando lo despachemos.';
+  }
+  return 'Tu pedido llega en 2 a 3 días hábiles. Te avisamos cuando salga en camino.';
+}
+
+/** Primer nombre del cliente para el saludo (o vacío si no hay nombre). */
+function firstName(o) {
+  const n = String(o.name || '').trim();
+  return n && n !== '—' ? n.split(/\s+/)[0] : '';
+}
+
+function buildCustomerEmailHtml(o) {
+  const saludo = firstName(o) ? `¡Hola ${esc(firstName(o))}!` : '¡Hola!';
+  const esRetiro = /retiro/i.test(String(o.shippingMethod || ''));
+
+  return `
+  <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:620px;margin:0 auto;color:#111">
+    <div style="background:#111;color:#fff;padding:18px 24px;border-radius:12px 12px 0 0">
+      <h1 style="margin:0;font-size:22px;letter-spacing:1px">EPICALCOS</h1>
+      <p style="margin:4px 0 0;font-size:14px;color:#ddd">Calcos premium para personalizar lo que quieras</p>
+    </div>
+
+    <div style="padding:24px;border:1px solid #eee;border-top:0;border-radius:0 0 12px 12px">
+      <h2 style="margin:0 0 6px">✅ ${saludo} Recibimos tu pedido</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#444">
+        Tu pago fue aprobado y ya estamos preparando todo.
+        Guardá este mail como comprobante.<br>
+        <strong>Número de pedido:</strong> ${esc(o.orderId)}
+      </p>
+
+      <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Tu pedido</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="background:#f5f5f5">
+            <th style="padding:6px 10px;text-align:left">Producto</th>
+            <th style="padding:6px 10px;text-align:center">Cant.</th>
+            <th style="padding:6px 10px;text-align:right">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml(o.items)}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="padding:10px;text-align:right;font-weight:bold">Total pagado</td>
+            <td style="padding:10px;text-align:right;font-size:18px"><strong>${money(o.amountPaid ?? o.total)}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Entrega</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr><td style="padding:3px 0;width:140px;color:#666">Método</td><td>${esc(o.shippingMethod)}</td></tr>
+        ${
+          esRetiro
+            ? ''
+            : `<tr><td style="padding:3px 0;color:#666">Dirección</td><td>${esc(o.address)}</td></tr>
+        <tr><td style="padding:3px 0;color:#666">Ciudad</td><td>${esc(o.city)} (${esc(o.province)}) — CP ${esc(o.zipCode)}</td></tr>`
+        }
+      </table>
+
+      <p style="margin:16px 0;padding:12px;background:#f0fdf4;border-left:3px solid #16a34a;font-size:14px">
+        ${esc(customerTimeline(o))}
+      </p>
+
+      <p style="margin:16px 0 0;font-size:14px;color:#444">
+        ¿Dudas o cambios? Escribinos:<br>
+        📱 WhatsApp: <a href="${CONTACT.whatsappUrl}" style="color:#111">${CONTACT.whatsappDisplay}</a><br>
+        📷 Instagram: <a href="${CONTACT.instagramUrl}" style="color:#111">${CONTACT.instagram}</a><br>
+        ✉️ Email: <a href="mailto:${CONTACT.email}" style="color:#111">${CONTACT.email}</a>
+      </p>
+
+      <p style="margin-top:24px;font-size:12px;color:#999">
+        ¡Gracias por elegir EPICALCOS! 💜 — Rosario, Santa Fe, Argentina
+      </p>
+    </div>
+  </div>`;
+}
+
+function buildCustomerEmailText(o) {
+  const saludo = firstName(o) ? `¡Hola ${firstName(o)}!` : '¡Hola!';
+  const esRetiro = /retiro/i.test(String(o.shippingMethod || ''));
+  return `${saludo} Recibimos tu pedido — EPICALCOS
+
+Tu pago fue aprobado y ya estamos preparando todo.
+Número de pedido: ${o.orderId}
+
+TU PEDIDO
+${itemsText(o.items)}
+
+Total pagado: ${money(o.amountPaid ?? o.total)}
+
+ENTREGA
+  Método: ${o.shippingMethod}
+${esRetiro ? '' : `  Dirección: ${o.address}\n  Ciudad: ${o.city} (${o.province}) — CP ${o.zipCode}\n`}
+${customerTimeline(o)}
+
+¿Dudas o cambios? Escribinos:
+  WhatsApp: ${CONTACT.whatsappDisplay} (${CONTACT.whatsappUrl})
+  Instagram: ${CONTACT.instagram}
+  Email: ${CONTACT.email}
+
+¡Gracias por elegir EPICALCOS!
+`;
+}
+
+/**
  * Envía el mail del pedido vía Resend. No-op si falta RESEND_API_KEY.
  * @param {object} o vista de pedido (buildOrderView)
  */
@@ -244,6 +373,68 @@ export async function sendOrderEmail(o) {
     return { sent: true };
   } catch (err) {
     console.error('[notify] error enviando mail:', err?.message || err);
+    return { sent: false, reason: 'exception', detail: err?.message };
+  }
+}
+
+/**
+ * Envía al CLIENTE el mail de confirmación con el resumen de su pedido.
+ * No-op si falta RESEND_API_KEY, si el pedido no tiene email, o si el
+ * remitente sigue siendo el default onboarding@resend.dev (Resend no permite
+ * mandar a terceros desde esa dirección — hay que verificar un dominio
+ * propio y setear NOTIFY_EMAIL_FROM). Nunca lanza.
+ * @param {object} o vista de pedido (buildOrderView)
+ */
+export async function sendCustomerEmail(o) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log('[notify] RESEND_API_KEY no configurada — se omite el mail al cliente.');
+    return { sent: false, reason: 'no_api_key' };
+  }
+
+  const email = String(o.email || '').trim();
+  if (!email || !email.includes('@')) {
+    console.log('[notify] pedido sin email de cliente — se omite el mail al cliente.');
+    return { sent: false, reason: 'no_customer_email' };
+  }
+
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+  if (from.includes('resend.dev')) {
+    console.warn(
+      '[notify] NOTIFY_EMAIL_FROM es el default de Resend (resend.dev): no se puede ' +
+        'enviar a clientes. Verificá un dominio en Resend y seteá NOTIFY_EMAIL_FROM.'
+    );
+    return { sent: false, reason: 'unverified_sender' };
+  }
+
+  const subject = `✅ Pedido confirmado ${o.orderId} — EPICALCOS`;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        reply_to: CONTACT.email,
+        subject,
+        html: buildCustomerEmailHtml(o),
+        text: buildCustomerEmailText(o)
+      })
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      console.error('[notify] Resend (cliente) respondió', res.status, detail);
+      return { sent: false, reason: `resend_${res.status}`, detail };
+    }
+    console.log('[notify] mail de confirmación enviado al cliente', email);
+    return { sent: true };
+  } catch (err) {
+    console.error('[notify] error enviando mail al cliente:', err?.message || err);
     return { sent: false, reason: 'exception', detail: err?.message };
   }
 }
@@ -328,9 +519,10 @@ export async function createNotionRow(o) {
  * @param {object} o vista de pedido (buildOrderView)
  */
 export async function notifyOrder(o) {
-  const [email, notion] = await Promise.all([
+  const [email, customerEmail, notion] = await Promise.all([
     sendOrderEmail(o),
+    sendCustomerEmail(o),
     createNotionRow(o)
   ]);
-  return { email, notion };
+  return { email, customerEmail, notion };
 }

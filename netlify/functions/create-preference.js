@@ -11,25 +11,45 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { saveOrder } from './lib/orderStore.js';
 import { crearLeadEnCRM } from './_notion.js';
+import { validateAndPriceOrder } from './lib/pricing.js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+// CORS restringido a los orígenes propios (antes era "*"). Los requests sin
+// header Origin (curl, server-to-server) no usan CORS, así que no se ven afectados.
+const ALLOWED_ORIGINS = [
+  process.env.URL,
+  'https://epicalcos.com',
+  'https://www.epicalcos.com',
+  'https://epicalcos-ecommerce.netlify.app',
+  'http://localhost:8888' // netlify dev
+].filter(Boolean);
+
+const corsHeadersFor = (origin) => ({
+  'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type'
-};
-
-const json = (status, body) => ({
-  statusCode: status,
-  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  body: JSON.stringify(body)
+  'Access-Control-Allow-Headers': 'Content-Type',
+  Vary: 'Origin'
 });
 
+// Límites anti-abuso: payload acotado y campos de texto con tope de longitud.
+const MAX_BODY_BYTES = 50_000;
+const clip = (v, max) => String(v ?? '').slice(0, max).trim();
+
 export const handler = async (event) => {
+  const corsHeaders = corsHeadersFor(event.headers?.origin || event.headers?.Origin || '');
+  const json = (status, body) => ({
+    statusCode: status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders, body: '' };
   }
   if (event.httpMethod !== 'POST') {
     return json(405, { error: 'method_not_allowed' });
+  }
+  if ((event.body?.length || 0) > MAX_BODY_BYTES) {
+    return json(413, { error: 'payload_too_large' });
   }
 
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -48,13 +68,35 @@ export const handler = async (event) => {
     return json(400, { error: 'invalid_json' });
   }
 
-  const { items, payer, shipping } = body;
+  const { items, payer: rawPayer, shipping: rawShipping } = body;
 
-  if (!Array.isArray(items) || items.length === 0) {
-    return json(400, { error: 'items_empty' });
-  }
-  if (!payer?.email || !payer?.name) {
+  // Datos del comprador: requeridos, con formato de email y longitudes acotadas.
+  const payer = {
+    name: clip(rawPayer?.name, 120),
+    email: clip(rawPayer?.email, 254),
+    phone: clip(rawPayer?.phone, 40),
+    address: clip(rawPayer?.address, 240)
+  };
+  if (!payer.email || !payer.name || !/^\S+@\S+\.\S+$/.test(payer.email)) {
     return json(400, { error: 'payer_invalid' });
+  }
+
+  const shipping = {
+    methodValue: clip(rawShipping?.methodValue, 20),
+    method: clip(rawShipping?.method, 80),
+    city: clip(rawShipping?.city, 80),
+    province: clip(rawShipping?.province, 80),
+    zipCode: clip(rawShipping?.zipCode, 20),
+    comments: clip(rawShipping?.comments, 1000) || undefined
+  };
+
+  // Precios y envío: SIEMPRE recalculados en el servidor a partir del id de
+  // cada item (lib/pricing.js). Si el precio recibido no coincide con las
+  // reglas vigentes, se rechaza el pedido (precio adulterado o frontend viejo).
+  const order = validateAndPriceOrder({ items, shipping });
+  if (!order.ok) {
+    console.warn('[create-preference] pedido rechazado:', order.error, order.detail || '');
+    return json(400, { error: order.error, message: order.detail });
   }
 
   try {
@@ -64,19 +106,13 @@ export const handler = async (event) => {
     const orderId = `EPI-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const siteUrl = process.env.URL || 'https://epicalcos-ecommerce.netlify.app';
 
-    const mpItems = items.map((item) => ({
-      id: String(item.id),
-      title: String(item.title),
-      quantity: Number(item.quantity),
-      unit_price: Number(item.unit_price),
-      currency_id: 'ARS'
-    }));
-
-    const shippingCost = Number(shipping?.cost) || 0;
+    const mpItems = [...order.items];
+    const shippingCost = order.shippingCost;
+    shipping.method = order.shippingMethod; // etiqueta recalculada en el servidor
     if (shippingCost > 0) {
       mpItems.push({
         id: 'shipping',
-        title: `Envío — ${shipping?.method || 'a coordinar'}`,
+        title: `Envío — ${order.shippingMethod}`,
         quantity: 1,
         unit_price: shippingCost,
         currency_id: 'ARS'
@@ -86,9 +122,8 @@ export const handler = async (event) => {
     // Registrar el lead en el CRM de Notion ("Checkout iniciado") y guardar el
     // pageId para que el webhook actualice esa misma fila al confirmarse el pago.
     // crearLeadEnCRM nunca lanza: si Notion falla, el checkout sigue igual.
-    const total =
-      items.reduce((sum, it) => sum + Number(it.unit_price) * Number(it.quantity), 0) + shippingCost;
-    const notionPageId = await crearLeadEnCRM({ payer, shipping, items, total, orderId });
+    const total = order.itemsTotal + shippingCost;
+    const notionPageId = await crearLeadEnCRM({ payer, shipping, items: order.items, total, orderId });
 
     const preference = await preferenceClient.create({
       body: {

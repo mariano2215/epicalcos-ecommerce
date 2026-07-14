@@ -24,6 +24,20 @@
   directory = "../netlify/functions"
   node_bundler = "esbuild"
 
+# ── Headers de seguridad (aplican a los archivos estáticos del sitio) ──
+# La CSP está en modo Report-Only: no bloquea nada, solo reporta violaciones
+# en la consola del navegador. Cuando se verifique que GTM/GA4/Meta Pixel no
+# rompen nada, renombrar a "Content-Security-Policy" para que aplique en serio.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://www.googletagmanager.com https://www.facebook.com; frame-src https://www.googletagmanager.com https://td.doubleclick.net; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
 # Redirects /api/* → /.netlify/functions/* (URLs limpias en el frontend)
 [[redirects]]
   from   = "/api/create-preference"

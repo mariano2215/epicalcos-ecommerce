@@ -3,9 +3,10 @@
  * Recibe notificaciones IPN/Webhook de Mercado Pago. En cada cambio de estado:
  *   - Actualiza el CRM de Notion: el lead "Checkout iniciado" pasa a
  *     Pagado / Pendiente / Rechazado (ver _notion.js).
- *   - Cuando el pago queda APROBADO, manda el mail del pedido a EPICALCOS con
- *     TODOS los datos (recuperados de Netlify Blobs) y con dedup para no repetir
- *     el aviso si Mercado Pago reintenta el webhook (ver lib/notify.js).
+ *   - Cuando el pago queda APROBADO, manda dos mails: el aviso interno a
+ *     EPICALCOS con TODOS los datos y la confirmación con el resumen del pedido
+ *     al cliente (recuperados de Netlify Blobs), con dedup para no repetir
+ *     los avisos si Mercado Pago reintenta el webhook (ver lib/notify.js).
  *
  * Para activar en MP:
  *   Panel Mercado Pago → Tu app → Webhooks → URL:
@@ -19,12 +20,27 @@
  */
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getOrder, markNotified } from './lib/orderStore.js';
-import { buildOrderView, sendOrderEmail } from './lib/notify.js';
+import { buildOrderView, sendOrderEmail, sendCustomerEmail } from './lib/notify.js';
 import { actualizarEstadoPedido, mapEstado } from './_notion.js';
+import { verifyMpSignature } from './lib/mpSignature.js';
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
+  }
+
+  // Verificar que la notificación venga firmada por Mercado Pago (HMAC con la
+  // firma secreta del panel). Firma inválida → 401. Ver lib/mpSignature.js
+  // para el comportamiento cuando falta la firma o el secret.
+  const sig = verifyMpSignature(event);
+  if (!sig.ok) {
+    console.warn('[mp-webhook] firma rechazada:', sig.mode);
+    return { statusCode: 401, body: JSON.stringify({ error: 'invalid_signature' }) };
+  }
+  if (sig.mode !== 'valid') {
+    console.warn('[mp-webhook] firma no verificada (se procesa igual):', sig.mode);
+  } else {
+    console.log('[mp-webhook] firma ok');
   }
 
   let payload = {};
@@ -98,16 +114,21 @@ export const handler = async (event) => {
         console.error('[mp-webhook] notion sync error:', notionErr);
       }
 
-      // 2) Mail: solo cuando el pago queda aprobado. Recupera el pedido completo
+      // 2) Mails: solo cuando el pago queda aprobado. Recupera el pedido completo
       //    de Blobs y evita duplicados (MP reintenta el webhook varias veces).
+      //    Se manda el aviso interno a EPICALCOS y la confirmación al cliente.
       if (payment.status === 'approved') {
         const stored = await getOrder(orderId);
         if (stored?.notifiedAt) {
           console.log('[mp-webhook] pedido ya notificado, se omite:', orderId);
         } else {
           const view = buildOrderView(stored, payment);
-          const result = await sendOrderEmail(view);
-          console.log('[mp-webhook] mail:', JSON.stringify(result));
+          const [internal, customer] = await Promise.all([
+            sendOrderEmail(view),
+            sendCustomerEmail(view)
+          ]);
+          console.log('[mp-webhook] mail interno:', JSON.stringify(internal));
+          console.log('[mp-webhook] mail cliente:', JSON.stringify(customer));
           await markNotified(orderId, {
             id: payment.id,
             status: payment.status,
