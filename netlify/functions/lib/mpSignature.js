@@ -42,8 +42,12 @@ export function verifyMpSignature(event) {
   if (!ts || !v1) return { ok: false, mode: 'malformed' };
 
   const query = event.queryStringParameters || {};
-  // data.id en minúsculas si es alfanumérico (requisito de la doc de MP).
-  const dataId = String(query['data.id'] || query.id || '').toLowerCase();
+  // Solo el data.id de los QUERY PARAMS entra en el manifest, en minúsculas si es
+  // alfanumérico (requisito de la doc de MP). Ojo: NO vale caer a query.id — las
+  // notificaciones IPN (?topic=payment&id=123) no traen data.id, así que MP firma
+  // el manifest SIN el segmento id; agregarlo desde query.id rompe el HMAC y
+  // rechaza pagos reales con 401.
+  const dataId = String(query['data.id'] || '').toLowerCase();
   const requestId = headers['x-request-id'] || headers['X-Request-Id'] || '';
 
   const manifestParts = [];
