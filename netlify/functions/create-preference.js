@@ -12,6 +12,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { saveOrder } from './lib/orderStore.js';
 import { crearLeadEnCRM } from './_notion.js';
 import { validateAndPriceOrder } from './lib/pricing.js';
+import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
 
 // CORS restringido a los orígenes propios (antes era "*"). Los requests sin
 // header Origin (curl, server-to-server) no usan CORS, así que no se ven afectados.
@@ -160,7 +161,7 @@ export const handler = async (event) => {
       .filter((i) => i.id !== 'shipping')
       .reduce((acc, i) => acc + i.unit_price * i.quantity, 0);
 
-    await saveOrder(orderId, {
+    const storedOrder = {
       orderId,
       createdAt: new Date().toISOString(),
       preferenceId: preference.id,
@@ -182,7 +183,12 @@ export const handler = async (event) => {
       items: mpItems,
       itemsTotal,
       total: itemsTotal + shippingCost
-    });
+    };
+    await saveOrder(orderId, storedOrder);
+
+    // CRM interno (app.epicalcos.com): no-op sin CRM_WEBHOOK_URL/SECRET,
+    // nunca lanza y no bloquea el checkout si el CRM no responde.
+    await notifyCrm('order.created', buildCrmOrder(storedOrder));
 
     return json(200, {
       id: preference.id,

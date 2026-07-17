@@ -23,6 +23,7 @@ import { getOrder, markNotified } from './lib/orderStore.js';
 import { buildOrderView, sendOrderEmail, sendCustomerEmail } from './lib/notify.js';
 import { actualizarEstadoPedido, mapEstado } from './_notion.js';
 import { verifyMpSignature } from './lib/mpSignature.js';
+import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -119,6 +120,27 @@ export const handler = async (event) => {
       //    Se manda el aviso interno a EPICALCOS y la confirmación al cliente.
       if (payment.status === 'approved') {
         const stored = await getOrder(orderId);
+
+        // CRM interno (app.epicalcos.com): registra el pago aprobado.
+        // No-op sin CRM_WEBHOOK_URL/SECRET; nunca lanza. Idempotente por
+        // paymentId, así que los reintentos de MP no duplican pagos.
+        const crmOrder = buildCrmOrder(stored ?? {
+          orderId,
+          itemsTotal: payment.transaction_amount,
+          total: payment.transaction_amount,
+          payer: { name: meta.buyer_name, email: payment.payer?.email, phone: meta.buyer_phone, address: meta.shipping_address },
+          shipping: { method: meta.shipping_method, city: meta.shipping_city, province: meta.shipping_province, zipCode: meta.shipping_zip_code, cost: meta.shipping_cost || 0 },
+          items: items.map((i) => ({ title: i.title, quantity: Number(i.quantity) || 1, unit_price: Number(i.unit_price) || 0 }))
+        });
+        if (crmOrder) {
+          await notifyCrm('order.paid', {
+            ...crmOrder,
+            paymentStatus: 'paid',
+            paymentId: String(payment.id),
+            total: payment.transaction_amount
+          });
+        }
+
         if (stored?.notifiedAt) {
           console.log('[mp-webhook] pedido ya notificado, se omite:', orderId);
         } else {
@@ -129,11 +151,21 @@ export const handler = async (event) => {
           ]);
           console.log('[mp-webhook] mail interno:', JSON.stringify(internal));
           console.log('[mp-webhook] mail cliente:', JSON.stringify(customer));
-          await markNotified(orderId, {
-            id: payment.id,
-            status: payment.status,
-            amount: payment.transaction_amount
-          });
+          // Solo marcamos como notificado si el aviso interno salió: si Resend
+          // falló, dejamos que el reintento de MP vuelva a intentarlo en vez de
+          // perder el pedido para siempre.
+          if (internal.sent) {
+            await markNotified(orderId, {
+              id: payment.id,
+              status: payment.status,
+              amount: payment.transaction_amount
+            });
+          } else {
+            console.error(
+              '[mp-webhook] no se marca como notificado: falló el mail interno',
+              internal.reason
+            );
+          }
         }
       }
     } catch (err) {
