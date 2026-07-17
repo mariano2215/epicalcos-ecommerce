@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
-import { createPreference } from '../services/paymentService.js';
+import { createPreference, createTransferOrder } from '../services/paymentService.js';
 import { calculateShipping } from '../config/site.js';
 import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
+import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
 
 /** Resumen legible de packs/personalizados/negocio para que le llegue al vendedor. */
@@ -24,11 +25,19 @@ function buildDesignSummary(items) {
 }
 
 export default function Checkout() {
-  const { items, subtotal } = useCart();
+  const { pricedItems, clear } = useCart();
+  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [ship, setShip] = useState({ method: 'envio', city: 'Rosario', province: 'Santa Fe' });
+  const [paymentMethod, setPaymentMethod] = useState('mercadopago');
   const isPickup = ship.method === 'retiro';
+  const isTransfer = paymentMethod === 'transferencia';
+
+  // Precios reales según el medio de pago elegido: el 10% off por volumen
+  // solo se aplica pagando por transferencia (ver CartContext.pricedItems).
+  const items = pricedItems(paymentMethod);
+  const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
   const shippingCost = calculateShipping({
     method: ship.method,
     subtotal,
@@ -37,7 +46,7 @@ export default function Checkout() {
   });
   const total = subtotal + shippingCost;
 
-  useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago.' });
+  useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago o por transferencia bancaria.' });
 
   useEffect(() => {
     if (items.length > 0) trackBeginCheckout(items);
@@ -46,6 +55,10 @@ export default function Checkout() {
 
   const onShippingChange = useCallback((next) => {
     setShip(next);
+  }, []);
+
+  const onPaymentMethodChange = useCallback((next) => {
+    setPaymentMethod(next);
   }, []);
 
   // Disparamos el evento de envío solo cuando cambia el método (no en cada tecla de la ciudad).
@@ -65,23 +78,32 @@ export default function Checkout() {
     );
   }
 
-  const handleSubmit = async ({ payer, shipping }) => {
+  const handleSubmit = async ({ payer, shipping, paymentMethod: method }) => {
     setSubmitting(true);
     setErrorMsg('');
+    setAdvancedMatching({ payer, shipping });
     try {
       const designSummary = buildDesignSummary(items);
       const comments = [shipping.comments, designSummary].filter(Boolean).join(' || ');
-      const { init_point } = await createPreference({
-        items,
-        payer,
-        shipping: { ...shipping, comments: comments || undefined, cost: shippingCost }
-      });
+      const fullShipping = { ...shipping, comments: comments || undefined, cost: shippingCost };
+
+      if (method === 'transferencia') {
+        const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping });
+        if (!orderId) throw new Error('Respuesta inválida del backend');
+        clear();
+        navigate(`/pago-transferencia?ref=${encodeURIComponent(orderId)}`);
+        return;
+      }
+
+      const { init_point } = await createPreference({ items, payer, shipping: fullShipping });
       if (!init_point) throw new Error('Respuesta inválida del backend');
       window.location.href = init_point;
     } catch (err) {
       console.error(err);
       setErrorMsg(
-        'No pudimos iniciar el pago. Revisá que el backend esté corriendo y que estén configuradas las credenciales de Mercado Pago.'
+        method === 'transferencia'
+          ? 'No pudimos registrar tu pedido. Probá de nuevo en unos segundos.'
+          : 'No pudimos iniciar el pago. Revisá que el backend esté corriendo y que estén configuradas las credenciales de Mercado Pago.'
       );
       setSubmitting(false);
     }
@@ -99,6 +121,7 @@ export default function Checkout() {
             <CheckoutForm
               onSubmit={handleSubmit}
               onShippingChange={onShippingChange}
+              onPaymentMethodChange={onPaymentMethodChange}
               submitting={submitting}
               errorMsg={errorMsg}
             />
@@ -142,8 +165,12 @@ export default function Checkout() {
             </div>
 
             <div className="mt-5 space-y-2 text-xs text-white/50">
-              <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
-              <div>🏷️ Desde 10 calcos sueltos se aplica 10% off automático.</div>
+              {isTransfer ? (
+                <div>🏦 Pagás por transferencia bancaria — datos en el formulario.</div>
+              ) : (
+                <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
+              )}
+              <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>
             </div>
           </aside>
         </div>

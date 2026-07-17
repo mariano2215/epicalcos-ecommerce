@@ -289,7 +289,7 @@ export default function Producto() {
 
               {/* Nudge de descuento por volumen */}
               <div className="mt-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-2.5 text-sm text-emerald-400 flex items-center gap-2">
-                🏷️ <span>Desde <strong>{BULK_THRESHOLD} calcos</strong> en el carrito, <strong>10% off</strong> — mezclá las categorías que quieras.</span>
+                🏷️ <span>Desde <strong>{BULK_THRESHOLD} calcos</strong> en el carrito, <strong>10% off pagando por transferencia bancaria</strong> — mezclá categorías y tamaños como quieras.</span>
               </div>
 
               {/* Condiciones de compra (estilo Mercado Libre) */}

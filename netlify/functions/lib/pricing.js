@@ -10,9 +10,10 @@
  */
 
 // --- Espejo de frontend/src/config/pricing.js ---
-const SIZE_PRICES = { '4cm': 1000, '6cm': 1500, '9cm': 2000 };
-const BULK_THRESHOLD = 10; // desde 10 calcos sueltos, 10 % off
+const SIZE_PRICES = { '4cm': 1200, '6cm': 1600, '9cm': 2000 };
+const BULK_THRESHOLD = 10; // desde 10 calcos sueltos TOTALES (combinables), 10 % off
 const BULK_DISCOUNT = 0.1;
+const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia'; // el 10 % solo aplica pagando por transferencia
 const WHOLESALE_QTY = 100; // pack mayorista: exactamente 100 calcos, 25 % off
 const WHOLESALE_DISCOUNT = 0.25;
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
@@ -25,7 +26,7 @@ const FIXED_PRICES = {
 
 // --- Espejo de frontend/src/config/site.js (envío) ---
 const FREE_SHIPPING_THRESHOLD_ROSARIO = 50000;
-const SHIPPING_COST = { rosario: 3500, nearby: 5000, interior: 8000 };
+const SHIPPING_COST = { rosario: 4500, nearby: 5000, interior: 8500 }; // rosario=motomensajería, interior=Correo Argentino
 const NEARBY_CITIES = ['funes', 'granadero baigorria', 'villa gobernador galvez'];
 
 // --- Límites anti-abuso del payload ---
@@ -125,12 +126,12 @@ function expectedUnitPrice(id, quantity, bulkActive) {
  * Valida y re-precia un pedido completo con las reglas del servidor.
  * Nunca confía en unit_price ni en shipping.cost del cliente.
  *
- * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object }} payload
+ * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object, paymentMethod?: string }} payload
  * @returns {{ ok: true, items: Array, itemsTotal: number, shippingCost: number,
  *             shippingMethod: string, methodValue: string }
  *          | { ok: false, error: string, detail?: string }}
  */
-export function validateAndPriceOrder({ items, shipping }) {
+export function validateAndPriceOrder({ items, shipping, paymentMethod }) {
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: 'items_empty' };
   }
@@ -155,11 +156,12 @@ export function validateAndPriceOrder({ items, shipping }) {
     clean.push({ id, title, quantity, unitPrice });
   }
 
-  // El 10 % por volumen aplica a calcos sueltos cuando el carrito suma ≥ 10.
+  // El 10 % por volumen aplica a calcos sueltos cuando el carrito suma ≥ 10
+  // calcos TOTALES (se pueden combinar tamaños) Y el pago es por transferencia.
   const stickerUnits = clean
     .filter((i) => i.id.startsWith('sticker:'))
     .reduce((a, i) => a + i.quantity, 0);
-  const bulkActive = stickerUnits >= BULK_THRESHOLD;
+  const bulkActive = stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD;
 
   const priced = [];
   for (const item of clean) {

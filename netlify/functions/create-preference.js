@@ -94,7 +94,7 @@ export const handler = async (event) => {
   // Precios y envío: SIEMPRE recalculados en el servidor a partir del id de
   // cada item (lib/pricing.js). Si el precio recibido no coincide con las
   // reglas vigentes, se rechaza el pedido (precio adulterado o frontend viejo).
-  const order = validateAndPriceOrder({ items, shipping });
+  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'mercadopago' });
   if (!order.ok) {
     console.warn('[create-preference] pedido rechazado:', order.error, order.detail || '');
     return json(400, { error: order.error, message: order.detail });

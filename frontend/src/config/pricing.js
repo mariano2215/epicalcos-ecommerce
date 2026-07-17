@@ -2,18 +2,23 @@
  * Reglas comerciales de EPICALCOS — un solo lugar para editar precios y descuentos.
  */
 
-/** Tamaños disponibles por calco y su precio unitario (ARS). */
+/** Tamaños disponibles por calco y su precio unitario (ARS). Precio de vidriera = Mercado Pago (sin descuento). */
 export const SIZES = [
-  { id: '4cm', label: '4 cm', price: 1000 },
-  { id: '6cm', label: '6 cm', price: 1500 },
+  { id: '4cm', label: '4 cm', price: 1200 },
+  { id: '6cm', label: '6 cm', price: 1600 },
   { id: '9cm', label: '9 cm', price: 2000 }
 ];
 
 export const DEFAULT_SIZE = '6cm';
 
-/** Descuento por volumen en calcos sueltos: desde 10 calcos, 10 % off. */
+/**
+ * Descuento por volumen en calcos sueltos: desde 10 calcos TOTALES (se pueden
+ * combinar tamaños), 10 % off — pero SOLO pagando por transferencia bancaria.
+ * Pagando con Mercado Pago el precio es siempre el de vidriera (sin descuento).
+ */
 export const BULK_THRESHOLD = 10;
 export const BULK_DISCOUNT = 0.10;
+export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
 
 /** Pack mayorista: 100 calcos, 25 % off (reemplaza al 10 %). */
 export const WHOLESALE_QTY = 100;

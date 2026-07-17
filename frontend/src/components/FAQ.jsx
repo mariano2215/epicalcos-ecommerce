@@ -24,7 +24,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Cómo pago?',
-    a: 'Pagás online de forma segura con Mercado Pago: tarjeta de crédito, débito, dinero en cuenta, Rapipago o Pago Fácil. También aceptamos transferencia bancaria coordinada por WhatsApp.'
+    a: 'Elegís el medio en el checkout: Mercado Pago (tarjeta de crédito, débito, dinero en cuenta, Rapipago o Pago Fácil) o transferencia bancaria directa. Pagando por transferencia, desde 10 calcos totales (podés combinar tamaños) tenés 10% off.'
   },
   {
     tag: 'general',
@@ -34,7 +34,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Hacen envíos?',
-    a: 'Sí. En Rosario: $3.500, gratis desde $50.000. Ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez): $5.000. Al resto del país: $8.000. También podés retirar en mano sin costo, coordinamos por WhatsApp.'
+    a: 'Sí. En Rosario por motomensajería: $4.500, gratis desde $50.000. Ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez): $5.000. Al resto del país por Correo Argentino: $8.500. También podés retirar en mano sin costo, coordinamos por WhatsApp.'
   },
   {
     tag: 'general',
@@ -44,7 +44,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Qué pasa después de pagar?',
-    a: 'Recibimos el aviso de Mercado Pago, te escribimos por WhatsApp al número que dejaste en el checkout para coordinar diseño (si corresponde), producción y entrega.'
+    a: 'Con Mercado Pago recibimos el aviso automático. Con transferencia bancaria, necesitamos que nos envíes el comprobante por WhatsApp al 341 680-6675 para confirmar el pedido. En los dos casos te escribimos por WhatsApp para coordinar diseño (si corresponde), producción y entrega.'
   },
   {
     tag: 'mayorista',

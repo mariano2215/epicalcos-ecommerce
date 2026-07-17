@@ -45,6 +45,11 @@
   status = 200
 
 [[redirects]]
+  from   = "/api/create-order-transfer"
+  to     = "/.netlify/functions/create-order-transfer"
+  status = 200
+
+[[redirects]]
   from   = "/api/mercadopago-webhook"
   to     = "/.netlify/functions/mercadopago-webhook"
   status = 200

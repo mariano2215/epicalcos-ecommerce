@@ -3,7 +3,7 @@ import Reveal from './Reveal.jsx';
 const steps = [
   { n: '1', icon: '🎨', t: 'Seleccioná las calcos y el tamaño', d: 'Elegí tus diseños favoritos y el tamaño de cada uno (4, 6 o 9 cm).' },
   { n: '2', icon: '🛒', t: 'Andá al carrito y completá tus datos', d: 'Revisá tu pedido y rellená el formulario con tus datos de envío.' },
-  { n: '3', icon: '🔒', t: 'Pagá por Mercado Pago', d: 'Checkout 100% seguro. Tarjetas, efectivo o transferencia.' },
+  { n: '3', icon: '🔒', t: 'Pagá por Mercado Pago o transferencia', d: 'Checkout 100% seguro. Por transferencia, 10% off desde 10 calcos.' },
   { n: '4', icon: '📦', t: 'Esperá tu pedido o retiralo', d: 'Producción 2 a 3 días hábiles en Rosario, 7 a 10 al resto del país.' }
 ];
 

@@ -17,6 +17,7 @@ const Polaroid = lazy(() => import('./routes/Polaroid.jsx'));
 const Cart = lazy(() => import('./routes/Cart.jsx'));
 const Checkout = lazy(() => import('./routes/Checkout.jsx'));
 const PaymentSuccess = lazy(() => import('./routes/PaymentSuccess.jsx'));
+const PaymentTransfer = lazy(() => import('./routes/PaymentTransfer.jsx'));
 const PaymentPending = lazy(() => import('./routes/PaymentPending.jsx'));
 const PaymentError = lazy(() => import('./routes/PaymentError.jsx'));
 const Contact = lazy(() => import('./routes/Contact.jsx'));
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/carrito" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/pago-exitoso" element={<PaymentSuccess />} />
+            <Route path="/pago-transferencia" element={<PaymentTransfer />} />
             <Route path="/pago-pendiente" element={<PaymentPending />} />
             <Route path="/pago-error" element={<PaymentError />} />
             <Route path="/contacto" element={<Contact />} />

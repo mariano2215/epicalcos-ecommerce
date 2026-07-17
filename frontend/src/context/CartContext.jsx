@@ -5,7 +5,8 @@ import {
   sizeLabel,
   round,
   BULK_THRESHOLD,
-  BULK_DISCOUNT
+  BULK_DISCOUNT,
+  BULK_DISCOUNT_PAYMENT_METHOD
 } from '../config/pricing.js';
 
 const CartContext = createContext(null);
@@ -139,36 +140,51 @@ export function CartProvider({ children }) {
   const closeDrawer = useCallback(() => dispatch({ type: 'CLOSE_DRAWER' }), []);
 
   /**
-   * Precios derivados: el 10 % por volumen se aplica solo a calcos sueltos
-   * (type === 'sticker') cuando se llega a BULK_THRESHOLD. Packs y negocio ya
-   * traen su descuento en basePrice y no cuentan para el umbral.
+   * Precios derivados: el precio de vidriera SIEMPRE es el de Mercado Pago
+   * (basePrice, sin descuento) — el 10 % por volumen en calcos sueltos
+   * (type === 'sticker') recién se aplica en el checkout, y solo si el
+   * cliente elige pagar por transferencia (ver pricedItems). Packs y negocio
+   * ya traen su propio descuento en basePrice y no cuentan para el umbral.
    */
   const derived = useMemo(() => {
     const stickerLines = state.items.filter((i) => i.type === 'sticker');
     const bulkUnits = stickerLines.reduce((a, i) => a + i.quantity, 0);
-    const bulkActive = bulkUnits >= BULK_THRESHOLD;
+    const bulkEligible = bulkUnits >= BULK_THRESHOLD;
 
-    const items = state.items.map((i) => {
-      const price =
-        i.type === 'sticker' && bulkActive ? round(i.basePrice * (1 - BULK_DISCOUNT)) : i.basePrice;
-      return { ...i, price };
-    });
+    const items = state.items.map((i) => ({ ...i, price: i.basePrice }));
 
     const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
     const totalItems = items.reduce((a, i) => a + i.quantity, 0);
-    const bulkSavings = bulkActive
+    const bulkSavings = bulkEligible
       ? stickerLines.reduce(
           (a, i) => a + (i.basePrice - round(i.basePrice * (1 - BULK_DISCOUNT))) * i.quantity,
           0
         )
       : 0;
-    const unitsToBulk = bulkActive ? 0 : BULK_THRESHOLD - bulkUnits;
+    const unitsToBulk = bulkEligible ? 0 : BULK_THRESHOLD - bulkUnits;
 
-    return { items, subtotal, totalItems, bulkUnits, bulkActive, bulkSavings, unitsToBulk };
+    return { items, subtotal, totalItems, bulkUnits, bulkEligible, bulkSavings, unitsToBulk };
   }, [state.items]);
+
+  /**
+   * Recalcula los items con el precio real según el medio de pago elegido en
+   * el checkout: el 10 % por volumen solo se descuenta si paymentMethod es
+   * BULK_DISCOUNT_PAYMENT_METHOD ('transferencia') y el carrito llegó al umbral.
+   */
+  const pricedItems = useCallback(
+    (paymentMethod) => {
+      const discountActive = derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD;
+      if (!discountActive) return derived.items;
+      return derived.items.map((i) =>
+        i.type === 'sticker' ? { ...i, price: round(i.basePrice * (1 - BULK_DISCOUNT)) } : i
+      );
+    },
+    [derived]
+  );
 
   const value = {
     ...derived,
+    pricedItems,
     drawerOpen: state.drawerOpen,
     addSticker,
     addPack,

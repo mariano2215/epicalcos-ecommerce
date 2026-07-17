@@ -35,6 +35,13 @@ const CONTACT = {
   instagramUrl: 'https://instagram.com/epicalcos'
 };
 
+// Datos bancarios para transferencia (espejo de frontend/src/config/site.js → bankTransfer).
+const BANK_TRANSFER = {
+  cvu: '0000003100088847424287',
+  alias: 'epicalcos.mp',
+  titular: 'MARIANO ALEJANDRO JESUS CALANDRA'
+};
+
 const money = (n) =>
   typeof n === 'number' && !Number.isNaN(n)
     ? '$ ' + n.toLocaleString('es-AR')
@@ -79,15 +86,42 @@ export function buildOrderView(order, payment) {
     items: order?.items || [],
     itemsTotal: order?.itemsTotal,
     total: order?.total,
-    // Datos del pago confirmado
+    // Datos del pago confirmado (o, si es un pedido por transferencia sin
+    // confirmar todavía, los datos que dejó create-order-transfer).
     paymentId: payment?.id,
-    paymentStatus: payment?.status,
+    paymentStatus: payment?.status || order?.status,
     paymentStatusDetail: payment?.status_detail,
     amountPaid: payment?.transaction_amount,
-    paymentMethod: payment?.payment_method_id,
+    paymentMethod: payment?.payment_method_id || order?.paymentMethod,
     paymentType: payment?.payment_type_id,
-    paymentDate: payment?.date_approved || payment?.date_created
+    paymentDate: payment?.date_approved || payment?.date_created || order?.createdAt
   };
+}
+
+/** true si el pedido es por transferencia y todavía no se confirmó el pago. */
+function isPendingTransfer(o) {
+  return o.paymentMethod === 'transferencia' && o.paymentStatus !== 'approved';
+}
+
+/** Etiqueta del badge de estado para el mail interno. */
+function statusLabel(o) {
+  if (o.paymentStatus === 'approved') return 'PAGO APROBADO';
+  if (isPendingTransfer(o)) return 'TRANSFERENCIA — PENDIENTE DE COMPROBANTE';
+  return (o.paymentStatus || 'pendiente').toUpperCase();
+}
+
+/** Bloque HTML con los datos bancarios (mail interno y mail al cliente). */
+function bankTransferHtml() {
+  return `
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <tr><td style="padding:3px 0;width:140px;color:#666">CVU</td><td style="font-family:monospace">${BANK_TRANSFER.cvu}</td></tr>
+      <tr><td style="padding:3px 0;color:#666">Alias</td><td style="font-family:monospace">${BANK_TRANSFER.alias}</td></tr>
+      <tr><td style="padding:3px 0;color:#666">Titular</td><td>${BANK_TRANSFER.titular}</td></tr>
+    </table>`;
+}
+
+function bankTransferText() {
+  return `  CVU: ${BANK_TRANSFER.cvu}\n  Alias: ${BANK_TRANSFER.alias}\n  Titular: ${BANK_TRANSFER.titular}`;
 }
 
 function itemsText(items) {
@@ -123,7 +157,7 @@ function buildEmailHtml(o) {
     o.paymentStatus === 'approved'
       ? '<span style="background:#16a34a;color:#fff;padding:3px 10px;border-radius:999px;font-size:13px">PAGO APROBADO</span>'
       : `<span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:999px;font-size:13px">${esc(
-          (o.paymentStatus || 'pendiente').toUpperCase()
+          statusLabel(o)
         )}</span>`;
 
   return `
@@ -168,26 +202,34 @@ function buildEmailHtml(o) {
 
     <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Pago</h3>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
-      <tr><td style="padding:3px 0;width:140px;color:#666">Monto pagado</td><td style="font-size:18px"><strong>${money(
+      <tr><td style="padding:3px 0;width:140px;color:#666">${isPendingTransfer(o) ? 'Total a transferir' : 'Monto pagado'}</td><td style="font-size:18px"><strong>${money(
         o.amountPaid ?? o.total
       )}</strong></td></tr>
       <tr><td style="padding:3px 0;color:#666">Estado</td><td>${esc(o.paymentStatus || '—')} ${
     o.paymentStatusDetail ? '(' + esc(o.paymentStatusDetail) + ')' : ''
   }</td></tr>
-      <tr><td style="padding:3px 0;color:#666">Medio</td><td>${esc(o.paymentMethod || '—')} / ${esc(
-    o.paymentType || '—'
-  )}</td></tr>
+      <tr><td style="padding:3px 0;color:#666">Medio</td><td>${esc(o.paymentMethod || '—')}${
+    o.paymentType ? ' / ' + esc(o.paymentType) : ''
+  }</td></tr>
       <tr><td style="padding:3px 0;color:#666">ID de pago MP</td><td>${esc(o.paymentId || '—')}</td></tr>
       <tr><td style="padding:3px 0;color:#666">Fecha</td><td>${esc(o.paymentDate || '—')}</td></tr>
     </table>
+    ${
+      isPendingTransfer(o)
+        ? `<p style="margin:14px 0;padding:10px;background:#fff7ed;border-left:3px solid #f59e0b;font-size:14px">
+             <strong>⏳ Esperando comprobante</strong> — el cliente va a enviarlo por WhatsApp. Datos que le dimos:
+           </p>${bankTransferHtml()}`
+        : ''
+    }
 
     <p style="margin-top:24px;font-size:12px;color:#999">Notificación automática de la tienda EPICALCOS.</p>
   </div>`;
 }
 
 function buildEmailText(o) {
+  const pendingTransfer = isPendingTransfer(o);
   return `NUEVO PEDIDO EPICALCOS — Ref: ${o.orderId}
-Estado del pago: ${o.paymentStatus || '—'}
+Estado del pago: ${statusLabel(o)}
 
 CLIENTE
   Nombre: ${o.name}
@@ -205,11 +247,11 @@ ${itemsText(o.items)}
 
 ${o.comments ? 'COMENTARIOS / DETALLE:\n  ' + o.comments + '\n' : ''}
 PAGO
-  Monto pagado: ${money(o.amountPaid ?? o.total)}
-  Medio: ${o.paymentMethod || '—'} / ${o.paymentType || '—'}
+  ${pendingTransfer ? 'Total a transferir' : 'Monto pagado'}: ${money(o.amountPaid ?? o.total)}
+  Medio: ${o.paymentMethod || '—'}${o.paymentType ? ' / ' + o.paymentType : ''}
   ID de pago MP: ${o.paymentId || '—'}
   Fecha: ${o.paymentDate || '—'}
-`;
+${pendingTransfer ? '\nESPERANDO COMPROBANTE (WhatsApp). Datos que le dimos:\n' + bankTransferText() + '\n' : ''}`;
 }
 
 /**
@@ -236,6 +278,7 @@ function firstName(o) {
 function buildCustomerEmailHtml(o) {
   const saludo = firstName(o) ? `¡Hola ${esc(firstName(o))}!` : '¡Hola!';
   const esRetiro = /retiro/i.test(String(o.shippingMethod || ''));
+  const pendingTransfer = isPendingTransfer(o);
 
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:620px;margin:0 auto;color:#111">
@@ -245,9 +288,13 @@ function buildCustomerEmailHtml(o) {
     </div>
 
     <div style="padding:24px;border:1px solid #eee;border-top:0;border-radius:0 0 12px 12px">
-      <h2 style="margin:0 0 6px">✅ ${saludo} Recibimos tu pedido</h2>
+      <h2 style="margin:0 0 6px">${pendingTransfer ? '📥' : '✅'} ${saludo} Recibimos tu pedido</h2>
       <p style="margin:0 0 16px;font-size:14px;color:#444">
-        Tu pago fue aprobado y ya estamos preparando todo.
+        ${
+          pendingTransfer
+            ? 'Ahora necesitamos que hagas la transferencia y nos envíes el comprobante para pasar a producción.'
+            : 'Tu pago fue aprobado y ya estamos preparando todo.'
+        }
         Guardá este mail como comprobante.<br>
         <strong>Número de pedido:</strong> ${esc(o.orderId)}
       </p>
@@ -264,11 +311,23 @@ function buildCustomerEmailHtml(o) {
         <tbody>${itemsHtml(o.items)}</tbody>
         <tfoot>
           <tr>
-            <td colspan="2" style="padding:10px;text-align:right;font-weight:bold">Total pagado</td>
+            <td colspan="2" style="padding:10px;text-align:right;font-weight:bold">${pendingTransfer ? 'Total a transferir' : 'Total pagado'}</td>
             <td style="padding:10px;text-align:right;font-size:18px"><strong>${money(o.amountPaid ?? o.total)}</strong></td>
           </tr>
         </tfoot>
       </table>
+
+      ${
+        pendingTransfer
+          ? `<h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Datos para transferir</h3>
+             ${bankTransferHtml()}
+             <p style="margin:14px 0;padding:12px;background:#fff7ed;border-left:3px solid #f59e0b;font-size:14px">
+               📲 Cuando hagas la transferencia, enviá el comprobante por WhatsApp al
+               <a href="${CONTACT.whatsappUrl}" style="color:#111"><strong>${CONTACT.whatsappDisplay}</strong></a>
+               para que empecemos a producir tu pedido.
+             </p>`
+          : ''
+      }
 
       <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Entrega</h3>
       <table style="width:100%;border-collapse:collapse;font-size:14px">
@@ -281,9 +340,13 @@ function buildCustomerEmailHtml(o) {
         }
       </table>
 
-      <p style="margin:16px 0;padding:12px;background:#f0fdf4;border-left:3px solid #16a34a;font-size:14px">
-        ${esc(customerTimeline(o))}
-      </p>
+      ${
+        pendingTransfer
+          ? ''
+          : `<p style="margin:16px 0;padding:12px;background:#f0fdf4;border-left:3px solid #16a34a;font-size:14px">
+               ${esc(customerTimeline(o))}
+             </p>`
+      }
 
       <p style="margin:16px 0 0;font-size:14px;color:#444">
         ¿Dudas o cambios? Escribinos:<br>
@@ -302,20 +365,29 @@ function buildCustomerEmailHtml(o) {
 function buildCustomerEmailText(o) {
   const saludo = firstName(o) ? `¡Hola ${firstName(o)}!` : '¡Hola!';
   const esRetiro = /retiro/i.test(String(o.shippingMethod || ''));
+  const pendingTransfer = isPendingTransfer(o);
   return `${saludo} Recibimos tu pedido — EPICALCOS
 
-Tu pago fue aprobado y ya estamos preparando todo.
+${
+  pendingTransfer
+    ? 'Ahora necesitamos que hagas la transferencia y nos envíes el comprobante para pasar a producción.'
+    : 'Tu pago fue aprobado y ya estamos preparando todo.'
+}
 Número de pedido: ${o.orderId}
 
 TU PEDIDO
 ${itemsText(o.items)}
 
-Total pagado: ${money(o.amountPaid ?? o.total)}
-
+${pendingTransfer ? 'Total a transferir' : 'Total pagado'}: ${money(o.amountPaid ?? o.total)}
+${
+  pendingTransfer
+    ? `\nDATOS PARA TRANSFERIR\n${bankTransferText()}\n\nCuando hagas la transferencia, enviá el comprobante por WhatsApp al ${CONTACT.whatsappDisplay} para que empecemos a producir tu pedido.\n`
+    : ''
+}
 ENTREGA
   Método: ${o.shippingMethod}
 ${esRetiro ? '' : `  Dirección: ${o.address}\n  Ciudad: ${o.city} (${o.province}) — CP ${o.zipCode}\n`}
-${customerTimeline(o)}
+${pendingTransfer ? '' : customerTimeline(o)}
 
 ¿Dudas o cambios? Escribinos:
   WhatsApp: ${CONTACT.whatsappDisplay} (${CONTACT.whatsappUrl})

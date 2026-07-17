@@ -8,7 +8,7 @@ import Breadcrumbs from '../components/Breadcrumbs.jsx';
 const EDITABLE = new Set(['sticker', 'fixed']);
 
 export default function Cart() {
-  const { items, setQty, removeItem, subtotal, clear, bulkActive, unitsToBulk, bulkSavings } = useCart();
+  const { items, setQty, removeItem, subtotal, clear, bulkEligible, unitsToBulk, bulkSavings } = useCart();
   const navigate = useNavigate();
 
   useSeo({ title: 'Carrito', description: 'Revisá tu pedido antes de pagar con Mercado Pago.' });
@@ -38,13 +38,13 @@ export default function Cart() {
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Tu carrito</h1>
 
         {/* Banner de descuento por volumen */}
-        {bulkActive ? (
+        {bulkEligible ? (
           <div className="mt-4 rounded-xl p-3 text-sm border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
-            🎉 ¡10% de descuento por volumen aplicado! Estás ahorrando {formatPrice(bulkSavings)}.
+            🎉 Ya llegaste a 10 calcos: pagando por <strong>transferencia bancaria</strong> ahorrás {formatPrice(bulkSavings)} (10% off).
           </div>
         ) : unitsToBulk > 0 ? (
           <div className="mt-4 rounded-xl p-3 text-sm border border-white/10 bg-white/5 text-white/70">
-            Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más y obtené <strong className="text-white">10% off</strong> en los calcos sueltos.
+            Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más y obtené <strong className="text-white">10% off</strong> en los calcos sueltos pagando por transferencia.
           </div>
         ) : null}
 
@@ -97,7 +97,7 @@ export default function Cart() {
             </div>
             {bulkSavings > 0 && (
               <div className="flex justify-between text-emerald-400 text-sm mb-2">
-                <span>Descuento 10%</span><span>incluido</span>
+                <span>10% off por transferencia</span><span>-{formatPrice(bulkSavings)}</span>
               </div>
             )}
             <div className="flex justify-between text-white/70 mb-2">
@@ -111,7 +111,7 @@ export default function Cart() {
               Ir al checkout →
             </button>
             <p className="text-xs text-white/50 mt-3 text-center">
-              🔒 Vas a pagar de forma segura con Mercado Pago.
+              🔒 Pagás con Mercado Pago o transferencia bancaria — lo elegís en el checkout.
             </p>
           </aside>
         </div>

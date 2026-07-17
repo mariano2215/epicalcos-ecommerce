@@ -27,12 +27,12 @@ export const contact = {
 export const shipping = {
   /** Envío gratis en Rosario a partir de este monto */
   freeShippingThresholdRosario: 50000,
-  /** Costo de envío dentro de Rosario bajo el mínimo */
-  costRosario: 3500,
+  /** Costo de envío dentro de Rosario bajo el mínimo (motomensajería) */
+  costRosario: 4500,
   /** Costo de envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) */
   costNearby: 5000,
-  /** Costo de envío al resto del país */
-  costInterior: 8000,
+  /** Costo de envío al resto del país (Correo Argentino) */
+  costInterior: 8500,
   /** Texto para retiro */
   pickupLabel: 'Coordinamos retiro por WhatsApp',
   /** Plazos de producción/entrega */
@@ -102,9 +102,9 @@ export function shippingZone(city, province) {
 /**
  * Calcula el costo de envío en pesos según método, subtotal y destino.
  * - retiro → 0 (gratis)
- * - envío a Rosario → $3.500 (gratis desde $50.000 de subtotal)
+ * - envío a Rosario (motomensajería) → $4.500 (gratis desde $50.000 de subtotal)
  * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → $5.000
- * - envío al resto del país → $8.000
+ * - envío al resto del país (Correo Argentino) → $8.500
  * @param {{ method: string, subtotal?: number, city?: string, province?: string }} opts
  * @returns {number}
  */
@@ -136,6 +136,15 @@ export const order = {
   /** Pedido mínimo: 10 calcos por pedido (todos los packs ya cumplen por defecto) */
   minimumCalcos: 10,
   paymentMethods: ['Mercado Pago', 'Transferencia bancaria']
+};
+
+/** Datos para pagar por transferencia bancaria (se muestran en el checkout y el mail de confirmación). */
+export const bankTransfer = {
+  cvu: '0000003100088847424287',
+  alias: 'epicalcos.mp',
+  titular: 'MARIANO ALEJANDRO JESUS CALANDRA',
+  /** Número de WhatsApp para enviar el comprobante (mismo que contact.whatsapp). */
+  receiptWhatsapp: '3416806675'
 };
 
 export const announcements = [

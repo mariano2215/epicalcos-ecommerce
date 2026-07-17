@@ -17,13 +17,13 @@ export default function Envios() {
       <h2>Zonas y costos</h2>
       <ul>
         <li>
-          <strong>Envío en Rosario:</strong> $3.500. <strong>Gratis</strong> en compras desde $50.000.
+          <strong>Envío en Rosario (motomensajería):</strong> $4.500. <strong>Gratis</strong> en compras desde $50.000.
         </li>
         <li>
           <strong>Ciudades próximas:</strong> $5.000 (Funes, Granadero Baigorria y Villa Gobernador Gálvez).
         </li>
         <li>
-          <strong>Resto del país:</strong> $8.000 a domicilio (vía correo o plataforma logística).
+          <strong>Resto del país (Correo Argentino):</strong> $8.500 a domicilio.
         </li>
         <li>
           <strong>Retiro en mano:</strong> sin costo. Coordinamos lugar y horario por WhatsApp.

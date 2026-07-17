@@ -4,7 +4,7 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 const EDITABLE = new Set(['sticker', 'fixed']);
 
 export default function CartDrawer() {
-  const { drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear, bulkActive, unitsToBulk } = useCart();
+  const { drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear, bulkEligible, unitsToBulk } = useCart();
   const navigate = useNavigate();
 
   if (!drawerOpen) return null;
@@ -65,10 +65,10 @@ export default function CartDrawer() {
 
         {items.length > 0 && (
           <div className="p-5 border-t border-white/10 space-y-3">
-            {bulkActive ? (
-              <div className="text-xs text-emerald-400">🎉 10% off por volumen aplicado.</div>
+            {bulkEligible ? (
+              <div className="text-xs text-emerald-400">🎉 10% off pagando por transferencia bancaria.</div>
             ) : unitsToBulk > 0 ? (
-              <div className="text-xs text-white/50">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off.</div>
+              <div className="text-xs text-white/50">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off por transferencia.</div>
             ) : null}
             <div className="flex justify-between text-white/70 text-sm">
               <span>Subtotal</span>
