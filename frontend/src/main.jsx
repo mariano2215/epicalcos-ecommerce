@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { CartProvider } from './context/CartContext.jsx';
+import { getStoredAdvancedMatching } from './lib/advancedMatching.js';
 import './styles/index.css';
 
 // ─── Analytics bootstrap (solo si hay IDs en .env) ───────────────────────────
@@ -44,7 +45,11 @@ if (PIXEL_ID) {
     s.parentNode.insertBefore(t, s);
   })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
   /* eslint-enable */
-  window.fbq('init', PIXEL_ID);
+  // Coincidencias avanzadas: si el usuario ya cargó el checkout en esta sesión,
+  // el init las lleva (necesario para el Purchase al volver de Mercado Pago).
+  const matching = getStoredAdvancedMatching();
+  if (matching) window.fbq('init', PIXEL_ID, matching);
+  else window.fbq('init', PIXEL_ID);
   window.fbq('track', 'PageView');
 }
 

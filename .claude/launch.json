@@ -4,8 +4,25 @@
     {
       "name": "epicalcos-frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "frontend"
+      ],
       "port": 5173
+    },
+    {
+      "name": "epicalcos-app-crm",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "netlify",
+        "dev",
+        "--offline",
+        "--cwd",
+        "/Users/marianocalandra/Documents/Mariano/epicalcos-app"
+      ],
+      "port": 8888
     }
   ]
 }
