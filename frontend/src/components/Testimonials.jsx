@@ -1,3 +1,5 @@
+import Reveal from './Reveal.jsx';
+
 /**
  * Bloque de prueba social — 3 testimonios reales.
  * Reemplazá name, text e image con los datos reales cuando los tengas.
@@ -34,8 +36,8 @@ export default function Testimonials() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          {testimonials.map((t) => (
-            <div key={t.name} className="card-glass p-6 flex flex-col gap-4">
+          {testimonials.map((t, i) => (
+            <Reveal key={t.name} delay={i * 100} className="card-glass p-6 flex flex-col gap-4">
               {t.image ? (
                 <img
                   src={t.image}
@@ -52,7 +54,7 @@ export default function Testimonials() {
                 <div className="font-semibold text-sm">{t.name}</div>
                 <div className="text-white/40 text-xs">{t.label}</div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

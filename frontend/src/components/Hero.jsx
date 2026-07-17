@@ -30,48 +30,40 @@ export default function Hero() {
       <div className="hero-aurora" aria-hidden="true" />
       <StickerField count={14} opacity={0.34} />
 
-      <div className="container-app pt-20 pb-28 md:pt-28 md:pb-36 text-center relative z-10">
-        <span className="badge badge-soft mb-6">🔥 Calcos premium · Resistentes al agua y al sol</span>
+      <div className="container-app pt-8 pb-8 md:pt-10 md:pb-10 text-center relative z-10">
+        <span className="badge badge-soft mb-3 hidden sm:inline-flex">🔥 Calcos premium · Resistentes al agua y al sol</span>
 
-        <h1 className="font-display font-black text-4xl md:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
+        <h1 className="font-display font-black text-2xl md:text-4xl lg:text-5xl leading-[1.05] tracking-tight">
           <RotatingHeadline />
         </h1>
 
-        <p className="mt-5 max-w-2xl mx-auto text-white/70 text-lg">
-          Para fans de anime, fútbol, series y todo lo que te gusta personalizar. Miles de diseños en
-          99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
+        <p className="mt-2 max-w-2xl mx-auto text-white/70 text-sm md:text-base hidden sm:block">
+          Miles de diseños en 99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
         </p>
 
         {/* Search card */}
-        <form onSubmit={onSearch} className="mt-10 card-glass max-w-2xl mx-auto p-3 flex items-center gap-2">
-          <span className="pl-3 text-white/50" aria-hidden>🔎</span>
+        <form onSubmit={onSearch} className="mt-3 card-glass max-w-md mx-auto p-1 flex items-center gap-1">
+          <span className="pl-2 text-white/50 text-sm" aria-hidden>🔎</span>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscá una categoría: anime, fútbol, memes…"
-            className="flex-1 min-w-0 bg-transparent outline-none px-2 py-3 text-white placeholder:text-white/40"
+            placeholder="Buscá una categoría…"
+            className="flex-1 min-w-0 bg-transparent outline-none px-1.5 py-1.5 text-sm text-white placeholder:text-white/40"
             aria-label="Buscar categorías"
           />
-          <button type="submit" className="btn-primary shrink-0 !py-3 !px-4 sm:!px-5">Buscar</button>
+          <button type="submit" className="btn-primary shrink-0 !py-1.5 !px-3 !text-xs">Buscar</button>
         </form>
 
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
           {quickTags.map((t) => (
             <button
               key={t.slug}
               onClick={() => navigate(`/categoria/${t.slug}`)}
-              className="btn-ghost !text-white/70 border border-white/10 hover:border-white/20"
+              className="btn-ghost !text-white/60 !text-xs !py-1 !px-2.5 border border-white/10 hover:border-white/20"
             >
               #{t.label}
             </button>
           ))}
-        </div>
-
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <button onClick={() => navigate('/categorias')} className="btn-primary">Ver categorías →</button>
-          <button onClick={() => navigate('/personalizados')} className="btn-secondary">
-            Personalizados
-          </button>
         </div>
       </div>
     </section>

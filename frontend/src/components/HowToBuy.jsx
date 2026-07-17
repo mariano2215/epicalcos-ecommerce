@@ -1,8 +1,10 @@
+import Reveal from './Reveal.jsx';
+
 const steps = [
-  { n: '1', icon: '🎨', t: 'Elegí tus diseños', d: 'Navegá las categorías o usá el buscador.' },
-  { n: '2', icon: '🛒', t: 'Agregalos al carrito', d: 'Sumá la cantidad que quieras. Mínimo 10 calcos por pedido.' },
-  { n: '3', icon: '🔒', t: 'Pagá seguro online', d: 'Checkout con Mercado Pago. Tarjetas, efectivo o transferencia.' },
-  { n: '4', icon: '📦', t: 'Recibí o retirás', d: 'Producción 2 a 3 días hábiles en Rosario, 7 a 10 al resto del país.' }
+  { n: '1', icon: '🎨', t: 'Seleccioná las calcos y el tamaño', d: 'Elegí tus diseños favoritos y el tamaño de cada uno (4, 6 o 9 cm).' },
+  { n: '2', icon: '🛒', t: 'Andá al carrito y completá tus datos', d: 'Revisá tu pedido y rellená el formulario con tus datos de envío.' },
+  { n: '3', icon: '🔒', t: 'Pagá por Mercado Pago', d: 'Checkout 100% seguro. Tarjetas, efectivo o transferencia.' },
+  { n: '4', icon: '📦', t: 'Esperá tu pedido o retiralo', d: 'Producción 2 a 3 días hábiles en Rosario, 7 a 10 al resto del país.' }
 ];
 
 export default function HowToBuy() {
@@ -17,15 +19,15 @@ export default function HowToBuy() {
           </p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((s) => (
-            <div key={s.n} className="card-glass p-6 relative">
+          {steps.map((s, i) => (
+            <Reveal key={s.n} delay={i * 100} className="card-glass p-6 relative">
               <div className="absolute top-3 right-4 font-display font-extrabold text-4xl text-white/10">
                 {s.n}
               </div>
-              <div className="text-3xl mb-3">{s.icon}</div>
+              <div className="text-5xl mb-3 text-center">{s.icon}</div>
               <h3 className="font-semibold text-white mb-1">{s.t}</h3>
               <p className="text-white/60 text-sm">{s.d}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

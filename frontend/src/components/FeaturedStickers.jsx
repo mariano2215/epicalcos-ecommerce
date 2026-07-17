@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import StickerCard from './StickerCard.jsx';
+import Reveal from './Reveal.jsx';
 import { CATEGORIES } from '../data/categories.js';
 
 const TABS = [
   { slug: 'argentina',  label: '🇦🇷 Argentina' },
   { slug: 'campeones',  label: '🏆 Campeones' },
-  { slug: 'futbol',     label: '⚽ Fútbol' },
-  { slug: 'anime',      label: '🌸 Anime' },
-  { slug: 'disney',     label: '🏰 Disney' },
-  { slug: 'memes',      label: '😂 Memes' },
 ];
 
 const SORT_OPTIONS = [
@@ -114,9 +111,11 @@ export default function FeaturedStickers() {
             ))}
           </div>
         ) : (
-          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-            {displayed.map((s) => (
-              <StickerCard key={s.id} sticker={s} />
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+            {displayed.map((s, i) => (
+              <Reveal key={s.id} delay={i * 60} className="h-full">
+                <StickerCard sticker={s} />
+              </Reveal>
             ))}
           </div>
         )}

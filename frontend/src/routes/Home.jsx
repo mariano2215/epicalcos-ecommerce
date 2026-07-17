@@ -7,10 +7,12 @@ import Testimonials from '../components/Testimonials.jsx';
 import HowToBuy from '../components/HowToBuy.jsx';
 import FAQ from '../components/FAQ.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
+import Reveal from '../components/Reveal.jsx';
 import { CATEGORIES, SPECIALS } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
 
 const FEATURED_SLUGS = ['anime', 'futbol', 'disney', 'pokemon', 'memes', 'gamer', 'superheroes', 'cute', 'autos-y-motos', 'musica'];
+const SERVICE_SLUGS = ['personalizados', 'mayorista', 'tatuajes', 'polaroid'];
 
 export default function Home() {
   const [catalog, setCatalog] = useState({});
@@ -29,66 +31,37 @@ export default function Home() {
   }, []);
 
   const featured = CATEGORIES.filter((c) => FEATURED_SLUGS.includes(c.slug) && catalog[c.slug]).slice(0, 10);
+  const services = SPECIALS.filter((s) => SERVICE_SLUGS.includes(s.slug));
 
   return (
     <>
       <Hero />
 
-      {/* Caminos de compra — segmentación de intención */}
-      <section className="py-12">
+      <FeaturedStickers />
+
+      {/* Servicios: personalizados, mayorista, tatuajes, polaroid */}
+      <section className="py-10">
         <div className="container-app">
-          <div className="text-center mb-8">
-            <span className="badge badge-soft mb-3">¿Qué estás buscando?</span>
-            <h2 className="font-display font-extrabold text-3xl md:text-4xl">Encontrá tu camino</h2>
+          <div className="mb-6">
+            <span className="badge badge-soft mb-2">Además del catálogo</span>
+            <h2 className="font-display font-extrabold text-3xl md:text-4xl">Packs y servicios</h2>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Catálogo */}
-            <Link to="/categorias" className="card-glass card-glass-hover p-7 flex flex-col gap-4 relative overflow-hidden group">
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-brand-blue to-brand-fuchsia" />
-              <div className="text-4xl">🏷️</div>
-              <div>
-                <div className="font-display font-extrabold text-xl mb-1">Comprar del catálogo</div>
-                <div className="text-white/60 text-sm leading-relaxed">
-                  Más de 6.000 diseños en 99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
-                </div>
-              </div>
-              <span className="btn-primary self-start mt-auto">Ver categorías →</span>
-            </Link>
-
-            {/* Personalizados */}
-            <Link to="/personalizados" className="card-glass card-glass-hover p-7 flex flex-col gap-4 relative overflow-hidden group">
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-brand-fuchsia to-brand-orange" />
-              <div className="text-4xl">✏️</div>
-              <div>
-                <div className="font-display font-extrabold text-xl mb-1">Calco personalizado</div>
-                <div className="text-white/60 text-sm leading-relaxed">
-                  Traé tu diseño o tu foto y lo imprimimos. Listo en 48-72 hs. Ideal para regalar, tu mascota, tu banda o lo que se te ocurra.
-                </div>
-              </div>
-              <span className="btn-secondary self-start mt-auto">Personalizar →</span>
-            </Link>
-
-            {/* Negocio / mayorista */}
-            <Link to="/negocio" className="card-glass card-glass-hover p-7 flex flex-col gap-4 relative overflow-hidden group">
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-brand-orange to-brand-blue" />
-              <div className="text-4xl">🏢</div>
-              <div>
-                <div className="font-display font-extrabold text-xl mb-1">Para tu marca o negocio</div>
-                <div className="text-white/60 text-sm leading-relaxed">
-                  Calcos con tu logo para merch, packaging o reventa. Desde <strong className="text-white">$400/unidad en volumen</strong>. Cotización sin compromiso.
-                </div>
-              </div>
-              <span className="btn-ghost self-start mt-auto border border-white/20">Cotizar →</span>
-            </Link>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+            {services.map((s, i) => (
+              <Reveal key={s.slug} delay={i * 80} className="h-full">
+                <Link to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] h-full relative overflow-hidden">
+                  <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
+                  <div className="relative text-5xl text-center">{s.emoji}</div>
+                  <div className="relative">
+                    <div className="font-display font-extrabold leading-tight">{s.name}</div>
+                    <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
+                  </div>
+                </Link>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
-
-      <Benefits />
-
-      <FeaturedStickers />
-
-      <Testimonials />
 
       {/* Categorías destacadas */}
       <section className="py-10">
@@ -102,68 +75,33 @@ export default function Home() {
           </div>
 
           {featured.length === 0 ? (
-            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-              {CATEGORIES.slice(0, 10).map((c) => (
-                <Link key={c.slug} to={`/categoria/${c.slug}`} className="card-glass card-glass-hover p-5">
-                  <div className="text-2xl mb-2">{c.emoji}</div>
-                  <div className="font-semibold text-sm">{c.name}</div>
-                </Link>
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+              {CATEGORIES.slice(0, 10).map((c, i) => (
+                <Reveal key={c.slug} delay={i * 60} className="h-full">
+                  <Link to={`/categoria/${c.slug}`} className="card-glass card-glass-hover p-5 h-full block">
+                    <div className="text-4xl mb-2 text-center">{c.emoji}</div>
+                    <div className="font-semibold text-sm">{c.name}</div>
+                  </Link>
+                </Reveal>
               ))}
             </div>
           ) : (
-            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {featured.map((c) => (
-                <CategoryCard key={c.slug} slug={c.slug} name={c.name} emoji={c.emoji} cover={catalog[c.slug]?.cover} count={catalog[c.slug]?.count} />
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {featured.map((c, i) => (
+                <Reveal key={c.slug} delay={i * 60} className="h-full">
+                  <CategoryCard slug={c.slug} name={c.name} emoji={c.emoji} cover={catalog[c.slug]?.cover} count={catalog[c.slug]?.count} />
+                </Reveal>
               ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* Especiales — dividido en B2C y B2B */}
-      <section className="py-10">
-        <div className="container-app space-y-8">
-          {/* Para vos */}
-          <div>
-            <div className="mb-4">
-              <span className="badge badge-soft mb-2">Para vos</span>
-              <h2 className="font-display font-extrabold text-3xl md:text-4xl">Packs y servicios</h2>
-            </div>
-            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3">
-              {SPECIALS.filter((s) => ['personalizados', 'tatuajes', 'polaroid'].includes(s.slug)).map((s) => (
-                <Link key={s.slug} to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] relative overflow-hidden">
-                  <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
-                  <div className="relative text-3xl">{s.emoji}</div>
-                  <div className="relative">
-                    <div className="font-display font-extrabold leading-tight">{s.name}</div>
-                    <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+      <HowToBuy />
 
-          {/* Para tu marca o negocio */}
-          <div>
-            <div className="mb-4">
-              <span className="badge badge-soft mb-2">Para tu marca o negocio</span>
-              <h2 className="font-display font-extrabold text-2xl md:text-3xl">Volumen y B2B</h2>
-            </div>
-            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3">
-              {SPECIALS.filter((s) => ['mayorista', 'negocio'].includes(s.slug)).map((s) => (
-                <Link key={s.slug} to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] relative overflow-hidden">
-                  <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
-                  <div className="relative text-3xl">{s.emoji}</div>
-                  <div className="relative">
-                    <div className="font-display font-extrabold leading-tight">{s.name}</div>
-                    <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <Benefits />
+
+      <Testimonials />
 
       {/* Banner descuento por volumen */}
       <section className="py-10">
@@ -183,7 +121,6 @@ export default function Home() {
         </div>
       </section>
 
-      <HowToBuy />
       <FAQ />
     </>
   );
