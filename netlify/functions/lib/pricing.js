@@ -26,7 +26,7 @@ const FIXED_PRICES = {
 
 // --- Espejo de frontend/src/config/site.js (envío) ---
 const FREE_SHIPPING_THRESHOLD_ROSARIO = 50000;
-const SHIPPING_COST = { rosario: 4500, nearby: 5000, interior: 8500 }; // rosario=motomensajería, interior=Correo Argentino
+const SHIPPING_COST = { rosario: 4500, nearby: 6500, interior: 8500 }; // rosario=motomensajería, interior=Correo Argentino
 const NEARBY_CITIES = ['funes', 'granadero baigorria', 'villa gobernador galvez'];
 
 // --- Límites anti-abuso del payload ---

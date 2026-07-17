@@ -34,7 +34,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Hacen envíos?',
-    a: 'Sí. En Rosario por motomensajería: $4.500, gratis desde $50.000. Ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez): $5.000. Al resto del país por Correo Argentino: $8.500. También podés retirar en mano sin costo, coordinamos por WhatsApp.'
+    a: 'Sí. En Rosario por motomensajería: $4.500, gratis desde $50.000. Ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez): $6.500. Al resto del país por Correo Argentino: $8.500. También podés retirar en mano sin costo, coordinamos por WhatsApp.'
   },
   {
     tag: 'general',

@@ -20,7 +20,7 @@ export default function Envios() {
           <strong>Envío en Rosario (motomensajería):</strong> $4.500. <strong>Gratis</strong> en compras desde $50.000.
         </li>
         <li>
-          <strong>Ciudades próximas:</strong> $5.000 (Funes, Granadero Baigorria y Villa Gobernador Gálvez).
+          <strong>Ciudades próximas:</strong> $6.500 (Funes, Granadero Baigorria y Villa Gobernador Gálvez).
         </li>
         <li>
           <strong>Resto del país (Correo Argentino):</strong> $8.500 a domicilio.

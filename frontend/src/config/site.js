@@ -30,7 +30,7 @@ export const shipping = {
   /** Costo de envío dentro de Rosario bajo el mínimo (motomensajería) */
   costRosario: 4500,
   /** Costo de envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) */
-  costNearby: 5000,
+  costNearby: 6500,
   /** Costo de envío al resto del país (Correo Argentino) */
   costInterior: 8500,
   /** Texto para retiro */
@@ -69,7 +69,7 @@ export const provinces = [
 ];
 
 /**
- * Ciudades de Santa Fe con tarifa intermedia ("ciudades próximas", $5000).
+ * Ciudades de Santa Fe con tarifa intermedia ("ciudades próximas", $6500).
  * Se comparan normalizadas (minúsculas y sin acentos).
  */
 const nearbyCities = ['funes', 'granadero baigorria', 'villa gobernador galvez'];
@@ -103,7 +103,7 @@ export function shippingZone(city, province) {
  * Calcula el costo de envío en pesos según método, subtotal y destino.
  * - retiro → 0 (gratis)
  * - envío a Rosario (motomensajería) → $4.500 (gratis desde $50.000 de subtotal)
- * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → $5.000
+ * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → $6.500
  * - envío al resto del país (Correo Argentino) → $8.500
  * @param {{ method: string, subtotal?: number, city?: string, province?: string }} opts
  * @returns {number}
