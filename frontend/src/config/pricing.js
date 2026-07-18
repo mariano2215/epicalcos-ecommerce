@@ -22,13 +22,14 @@ export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
 
 /**
  * Cupones de descuento sobre calcos sueltos (mismo alcance que el descuento por
- * volumen: solo type === 'sticker'). Si el carrito califica para el descuento
- * por transferencia Y tiene un cupón válido, se aplica el MAYOR de los dos
- * (nunca se suman/multiplican).
+ * volumen: solo type === 'sticker'). El cupón es ACUMULABLE con el descuento
+ * por transferencia: los descuentos se SUMAN (ej. transferencia 10 % + EPICA10
+ * 10 % = 20 % off), con un tope de seguridad (MAX_STICKER_DISCOUNT).
  */
 export const COUPONS = {
   EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF' }
 };
+export const MAX_STICKER_DISCOUNT = 0.9;
 
 export function findCoupon(code) {
   return COUPONS[String(code || '').trim().toUpperCase()] || null;

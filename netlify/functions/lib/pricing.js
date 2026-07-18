@@ -16,9 +16,11 @@ const BULK_DISCOUNT = 0.1;
 const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia'; // el 10 % solo aplica pagando por transferencia
 
 // Cupones de descuento (mismo alcance que el descuento por volumen: solo
-// calcos sueltos). Si aplican los dos (transferencia + cupón), se usa el
-// MAYOR de los dos, nunca se suman.
+// calcos sueltos). El cupón es ACUMULABLE con el 10 % por transferencia: los
+// descuentos se SUMAN (ej. transferencia 10 % + EPICA10 10 % = 20 % off),
+// con un tope de seguridad para no llegar a precio negativo.
 const COUPONS = { EPICA10: 0.1 };
+const MAX_STICKER_DISCOUNT = 0.9;
 const WHOLESALE_QTY = 100; // pack mayorista: exactamente 100 calcos, 25 % off
 const WHOLESALE_DISCOUNT = 0.25;
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
@@ -168,11 +170,11 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     .reduce((a, i) => a + i.quantity, 0);
   const bulkDiscount = stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
 
-  // Cupón: si es válido, se usa el MAYOR entre su descuento y el de volumen
-  // (nunca se suman). No requiere umbral de cantidad ni medio de pago.
+  // Cupón: ACUMULABLE con el descuento por transferencia (se SUMAN). No
+  // requiere umbral de cantidad ni medio de pago.
   const normalizedCoupon = String(couponCode || '').trim().toUpperCase();
   const couponDiscount = COUPONS[normalizedCoupon] || 0;
-  const stickerDiscountRate = Math.max(bulkDiscount, couponDiscount);
+  const stickerDiscountRate = Math.min(bulkDiscount + couponDiscount, MAX_STICKER_DISCOUNT);
   const couponApplied = couponDiscount > 0 ? normalizedCoupon : null;
 
   const priced = [];

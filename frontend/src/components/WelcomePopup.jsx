@@ -5,7 +5,11 @@ import { trackLeadCapture } from '../lib/analytics.js';
 import { WELCOME_COUPON_STORAGE_KEY } from '../config/pricing.js';
 
 const SEEN_KEY = 'epicalcos.welcomePopup.seen';
-const SHOW_DELAY_MS = 4500;
+// El popup se dispara cuando, scrolleando, se llega a la sección de categorías
+// destacadas del Home (esta id la pone Home.jsx). En páginas que no la tienen,
+// cae al fallback de scroll (aparece tras bajar un poco).
+const TRIGGER_ID = 'categorias-destacadas';
+const SCROLL_FALLBACK_PX = 600;
 const HIDDEN_ON = ['/checkout', '/carrito'];
 
 export default function WelcomePopup() {
@@ -25,8 +29,29 @@ export default function WelcomePopup() {
     if (seen) return;
     if (HIDDEN_ON.includes(location.pathname)) return;
 
-    const t = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
-    return () => clearTimeout(t);
+    let done = false;
+    const cleanup = () => window.removeEventListener('scroll', maybeShow);
+    function trigger() {
+      if (done) return;
+      done = true;
+      cleanup();
+      setVisible(true);
+    }
+
+    // En el Home aparece apenas la sección de categorías entra en el viewport;
+    // en páginas sin esa sección, cae al fallback de bajar un poco.
+    function maybeShow() {
+      const target = document.getElementById(TRIGGER_ID);
+      if (target) {
+        if (target.getBoundingClientRect().top <= window.innerHeight * 0.9) trigger();
+      } else if (window.scrollY > SCROLL_FALLBACK_PX) {
+        trigger();
+      }
+    }
+
+    window.addEventListener('scroll', maybeShow, { passive: true });
+    maybeShow(); // por si ya está en viewport al montar
+    return cleanup;
     // Solo evaluamos al montar la app (no reabrir al navegar entre páginas).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

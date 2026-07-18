@@ -63,8 +63,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categorías destacadas */}
-      <section className="py-10">
+      {/* Categorías destacadas — id usado por WelcomePopup para dispararse al llegar acá con el scroll */}
+      <section id="categorias-destacadas" className="py-10 scroll-mt-24">
         <div className="container-app">
           <div className="flex items-end justify-between mb-6">
             <div>
