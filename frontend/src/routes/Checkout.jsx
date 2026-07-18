@@ -5,6 +5,7 @@ import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
 import { calculateShipping } from '../config/site.js';
+import { findCoupon, WELCOME_COUPON_STORAGE_KEY } from '../config/pricing.js';
 import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
@@ -31,12 +32,47 @@ export default function Checkout() {
   const [errorMsg, setErrorMsg] = useState('');
   const [ship, setShip] = useState({ method: 'envio', city: 'Rosario', province: 'Santa Fe' });
   const [paymentMethod, setPaymentMethod] = useState('mercadopago');
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState('');
+  const [couponError, setCouponError] = useState('');
   const isPickup = ship.method === 'retiro';
   const isTransfer = paymentMethod === 'transferencia';
 
-  // Precios reales según el medio de pago elegido: el 10% off por volumen
-  // solo se aplica pagando por transferencia (ver CartContext.pricedItems).
-  const items = pricedItems(paymentMethod);
+  // Si vino del popup de bienvenida, lo aplicamos solo automáticamente.
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(WELCOME_COUPON_STORAGE_KEY);
+      if (stored && findCoupon(stored)) {
+        setCouponInput(stored);
+        setAppliedCoupon(stored.trim().toUpperCase());
+      }
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyCoupon = () => {
+    const coupon = findCoupon(couponInput);
+    if (!coupon) {
+      setAppliedCoupon('');
+      setCouponError(couponInput.trim() ? 'Ese cupón no existe o venció.' : '');
+      return;
+    }
+    setAppliedCoupon(couponInput.trim().toUpperCase());
+    setCouponError('');
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon('');
+    setCouponInput('');
+    setCouponError('');
+  };
+
+  // Precios reales según el medio de pago y el cupón aplicado: a los calcos
+  // sueltos se les aplica el MAYOR entre el 10% por transferencia y el cupón
+  // (ver CartContext.pricedItems) — nunca se suman.
+  const items = pricedItems(paymentMethod, appliedCoupon);
   const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
   const shippingCost = calculateShipping({
     method: ship.method,
@@ -88,14 +124,14 @@ export default function Checkout() {
       const fullShipping = { ...shipping, comments: comments || undefined, cost: shippingCost };
 
       if (method === 'transferencia') {
-        const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping });
+        const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
         if (!orderId) throw new Error('Respuesta inválida del backend');
         clear();
         navigate(`/pago-transferencia?ref=${encodeURIComponent(orderId)}`);
         return;
       }
 
-      const { init_point } = await createPreference({ items, payer, shipping: fullShipping });
+      const { init_point } = await createPreference({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
       if (!init_point) throw new Error('Respuesta inválida del backend');
       window.location.href = init_point;
     } catch (err) {
@@ -144,6 +180,32 @@ export default function Checkout() {
             </div>
 
             <div className="border-t border-white/10 my-4" />
+
+            <div className="mb-3">
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between gap-2 text-sm rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2">
+                  <span className="text-emerald-400">🎟️ Cupón <strong>{appliedCoupon}</strong> aplicado</span>
+                  <button type="button" onClick={removeCoupon} className="text-white/50 hover:text-white text-xs">Quitar</button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value)}
+                      placeholder="Código de descuento"
+                      className="input-dark !py-2 text-sm flex-1"
+                    />
+                    <button type="button" onClick={applyCoupon} className="btn-secondary !py-2 !px-3 text-sm shrink-0">
+                      Aplicar
+                    </button>
+                  </div>
+                  {couponError && <div className="text-xs text-brand-pink mt-1.5">{couponError}</div>}
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-between text-white/70 text-sm mb-1.5">
               <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
             </div>

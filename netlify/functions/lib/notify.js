@@ -587,6 +587,105 @@ export async function createNotionRow(o) {
 }
 
 /**
+ * Notifica internamente (mail a EPICALCOS) que el popup de bienvenida capturó
+ * un mail nuevo. No-op si falta RESEND_API_KEY. Nunca lanza.
+ * @param {string} email
+ */
+export async function sendLeadEmail(email) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log('[notify] RESEND_API_KEY no configurada — se omite el mail de lead.');
+    return { sent: false, reason: 'no_api_key' };
+  }
+
+  const to = (process.env.NOTIFY_EMAIL_TO || DEFAULT_TO)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        reply_to: email,
+        subject: `📧 Nuevo lead (popup 10% OFF) — ${email}`,
+        html: `<p>Alguien dejó su mail en el popup de bienvenida.</p><p><strong>Mail:</strong> ${esc(email)}</p><p>Se le mandó el cupón <strong>EPICA10</strong> (si el remitente está verificado en Resend).</p>`,
+        text: `Nuevo lead (popup 10% OFF)\nMail: ${email}\nCupón enviado: EPICA10`
+      })
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      console.error('[notify] Resend (lead) respondió', res.status, detail);
+      return { sent: false, reason: `resend_${res.status}`, detail };
+    }
+    console.log('[notify] mail de lead enviado a', to.join(', '));
+    return { sent: true };
+  } catch (err) {
+    console.error('[notify] error enviando mail de lead:', err?.message || err);
+    return { sent: false, reason: 'exception', detail: err?.message };
+  }
+}
+
+/**
+ * Envía el cupón al mail que dejó en el popup. Mismo requisito que
+ * sendCustomerEmail: necesita NOTIFY_EMAIL_FROM con dominio propio verificado
+ * (con el default onboarding@resend.dev, Resend no permite mandar a terceros).
+ * El código igual se muestra en pantalla al instante, así que esto es un
+ * "además" — no-op silencioso si no está configurado. Nunca lanza.
+ * @param {string} email
+ * @param {string} code
+ */
+export async function sendLeadCouponEmail(email, code) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { sent: false, reason: 'no_api_key' };
+
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+  if (from.includes('resend.dev')) {
+    return { sent: false, reason: 'unverified_sender' };
+  }
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        reply_to: CONTACT.email,
+        subject: `🎁 Tu 10% OFF en EPICALCOS: ${code}`,
+        html: `
+          <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
+            <div style="background:#111;color:#fff;padding:18px 24px;border-radius:12px 12px 0 0">
+              <h1 style="margin:0;font-size:22px;letter-spacing:1px">EPICALCOS</h1>
+            </div>
+            <div style="padding:24px;border:1px solid #eee;border-top:0;border-radius:0 0 12px 12px">
+              <h2 style="margin:0 0 10px">🎁 ¡Gracias por sumarte!</h2>
+              <p style="font-size:14px;color:#444">Usá este código en tu próxima compra y llevate 10% OFF:</p>
+              <p style="font-size:28px;font-weight:800;letter-spacing:2px;background:#f5f5f5;padding:14px;text-align:center;border-radius:10px;margin:16px 0">${esc(code)}</p>
+              <p style="font-size:13px;color:#666">Lo cargás en el campo "Código de descuento" del checkout, en epicalcos.com.</p>
+            </div>
+          </div>`,
+        text: `¡Gracias por sumarte a EPICALCOS!\n\nTu código de 10% OFF: ${code}\n\nUsalo en el checkout de epicalcos.com.`
+      })
+    });
+    if (!res.ok) return { sent: false, reason: `resend_${res.status}` };
+    return { sent: true };
+  } catch (err) {
+    return { sent: false, reason: 'exception', detail: err?.message };
+  }
+}
+
+/**
  * Dispara todas las notificaciones configuradas. Nunca lanza.
  * @param {object} o vista de pedido (buildOrderView)
  */

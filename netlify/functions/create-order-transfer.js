@@ -56,7 +56,8 @@ export const handler = async (event) => {
     return json(400, { error: 'invalid_json' });
   }
 
-  const { items, payer: rawPayer, shipping: rawShipping } = body;
+  const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon } = body;
+  const couponCode = clip(rawCoupon, 30) || undefined;
 
   const payer = {
     name: clip(rawPayer?.name, 120),
@@ -79,7 +80,7 @@ export const handler = async (event) => {
 
   // Precios y envío: SIEMPRE recalculados en el servidor. paymentMethod
   // 'transferencia' es lo que habilita el 10% off por volumen (ver lib/pricing.js).
-  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'transferencia' });
+  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'transferencia', couponCode });
   if (!order.ok) {
     console.warn('[create-order-transfer] pedido rechazado:', order.error, order.detail || '');
     return json(400, { error: order.error, message: order.detail });

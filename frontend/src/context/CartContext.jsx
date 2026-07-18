@@ -6,7 +6,8 @@ import {
   round,
   BULK_THRESHOLD,
   BULK_DISCOUNT,
-  BULK_DISCOUNT_PAYMENT_METHOD
+  BULK_DISCOUNT_PAYMENT_METHOD,
+  findCoupon
 } from '../config/pricing.js';
 
 const CartContext = createContext(null);
@@ -167,16 +168,19 @@ export function CartProvider({ children }) {
   }, [state.items]);
 
   /**
-   * Recalcula los items con el precio real según el medio de pago elegido en
-   * el checkout: el 10 % por volumen solo se descuenta si paymentMethod es
-   * BULK_DISCOUNT_PAYMENT_METHOD ('transferencia') y el carrito llegó al umbral.
+   * Recalcula los items con el precio real según el medio de pago y el cupón
+   * aplicado en el checkout: a los calcos sueltos se les aplica el MAYOR entre
+   * el 10 % por volumen (solo si paymentMethod es 'transferencia' y el carrito
+   * llegó al umbral) y el descuento del cupón (si es válido). Nunca se suman.
    */
   const pricedItems = useCallback(
-    (paymentMethod) => {
-      const discountActive = derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD;
-      if (!discountActive) return derived.items;
+    (paymentMethod, couponCode) => {
+      const bulkRate = derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
+      const couponRate = findCoupon(couponCode)?.discount || 0;
+      const rate = Math.max(bulkRate, couponRate);
+      if (rate === 0) return derived.items;
       return derived.items.map((i) =>
-        i.type === 'sticker' ? { ...i, price: round(i.basePrice * (1 - BULK_DISCOUNT)) } : i
+        i.type === 'sticker' ? { ...i, price: round(i.basePrice * (1 - rate)) } : i
       );
     },
     [derived]

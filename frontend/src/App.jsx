@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import CartDrawer from './components/CartDrawer.jsx';
+import WelcomePopup from './components/WelcomePopup.jsx';
 import Home from './routes/Home.jsx'; // Home eager (LCP)
 
 // Resto lazy: bajan el initial bundle
@@ -39,6 +40,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <CartDrawer />
+      <WelcomePopup />
       <main className="flex-1">
         <Suspense fallback={<RouteFallback />}>
           <Routes>

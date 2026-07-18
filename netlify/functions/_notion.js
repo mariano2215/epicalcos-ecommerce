@@ -21,6 +21,7 @@ export const ESTADOS = {
   pendiente: 'Pendiente',
   pagado: 'Pagado',
   rechazado: 'Rechazado',
+  lead: 'Lead 10% OFF',
 };
 
 /** Devuelve el token solo si está configurado de verdad (no el placeholder).
@@ -128,6 +129,42 @@ export async function crearLeadEnCRM({ payer, shipping, items, total, orderId })
     return page.id;
   } catch (err) {
     console.error('[notion] crearLeadEnCRM error:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Crea una fila de LEAD (popup de bienvenida "10% OFF por tu mail") en el
+ * mismo CRM de pedidos, distinguible por Estado="Lead 10% OFF". No es un
+ * pedido: no lleva N° de orden ni monto. Nunca lanza. Devuelve el pageId o null.
+ */
+export async function crearLeadNewsletter(email) {
+  if (!getToken()) {
+    console.warn('[notion] NOTION_TOKEN no configurado — salteando CRM (lead)');
+    return null;
+  }
+  try {
+    const page = await notionFetch('/pages', 'POST', {
+      parent: { database_id: DB_ID },
+      properties: {
+        Nombre: { title: [{ text: { content: `Lead: ${email}`.slice(0, 200) } }] },
+        Estado: { select: { name: ESTADOS.lead } },
+        Correo: { email },
+        Observaciones: {
+          rich_text: [
+            {
+              text: {
+                content: `Dejó el mail en el popup de 10% OFF (cupón EPICA10) — ${new Date().toLocaleString('es-AR')}`,
+              },
+            },
+          ],
+        },
+      },
+    });
+    console.log('[notion] lead newsletter creado', page.id, '—', email);
+    return page.id;
+  } catch (err) {
+    console.error('[notion] crearLeadNewsletter error:', err.message);
     return null;
   }
 }

@@ -179,4 +179,10 @@ export function trackSearch(query) {
   debug('search', query);
 }
 
+export function trackLeadCapture(source = 'welcome_popup') {
+  pushDataLayer({ event: 'generate_lead', lead_source: source });
+  pixel('Lead', { content_name: source });
+  debug('generate_lead', source);
+}
+
 export const analyticsConfig = { GTM_ID, GA4_ID, PIXEL_ID };

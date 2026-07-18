@@ -14,6 +14,11 @@ const SIZE_PRICES = { '4cm': 1200, '6cm': 1600, '9cm': 2000 };
 const BULK_THRESHOLD = 10; // desde 10 calcos sueltos TOTALES (combinables), 10 % off
 const BULK_DISCOUNT = 0.1;
 const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia'; // el 10 % solo aplica pagando por transferencia
+
+// Cupones de descuento (mismo alcance que el descuento por volumen: solo
+// calcos sueltos). Si aplican los dos (transferencia + cupón), se usa el
+// MAYOR de los dos, nunca se suman.
+const COUPONS = { EPICA10: 0.1 };
 const WHOLESALE_QTY = 100; // pack mayorista: exactamente 100 calcos, 25 % off
 const WHOLESALE_DISCOUNT = 0.25;
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
@@ -78,17 +83,17 @@ export function shippingMethodLabel(method, city, province) {
  *   sticker:{stickerId}:{size} · pack:{tipo}:{size}:{ts} · negocio:{ts} · fixed:{productId}
  * @param {string} id
  * @param {number} quantity cantidad de la línea (para validar packs)
- * @param {boolean} bulkActive si el carrito llegó al umbral de descuento por volumen
+ * @param {number} stickerDiscountRate descuento a aplicar a calcos sueltos (0 a 1; ya resuelto como el mayor entre volumen+transferencia y cupón)
  * @returns {{ price: number } | { error: string }}
  */
-function expectedUnitPrice(id, quantity, bulkActive) {
+function expectedUnitPrice(id, quantity, stickerDiscountRate) {
   const parts = String(id).split(':');
   const kind = parts[0];
 
   if (kind === 'sticker') {
     const base = SIZE_PRICES[parts[2]];
     if (!base) return { error: `tamaño inválido en "${id}"` };
-    return { price: bulkActive ? round(base * (1 - BULK_DISCOUNT)) : base };
+    return { price: stickerDiscountRate > 0 ? round(base * (1 - stickerDiscountRate)) : base };
   }
 
   if (kind === 'pack') {
@@ -126,12 +131,12 @@ function expectedUnitPrice(id, quantity, bulkActive) {
  * Valida y re-precia un pedido completo con las reglas del servidor.
  * Nunca confía en unit_price ni en shipping.cost del cliente.
  *
- * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object, paymentMethod?: string }} payload
+ * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object, paymentMethod?: string, couponCode?: string }} payload
  * @returns {{ ok: true, items: Array, itemsTotal: number, shippingCost: number,
- *             shippingMethod: string, methodValue: string }
+ *             shippingMethod: string, methodValue: string, couponApplied: string|null }
  *          | { ok: false, error: string, detail?: string }}
  */
-export function validateAndPriceOrder({ items, shipping, paymentMethod }) {
+export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCode }) {
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: 'items_empty' };
   }
@@ -161,11 +166,18 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod }) {
   const stickerUnits = clean
     .filter((i) => i.id.startsWith('sticker:'))
     .reduce((a, i) => a + i.quantity, 0);
-  const bulkActive = stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD;
+  const bulkDiscount = stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
+
+  // Cupón: si es válido, se usa el MAYOR entre su descuento y el de volumen
+  // (nunca se suman). No requiere umbral de cantidad ni medio de pago.
+  const normalizedCoupon = String(couponCode || '').trim().toUpperCase();
+  const couponDiscount = COUPONS[normalizedCoupon] || 0;
+  const stickerDiscountRate = Math.max(bulkDiscount, couponDiscount);
+  const couponApplied = couponDiscount > 0 ? normalizedCoupon : null;
 
   const priced = [];
   for (const item of clean) {
-    const expected = expectedUnitPrice(item.id, item.quantity, bulkActive);
+    const expected = expectedUnitPrice(item.id, item.quantity, stickerDiscountRate);
     if (expected.error) {
       return { ok: false, error: 'item_invalid', detail: expected.error };
     }
@@ -212,6 +224,7 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod }) {
     itemsTotal,
     shippingCost,
     shippingMethod: shippingMethodLabel(methodValue, shipping?.city, shipping?.province),
-    methodValue
+    methodValue,
+    couponApplied
   };
 }

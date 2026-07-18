@@ -50,6 +50,11 @@
   status = 200
 
 [[redirects]]
+  from   = "/api/capture-lead"
+  to     = "/.netlify/functions/capture-lead"
+  status = 200
+
+[[redirects]]
   from   = "/api/mercadopago-webhook"
   to     = "/.netlify/functions/mercadopago-webhook"
   status = 200

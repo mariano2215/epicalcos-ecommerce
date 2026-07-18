@@ -4,7 +4,7 @@
  */
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-export async function createPreference({ items, payer, shipping }) {
+export async function createPreference({ items, payer, shipping, couponCode }) {
   const payload = {
     items: items.map((i) => ({
       id: i.id,
@@ -13,7 +13,8 @@ export async function createPreference({ items, payer, shipping }) {
       unit_price: Number(i.price)
     })),
     payer,
-    shipping
+    shipping,
+    couponCode: couponCode || undefined
   };
 
   const res = await fetch(`${API_URL}/api/create-preference`, {
@@ -37,7 +38,7 @@ export async function createPreference({ items, payer, shipping }) {
 }
 
 /** Registra un pedido a pagar por transferencia bancaria (sin pasar por Mercado Pago). */
-export async function createTransferOrder({ items, payer, shipping }) {
+export async function createTransferOrder({ items, payer, shipping, couponCode }) {
   const payload = {
     items: items.map((i) => ({
       id: i.id,
@@ -46,7 +47,8 @@ export async function createTransferOrder({ items, payer, shipping }) {
       unit_price: Number(i.price)
     })),
     payer,
-    shipping
+    shipping,
+    couponCode: couponCode || undefined
   };
 
   const res = await fetch(`${API_URL}/api/create-order-transfer`, {

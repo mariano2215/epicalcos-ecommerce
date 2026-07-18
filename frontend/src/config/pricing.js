@@ -20,6 +20,23 @@ export const BULK_THRESHOLD = 10;
 export const BULK_DISCOUNT = 0.10;
 export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
 
+/**
+ * Cupones de descuento sobre calcos sueltos (mismo alcance que el descuento por
+ * volumen: solo type === 'sticker'). Si el carrito califica para el descuento
+ * por transferencia Y tiene un cupón válido, se aplica el MAYOR de los dos
+ * (nunca se suman/multiplican).
+ */
+export const COUPONS = {
+  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF' }
+};
+
+export function findCoupon(code) {
+  return COUPONS[String(code || '').trim().toUpperCase()] || null;
+}
+
+/** Clave de localStorage donde el popup de bienvenida guarda el código para prellenarlo en el checkout. */
+export const WELCOME_COUPON_STORAGE_KEY = 'epicalcos.welcomeCoupon';
+
 /** Pack mayorista: 100 calcos, 25 % off (reemplaza al 10 %). */
 export const WHOLESALE_QTY = 100;
 export const WHOLESALE_DISCOUNT = 0.25;
