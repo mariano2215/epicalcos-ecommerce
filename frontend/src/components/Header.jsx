@@ -17,18 +17,24 @@ export default function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              className={({ isActive }) =>
-                `btn-ghost ${isActive ? 'text-white bg-white/10' : ''}`
-              }
-              end={l.to === '/'}
-            >
-              {l.label}
-            </NavLink>
-          ))}
+          {navLinks.map((l) =>
+            l.hash ? (
+              <Link key={l.to} to={l.to} className="btn-ghost">
+                {l.label}
+              </Link>
+            ) : (
+              <NavLink
+                key={l.to}
+                to={l.to}
+                className={({ isActive }) =>
+                  `btn-ghost ${isActive ? 'text-white bg-white/10' : ''}`
+                }
+                end={l.to === '/'}
+              >
+                {l.label}
+              </NavLink>
+            )
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -55,19 +61,30 @@ export default function Header() {
       {open && (
         <div className="md:hidden border-t border-white/10 bg-black/80">
           <div className="container-app py-3 flex flex-col gap-1">
-            {navLinks.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                onClick={() => setOpen(false)}
-                end={l.to === '/'}
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded-lg ${isActive ? 'bg-white/10 text-white' : 'text-white/80'}`
-                }
-              >
-                {l.label}
-              </NavLink>
-            ))}
+            {navLinks.map((l) =>
+              l.hash ? (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-white/80"
+                >
+                  {l.label}
+                </Link>
+              ) : (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  onClick={() => setOpen(false)}
+                  end={l.to === '/'}
+                  className={({ isActive }) =>
+                    `block px-3 py-2 rounded-lg ${isActive ? 'bg-white/10 text-white' : 'text-white/80'}`
+                  }
+                >
+                  {l.label}
+                </NavLink>
+              )
+            )}
           </div>
         </div>
       )}

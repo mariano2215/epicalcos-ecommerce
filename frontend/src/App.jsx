@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import CartDrawer from './components/CartDrawer.jsx';
@@ -35,9 +35,30 @@ function RouteFallback() {
   );
 }
 
+/**
+ * Scrollea a la sección del hash (ej. /#faq). Reintenta unos frames por si el
+ * destino todavía no montó al venir de otra página.
+ */
+function ScrollToHash() {
+  const { hash, pathname } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const id = hash.slice(1);
+    let tries = 0;
+    const tryScroll = () => {
+      const el = document.getElementById(id);
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      if (tries++ < 12) setTimeout(tryScroll, 60);
+    };
+    tryScroll();
+  }, [hash, pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
+      <ScrollToHash />
       <Header />
       <CartDrawer />
       <WelcomePopup />

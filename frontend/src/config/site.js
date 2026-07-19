@@ -160,7 +160,10 @@ export const announcements = [
 export const navLinks = [
   { to: '/', label: 'Inicio' },
   { to: '/categorias', label: 'Categorías' },
-  { to: '/contacto', label: 'Contacto' }
+  { to: '/mayorista', label: 'Mayorista' },
+  { to: '/contacto', label: 'Contacto' },
+  // FAQ es una sección del Home (id="faq"); el hash hace que el header scrollee hasta ahí.
+  { to: '/#faq', label: 'FAQ', hash: true }
 ];
 
 export const footerLinks = {

@@ -81,7 +81,7 @@ export default function FAQ() {
   const visible = tab === 'all' ? faqs : faqs.filter((f) => f.tag === tab);
 
   return (
-    <section id="faq" className="py-20">
+    <section id="faq" className="py-20 scroll-mt-24">
       <div className="container-app">
         <div className="text-center mb-10">
           <span className="badge badge-soft mb-3">Preguntas frecuentes</span>
