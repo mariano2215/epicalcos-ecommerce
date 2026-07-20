@@ -35,6 +35,8 @@ export const shipping = {
   costInterior: 8500,
   /** Texto para retiro */
   pickupLabel: 'Coordinamos retiro por WhatsApp',
+  /** Zona donde se retira (se avisa en el checkout para evitar pedidos de envío después) */
+  pickupZone: 'Ov. Lagos y Bv. Seguí, Rosario',
   /** Plazos de producción/entrega */
   productionDaysRosario: '2 a 3 días hábiles',
   productionDaysInterior: '7 a 10 días hábiles'

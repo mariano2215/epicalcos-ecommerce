@@ -123,8 +123,10 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
       </label>
 
       {form.shippingMethod === 'retiro' && (
-        <div className="rounded-xl p-3 text-sm border border-white/10 bg-white/5 text-white/70">
-          📍 {shippingCfg.pickupLabel}. Te contactamos al teléfono que dejes acá.
+        <div className="rounded-xl p-3 text-sm border border-brand-pink/40 bg-brand-pink/10 text-white/80">
+          📍 El retiro es en la zona de <strong className="text-white">{shippingCfg.pickupZone}</strong>.
+          Si no podés acercarte hasta ahí, elegí una opción de envío.
+          <span className="block mt-1 text-white/60">{shippingCfg.pickupLabel}. Te contactamos al teléfono que dejes acá.</span>
         </div>
       )}
 
