@@ -38,6 +38,9 @@ export function findCoupon(code) {
 /** Clave de localStorage donde el popup de bienvenida guarda el código para prellenarlo en el checkout. */
 export const WELCOME_COUPON_STORAGE_KEY = 'epicalcos.welcomeCoupon';
 
+/** Clave de sessionStorage donde el checkout guarda la spec de los personalizados para el CTA de WhatsApp en /pago-exitoso. */
+export const CUSTOM_SPEC_STORAGE_KEY = 'epicalcos.customSpec';
+
 /** Pack mayorista: 100 calcos, 25 % off (reemplaza al 10 %). */
 export const WHOLESALE_QTY = 100;
 export const WHOLESALE_DISCOUNT = 0.25;

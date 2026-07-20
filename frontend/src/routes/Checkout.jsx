@@ -5,7 +5,7 @@ import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
 import { calculateShipping } from '../config/site.js';
-import { findCoupon, WELCOME_COUPON_STORAGE_KEY } from '../config/pricing.js';
+import { findCoupon, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
 import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
@@ -20,9 +20,53 @@ function buildDesignSummary(items) {
       parts.push(`${it.name} → ${designs || 'sin catálogo'}${custom}`);
     } else if (it.type === 'negocio' && it.meta) {
       parts.push(`Negocio "${it.meta.business}": ${it.meta.qty}u ${it.meta.size} (logo por WhatsApp)`);
+    } else if (it.type === 'custom' && it.meta) {
+      const m = it.meta;
+      const files = m.archivos || [];
+      let arch;
+      if (files.length === 0) {
+        arch = 'diseños: se envían por WhatsApp';
+      } else if (files.some((f) => f.url)) {
+        // Con URL de Cloudinary: los diseños llegan al CRM/mail como links.
+        arch = `diseños (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`;
+      } else {
+        arch = `diseños (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
+      }
+      const notas = m.instrucciones ? ` | notas: ${m.instrucciones}` : '';
+      parts.push(
+        `Personalizado (${m.materialLabel}, ${m.tamanoLabel}, corte ${m.corteLabel}, x${m.cantidad}) | ${arch}${notas}`
+      );
     }
   }
   return parts.length ? `PEDIDO: ${parts.join(' ; ')}` : '';
+}
+
+/**
+ * Guarda la especificación de los ítems personalizados (+ nombre del comprador) en
+ * sessionStorage para que /pago-exitoso arme el CTA de WhatsApp pre-cargado. El blob
+ * del archivo NO se serializa; el cliente lo adjunta en WhatsApp. Sobrevive al
+ * redirect a Mercado Pago (mismo tab).
+ */
+function stashCustomSpec(items, payerName) {
+  try {
+    const custom = items
+      .filter((it) => it.type === 'custom' && it.meta)
+      .map((it) => ({
+        material: it.meta.materialLabel,
+        tamano: it.meta.tamanoLabel,
+        corte: it.meta.corteLabel,
+        cantidad: it.meta.cantidad,
+        archivos: (it.meta.archivos || []).map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) })),
+        instrucciones: it.meta.instrucciones || null
+      }));
+    if (custom.length) {
+      sessionStorage.setItem(CUSTOM_SPEC_STORAGE_KEY, JSON.stringify({ nombre: payerName || '', items: custom }));
+    } else {
+      sessionStorage.removeItem(CUSTOM_SPEC_STORAGE_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 export default function Checkout() {
@@ -122,6 +166,9 @@ export default function Checkout() {
       const designSummary = buildDesignSummary(items);
       const comments = [shipping.comments, designSummary].filter(Boolean).join(' || ');
       const fullShipping = { ...shipping, comments: comments || undefined, cost: shippingCost };
+
+      // Guardá la spec de los personalizados para el CTA de WhatsApp en /pago-exitoso.
+      stashCustomSpec(items, payer?.name);
 
       if (method === 'transferencia') {
         const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
