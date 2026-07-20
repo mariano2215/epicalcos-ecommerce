@@ -1,13 +1,12 @@
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
-import PackBuilder from '../components/PackBuilder.jsx';
-import { PERSONALIZADOS_MIN, PERSONALIZADOS_DISCOUNT } from '../config/pricing.js';
+import Configurador from '../components/personalizados/Configurador.jsx';
 import { useSeo } from '../lib/seo.js';
 
 export default function Personalizados() {
   useSeo({
     title: 'Personalizados',
     description:
-      'Armá tu pack de calcos personalizados: elegí diseños del catálogo o sumá tus propios diseños. Mínimo 10 calcos, 10% off. Coordinás tu arte por WhatsApp.'
+      'Armá tu calco personalizado: elegí material, tamaño, corte y cantidad, subí tu diseño y ves el precio final antes de pagar. Producción en 2 a 3 días hábiles.'
   });
 
   return (
@@ -15,14 +14,7 @@ export default function Personalizados() {
       <div className="container-app py-10">
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Categorías', to: '/categorias' }, { name: 'Personalizados' }]} />
         <div className="mt-6">
-          <PackBuilder
-            packType="personalizados"
-            min={PERSONALIZADOS_MIN}
-            discount={PERSONALIZADOS_DISCOUNT}
-            allowCustom
-            title="Calcos Personalizados"
-            subtitle="Elegí diseños del catálogo y/o sumá tus propios diseños. Mínimo 10 calcos, 10% off ya incluido. Los diseños propios los coordinás por WhatsApp."
-          />
+          <Configurador />
         </div>
       </div>
     </div>

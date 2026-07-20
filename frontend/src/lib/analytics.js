@@ -31,6 +31,14 @@ function pixel(eventName, data = {}) {
   }
 }
 
+/** Eventos NO estándar de Meta (los del configurador) → trackCustom. */
+function pixelCustom(eventName, data = {}) {
+  if (typeof window === 'undefined') return;
+  if (typeof window.fbq === 'function') {
+    window.fbq('trackCustom', eventName, data);
+  }
+}
+
 function debug(...args) {
   if (DEV) console.log('[analytics]', ...args);
 }
@@ -183,6 +191,36 @@ export function trackLeadCapture(source = 'welcome_popup') {
   pushDataLayer({ event: 'generate_lead', lead_source: source });
   pixel('Lead', { content_name: source });
   debug('generate_lead', source);
+}
+
+// ─── Configurador de personalizados ───────────────────────────────────────────
+
+/** Primera interacción con el configurador (una vez por sesión de página). */
+export function trackPersonalizadoInicio() {
+  pushDataLayer({ event: 'personalizado_inicio' });
+  pixelCustom('PersonalizadoInicio');
+  debug('personalizado_inicio');
+}
+
+/** Cada paso completado del configurador. */
+export function trackPersonalizadoPaso(paso, valor) {
+  pushDataLayer({ event: 'personalizado_paso', paso, valor });
+  pixelCustom('PersonalizadoPaso', { paso, valor });
+  debug('personalizado_paso', paso, valor);
+}
+
+/** Archivo válido cargado en el configurador. */
+export function trackPersonalizadoArchivo(info = {}) {
+  pushDataLayer({ event: 'personalizado_archivo_cargado', ...info });
+  pixelCustom('PersonalizadoArchivo', info);
+  debug('personalizado_archivo_cargado', info);
+}
+
+/** Configuración completa cotizada en vivo. */
+export function trackPersonalizadoPrecio({ valor, material, cantidad }) {
+  pushDataLayer({ event: 'personalizado_precio_calculado', valor, material, cantidad });
+  pixelCustom('PersonalizadoPrecio', { valor, material, cantidad });
+  debug('personalizado_precio_calculado', valor, material, cantidad);
 }
 
 export const analyticsConfig = { GTM_ID, GA4_ID, PIXEL_ID };

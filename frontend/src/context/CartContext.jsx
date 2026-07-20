@@ -105,6 +105,13 @@ export function CartProvider({ children }) {
     trackAddToCart({ ...line, price: line.basePrice }, line.quantity || 1);
   }, [notify]);
 
+  /** Agregar un calco personalizado ya configurado (Configurador). */
+  const addCustom = useCallback((line) => {
+    dispatch({ type: 'ADD', line: { ...line, type: 'custom' } });
+    notify(`${line.name} agregado`);
+    trackAddToCart({ ...line, price: line.basePrice }, line.quantity || 1);
+  }, [notify]);
+
   /** Agregar la promo Negocio. */
   const addNegocio = useCallback((line) => {
     dispatch({ type: 'ADD', line: { ...line, type: 'negocio' } });
@@ -193,6 +200,7 @@ export function CartProvider({ children }) {
     drawerOpen: state.drawerOpen,
     addSticker,
     addPack,
+    addCustom,
     addNegocio,
     addFixed,
     removeItem,
