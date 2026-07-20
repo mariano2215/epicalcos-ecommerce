@@ -10,7 +10,7 @@
  */
 
 // --- Espejo de frontend/src/config/pricing.js ---
-const SIZE_PRICES = { '4cm': 1200, '6cm': 1600, '9cm': 2000 };
+export const SIZE_PRICES = { '4cm': 1200, '6cm': 1600, '9cm': 2000 };
 const BULK_THRESHOLD = 10; // desde 10 calcos sueltos TOTALES (combinables), 10 % off
 const BULK_DISCOUNT = 0.1;
 const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia'; // el 10 % solo aplica pagando por transferencia
@@ -34,14 +34,14 @@ const FIXED_PRICES = {
 // --- Espejo de frontend/src/config/personalizados.js (calcos personalizados) ---
 // ⚠️ Si cambiás la grilla de personalizados en el frontend, cambiala TAMBIÉN acá.
 // El test frontend/src/lib/precioPersonalizados.test.js verifica que coincidan.
-// unitario = round( base(material) × (1 + modTamaño/100) × factorVolumen(cantidad) )
-export const CUSTOM_MATERIAL_BASE = {
-  'vinilo-blanco': 1200,
-  transparente: 1400,
-  holografico: 1800,
-  'dtf-uv': 1600
+// unitario = round( SIZE_PRICES[tamaño] × multiplicador(material) × factorVolumen(cantidad) )
+// El precio por tamaño es el mismo SIZE_PRICES de arriba: no se duplica.
+export const CUSTOM_MATERIAL_MULT = {
+  'vinilo-blanco': 1,
+  transparente: 1,
+  holografico: 1.3,
+  'dtf-uv': 1
 };
-export const CUSTOM_SIZE_MOD = { '4cm': 0, '6cm': 35, '9cm': 70 };
 export const CUSTOM_TIERS = [
   { cantidad: 10, factor: 1 },
   { cantidad: 25, factor: 0.92 },
@@ -150,13 +150,13 @@ function expectedUnitPrice(id, quantity, stickerDiscountRate) {
   // custom:{material}:{tamano}:{corte}:{ts} — calco personalizado.
   // El corte (parts[3]) es especificación (modificador 0 %), no afecta el precio.
   if (kind === 'custom') {
-    const base = CUSTOM_MATERIAL_BASE[parts[1]];
-    if (!base) return { error: `material inválido en "${id}"` };
-    const sizeMod = CUSTOM_SIZE_MOD[parts[2]];
-    if (sizeMod === undefined) return { error: `tamaño inválido en "${id}"` };
+    const mult = CUSTOM_MATERIAL_MULT[parts[1]];
+    if (mult === undefined) return { error: `material inválido en "${id}"` };
+    const base = SIZE_PRICES[parts[2]];
+    if (!base) return { error: `tamaño inválido en "${id}"` };
     const tier = CUSTOM_TIERS.find((t) => t.cantidad === quantity);
     if (!tier) return { error: `cantidad inválida para personalizado en "${id}"` };
-    return { price: round(base * (1 + sizeMod / 100) * tier.factor) };
+    return { price: round(base * mult * tier.factor) };
   }
 
   return { error: `item desconocido "${id}"` };

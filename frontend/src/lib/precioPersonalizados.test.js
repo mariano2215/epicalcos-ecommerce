@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { calcularPrecio, unitarioParaTier } from './precioPersonalizados.js';
 import { MATERIALES, TAMANOS, CORTES, TIERS } from '../config/personalizados.js';
+import { SIZES } from '../config/pricing.js';
 // Espejo del backend: la fuente de verdad del servidor que re-precia el checkout.
 import {
-  CUSTOM_MATERIAL_BASE,
-  CUSTOM_SIZE_MOD,
+  SIZE_PRICES,
+  CUSTOM_MATERIAL_MULT,
   CUSTOM_TIERS
 } from '../../../netlify/functions/lib/pricing.js';
 
@@ -34,60 +35,69 @@ describe('calcularPrecio — configuración incompleta', () => {
   });
 });
 
-describe('calcularPrecio — fórmula base × modificadores × volumen', () => {
-  it('material en tamaño de referencia (4 cm, tier 1) = precio base', () => {
-    for (const m of MATERIALES) {
-      const r = calcularPrecio({ material: m.id, tamano: '4cm', corte: 'silueta', cantidad: 10 });
-      expect(r.configuracionCompleta).toBe(true);
-      expect(r.unitario).toBe(m.precioBase);
-      expect(r.total).toBe(m.precioBase * 10);
+describe('calcularPrecio — precio de lista × material × volumen', () => {
+  it('vinilo blanco y transparente cotizan al PRECIO DE LISTA en el tier base', () => {
+    for (const material of ['vinilo-blanco', 'transparente']) {
+      for (const s of SIZES) {
+        const r = calcularPrecio({ material, tamano: s.id, corte: 'silueta', cantidad: 10 });
+        expect(r.configuracionCompleta).toBe(true);
+        expect(r.unitario).toBe(s.price); // 4cm 1200 · 6cm 1600 · 9cm 2000
+      }
     }
   });
 
-  it('aplica el modificador de tamaño', () => {
-    // vinilo blanco 1200, 6 cm +35% → 1620 en tier 1
-    const r = calcularPrecio({ material: 'vinilo-blanco', tamano: '6cm', corte: 'silueta', cantidad: 10 });
-    expect(r.unitario).toBe(round(1200 * 1.35));
+  it('holográfico cuesta 30 % más que el precio de lista', () => {
+    for (const s of SIZES) {
+      const lista = calcularPrecio({ material: 'vinilo-blanco', tamano: s.id, corte: 'silueta', cantidad: 10 }).unitario;
+      const holo = calcularPrecio({ material: 'holografico', tamano: s.id, corte: 'silueta', cantidad: 10 }).unitario;
+      expect(holo).toBe(round(lista * 1.3));
+    }
   });
 
-  it('el corte NO cambia el precio (modificador 0)', () => {
+  it('el corte NO cambia el precio', () => {
     const base = calcularPrecio({ material: 'holografico', tamano: '9cm', corte: 'silueta', cantidad: 50 }).unitario;
     for (const c of CORTES) {
-      const r = calcularPrecio({ material: 'holografico', tamano: '9cm', corte: c.id, cantidad: 50 });
-      expect(r.unitario).toBe(base);
+      expect(calcularPrecio({ material: 'holografico', tamano: '9cm', corte: c.id, cantidad: 50 }).unitario).toBe(base);
+    }
+  });
+
+  it('la cantidad mínima es 10 unidades para todos los materiales', () => {
+    expect(TIERS[0].cantidad).toBe(10);
+    expect(Math.min(...TIERS.map((t) => t.cantidad))).toBe(10);
+    for (const m of MATERIALES) {
+      expect(calcularPrecio({ material: m.id, tamano: '6cm', corte: 'silueta', cantidad: 5 }).configuracionCompleta).toBe(false);
     }
   });
 
   it('cada tier de volumen aplica su factor y expone el ahorro', () => {
     for (const t of TIERS) {
-      const r = calcularPrecio({ material: 'dtf-uv', tamano: '6cm', corte: 'cuadrado', cantidad: t.cantidad });
-      const esperado = round(1600 * 1.35 * t.factor);
+      const r = calcularPrecio({ material: 'holografico', tamano: '6cm', corte: 'cuadrado', cantidad: t.cantidad });
+      const esperado = round(1600 * 1.3 * t.factor);
       expect(r.unitario).toBe(esperado);
       expect(r.total).toBe(esperado * t.cantidad);
-      // el ahorro nunca es negativo y crece al bajar el factor
       expect(r.ahorro).toBeGreaterThanOrEqual(0);
     }
   });
 
   it('el desglose refleja los componentes del precio', () => {
-    const r = calcularPrecio({ material: 'transparente', tamano: '9cm', corte: 'circulo', cantidad: 100 });
-    expect(r.desglose.base).toBe(1400);
-    expect(r.desglose.modificadorTamano).toBe(70);
+    const r = calcularPrecio({ material: 'holografico', tamano: '9cm', corte: 'circulo', cantidad: 100 });
+    expect(r.desglose.precioTamano).toBe(2000);
+    expect(r.desglose.multiplicadorMaterial).toBe(1.3);
     expect(r.desglose.modificadorCorte).toBe(0);
     expect(r.desglose.factorVolumen).toBe(0.78);
-    expect(r.desglose.unitario).toBe(round(1400 * 1.7 * 0.78));
+    expect(r.desglose.unitario).toBe(round(2000 * 1.3 * 0.78));
   });
 
   it('unitarioParaTier coincide con el unitario completo', () => {
-    const args = { material: 'vinilo-blanco', tamano: '9cm', corte: 'cuadrado', cantidad: 250 };
+    const args = { material: 'holografico', tamano: '9cm', corte: 'cuadrado', cantidad: 250 };
     expect(unitarioParaTier(args)).toBe(calcularPrecio(args).unitario);
   });
 });
 
 describe('paridad frontend ↔ backend (evita price_mismatch en el checkout)', () => {
   it('las constantes espejadas son idénticas', () => {
-    expect(Object.fromEntries(MATERIALES.map((m) => [m.id, m.precioBase]))).toEqual(CUSTOM_MATERIAL_BASE);
-    expect(Object.fromEntries(TAMANOS.map((t) => [t.id, t.modificador]))).toEqual(CUSTOM_SIZE_MOD);
+    expect(Object.fromEntries(MATERIALES.map((m) => [m.id, m.multiplicador]))).toEqual(CUSTOM_MATERIAL_MULT);
+    expect(Object.fromEntries(TAMANOS.map((t) => [t.id, t.precio]))).toEqual(SIZE_PRICES);
     expect(TIERS).toEqual(CUSTOM_TIERS);
   });
 
@@ -98,7 +108,7 @@ describe('paridad frontend ↔ backend (evita price_mismatch en el checkout)', (
           const front = calcularPrecio({ material: m.id, tamano: t.id, corte: 'silueta', cantidad: tier.cantidad }).unitario;
           // Reproduce la rama `custom` del servidor con SUS constantes.
           const server = round(
-            CUSTOM_MATERIAL_BASE[m.id] * (1 + CUSTOM_SIZE_MOD[t.id] / 100) * CUSTOM_TIERS.find((x) => x.cantidad === tier.cantidad).factor
+            SIZE_PRICES[t.id] * CUSTOM_MATERIAL_MULT[m.id] * CUSTOM_TIERS.find((x) => x.cantidad === tier.cantidad).factor
           );
           expect(front).toBe(server);
         }

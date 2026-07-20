@@ -2,7 +2,7 @@
  * Cálculo de precio de un calco personalizado. Función PURA (sin React).
  *
  * Fórmula (idéntica a la rama `custom` de netlify/functions/lib/pricing.js):
- *   unitario = round( base(material) × (1 + Σmodificadores/100) × factorVolumen(cantidad) )
+ *   unitario = round( precio(tamaño) × multiplicador(material) × factorVolumen(cantidad) )
  *   total    = unitario × cantidad
  *
  * Devuelve SIEMPRE el desglose para que el resumen muestre de dónde sale el precio.
@@ -21,9 +21,9 @@ const CAMPOS = [
   { key: 'cantidad', label: 'la cantidad' }
 ];
 
-/** Unitario para una combinación ya validada (base + modificadores + factor). */
-function unitarioPara(base, sumaModificadores, factor) {
-  return round(base * (1 + sumaModificadores / 100) * factor);
+/** Unitario para una combinación ya validada (precio del tamaño × material × volumen). */
+function unitarioPara(precioTamano, multiplicador, factor) {
+  return round(precioTamano * multiplicador * factor);
 }
 
 export function calcularPrecio({ material, tamano, corte, cantidad } = {}) {
@@ -47,12 +47,12 @@ export function calcularPrecio({ material, tamano, corte, cantidad } = {}) {
     };
   }
 
-  const base = mat.precioBase;
-  const sumaModificadores = tam.modificador + cor.modificador; // corte = 0
+  const precioTamano = tam.precio;
+  const multiplicador = mat.multiplicador * (1 + cor.modificador / 100); // corte = 0 %
   const factor = tier.factor;
 
-  const unitarioLista = unitarioPara(base, sumaModificadores, TIERS[0].factor); // precio a tier 1
-  const unitario = unitarioPara(base, sumaModificadores, factor);
+  const unitarioLista = unitarioPara(precioTamano, multiplicador, TIERS[0].factor); // precio a tier 1
+  const unitario = unitarioPara(precioTamano, multiplicador, factor);
   const total = unitario * cantidad;
   const ahorro = (unitarioLista - unitario) * cantidad;
   const porcentajeAhorro = round((1 - factor / TIERS[0].factor) * 100);
@@ -65,10 +65,9 @@ export function calcularPrecio({ material, tamano, corte, cantidad } = {}) {
     configuracionCompleta: true,
     faltante: null,
     desglose: {
-      base,
-      modificadorTamano: tam.modificador,
+      precioTamano,
+      multiplicadorMaterial: mat.multiplicador,
       modificadorCorte: cor.modificador,
-      sumaModificadores,
       factorVolumen: factor,
       unitarioLista,
       unitario
@@ -86,6 +85,6 @@ export function unitarioParaTier({ material, tamano, corte, cantidad }) {
   const tier = getTier(cantidad);
   if (!mat || !tam || !tier) return 0;
   const cor = getCorte(corte);
-  const sumaModificadores = tam.modificador + (cor?.modificador || 0);
-  return unitarioPara(mat.precioBase, sumaModificadores, tier.factor);
+  const multiplicador = mat.multiplicador * (1 + (cor?.modificador || 0) / 100);
+  return unitarioPara(tam.precio, multiplicador, tier.factor);
 }

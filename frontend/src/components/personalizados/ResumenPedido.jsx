@@ -20,7 +20,8 @@ function specRows(sel) {
 function Desglose({ desglose }) {
   const [open, setOpen] = useState(false);
   if (!desglose) return null;
-  const { base, modificadorTamano, factorVolumen, unitarioLista, unitario } = desglose;
+  const { precioTamano, multiplicadorMaterial, factorVolumen, unitarioLista, unitario } = desglose;
+  const recargo = Math.round((multiplicadorMaterial - 1) * 100);
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
       <button
@@ -34,10 +35,10 @@ function Desglose({ desglose }) {
       </button>
       {open && (
         <dl className="mt-2 space-y-1 text-xs text-white/60">
-          <div className="flex justify-between"><dt>Base del material</dt><dd>{formatPrice(base)}</dd></div>
+          <div className="flex justify-between"><dt>Precio del tamaño</dt><dd>{formatPrice(precioTamano)}</dd></div>
           <div className="flex justify-between">
-            <dt>Modificador de tamaño</dt>
-            <dd>{modificadorTamano > 0 ? `+${modificadorTamano}%` : '—'}</dd>
+            <dt>Recargo del material</dt>
+            <dd>{recargo > 0 ? `+${recargo}%` : 'sin recargo'}</dd>
           </div>
           <div className="flex justify-between border-t border-white/5 pt-1">
             <dt>Precio de lista (c/u)</dt><dd>{formatPrice(unitarioLista)}</dd>

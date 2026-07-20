@@ -1,60 +1,68 @@
 /**
  * Configurador de calcos personalizados — ÚNICA fuente de verdad del frontend.
  *
- * Modelo de precio (definido con Mariano en Fase 0):
- *   unitario = round( base(material) × (1 + Σmodificadores/100) × factorVolumen(cantidad) )
+ * Modelo de precio:
+ *   unitario = round( precio(tamaño) × multiplicador(material) × factorVolumen(cantidad) )
  *   total    = unitario × cantidad
  *
- * Alcance Fase 1: SOLO calcos individuales. Sin planchas, sin terminación barniz/laminado.
+ * El precio del tamaño sale de SIZES en `config/pricing.js` (la lista de calcos que
+ * ya se mantiene ahí), así que subir un precio allá reajusta todo el configurador.
+ *
+ * Alcance: SOLO calcos individuales. Sin planchas, sin terminación barniz/laminado.
  * El corte es especificación (modificador 0 %), no cambia el precio.
  *
- * ⚠️ ESPEJO OBLIGATORIO: la grilla numérica (base por material, % por tamaño y
- * factores de volumen) está espejada en `netlify/functions/lib/pricing.js`
- * (constantes CUSTOM_MATERIAL_BASE / CUSTOM_SIZE_MOD / CUSTOM_TIERS). Si cambiás
+ * ⚠️ ESPEJO OBLIGATORIO: los multiplicadores por material y los factores de volumen
+ * están espejados en `netlify/functions/lib/pricing.js` (CUSTOM_MATERIAL_MULT /
+ * CUSTOM_TIERS; los precios por tamaño ya viven allá como SIZE_PRICES). Si cambiás
  * un número acá, cambialo TAMBIÉN allá o el checkout se rechaza con `price_mismatch`.
  * El test `src/lib/precioPersonalizados.test.js` verifica que ambos lados coincidan.
- *
- * 🚧 Los precios base y modificadores son NÚMEROS DE MUESTRA para poder demostrar
- * el flujo. NO son vendibles hasta que Mariano confirme costos reales.
  */
+import { SIZES } from './pricing.js';
 
 /**
- * Materiales que produce EPICALCOS (Fase 0). `precioBase` = precio del calco en el
- * tamaño de referencia (4 cm, modificador 0 %) al tier más chico (10 u, factor 1).
+ * Materiales que produce EPICALCOS. El precio sale del TAMAÑO (lista de `pricing.js`)
+ * y el material lo multiplica:
+ *   vinilo blanco y transparente → precio de lista (×1)
+ *   holográfico tornasolado      → +30 % (×1,30)
  */
 export const MATERIALES = [
   {
     id: 'vinilo-blanco',
     label: 'Vinilo blanco',
     descripcion: 'El clásico. Resistente al agua y al sol.',
-    precioBase: 1200 // TODO: confirmar con Mariano
+    multiplicador: 1
   },
   {
     id: 'transparente',
     label: 'Transparente',
     descripcion: 'Sin fondo, se integra a cualquier superficie.',
-    precioBase: 1400 // TODO: confirmar con Mariano
+    multiplicador: 1
   },
   {
     id: 'holografico',
     label: 'Holográfico / especiales',
-    descripcion: 'Con brillo tornasolado que cambia con la luz.',
-    precioBase: 1800 // TODO: confirmar con Mariano
+    descripcion: 'Tornasolado especial, con brillo que cambia con la luz.',
+    multiplicador: 1.3
   },
   {
     id: 'dtf-uv',
     label: 'DTF UV sin fondo',
     descripcion: 'Con relieve y terminación premium, sin fondo.',
-    precioBase: 1600 // TODO: confirmar con Mariano
+    multiplicador: 1 // TODO: confirmar con Mariano — ¿va a precio de lista o lleva recargo?
   }
 ];
 
-/** Tamaños ofrecidos. `cm` se usa para recomendar la resolución mínima del archivo. */
-export const TAMANOS = [
-  { id: '4cm', label: '4 cm', cm: 4, modificador: 0 }, //  TODO: confirmar % con Mariano
-  { id: '6cm', label: '6 cm', cm: 6, modificador: 35 }, // TODO: confirmar % con Mariano
-  { id: '9cm', label: '9 cm', cm: 9, modificador: 70 } //  TODO: confirmar % con Mariano
-];
+/**
+ * Tamaños: se derivan de SIZES (`config/pricing.js`) para no duplicar la lista de
+ * precios. Cambiar un precio allá reajusta toda la grilla del configurador.
+ * `cm` se usa para recomendar la resolución mínima del archivo.
+ */
+export const TAMANOS = SIZES.map((s) => ({
+  id: s.id,
+  label: s.label,
+  cm: parseFloat(s.id),
+  precio: s.price
+}));
 
 /** Cortes: especificación pura. modificador SIEMPRE 0 (no cambia el precio). */
 export const CORTES = [
@@ -100,5 +108,5 @@ export const recomendacionPx = (cm) => Math.round((cm / 2.54) * ARCHIVO.resoluci
  * Mapas derivados para el test de paridad contra el espejo del backend.
  * (Mantienen la MISMA forma que las constantes de netlify/functions/lib/pricing.js.)
  */
-export const MATERIAL_BASE_MAP = Object.fromEntries(MATERIALES.map((m) => [m.id, m.precioBase]));
-export const SIZE_MOD_MAP = Object.fromEntries(TAMANOS.map((t) => [t.id, t.modificador]));
+export const MATERIAL_MULT_MAP = Object.fromEntries(MATERIALES.map((m) => [m.id, m.multiplicador]));
+export const SIZE_PRICE_MAP = Object.fromEntries(TAMANOS.map((t) => [t.id, t.precio]));
