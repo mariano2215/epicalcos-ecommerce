@@ -40,7 +40,7 @@ export const CUSTOM_MATERIAL_MULT = {
   'vinilo-blanco': 1,
   transparente: 1,
   holografico: 1.3,
-  'dtf-uv': 1
+  'dtf-uv': 1.2
 };
 export const CUSTOM_TIERS = [
   { cantidad: 10, factor: 1 },

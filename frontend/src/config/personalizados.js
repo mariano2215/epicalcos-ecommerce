@@ -23,6 +23,7 @@ import { SIZES } from './pricing.js';
  * Materiales que produce EPICALCOS. El precio sale del TAMAÑO (lista de `pricing.js`)
  * y el material lo multiplica:
  *   vinilo blanco y transparente → precio de lista (×1)
+ *   DTF UV sin fondo             → +20 % (×1,20)
  *   holográfico tornasolado      → +30 % (×1,30)
  */
 export const MATERIALES = [
@@ -48,7 +49,7 @@ export const MATERIALES = [
     id: 'dtf-uv',
     label: 'DTF UV sin fondo',
     descripcion: 'Con relieve y terminación premium, sin fondo.',
-    multiplicador: 1 // TODO: confirmar con Mariano — ¿va a precio de lista o lleva recargo?
+    multiplicador: 1.2
   }
 ];
 

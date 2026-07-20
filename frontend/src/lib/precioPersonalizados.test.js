@@ -46,11 +46,14 @@ describe('calcularPrecio — precio de lista × material × volumen', () => {
     }
   });
 
-  it('holográfico cuesta 30 % más que el precio de lista', () => {
-    for (const s of SIZES) {
-      const lista = calcularPrecio({ material: 'vinilo-blanco', tamano: s.id, corte: 'silueta', cantidad: 10 }).unitario;
-      const holo = calcularPrecio({ material: 'holografico', tamano: s.id, corte: 'silueta', cantidad: 10 }).unitario;
-      expect(holo).toBe(round(lista * 1.3));
+  it('los materiales con recargo lo aplican sobre el precio de lista', () => {
+    const recargos = { holografico: 1.3, 'dtf-uv': 1.2 };
+    for (const [material, mult] of Object.entries(recargos)) {
+      for (const s of SIZES) {
+        const lista = calcularPrecio({ material: 'vinilo-blanco', tamano: s.id, corte: 'silueta', cantidad: 10 }).unitario;
+        const conRecargo = calcularPrecio({ material, tamano: s.id, corte: 'silueta', cantidad: 10 }).unitario;
+        expect(conRecargo).toBe(round(lista * mult));
+      }
     }
   });
 
