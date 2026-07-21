@@ -49,25 +49,37 @@ function buildDesignSummary(items) {
 }
 
 /**
- * Guarda la especificación de los ítems personalizados (+ nombre del comprador) en
- * sessionStorage para que /pago-exitoso arme el CTA de WhatsApp pre-cargado. El blob
- * del archivo NO se serializa; el cliente lo adjunta en WhatsApp. Sobrevive al
- * redirect a Mercado Pago (mismo tab).
+ * Guarda la especificación de los ítems con diseño/fotos (+ nombre del comprador) en
+ * sessionStorage para que /pago-exitoso arme el CTA de WhatsApp pre-cargado. Cubre los
+ * personalizados (`custom`) y los productos fijos con fotos adjuntas (`fixed`, ej.
+ * Polaroid). El blob del archivo NO se serializa; el cliente lo adjunta en WhatsApp.
+ * Sobrevive al redirect a Mercado Pago (mismo tab).
  */
-function stashCustomSpec(items, payerName) {
+function stashDesignSpec(items, payerName) {
   try {
-    const custom = items
-      .filter((it) => it.type === 'custom' && it.meta)
-      .map((it) => ({
-        material: it.meta.materialLabel,
-        tamano: it.meta.tamanoLabel,
-        corte: it.meta.corteLabel,
-        cantidad: it.meta.cantidad,
-        archivos: (it.meta.archivos || []).map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) })),
-        instrucciones: it.meta.instrucciones || null
-      }));
-    if (custom.length) {
-      sessionStorage.setItem(CUSTOM_SPEC_STORAGE_KEY, JSON.stringify({ nombre: payerName || '', items: custom }));
+    const spec = [];
+    for (const it of items) {
+      if (it.type === 'custom' && it.meta) {
+        spec.push({
+          tipo: 'custom',
+          material: it.meta.materialLabel,
+          tamano: it.meta.tamanoLabel,
+          corte: it.meta.corteLabel,
+          cantidad: it.meta.cantidad,
+          archivos: (it.meta.archivos || []).map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) })),
+          instrucciones: it.meta.instrucciones || null
+        });
+      } else if (it.type === 'fixed' && it.meta?.archivos?.length) {
+        spec.push({
+          tipo: 'fixed',
+          nombre: it.name,
+          cantidad: it.quantity,
+          archivos: it.meta.archivos.map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) }))
+        });
+      }
+    }
+    if (spec.length) {
+      sessionStorage.setItem(CUSTOM_SPEC_STORAGE_KEY, JSON.stringify({ nombre: payerName || '', items: spec }));
     } else {
       sessionStorage.removeItem(CUSTOM_SPEC_STORAGE_KEY);
     }
@@ -174,8 +186,8 @@ export default function Checkout() {
       const comments = [shipping.comments, designSummary].filter(Boolean).join(' || ');
       const fullShipping = { ...shipping, comments: comments || undefined, cost: shippingCost };
 
-      // Guardá la spec de los personalizados para el CTA de WhatsApp en /pago-exitoso.
-      stashCustomSpec(items, payer?.name);
+      // Guardá la spec (personalizados + fotos de fijos) para el CTA de WhatsApp en /pago-exitoso.
+      stashDesignSpec(items, payer?.name);
 
       if (method === 'transferencia') {
         const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });

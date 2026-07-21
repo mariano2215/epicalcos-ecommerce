@@ -6,24 +6,39 @@ import { CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
 import { contact } from '../config/site.js';
 import { useSeo } from '../lib/seo.js';
 
-/** Arma el mensaje de WhatsApp pre-cargado con la spec del/los personalizado(s). */
+/** Sustantivo plural según el contenido: solo personalizados → "diseños", solo fotos → "fotos", mezcla → "archivos". */
+function designNoun(items) {
+  const hasFixed = items.some((it) => it.tipo === 'fixed');
+  const hasCustom = items.some((it) => it.tipo !== 'fixed'); // items viejos sin `tipo` = custom
+  if (hasFixed && hasCustom) return 'archivos';
+  return hasFixed ? 'fotos' : 'diseños';
+}
+
+/** Arma el mensaje de WhatsApp pre-cargado con la spec de los personalizados y/o las fotos. */
 function buildWhatsappMessage(spec, orderId) {
   const nombre = (spec.nombre || '').trim();
   const ref = orderId && orderId !== 'unknown' ? ` ${orderId}` : '';
+  const noun = designNoun(spec.items);
   const lines = [nombre ? `Hola! Soy ${nombre}, pedido${ref}.` : `Hola! Te escribo por mi pedido${ref}.`];
   let algunoSubido = false;
   spec.items.forEach((it, i) => {
+    const files = it.archivos || [];
+    if (files.some((f) => f.subido)) algunoSubido = true;
+    if (it.tipo === 'fixed') {
+      lines.push(`— ${it.nombre}:`);
+      lines.push(`• Cantidad: ${it.cantidad}`);
+      if (files.length) lines.push(`• Fotos: ${files.map((f) => f.nombre).join(', ')}`);
+      return;
+    }
     lines.push(spec.items.length > 1 ? `— Calco ${i + 1}:` : 'Configuración:');
     lines.push(`• Material: ${it.material}`);
     lines.push(`• Tamaño: ${it.tamano}`);
     lines.push(`• Corte: ${it.corte}`);
     lines.push(`• Cantidad: ${it.cantidad}`);
-    const files = it.archivos || [];
     if (files.length) lines.push(`• Diseños: ${files.map((f) => f.nombre).join(', ')}`);
-    if (files.some((f) => f.subido)) algunoSubido = true;
     if (it.instrucciones) lines.push(`• Notas: ${it.instrucciones}`);
   });
-  lines.push(algunoSubido ? 'Ya subí mis diseños con el pedido. 🎨' : 'Te adjunto mis diseños. 🎨');
+  lines.push(algunoSubido ? `Ya subí mis ${noun} con el pedido. 🎨` : `Te adjunto mis ${noun}. 🎨`);
   return encodeURIComponent(lines.join('\n'));
 }
 
@@ -57,6 +72,7 @@ export default function PaymentSuccess() {
   const waHref = customSpec
     ? `${contact.whatsappUrl}?text=${buildWhatsappMessage(customSpec, orderId)}`
     : null;
+  const specNoun = customSpec ? designNoun(customSpec.items) : 'diseños';
 
   return (
     <div className="hero-gradient min-h-screen grid place-items-center">
@@ -68,7 +84,7 @@ export default function PaymentSuccess() {
           {customSpec ? (
             <>
               <p className="text-white/70 mt-3">
-                ¡Gracias! Ya registramos tu pedido. Para arrancar, <strong>mandanos tu diseño por WhatsApp</strong> con
+                ¡Gracias! Ya registramos tu pedido. Para arrancar, <strong>mandanos tus {specNoun} por WhatsApp</strong> con
                 un toque — el mensaje ya lleva toda tu configuración cargada.
               </p>
               <div className="mt-6 rounded-xl p-4 border border-white/10 bg-white/5 text-left text-sm">
@@ -76,9 +92,20 @@ export default function PaymentSuccess() {
                 <ul className="space-y-2">
                   {customSpec.items.map((it, i) => (
                     <li key={i} className="text-white/70">
-                      {it.material} · {it.tamano} · corte {it.corte} · <strong>x{it.cantidad}</strong>
-                      {it.archivos?.length > 0 && (
-                        <span className="text-white/40"> · {it.archivos.length} diseño{it.archivos.length > 1 ? 's' : ''}</span>
+                      {it.tipo === 'fixed' ? (
+                        <>
+                          {it.nombre} · <strong>x{it.cantidad}</strong>
+                          {it.archivos?.length > 0 && (
+                            <span className="text-white/40"> · {it.archivos.length} foto{it.archivos.length > 1 ? 's' : ''}</span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {it.material} · {it.tamano} · corte {it.corte} · <strong>x{it.cantidad}</strong>
+                          {it.archivos?.length > 0 && (
+                            <span className="text-white/40"> · {it.archivos.length} diseño{it.archivos.length > 1 ? 's' : ''}</span>
+                          )}
+                        </>
                       )}
                     </li>
                   ))}
@@ -86,7 +113,7 @@ export default function PaymentSuccess() {
               </div>
               <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
                 <a href={waHref} target="_blank" rel="noreferrer" className="btn-primary">
-                  📎 Enviar mi diseño por WhatsApp
+                  📎 Enviar mis {specNoun} por WhatsApp
                 </a>
                 <Link to="/" className="btn-secondary">Volver al inicio</Link>
               </div>
