@@ -187,6 +187,13 @@ export function trackSearch(query) {
   debug('search', query);
 }
 
+/** Búsqueda que devolvió 0 resultados → mide la fuga de tráfico del estado vacío. */
+export function trackSearchNoResults(term) {
+  pushDataLayer({ event: 'search_no_results', search_term: term });
+  pixel('Search', { search_string: term });
+  debug('search_no_results', term);
+}
+
 export function trackLeadCapture(source = 'welcome_popup') {
   pushDataLayer({ event: 'generate_lead', lead_source: source });
   pixel('Lead', { content_name: source });
