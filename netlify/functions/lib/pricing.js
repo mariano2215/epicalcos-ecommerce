@@ -21,8 +21,8 @@ const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia'; // el 10 % solo aplica pag
 // con un tope de seguridad para no llegar a precio negativo.
 const COUPONS = { EPICA10: 0.1 };
 const MAX_STICKER_DISCOUNT = 0.9;
-const WHOLESALE_QTY = 100; // pack mayorista: exactamente 100 calcos, 25 % off
-const WHOLESALE_DISCOUNT = 0.25;
+const WHOLESALE_QTY = 100; // pack mayorista: MÍNIMO 100 calcos (sin tope), 50 % off
+const WHOLESALE_DISCOUNT = 0.5;
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
 const PERSONALIZADOS_DISCOUNT = 0.1;
 const NEGOCIO_PRICE = 40000; // promo negocio: 100u 6 cm precio fijo, 1 por línea
@@ -124,8 +124,8 @@ function expectedUnitPrice(id, quantity, stickerDiscountRate) {
     const base = SIZE_PRICES[parts[2]];
     if (!base) return { error: `tamaño inválido en "${id}"` };
     if (packType === 'mayorista') {
-      if (quantity !== WHOLESALE_QTY)
-        return { error: `pack mayorista debe ser de ${WHOLESALE_QTY} calcos` };
+      if (quantity < WHOLESALE_QTY)
+        return { error: `pack mayorista: mínimo ${WHOLESALE_QTY} calcos` };
       return { price: round(base * (1 - WHOLESALE_DISCOUNT)) };
     }
     if (packType === 'personalizados') {

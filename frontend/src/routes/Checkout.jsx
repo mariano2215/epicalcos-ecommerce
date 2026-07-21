@@ -17,7 +17,14 @@ function buildDesignSummary(items) {
     if (it.type === 'pack' && it.meta) {
       const designs = (it.meta.items || []).map((d) => `${d.name} x${d.qty}`).join(', ');
       const custom = it.meta.customCount ? ` + ${it.meta.customCount} diseño(s) propio(s)` : '';
-      parts.push(`${it.name} → ${designs || 'sin catálogo'}${custom}`);
+      const files = it.meta.archivos || [];
+      let arch = '';
+      if (files.length) {
+        arch = files.some((f) => f.url)
+          ? ` | archivos (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`
+          : ` | archivos (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
+      }
+      parts.push(`${it.name} → ${designs || 'sin catálogo'}${custom}${arch}`);
     } else if (it.type === 'negocio' && it.meta) {
       parts.push(`Negocio "${it.meta.business}": ${it.meta.qty}u ${it.meta.size} (logo por WhatsApp)`);
     } else if (it.type === 'custom' && it.meta) {

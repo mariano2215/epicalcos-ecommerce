@@ -4,6 +4,7 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { SIZES, DEFAULT_SIZE, priceForSize, round } from '../config/pricing.js';
 import { categoryName } from '../data/categories.js';
 import CategoryMenu from './CategoryMenu.jsx';
+import SubidaArchivo from './personalizados/SubidaArchivo.jsx';
 
 const CUSTOM_IMG =
   'data:image/svg+xml;utf8,' +
@@ -18,17 +19,19 @@ const CUSTOM_IMG =
  * @param {{ packType:'mayorista'|'personalizados', target?:number, min?:number,
  *           discount:number, title:string, subtitle:string, allowCustom?:boolean }} props
  */
-export default function PackBuilder({ packType, target, min, discount, title, subtitle, allowCustom }) {
+export default function PackBuilder({ packType, target, min, discount, title, subtitle, allowCustom, defaultSize }) {
   const { addPack } = useCart();
   const navigate = useNavigate();
 
-  const [size, setSize] = useState(DEFAULT_SIZE);
+  const [size, setSize] = useState(defaultSize || DEFAULT_SIZE);
   const [cats, setCats] = useState([]);
   const [activeCat, setActiveCat] = useState(null);
   const [catItems, setCatItems] = useState([]);
   const [visible, setVisible] = useState(60);
   const [selection, setSelection] = useState({}); // id -> { id, image, name, category, qty }
   const [customCount, setCustomCount] = useState(0);
+  const [customFiles, setCustomFiles] = useState([]); // [{ nombre, pesoMB, url }] subidos a Cloudinary
+  const [showCustom, setShowCustom] = useState(false);
 
   const cap = target || Infinity; // mayorista: tope 100
 
@@ -116,7 +119,7 @@ export default function PackBuilder({ packType, target, min, discount, title, su
       size,
       basePrice: unit,
       quantity: totalSelected,
-      meta: { packType, size, discount, items, customCount }
+      meta: { packType, size, discount, items, customCount, archivos: customFiles.length ? customFiles : null }
     });
     navigate('/carrito');
   };
@@ -164,7 +167,10 @@ export default function PackBuilder({ packType, target, min, discount, title, su
             </div>
             {allowCustom && (
               <button
-                onClick={() => totalSelected < cap && setCustomCount((c) => c + 1)}
+                onClick={() => {
+                  setShowCustom(true);
+                  setCustomCount((c) => (c === 0 ? 1 : c));
+                }}
                 className="btn-secondary !py-1.5 !px-3 text-xs"
               >
                 🎨 + Diseño propio
@@ -211,6 +217,57 @@ export default function PackBuilder({ packType, target, min, discount, title, su
             </button>
           )}
         </div>
+
+        {/* Diseño propio: cantidad de calcos + subida de archivos */}
+        {allowCustom && showCustom && (
+          <div className="space-y-3">
+            <div className="card-glass p-5 border border-brand-fuchsia/30 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">🎨 Calcos con tu diseño</div>
+                <div className="text-xs text-white/50 mt-0.5">
+                  Poné cuántos querés (podés repetir el mismo diseño) y subí los archivos abajo.
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCustomCount((c) => Math.max(0, c - 1))}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10"
+                  aria-label="Restar"
+                >–</button>
+                <QtyInput
+                  value={customCount}
+                  onChange={(n) => setCustomCount(n)}
+                  ariaLabel="Cantidad de calcos con tu diseño"
+                />
+                <button
+                  type="button"
+                  onClick={() => setCustomCount((c) => c + 1)}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10"
+                  aria-label="Sumar"
+                >+</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustom(false);
+                    setCustomCount(0);
+                    setCustomFiles([]);
+                  }}
+                  className="btn-ghost !text-xs ml-1"
+                >
+                  Quitar
+                </button>
+              </div>
+            </div>
+            <SubidaArchivo
+              paso={null}
+              titulo="Subí tus diseños"
+              sustantivo="diseños"
+              tamanoCm={parseInt(size, 10) || null}
+              onChange={setCustomFiles}
+            />
+          </div>
+        )}
       </div>
 
       {/* Resumen / bandeja */}
@@ -251,7 +308,12 @@ export default function PackBuilder({ packType, target, min, discount, title, su
           {customCount > 0 && (
             <div className="flex items-center gap-2 text-sm">
               <span className="w-9 h-9 rounded-lg bg-white/5 grid place-items-center">🎨</span>
-              <span className="flex-1 text-white/80">Diseños propios (por WhatsApp)</span>
+              <span className="flex-1 text-white/80 truncate">
+                Diseños propios
+                {customFiles.length > 0 && (
+                  <span className="text-white/45"> · {customFiles.length} archivo{customFiles.length > 1 ? 's' : ''}</span>
+                )}
+              </span>
               <div className="flex items-center gap-1">
                 <button onClick={() => setCustomCount((c) => Math.max(0, c - 1))} className="w-6 h-6 rounded bg-white/5 border border-white/10">–</button>
                 <QtyInput
@@ -288,7 +350,7 @@ export default function PackBuilder({ packType, target, min, discount, title, su
         </button>
         {allowCustom && (
           <p className="text-xs text-white/50 text-center">
-            Los diseños propios los coordinás por WhatsApp después de la compra.
+            Subí tus diseños propios en “+ Diseño propio” o coordinálos por WhatsApp después de la compra.
           </p>
         )}
       </aside>

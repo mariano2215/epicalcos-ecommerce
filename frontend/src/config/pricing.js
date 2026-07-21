@@ -41,9 +41,9 @@ export const WELCOME_COUPON_STORAGE_KEY = 'epicalcos.welcomeCoupon';
 /** Clave de sessionStorage donde el checkout guarda la spec de los personalizados para el CTA de WhatsApp en /pago-exitoso. */
 export const CUSTOM_SPEC_STORAGE_KEY = 'epicalcos.customSpec';
 
-/** Pack mayorista: 100 calcos, 25 % off (reemplaza al 10 %). */
+/** Pack mayorista: DESDE 100 calcos (mínimo, sin tope), 50 % off en todos los tamaños. */
 export const WHOLESALE_QTY = 100;
-export const WHOLESALE_DISCOUNT = 0.25;
+export const WHOLESALE_DISCOUNT = 0.5;
 
 /** Personalizados: mínimo 10 calcos, 10 % off ya incluido. */
 export const PERSONALIZADOS_MIN = 10;
