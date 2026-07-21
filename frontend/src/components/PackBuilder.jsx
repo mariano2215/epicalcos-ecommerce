@@ -83,6 +83,14 @@ export default function PackBuilder({ packType, target, min, discount, title, su
       return { ...sel, [id]: { ...cur, qty } };
     });
   };
+  // Cantidad escrita a mano (ya clampeada por QtyInput). Para llevarla a 0 se usa el "–".
+  const setQtyExact = (id, n) => {
+    setSelection((sel) => {
+      const cur = sel[id];
+      if (!cur) return sel;
+      return { ...sel, [id]: { ...cur, qty: n } };
+    });
+  };
   const fillRemaining = () => {
     // Completa hasta el target con el último diseño seleccionado (o el primero)
     if (!target || remaining <= 0) return;
@@ -230,7 +238,12 @@ export default function PackBuilder({ packType, target, min, discount, title, su
               <span className="flex-1 truncate text-white/80">{s.name}</span>
               <div className="flex items-center gap-1">
                 <button onClick={() => bump(s.id, -1)} className="w-6 h-6 rounded bg-white/5 border border-white/10">–</button>
-                <span className="w-6 text-center">{s.qty}</span>
+                <QtyInput
+                  value={s.qty}
+                  onChange={(n) => setQtyExact(s.id, n)}
+                  max={cap === Infinity ? Infinity : Math.max(1, cap - (totalSelected - s.qty))}
+                  ariaLabel={`Cantidad de ${s.name}`}
+                />
                 <button onClick={() => bump(s.id, +1)} className="w-6 h-6 rounded bg-white/5 border border-white/10">+</button>
               </div>
             </div>
@@ -241,7 +254,12 @@ export default function PackBuilder({ packType, target, min, discount, title, su
               <span className="flex-1 text-white/80">Diseños propios (por WhatsApp)</span>
               <div className="flex items-center gap-1">
                 <button onClick={() => setCustomCount((c) => Math.max(0, c - 1))} className="w-6 h-6 rounded bg-white/5 border border-white/10">–</button>
-                <span className="w-6 text-center">{customCount}</span>
+                <QtyInput
+                  value={customCount}
+                  onChange={(n) => setCustomCount(n)}
+                  max={cap === Infinity ? Infinity : Math.max(1, cap - (totalSelected - customCount))}
+                  ariaLabel="Cantidad de diseños propios"
+                />
                 <button onClick={() => totalSelected < cap && setCustomCount((c) => c + 1)} className="w-6 h-6 rounded bg-white/5 border border-white/10">+</button>
               </div>
             </div>
@@ -275,5 +293,43 @@ export default function PackBuilder({ packType, target, min, discount, title, su
         )}
       </aside>
     </div>
+  );
+}
+
+/**
+ * Cantidad editable: se puede ESCRIBIR el número (ej. 100) además de usar –/+.
+ * Mientras se tipea permite el campo vacío sin commitear; en blur vuelve al valor.
+ * Para llegar a 0 (quitar) se usa el botón "–". Clampea a `max`.
+ */
+function QtyInput({ value, onChange, max = Infinity, ariaLabel }) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+
+  const handle = (raw) => {
+    const digits = raw.replace(/\D/g, '');
+    if (digits === '') {
+      setText(''); // permitir vacío mientras edita; no commitea
+      return;
+    }
+    let n = parseInt(digits, 10);
+    if (n < 1) n = 1;
+    if (n > max) n = max;
+    setText(String(n));
+    onChange(n);
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={text}
+      onChange={(e) => handle(e.target.value)}
+      onFocus={(e) => e.target.select()}
+      onBlur={() => setText(String(value))}
+      aria-label={ariaLabel}
+      className="w-11 h-6 text-center rounded bg-white/5 border border-white/10 text-sm tabular-nums outline-none focus:border-brand-fuchsia"
+    />
   );
 }
