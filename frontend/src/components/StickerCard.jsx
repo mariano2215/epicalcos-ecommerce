@@ -47,7 +47,7 @@ export default function StickerCard({ sticker }) {
                 type="button"
                 onClick={() => setSize(s.id)}
                 aria-pressed={active}
-                className={`rounded-xl py-1.5 text-center border transition-colors ${
+                className={`rounded-xl min-h-[44px] flex flex-col items-center justify-center border transition-colors ${
                   active
                     ? 'border-brand-fuchsia bg-brand-fuchsia/15 text-white'
                     : 'border-white/10 bg-white/[0.03] text-white/60 hover:border-white/25'
@@ -65,14 +65,14 @@ export default function StickerCard({ sticker }) {
           <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03]">
             <button
               type="button"
-              className="w-9 h-9 grid place-items-center rounded-l-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
+              className="w-11 h-11 grid place-items-center rounded-l-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               aria-label="Restar"
             >–</button>
             <span className="text-sm font-semibold tabular-nums">{qty}</span>
             <button
               type="button"
-              className="w-9 h-9 grid place-items-center rounded-r-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
+              className="w-11 h-11 grid place-items-center rounded-r-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
               onClick={() => setQty((q) => q + 1)}
               aria-label="Sumar"
             >+</button>
@@ -80,7 +80,7 @@ export default function StickerCard({ sticker }) {
           <button
             type="button"
             onClick={() => addSticker(sticker, size, qty)}
-            className="btn-primary w-full !py-2.5 !px-3 text-xs"
+            className="btn-primary w-full !py-2.5 !px-3 text-xs min-h-[44px]"
           >
             Agregar · {formatPrice(unit * qty)}
           </button>

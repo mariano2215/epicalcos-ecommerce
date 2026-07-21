@@ -47,9 +47,9 @@ export default function CartDrawer() {
                 <div className="mt-2 flex items-center gap-2">
                   {EDITABLE.has(item.type) ? (
                     <>
-                      <button className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity - 1)}>–</button>
+                      <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity - 1)} aria-label="Restar">–</button>
                       <span className="w-8 text-center text-sm">{item.quantity}</span>
-                      <button className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity + 1)}>+</button>
+                      <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity + 1)} aria-label="Sumar">+</button>
                     </>
                   ) : (
                     <span className="text-xs text-white/50">x{item.quantity}</span>

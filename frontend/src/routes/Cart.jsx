@@ -79,9 +79,9 @@ export default function Cart() {
                   <div className="mt-3 flex items-center justify-between">
                     {EDITABLE.has(it.type) ? (
                       <div className="flex items-center gap-2">
-                        <button className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(it.id, it.quantity - 1)} aria-label="Restar">–</button>
+                        <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(it.id, it.quantity - 1)} aria-label="Restar">–</button>
                         <span className="w-10 text-center font-semibold">{it.quantity}</span>
-                        <button className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(it.id, it.quantity + 1)} aria-label="Sumar">+</button>
+                        <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(it.id, it.quantity + 1)} aria-label="Sumar">+</button>
                       </div>
                     ) : (
                       <span className="text-sm text-white/60">{it.quantity} unidad{it.quantity === 1 ? '' : 'es'}</span>

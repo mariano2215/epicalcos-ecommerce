@@ -23,13 +23,14 @@ export default function RotatingHeadline({ interval = 2800 }) {
     return () => clearInterval(id);
   }, [reduced, interval]);
 
+  // El contenedor ya va con aria-hidden en el Hero (es decorativo, no es el H1),
+  // así que acá no hace falta aria-live ni marcar cada frase.
   return (
-    <span className="rotating-headline" aria-live="polite">
+    <span className="rotating-headline">
       {PHRASES.map((phrase, idx) => (
         <span
           key={idx}
           className={`rotating-headline__item gradient-text ${idx === i ? 'is-active' : ''}`}
-          aria-hidden={idx === i ? undefined : 'true'}
         >
           {phrase}
         </span>

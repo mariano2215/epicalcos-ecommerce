@@ -4,7 +4,10 @@ import { Link } from 'react-router-dom';
 export default function CategoryCard({ slug, name, emoji, cover, count }) {
   const [src, setSrc] = useState(() => {
     if (!count || count <= 1 || !slug) return cover;
-    const n = Math.floor(Math.random() * count) + 1;
+    // Portada determinística por slug: misma categoría → misma imagen siempre
+    // (memoria visual del catálogo; sin saltos entre recargas).
+    const hash = [...slug].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    const n = (hash % count) + 1;
     return `/stickers/${slug}/${n}.webp`;
   });
 

@@ -67,9 +67,9 @@ export default function FixedProductPage({ product, emoji, badge, title, subtitl
 
             <div className="mt-6 flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <button className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Restar">–</button>
+                <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Restar">–</button>
                 <span className="w-10 text-center font-semibold">{qty}</span>
-                <button className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty((q) => q + 1)} aria-label="Sumar">+</button>
+                <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty((q) => q + 1)} aria-label="Sumar">+</button>
               </div>
               <button onClick={onAdd} className="btn-primary flex-1">
                 Agregar · {formatPrice(product.price * qty)}
