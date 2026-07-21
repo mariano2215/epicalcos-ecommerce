@@ -112,6 +112,8 @@ export default function Producto() {
           name: sticker.name,
           description: `${sticker.name} — calco de vinilo premium de EPICALCOS.`,
           image: sticker.image,
+          category: sticker.category,
+          num: sticker.number,
           categoryLabel: sticker.categoryLabel,
           price: unit,
           stock: 999
