@@ -67,6 +67,11 @@ export default function Cart() {
                           {it.meta.customCount > 0 ? `${it.meta.customCount} propio(s)` : ''}
                         </div>
                       )}
+                      {it.meta?.archivos?.length > 0 && (
+                        <div className="text-xs text-white/50 mt-1">
+                          📎 {it.meta.archivos.length} archivo{it.meta.archivos.length > 1 ? 's' : ''} adjunto{it.meta.archivos.length > 1 ? 's' : ''}
+                        </div>
+                      )}
                     </div>
                     <button onClick={() => removeItem(it.id)} className="text-white/40 hover:text-white" aria-label="Quitar">✕</button>
                   </div>

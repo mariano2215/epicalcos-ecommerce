@@ -1,21 +1,36 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Breadcrumbs from './Breadcrumbs.jsx';
+import SubidaArchivo from './personalizados/SubidaArchivo.jsx';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 
 /**
  * Página de producto de precio fijo (tatuajes / polaroid) con stepper de cantidad.
+ * Si se pasa `upload`, muestra un uploader de archivos (mismo que personalizados) y
+ * adjunta los archivos al pedido en `meta.archivos` (llegan al CRM vía el checkout).
  * @param {{ product:{id,name,price}, emoji:string, badge:string, title:string,
- *           subtitle:string, bullets:string[], specs?:{label:string,value:string}[], breadcrumb:string }} props
+ *           subtitle:string, bullets:string[], specs?:{label:string,value:string}[], breadcrumb:string,
+ *           upload?:{ titulo?:string, sustantivo?:string, formatos?:string[], descripcion?:import('react').ReactNode,
+ *                     tamanoCm?:number|null, preset?:string, perUnit?:number, max?:number } }} props
  */
-export default function FixedProductPage({ product, emoji, badge, title, subtitle, bullets, specs, breadcrumb }) {
+export default function FixedProductPage({ product, emoji, badge, title, subtitle, bullets, specs, breadcrumb, upload }) {
   const { addFixed } = useCart();
   const [qty, setQty] = useState(1);
+  const [archivos, setArchivos] = useState([]);
+  const onArchivosChange = useCallback((items) => setArchivos(items), []);
+
+  // Cupo de archivos: por unidad (perUnit × cantidad) o un máximo fijo.
+  const uploadMax = upload ? (upload.perUnit ? upload.perUnit * qty : upload.max ?? 10) : 0;
 
   const image =
     'data:image/svg+xml;utf8,' +
     encodeURIComponent(
       `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' rx='24' fill='#202020'/><text x='50%' y='52%' font-size='96' text-anchor='middle' dominant-baseline='middle'>${emoji}</text></svg>`
     );
+
+  const onAdd = () => {
+    const meta = upload && archivos.length ? { archivos } : null;
+    addFixed({ ...product, image, meta }, qty);
+  };
 
   return (
     <div className="page-gradient min-h-screen">
@@ -56,12 +71,36 @@ export default function FixedProductPage({ product, emoji, badge, title, subtitl
                 <span className="w-10 text-center font-semibold">{qty}</span>
                 <button className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty((q) => q + 1)} aria-label="Sumar">+</button>
               </div>
-              <button onClick={() => addFixed({ ...product, image }, qty)} className="btn-primary flex-1">
+              <button onClick={onAdd} className="btn-primary flex-1">
                 Agregar · {formatPrice(product.price * qty)}
               </button>
             </div>
+
+            {upload && (
+              <p className="mt-3 text-xs text-white/50">
+                📸 {archivos.length > 0
+                  ? `${archivos.length} archivo${archivos.length > 1 ? 's' : ''} listo${archivos.length > 1 ? 's' : ''} — se suman al pedido.`
+                  : 'Subí tus fotos abajo antes de agregar (o mandalas por WhatsApp después).'}
+              </p>
+            )}
           </div>
         </div>
+
+        {upload && (
+          <div className="mt-6 lg:max-w-2xl">
+            <SubidaArchivo
+              tamanoCm={upload.tamanoCm ?? null}
+              max={uploadMax}
+              paso={null}
+              titulo={upload.titulo}
+              sustantivo={upload.sustantivo}
+              formatos={upload.formatos}
+              descripcion={upload.descripcion}
+              preset={upload.preset}
+              onChange={onArchivosChange}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

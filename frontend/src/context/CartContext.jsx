@@ -119,16 +119,24 @@ export function CartProvider({ children }) {
     trackAddToCart({ ...line, price: line.basePrice }, 1);
   }, [notify]);
 
-  /** Agregar un producto de precio fijo (tatuajes / polaroid). */
+  /**
+   * Agregar un producto de precio fijo (tatuajes / polaroid). Si trae `meta`
+   * (ej. fotos adjuntas de Polaroid), la línea lleva un id único para que cada
+   * pedido conserve sus propios adjuntos en vez de mergear la cantidad y pisarlos.
+   * El backend valida el precio por el prefijo `fixed:{productId}` (ver
+   * netlify/functions/lib/pricing.js), así que el sufijo extra no lo afecta.
+   */
   const addFixed = useCallback((product, quantity = 1) => {
+    const hasMeta = product.meta && Object.keys(product.meta).length > 0;
     const line = {
-      id: `fixed:${product.id}`,
+      id: hasMeta ? `fixed:${product.id}:${Date.now()}` : `fixed:${product.id}`,
       type: 'fixed',
       name: product.name,
       categoryLabel: product.categoryLabel || 'Especial',
       image: product.image,
       basePrice: product.price,
-      quantity
+      quantity,
+      ...(hasMeta ? { meta: product.meta } : {})
     };
     dispatch({ type: 'ADD', line });
     notify(`${line.name} agregado`);

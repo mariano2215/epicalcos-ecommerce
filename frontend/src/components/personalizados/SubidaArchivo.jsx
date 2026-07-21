@@ -7,15 +7,32 @@ const nextId = () => `f${++uid}`;
 const ext = (name) => name.split('.').pop()?.toLowerCase() || '';
 
 /**
- * Subida de hasta {max} diseños. Valida formato/peso/resolución por archivo (la
+ * Subida de hasta {max} archivos. Valida formato/peso/resolución por archivo (la
  * resolución es AVISO, no bloqueo). Si Cloudinary está configurado, sube cada
  * archivo y guarda su URL; si no, queda solo el nombre (se manda por WhatsApp).
  *
- * @param {{ tamanoCm: number|null, max?: number,
+ * El copy es parametrizable para reusar el componente fuera del configurador
+ * (ej. fotos en Polaroid): `paso` (badge numérico; null lo oculta), `titulo`,
+ * `sustantivo` (plural para los avisos), `formatos` aceptados y `descripcion`.
+ *
+ * @param {{ tamanoCm: number|null, max?: number, paso?: number|null, titulo?: string,
+ *           sustantivo?: string, formatos?: string[], descripcion?: import('react').ReactNode,
+ *           preset?: string,
  *           onChange: (items:Array<{nombre,pesoMB,url}>) => void,
  *           onAdd?: (info:{nombre,pesoMB}) => void }} props
  */
-export default function SubidaArchivo({ tamanoCm, max = ARCHIVO.maxArchivos, onChange, onAdd }) {
+export default function SubidaArchivo({
+  tamanoCm,
+  max = ARCHIVO.maxArchivos,
+  paso = 5,
+  titulo = 'Subí tu diseño',
+  sustantivo = 'diseños',
+  formatos = ARCHIVO.formatos,
+  descripcion,
+  preset,
+  onChange,
+  onAdd
+}) {
   const inputRef = useRef(null);
   const [drag, setDrag] = useState(false);
   const [archivos, setArchivos] = useState([]); // { id, nombre, pesoMB, width, height, preview, aviso, url, uploading, progress, error }
@@ -43,15 +60,15 @@ export default function SubidaArchivo({ tamanoCm, max = ARCHIVO.maxArchivos, onC
   const subir = (id, file) => {
     if (!uploadEnabled) return;
     patch(id, { uploading: true, progress: 0, error: '' });
-    uploadDesign(file, { onProgress: (pct) => patch(id, { progress: pct }) })
+    uploadDesign(file, { preset, onProgress: (pct) => patch(id, { progress: pct }) })
       .then((url) => patch(id, { uploading: false, url: url || null }))
       .catch(() => patch(id, { uploading: false, error: 'No se pudo subir — mandalo por WhatsApp.' }));
   };
 
   const procesarUno = async (file, cupo) => {
     const e = ext(file.name);
-    if (!ARCHIVO.formatos.includes(e)) {
-      setErrorGlobal(`Formato .${e} no soportado. Usá ${ARCHIVO.formatos.join(', ').toUpperCase()}.`);
+    if (!formatos.includes(e)) {
+      setErrorGlobal(`Formato .${e} no soportado. Usá ${formatos.join(', ').toUpperCase()}.`);
       return false;
     }
     const pesoMB = file.size / (1024 * 1024);
@@ -84,7 +101,7 @@ export default function SubidaArchivo({ tamanoCm, max = ARCHIVO.maxArchivos, onC
     const files = Array.from(fileList);
     let cupo = max - archivos.length;
     if (files.length > cupo) {
-      setErrorGlobal(`Podés subir hasta ${max} diseños. Se tomaron los primeros ${Math.max(cupo, 0)}.`);
+      setErrorGlobal(`Podés subir hasta ${max} ${sustantivo}. Se tomaron los primeros ${Math.max(cupo, 0)}.`);
     }
     for (const file of files) {
       if (cupo <= 0) break;
@@ -116,15 +133,21 @@ export default function SubidaArchivo({ tamanoCm, max = ARCHIVO.maxArchivos, onC
   return (
     <section className="card-glass p-5">
       <div className="flex items-baseline gap-2 mb-1">
-        <span className="grid place-items-center w-6 h-6 rounded-full bg-brand-fuchsia/20 text-brand-fuchsia text-xs font-bold shrink-0">
-          5
-        </span>
-        <h2 className="font-display font-extrabold text-lg">Subí tu diseño</h2>
+        {paso != null && (
+          <span className="grid place-items-center w-6 h-6 rounded-full bg-brand-fuchsia/20 text-brand-fuchsia text-xs font-bold shrink-0">
+            {paso}
+          </span>
+        )}
+        <h2 className="font-display font-extrabold text-lg">{titulo}</h2>
         <span className="text-xs text-white/40 ml-auto">{archivos.length}/{max}</span>
       </div>
-      <p className="text-white/50 text-sm mb-3 ml-8">
-        PNG, JPG o PDF, hasta {ARCHIVO.pesoMaximoMB} MB cada uno. Podés sumar hasta {max} diseños. Si tenés el
-        vectorial (AI, SVG, PDF), mejor: el corte sale más preciso.
+      <p className={`text-white/50 text-sm mb-3 ${paso != null ? 'ml-8' : ''}`}>
+        {descripcion ?? (
+          <>
+            PNG, JPG o PDF, hasta {ARCHIVO.pesoMaximoMB} MB cada uno. Podés sumar hasta {max} {sustantivo}. Si tenés el
+            vectorial (AI, SVG, PDF), mejor: el corte sale más preciso.
+          </>
+        )}
       </p>
 
       {!lleno && (
@@ -148,7 +171,7 @@ export default function SubidaArchivo({ tamanoCm, max = ARCHIVO.maxArchivos, onC
             ref={inputRef}
             type="file"
             multiple
-            accept={ARCHIVO.formatos.map((f) => '.' + f).join(',')}
+            accept={formatos.map((f) => '.' + f).join(',')}
             onChange={onInput}
             className="hidden"
           />
