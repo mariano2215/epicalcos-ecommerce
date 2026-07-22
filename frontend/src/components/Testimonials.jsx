@@ -42,10 +42,10 @@ export default function Testimonials() {
                 <img
                   src={t.image}
                   alt={`Calco aplicado — testimonio de ${t.name}`}
-                  className="w-full h-36 object-cover rounded-xl"
+                  className="w-full aspect-[4/5] object-cover rounded-xl"
                 />
               ) : (
-                <div className="w-full h-36 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 text-sm">
+                <div className="w-full aspect-[4/5] rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 text-sm">
                   📸 Foto del calco aplicado
                 </div>
               )}
