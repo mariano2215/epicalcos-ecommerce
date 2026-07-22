@@ -4,6 +4,7 @@ import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
 import CartDrawer from './components/CartDrawer.jsx';
 import WelcomePopup from './components/WelcomePopup.jsx';
+import WhatsAppButton from './components/WhatsAppButton.jsx';
 import Home from './routes/Home.jsx'; // Home eager (LCP)
 
 // Resto lazy: bajan el initial bundle
@@ -93,6 +94,7 @@ export default function App() {
         </Suspense>
       </main>
       <Footer />
+      <WhatsAppButton />
     </div>
   );
 }
