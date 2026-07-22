@@ -35,6 +35,67 @@ export function findCoupon(code) {
   return COUPONS[String(code || '').trim().toUpperCase()] || null;
 }
 
+/**
+ * ─── PROMO 3x2 (por tiempo limitado) ──────────────────────────────────────────
+ * "3x2 en TODAS las calcos": cada 3 calcos elegibles, la MÁS BARATA gratis.
+ * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom').
+ * NO incluye packs mayoristas ni la promo Negocio.
+ *
+ * ACUMULABLE con el cupón EPICA10, pero durante la promo el descuento en % está
+ * topeado en `percentCap` (10 %): EPICA10 y el 10 % por transferencia NO se
+ * suman por encima de ese tope (fuera de la promo, el tope sigue siendo
+ * MAX_STICKER_DISCOUNT y el cupón sí se suma a la transferencia como siempre).
+ *
+ * Se auto-desactiva por fecha (sin cron): cuando `Date.now() > PROMO_END_MS`,
+ * los precios, el banner y el contador vuelven solos a la normalidad.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO: `PROMO_END_MS`, `percentCap` y la función `promo3x2`
+ * están espejados en `netlify/functions/lib/pricing.js`. Si cambiás algo acá,
+ * cambialo TAMBIÉN allá o el checkout se rechaza con `price_mismatch`.
+ * El test `src/lib/promoPricing.test.js` verifica que ambos lados coincidan.
+ */
+export const PROMO_3X2 = {
+  /** Fin de la promo, en hora de Argentina (UTC−03:00). Inclusive: termina al cerrar el domingo. */
+  endsAt: '2026-07-26T23:59:59-03:00',
+  buy: 3,
+  pay: 2,
+  /** Tope del descuento en % durante la promo (transferencia + cupón no superan esto). */
+  percentCap: 0.10,
+  couponCode: 'EPICA10'
+};
+
+export const PROMO_END_MS = Date.parse(PROMO_3X2.endsAt);
+
+/** ¿La promo 3x2 está vigente en este instante? */
+export function isPromoActive(now = Date.now()) {
+  return Number.isFinite(PROMO_END_MS) && now <= PROMO_END_MS;
+}
+
+/**
+ * 3x2 sobre una "bolsa" de unidades elegibles (cada `buy`, se regalan las
+ * `buy - pay` más baratas). Devuelve el ahorro y `keepFraction` = fracción del
+ * subtotal elegible que efectivamente SE PAGA. Se aplica uniforme a cada línea
+ * (así el precio por unidad queda POSITIVO y verificable idéntico en el server;
+ * Mercado Pago no admite líneas con precio ≤ 0, por eso no se manda un ítem de
+ * descuento negativo).
+ *
+ * @param {{ unitBasePrices: number[], buy?: number, pay?: number }} args
+ * @returns {{ freeUnits: number, discount: number, keepFraction: number }}
+ */
+export function promo3x2({ unitBasePrices, buy = PROMO_3X2.buy, pay = PROMO_3X2.pay }) {
+  const n = unitBasePrices.length;
+  const eligibleBase = unitBasePrices.reduce((a, b) => a + b, 0);
+  const freeUnits = Math.floor(n / buy) * (buy - pay);
+  if (eligibleBase <= 0 || freeUnits <= 0) {
+    return { freeUnits: 0, discount: 0, keepFraction: 1 };
+  }
+  // Se regalan las MÁS BARATAS: ordenar asc y sumar las primeras `freeUnits`.
+  const sorted = [...unitBasePrices].sort((a, b) => a - b);
+  let discount = 0;
+  for (let k = 0; k < freeUnits; k++) discount += sorted[k];
+  return { freeUnits, discount, keepFraction: (eligibleBase - discount) / eligibleBase };
+}
+
 /** Clave de localStorage donde el popup de bienvenida guarda el código para prellenarlo en el checkout. */
 export const WELCOME_COUPON_STORAGE_KEY = 'epicalcos.welcomeCoupon';
 

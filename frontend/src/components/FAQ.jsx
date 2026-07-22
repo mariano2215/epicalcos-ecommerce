@@ -49,7 +49,7 @@ const faqs = [
   {
     tag: 'mayorista',
     q: '¿Cuál es el pedido mínimo para mayorista?',
-    a: 'El Pack Mayorista parte de 100 calcos con 25% de descuento. Para pedidos más grandes o negocio personalizado, cotizamos por WhatsApp sin compromiso.'
+    a: 'El Pack Mayorista parte de 100 calcos con 50% de descuento. Para pedidos más grandes o negocio personalizado, cotizamos por WhatsApp sin compromiso.'
   },
   {
     tag: 'mayorista',

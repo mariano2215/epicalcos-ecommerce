@@ -8,7 +8,10 @@ import Breadcrumbs from '../components/Breadcrumbs.jsx';
 const EDITABLE = new Set(['sticker', 'fixed']);
 
 export default function Cart() {
-  const { items, setQty, removeItem, subtotal, clear, bulkEligible, unitsToBulk, bulkSavings } = useCart();
+  const {
+    items, setQty, removeItem, subtotal, clear, bulkEligible, unitsToBulk, bulkSavings,
+    promoActive, promoSavings
+  } = useCart();
   const navigate = useNavigate();
 
   useSeo({ title: 'Carrito', description: 'Revisá tu pedido antes de pagar con Mercado Pago.' });
@@ -37,8 +40,12 @@ export default function Cart() {
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Carrito' }]} />
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Tu carrito</h1>
 
-        {/* Banner de descuento por volumen */}
-        {bulkEligible ? (
+        {/* Banner de la promo 3x2 (o del descuento por volumen fuera de la promo) */}
+        {promoActive ? (
+          <div className="mt-4 rounded-xl p-3 text-sm border border-brand-fuchsia/30 bg-brand-fuchsia/10 text-white/85">
+            🎉 <strong>Promo 3x2 en todas las calcos</strong> — cada 3 (catálogo o personalizados), la más barata gratis. Sumá <strong>EPICA10</strong> en el checkout para 10% extra.
+          </div>
+        ) : bulkEligible ? (
           <div className="mt-4 rounded-xl p-3 text-sm border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
             🎉 Ya llegaste a 10 calcos: pagando por <strong>transferencia bancaria</strong> ahorrás {formatPrice(bulkSavings)} (10% off).
           </div>
@@ -100,18 +107,27 @@ export default function Cart() {
             <div className="flex justify-between text-white/70 mb-2">
               <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
             </div>
-            {bulkSavings > 0 && (
+            {promoActive && promoSavings > 0 ? (
+              <div className="flex justify-between text-emerald-400 text-sm mb-2">
+                <span>🎉 Promo 3x2</span><span>-{formatPrice(promoSavings)}</span>
+              </div>
+            ) : bulkSavings > 0 ? (
               <div className="flex justify-between text-emerald-400 text-sm mb-2">
                 <span>10% off por transferencia</span><span>-{formatPrice(bulkSavings)}</span>
               </div>
-            )}
+            ) : null}
             <div className="flex justify-between text-white/70 mb-2">
               <span>Envío</span><span className="text-white/50">Se calcula en el checkout</span>
             </div>
             <div className="border-t border-white/10 my-3" />
             <div className="flex justify-between font-display font-extrabold text-lg">
-              <span>Total</span><span>{formatPrice(subtotal)}</span>
+              <span>Total</span><span>{formatPrice(promoActive ? subtotal - promoSavings : subtotal)}</span>
             </div>
+            {promoActive && (
+              <p className="text-xs text-white/50 mt-2">
+                El cupón EPICA10 y el 10% por transferencia se suman en el checkout (tope 10%).
+              </p>
+            )}
             <button onClick={() => navigate('/checkout')} className="btn-primary w-full mt-5">
               Ir al checkout →
             </button>

@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
+import PromoBanner from './PromoBanner.jsx';
+import { usePromoActive } from '../lib/promo.js';
 import { navLinks, site } from '../config/site.js';
 
 export default function Header() {
   const { totalItems, openDrawer } = useCart();
   const [open, setOpen] = useState(false);
+  const promoActive = usePromoActive();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
-      <AnnouncementBar />
+      {promoActive ? <PromoBanner /> : <AnnouncementBar />}
       <div className="container-app flex items-center justify-between py-4">
         <Link to="/" className="flex items-center" onClick={() => setOpen(false)} aria-label={site.name}>
           <img src="/favicon.png" alt={site.name} className="h-11 w-11 rounded-lg" />

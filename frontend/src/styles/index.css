@@ -321,6 +321,75 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
 }
 
+/* ============================================================
+   Promo 3x2 — banner del header (fondo de calcos + cuenta regresiva)
+   ============================================================ */
+.promo-banner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(255, 27, 141, 0.24), rgba(255, 90, 31, 0.18) 55%, rgba(255, 216, 77, 0.16)), #141018;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.promo-banner__stickers { z-index: 1; }
+.promo-banner__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(12, 10, 14, 0.42), rgba(12, 10, 14, 0.62));
+  pointer-events: none;
+}
+.promo-banner__title {
+  display: block;
+  font-family: 'Montserrat', 'Poppins', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+.promo-banner__sub {
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 3px;
+}
+.promo-banner__sub strong { color: #fff; }
+@media (min-width: 640px) {
+  .promo-banner__title { font-size: 1.3rem; }
+}
+
+.promo-timebox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 3px 7px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  line-height: 1;
+}
+.promo-timebox__num {
+  font-family: 'Montserrat', 'Poppins', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #fff;
+}
+.promo-timebox__lbl {
+  margin-top: 3px;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.promo-timebox__sep {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora,
   .page-gradient,

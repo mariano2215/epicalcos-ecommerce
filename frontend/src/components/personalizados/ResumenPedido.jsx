@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatPrice } from '../../context/CartContext.jsx';
+import { isPromoActive } from '../../config/pricing.js';
 
 function ctaLabel(precio) {
   if (!precio.configuracionCompleta) return `Elegí ${precio.faltante} para ver el precio`;
@@ -92,6 +93,12 @@ export default function ResumenPedido({ precio, seleccion, onAdd }) {
           )}
           <Desglose desglose={precio.desglose} />
         </div>
+      )}
+
+      {isPromoActive() && (
+        <p className="mt-4 text-xs text-brand-fuchsia bg-brand-fuchsia/10 border border-brand-fuchsia/25 rounded-lg px-3 py-2">
+          🎉 <strong>Promo 3x2</strong>: la promo se aplica en el carrito — cada 3 calcos (contando catálogo + personalizados), la más barata te queda gratis.
+        </p>
       )}
 
       <button

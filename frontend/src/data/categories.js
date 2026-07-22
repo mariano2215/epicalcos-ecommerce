@@ -130,7 +130,7 @@ export const SPECIALS = [
     to: '/mayorista',
     name: 'Pack Mayorista x100',
     emoji: '📦',
-    blurb: 'Armá 100 calcos · 25% off',
+    blurb: 'Armá 100 calcos · 50% off',
     accent: 'from-amber-400 to-orange-500'
   },
   {

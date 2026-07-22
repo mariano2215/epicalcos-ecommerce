@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
+import AnnouncementBar from '../components/AnnouncementBar.jsx';
 import Benefits from '../components/Benefits.jsx';
 import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import Testimonials from '../components/Testimonials.jsx';
@@ -36,6 +37,9 @@ export default function Home() {
   return (
     <>
       <Hero />
+
+      {/* Ticker de novedades: pasa despacio entre la portada y los destacados. */}
+      <AnnouncementBar durationSec={90} />
 
       <FeaturedStickers />
 
@@ -111,7 +115,7 @@ export default function Home() {
             <span className="badge badge-hot mb-3">Descuentos</span>
             <h3 className="font-display font-extrabold text-2xl md:text-4xl">Desde 10 calcos, 10% off por transferencia</h3>
             <p className="text-white/70 mt-3 max-w-xl mx-auto">
-              Mezclá los diseños y tamaños que quieras, y pagá por transferencia bancaria. Y si vas por volumen, el Pack Mayorista x100 tiene 25% de descuento.
+              Mezclá los diseños y tamaños que quieras, y pagá por transferencia bancaria. Y si vas por volumen, el Pack Mayorista desde 100 calcos tiene 50% de descuento.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link to="/categorias" className="btn-primary">Ver categorías</Link>

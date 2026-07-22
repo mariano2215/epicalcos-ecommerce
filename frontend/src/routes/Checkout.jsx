@@ -96,7 +96,7 @@ function stashDesignSpec(items, payerName) {
 }
 
 export default function Checkout() {
-  const { pricedItems, clear } = useCart();
+  const { pricedItems, clear, promoActive } = useCart();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -144,6 +144,15 @@ export default function Checkout() {
   // (ver CartContext.pricedItems) — nunca se suman.
   const items = pricedItems(paymentMethod, appliedCoupon);
   const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
+  const listSubtotal = items.reduce((a, i) => a + i.basePrice * i.quantity, 0);
+  const discount = listSubtotal - subtotal;
+  const discountLabel = (() => {
+    const parts = [];
+    if (promoActive) parts.push('3x2');
+    if (appliedCoupon) parts.push(appliedCoupon);
+    if (isTransfer && !appliedCoupon) parts.push('10% transf.');
+    return parts.length ? parts.join(' + ') : 'Descuento';
+  })();
   const shippingCost = calculateShipping({
     method: ship.method,
     subtotal,
@@ -245,9 +254,9 @@ export default function Checkout() {
                   <img src={it.image} alt={it.name} className="w-14 h-14 rounded-xl object-contain bg-white/5 p-0.5" />
                   <div className="flex-1 text-sm">
                     <div className="font-semibold leading-snug">{it.name}</div>
-                    <div className="text-white/50">x{it.quantity} · {formatPrice(it.price)}</div>
+                    <div className="text-white/50">x{it.quantity} · {formatPrice(it.basePrice)}</div>
                   </div>
-                  <div className="text-sm font-semibold">{formatPrice(it.price * it.quantity)}</div>
+                  <div className="text-sm font-semibold">{formatPrice(it.basePrice * it.quantity)}</div>
                 </div>
               ))}
             </div>
@@ -280,8 +289,13 @@ export default function Checkout() {
             </div>
 
             <div className="flex justify-between text-white/70 text-sm mb-1.5">
-              <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
+              <span>Subtotal</span><span>{formatPrice(listSubtotal)}</span>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-emerald-400 text-sm mb-1.5">
+                <span>🎉 {discountLabel}</span><span>−{formatPrice(discount)}</span>
+              </div>
+            )}
             {isPickup ? (
               <div className="flex justify-between text-white/70 text-sm mb-3">
                 <span>Retiro en Rosario</span>
@@ -304,6 +318,9 @@ export default function Checkout() {
                 <div>🏦 Pagás por transferencia bancaria — datos en el formulario.</div>
               ) : (
                 <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
+              )}
+              {promoActive && (
+                <div className="text-emerald-400">🎉 Promo 3x2 en calcos y personalizados. Sumá <strong>EPICA10</strong> para 10% extra.</div>
               )}
               <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>
             </div>

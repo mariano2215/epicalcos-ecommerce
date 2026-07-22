@@ -5,7 +5,7 @@ const ticker = announcements.join(SEP) + SEP;
 // 6 copias: la animación mueve -50% (3 copias), las otras 3 actúan de relleno invisible
 const COPIES = 6;
 
-export default function AnnouncementBar() {
+export default function AnnouncementBar({ durationSec }) {
   if (!announcements.length) return null;
 
   return (
@@ -17,7 +17,10 @@ export default function AnnouncementBar() {
       }}
       aria-label={announcements.join(' · ')}
     >
-      <div className="announcement-ticker">
+      <div
+        className="announcement-ticker"
+        style={durationSec ? { animationDuration: `${durationSec}s` } : undefined}
+      >
         {Array.from({ length: COPIES }, (_, i) => (
           <span key={i} aria-hidden={i > 0 ? 'true' : undefined}>{ticker}</span>
         ))}

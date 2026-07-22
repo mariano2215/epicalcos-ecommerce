@@ -4,7 +4,11 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 const EDITABLE = new Set(['sticker', 'fixed']);
 
 export default function CartDrawer() {
-  const { drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear, bulkEligible, unitsToBulk } = useCart();
+  const {
+    drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear,
+    bulkEligible, unitsToBulk,
+    promoActive, promoFreeUnits, promoSavings, promoUnits, promoToNextFree
+  } = useCart();
   const navigate = useNavigate();
 
   if (!drawerOpen) return null;
@@ -65,6 +69,16 @@ export default function CartDrawer() {
 
         {items.length > 0 && (
           <div className="p-5 border-t border-white/10 space-y-3">
+            {promoActive && promoFreeUnits > 0 && (
+              <div className="text-xs text-emerald-400">
+                🎉 Promo 3x2: {promoFreeUnits} calco{promoFreeUnits === 1 ? '' : 's'} gratis — ahorrás {formatPrice(promoSavings)}.
+              </div>
+            )}
+            {promoActive && promoFreeUnits === 0 && promoUnits > 0 && promoToNextFree > 0 && (
+              <div className="text-xs text-white/50">
+                Sumá {promoToNextFree} calco{promoToNextFree === 1 ? '' : 's'} y llevás 1 gratis (promo 3x2).
+              </div>
+            )}
             {bulkEligible ? (
               <div className="text-xs text-emerald-400">🎉 10% off pagando por transferencia bancaria.</div>
             ) : unitsToBulk > 0 ? (
@@ -74,10 +88,21 @@ export default function CartDrawer() {
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {promoActive && promoSavings > 0 && (
+              <div className="flex justify-between text-emerald-400 text-sm">
+                <span>Promo 3x2</span>
+                <span>−{formatPrice(promoSavings)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-display font-extrabold text-lg">
               <span>Total</span>
-              <span>{formatPrice(subtotal)}</span>
+              <span>{formatPrice(promoActive ? subtotal - promoSavings : subtotal)}</span>
             </div>
+            {promoActive && (
+              <p className="text-[11px] text-white/40 leading-snug">
+                El cupón EPICA10 y el medio de pago se aplican en el checkout.
+              </p>
+            )}
             <button onClick={goCheckout} className="btn-primary w-full">
               Ir al checkout →
             </button>

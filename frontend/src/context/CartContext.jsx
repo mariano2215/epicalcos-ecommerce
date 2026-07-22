@@ -8,8 +8,14 @@ import {
   BULK_DISCOUNT,
   BULK_DISCOUNT_PAYMENT_METHOD,
   findCoupon,
-  MAX_STICKER_DISCOUNT
+  MAX_STICKER_DISCOUNT,
+  PROMO_3X2,
+  isPromoActive,
+  promo3x2
 } from '../config/pricing.js';
+
+/** Tipos de línea que entran en la promo 3x2 (calcos de catálogo + personalizados). */
+const PROMO_ELIGIBLE_TYPES = new Set(['sticker', 'custom']);
 
 const CartContext = createContext(null);
 const STORAGE_KEY = 'epicalcos.cart.v2';
@@ -180,23 +186,74 @@ export function CartProvider({ children }) {
       : 0;
     const unitsToBulk = bulkEligible ? 0 : BULK_THRESHOLD - bulkUnits;
 
-    return { items, subtotal, totalItems, bulkUnits, bulkEligible, bulkSavings, unitsToBulk };
+    // Promo 3x2 (por tiempo limitado): bolsa común de calcos elegibles
+    // (catálogo + personalizados). Independiente del medio de pago y del cupón,
+    // así ya se puede mostrar en el carrito. El % (EPICA10 / transferencia) se
+    // suma recién en el checkout, en pricedItems.
+    const promoActive = isPromoActive();
+    const unitBasePrices = [];
+    if (promoActive) {
+      for (const i of state.items) {
+        if (PROMO_ELIGIBLE_TYPES.has(i.type)) {
+          for (let k = 0; k < i.quantity; k++) unitBasePrices.push(i.basePrice);
+        }
+      }
+    }
+    const promo = promo3x2({ unitBasePrices });
+    const promoUnits = unitBasePrices.length;
+    const promoToNextFree = promoActive
+      ? (PROMO_3X2.buy - (promoUnits % PROMO_3X2.buy)) % PROMO_3X2.buy
+      : 0;
+
+    return {
+      items,
+      subtotal,
+      totalItems,
+      bulkUnits,
+      bulkEligible,
+      bulkSavings,
+      unitsToBulk,
+      promoActive,
+      promoUnits,
+      promoFreeUnits: promo.freeUnits,
+      promoSavings: promo.discount,
+      promoKeepFraction: promo.keepFraction,
+      promoToNextFree
+    };
   }, [state.items]);
 
   /**
    * Recalcula los items con el precio real según el medio de pago y el cupón
-   * aplicado en el checkout: a los calcos sueltos se les SUMA el 10 % por
-   * volumen (solo si paymentMethod es 'transferencia' y el carrito llegó al
-   * umbral) MÁS el descuento del cupón (si es válido). Son acumulables.
+   * aplicado en el checkout.
+   *
+   * FUERA de la promo: a los calcos sueltos se les SUMA el 10 % por volumen
+   * (solo transferencia y desde el umbral) MÁS el cupón (acumulables, tope 90 %).
+   *
+   * DURANTE la promo 3x2: a los calcos elegibles (catálogo + personalizados) se
+   * les aplica primero el 3x2 (uniforme vía keepFraction) y después el % (cupón
+   * + transferencia) topeado en PROMO_3X2.percentCap (10 %). Espejado en
+   * netlify/functions/lib/pricing.js.
    */
   const pricedItems = useCallback(
     (paymentMethod, couponCode) => {
       const bulkRate = derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
       const couponRate = findCoupon(couponCode)?.discount || 0;
-      const rate = Math.min(bulkRate + couponRate, MAX_STICKER_DISCOUNT);
-      if (rate === 0) return derived.items;
+      const cap = derived.promoActive ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
+      const percentRate = Math.min(bulkRate + couponRate, cap);
+      const keep = derived.promoKeepFraction;
+
+      if (!derived.promoActive) {
+        if (percentRate === 0) return derived.items;
+        return derived.items.map((i) =>
+          i.type === 'sticker' ? { ...i, price: round(i.basePrice * (1 - percentRate)) } : i
+        );
+      }
+
+      // Promo activa: 3x2 + % (con tope) a los elegibles; el resto intacto.
       return derived.items.map((i) =>
-        i.type === 'sticker' ? { ...i, price: round(i.basePrice * (1 - rate)) } : i
+        PROMO_ELIGIBLE_TYPES.has(i.type)
+          ? { ...i, price: round(i.basePrice * keep * (1 - percentRate)) }
+          : i
       );
     },
     [derived]

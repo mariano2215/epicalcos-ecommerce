@@ -14,7 +14,7 @@ const CUSTOM_IMG =
 
 /**
  * Armador de packs ("armá tu pack"). Un solo tamaño para todo el pack y descuento
- * fijo según el tipo. Sirve para Mayorista (target 100, 25%) y Personalizados (mín 10, 10%).
+ * fijo según el tipo. Sirve para Mayorista (target 100, 50%) y Personalizados (mín 10, 10%).
  *
  * @param {{ packType:'mayorista'|'personalizados', target?:number, min?:number,
  *           discount:number, title:string, subtitle:string, allowCustom?:boolean }} props

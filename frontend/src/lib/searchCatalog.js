@@ -115,7 +115,7 @@ export function suggest(query, categories, counts, aliases, limit = 6) {
   if (out.kind === 'route') {
     const labels = {
       '/personalizados': '✏️ Armá tu calco personalizado',
-      '/mayorista': '📦 Pack Mayorista x100 · 25% off',
+      '/mayorista': '📦 Pack Mayorista x100 · 50% off',
       '/negocio': '🏪 Calcos para tu negocio',
       '/tatuajes': '💉 Tatuajes temporales',
       '/polaroid': '📸 Fotos Polaroid',
