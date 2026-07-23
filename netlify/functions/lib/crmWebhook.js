@@ -17,11 +17,30 @@ import { createHmac, randomUUID } from 'node:crypto';
 const TIMEOUT_MS = 3000;
 
 /**
- * Envía un evento al CRM. `event` es 'order.created' u 'order.paid'.
- * `order` sigue el payload de referencia del CRM (importes en PESOS).
- * Nunca lanza: devuelve { sent: boolean, status?, error? } solo para logging.
+ * Envía un evento de pedido al CRM. `event` es 'order.created', 'order.paid'
+ * u 'order.rejected'. `order` sigue el payload de referencia del CRM
+ * (importes en PESOS). Nunca lanza: devuelve { sent, status?, error? }.
  */
 export async function notifyCrm(event, order) {
+  if (!order) return { sent: false, error: 'no_order' };
+  return sendCrmEvent(
+    event,
+    { order },
+    `${event}:${order.externalId}:${order.paymentId || randomUUID()}`,
+  );
+}
+
+/**
+ * Envía un lead de newsletter al CRM (evento 'lead.created').
+ * `lead` = { email, name?, context? }. El CRM dedupea por email: si el
+ * cliente ya existe solo registra la actividad. Nunca lanza.
+ */
+export async function notifyCrmLead(lead) {
+  if (!lead?.email) return { sent: false, error: 'no_email' };
+  return sendCrmEvent('lead.created', { lead }, `lead.created:${lead.email}:${randomUUID()}`);
+}
+
+async function sendCrmEvent(event, payload, idempotencyKey) {
   const url = process.env.CRM_WEBHOOK_URL;
   const secret = process.env.CRM_WEBHOOK_SECRET;
   if (!url || !secret) return { sent: false, error: 'not_configured' };
@@ -30,7 +49,7 @@ export async function notifyCrm(event, order) {
     const body = JSON.stringify({
       event,
       occurredAt: new Date().toISOString(),
-      order,
+      ...payload,
     });
     const timestamp = String(Math.floor(Date.now() / 1000));
     const signature = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
@@ -45,7 +64,7 @@ export async function notifyCrm(event, order) {
         'X-EPICALCOS-Timestamp': timestamp,
         'X-EPICALCOS-Event': event,
         // El reintento del mismo evento sobre el mismo pedido no duplica nada.
-        'X-EPICALCOS-Idempotency-Key': `${event}:${order.externalId}:${order.paymentId || randomUUID()}`,
+        'X-EPICALCOS-Idempotency-Key': idempotencyKey,
       },
       body,
       signal: controller.signal,

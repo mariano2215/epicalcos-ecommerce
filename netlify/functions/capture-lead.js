@@ -1,9 +1,11 @@
 /**
  * Netlify Function: POST /api/capture-lead
  * Popup de bienvenida "10% OFF por tu mail": guarda el lead en el CRM de
- * Notion, avisa por mail (Resend) y devuelve el código de cupón.
+ * Notion y en el CRM interno (app.epicalcos.com), avisa por mail (Resend)
+ * y devuelve el código de cupón.
  */
 import { crearLeadNewsletter } from './_notion.js';
+import { notifyCrmLead } from './lib/crmWebhook.js';
 import { sendLeadEmail, sendLeadCouponEmail } from './lib/notify.js';
 
 const WELCOME_COUPON_CODE = 'EPICA10';
@@ -58,6 +60,7 @@ export const handler = async (event) => {
   try {
     await Promise.all([
       crearLeadNewsletter(email),
+      notifyCrmLead({ email, context: `Popup 10% OFF (cupón ${WELCOME_COUPON_CODE})` }),
       sendLeadEmail(email),
       sendLeadCouponEmail(email, WELCOME_COUPON_CODE)
     ]);

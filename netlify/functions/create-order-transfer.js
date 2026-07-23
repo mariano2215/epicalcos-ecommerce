@@ -113,7 +113,15 @@ export const handler = async (event) => {
     };
     await saveOrder(orderId, storedOrder);
 
-    await notifyCrm('order.created', buildCrmOrder(storedOrder, { paymentStatus: 'pending_transfer' }));
+    // 'pending_transfer' le indica al CRM que el pago viene por transferencia
+    // bancaria (lo trata como pendiente; el comprobante se registra a mano).
+    await notifyCrm(
+      'order.created',
+      buildCrmOrder(storedOrder, {
+        paymentStatus: 'pending_transfer',
+        metadata: { paymentMethod: 'transferencia' }
+      })
+    );
 
     // No hay webhook de pago: avisamos por mail ya mismo (pedido pendiente de comprobante).
     const view = buildOrderView(storedOrder, null);

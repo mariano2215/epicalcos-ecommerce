@@ -115,15 +115,14 @@ export const handler = async (event) => {
         console.error('[mp-webhook] notion sync error:', notionErr);
       }
 
-      // 2) Mails: solo cuando el pago queda aprobado. Recupera el pedido completo
-      //    de Blobs y evita duplicados (MP reintenta el webhook varias veces).
-      //    Se manda el aviso interno a EPICALCOS y la confirmación al cliente.
-      if (payment.status === 'approved') {
-        const stored = await getOrder(orderId);
+      // 2) CRM interno (app.epicalcos.com): registra el pago aprobado o deja
+      //    constancia del rechazo/devolución en el pedido. No-op sin
+      //    CRM_WEBHOOK_URL/SECRET; nunca lanza. Idempotente por paymentId,
+      //    así que los reintentos de MP no duplican pagos.
+      const isRejected = ['rejected', 'cancelled', 'refunded', 'charged_back'].includes(payment.status);
+      const stored = payment.status === 'approved' || isRejected ? await getOrder(orderId) : null;
 
-        // CRM interno (app.epicalcos.com): registra el pago aprobado.
-        // No-op sin CRM_WEBHOOK_URL/SECRET; nunca lanza. Idempotente por
-        // paymentId, así que los reintentos de MP no duplican pagos.
+      if (payment.status === 'approved' || isRejected) {
         const crmOrder = buildCrmOrder(stored ?? {
           orderId,
           itemsTotal: payment.transaction_amount,
@@ -133,14 +132,19 @@ export const handler = async (event) => {
           items: items.map((i) => ({ title: i.title, quantity: Number(i.quantity) || 1, unit_price: Number(i.unit_price) || 0 }))
         });
         if (crmOrder) {
-          await notifyCrm('order.paid', {
+          await notifyCrm(isRejected ? 'order.rejected' : 'order.paid', {
             ...crmOrder,
-            paymentStatus: 'paid',
+            paymentStatus: isRejected ? 'rejected' : 'paid',
             paymentId: String(payment.id),
             total: payment.transaction_amount
           });
         }
+      }
 
+      // 3) Mails: solo cuando el pago queda aprobado. Usa el pedido completo
+      //    de Blobs y evita duplicados (MP reintenta el webhook varias veces).
+      //    Se manda el aviso interno a EPICALCOS y la confirmación al cliente.
+      if (payment.status === 'approved') {
         if (stored?.notifiedAt) {
           console.log('[mp-webhook] pedido ya notificado, se omite:', orderId);
         } else {
