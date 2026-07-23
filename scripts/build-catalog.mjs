@@ -7,7 +7,7 @@
  *
  * Correr DESPUÉS de import-stickers.sh. Es resumible: regenera con lo que haya.
  */
-import { readdirSync, statSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { readdirSync, statSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,12 +41,26 @@ for (const slug of cats) {
   const files = readdirSync(dir).filter((f) => /\.webp$/i.test(f)).sort(byNum);
   if (files.length === 0) continue;
 
+  // Preservar sku/stock ya asignados (los pone scripts/build-meta-feed.mjs).
+  // Meta trackea productos por id → un rebuild NO debe borrar ni renumerar SKUs.
+  const outPath = join(DATA, `${slug}.json`);
+  const prevById = existsSync(outPath)
+    ? Object.fromEntries(JSON.parse(readFileSync(outPath, 'utf8')).map((p) => [p.id, p]))
+    : {};
+
   const items = files.map((f) => {
     const stem = f.replace(/\.webp$/i, '');
-    return { id: `${slug}-${stem}`, file: `/stickers/${slug}/${f}` };
+    const id = `${slug}-${stem}`;
+    const item = { id, file: `/stickers/${slug}/${f}` };
+    const prev = prevById[id];
+    if (prev?.sku) {
+      item.sku = prev.sku;
+      item.stock = prev.stock ?? 50;
+    }
+    return item;
   });
 
-  writeFileSync(join(DATA, `${slug}.json`), JSON.stringify(items));
+  writeFileSync(outPath, JSON.stringify(items));
   catalog.push({ slug, count: items.length, cover: items[0].file });
   console.log(`${slug}: ${items.length}`);
 }
