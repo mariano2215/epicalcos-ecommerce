@@ -56,6 +56,18 @@ const SPECIAL_IMAGES = {
   polaroid: '/meta/polaroid.webp'
 };
 
+/**
+ * `image_link` para el feed. Meta NO renderiza WebP en el catálogo, así que los
+ * `.webp` se sirven convertidos a JPG on-the-fly con el Netlify Image CDN
+ * (`/.netlify/images?...&fm=jpg`) — sin generar ni versionar archivos nuevos.
+ * Los JPG/PNG van directo.
+ */
+function feedImage(path) {
+  return /\.webp$/i.test(path)
+    ? `${SITE}/.netlify/images?url=${path}&fm=jpg&w=600`
+    : `${SITE}${path}`;
+}
+
 // ── Registro de SKUs (estable / append-only) ────────────────────────────────
 const registry = existsSync(REGISTRY)
   ? JSON.parse(readFileSync(REGISTRY, 'utf8'))
@@ -103,7 +115,7 @@ for (const { slug } of catalog) {
       condition: 'new',
       price: `${priceForSize(DEFAULT_SIZE).toFixed(2)} ${CURRENCY}`,
       link: `${SITE}/producto/${slug}/${num}`,
-      image_link: `${SITE}${it.file}`,
+      image_link: feedImage(it.file),
       brand: BRAND,
       inventory: STOCK,
       product_type: name
@@ -146,7 +158,7 @@ for (const s of SPECIALS) {
     condition: 'new',
     price: `${specialPrice(s.slug).toFixed(2)} ${CURRENCY}`,
     link: `${SITE}${s.to}`,
-    image_link: `${SITE}${image}`,
+    image_link: feedImage(image),
     brand: BRAND,
     inventory: STOCK,
     product_type: 'Servicios'
