@@ -54,6 +54,12 @@ const toItems = (items) =>
 
 const sum = (items) => items.reduce((acc, i) => acc + i.price * (i.quantity || 1), 0);
 
+/**
+ * `content_id` que Meta debe matchear con el catálogo: el SKU del catálogo si el
+ * ítem lo tiene (`catalogSku`), si no el id interno. Ver src/config/metaCatalog.js.
+ */
+const contentId = (p) => p.catalogSku || p.id;
+
 // ─── GA4 e-commerce events ────────────────────────────────────────────────────
 
 export function trackViewItem(product) {
@@ -68,7 +74,7 @@ export function trackViewItem(product) {
   pushDataLayer({ ecommerce: null });
   pushDataLayer(data);
   pixel('ViewContent', {
-    content_ids: [product.id],
+    content_ids: [contentId(product)],
     content_name: product.name,
     content_type: 'product',
     currency: 'ARS',
@@ -100,7 +106,7 @@ export function trackAddToCart(product, quantity = 1) {
     }
   });
   pixel('AddToCart', {
-    content_ids: [product.id],
+    content_ids: [contentId(product)],
     content_name: product.name,
     content_type: 'product',
     currency: 'ARS',
@@ -138,7 +144,8 @@ export function trackBeginCheckout(items) {
     ecommerce: { currency: 'ARS', value: sum(items), items: toItems(items) }
   });
   pixel('InitiateCheckout', {
-    contents: items.map((i) => ({ id: i.id, quantity: i.quantity })),
+    contents: items.map((i) => ({ id: contentId(i), quantity: i.quantity })),
+    content_type: 'product',
     currency: 'ARS',
     value: sum(items),
     num_items: items.reduce((a, i) => a + i.quantity, 0)
@@ -173,7 +180,8 @@ export function trackPurchase({ orderId, items, total, shipping }) {
     }
   });
   pixel('Purchase', {
-    contents: items.map((i) => ({ id: i.id, quantity: i.quantity })),
+    contents: items.map((i) => ({ id: contentId(i), quantity: i.quantity })),
+    content_type: 'product',
     currency: 'ARS',
     value: total,
     num_items: items.reduce((a, i) => a + i.quantity, 0)

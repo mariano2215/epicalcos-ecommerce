@@ -12,6 +12,7 @@ import {
 } from '../config/pricing.js';
 import { shipping } from '../config/site.js';
 import { useSeo, productJsonLd, breadcrumbJsonLd } from '../lib/seo.js';
+import { trackViewItem } from '../lib/analytics.js';
 
 /**
  * Subpágina de detalle de un calco (estilo Mercado Libre): imagen en grande,
@@ -67,6 +68,7 @@ export default function Producto() {
     const images = Array.isArray(raw.images) && raw.images.length ? raw.images : [raw.file];
     return {
       id: raw.id,
+      sku: raw.sku, // SKU del catálogo de Meta (embebido en /data/<cat>.json)
       number: n,
       image: raw.file,
       images,
@@ -98,6 +100,20 @@ export default function Producto() {
   }, [items, index]);
 
   const unit = priceForSize(size);
+
+  // Meta Pixel / GA4: ViewContent al abrir la ficha, con el SKU del catálogo.
+  useEffect(() => {
+    if (!sticker) return;
+    trackViewItem({
+      id: sticker.id,
+      catalogSku: sticker.sku,
+      name: sticker.name,
+      category: sticker.category,
+      categoryLabel: sticker.categoryLabel,
+      price: priceForSize(DEFAULT_SIZE)
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sticker?.id]);
 
   useSeo({
     title: sticker ? sticker.name : 'Producto',

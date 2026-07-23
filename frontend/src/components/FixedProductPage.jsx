@@ -1,7 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Breadcrumbs from './Breadcrumbs.jsx';
 import SubidaArchivo from './personalizados/SubidaArchivo.jsx';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
+import { trackViewItem } from '../lib/analytics.js';
+import { FIXED_SKU } from '../config/metaCatalog.js';
 
 /**
  * Página de producto de precio fijo (tatuajes / polaroid) con stepper de cantidad.
@@ -17,6 +19,18 @@ export default function FixedProductPage({ product, emoji, badge, title, subtitl
   const [qty, setQty] = useState(1);
   const [archivos, setArchivos] = useState([]);
   const onArchivosChange = useCallback((items) => setArchivos(items), []);
+
+  // Meta Pixel / GA4: ViewContent al abrir la página, con el SKU del catálogo.
+  useEffect(() => {
+    trackViewItem({
+      id: `fixed:${product.id}`,
+      catalogSku: FIXED_SKU[product.id],
+      name: product.name,
+      categoryLabel: badge || 'Especial',
+      price: product.price
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
 
   // Cupo de archivos: por unidad (perUnit × cantidad) o un máximo fijo.
   const uploadMax = upload ? (upload.perUnit ? upload.perUnit * qty : upload.max ?? 10) : 0;

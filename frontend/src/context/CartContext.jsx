@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState, useCallback } from 'react';
 import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
+import { META_LINE_SKU, FIXED_SKU } from '../config/metaCatalog.js';
 import {
   priceForSize,
   sizeLabel,
@@ -95,6 +96,7 @@ export function CartProvider({ children }) {
       categoryLabel: sticker.categoryLabel,
       category: sticker.category,
       image: sticker.image,
+      catalogSku: sticker.sku, // SKU del diseño en el catálogo de Meta
       size,
       basePrice: priceForSize(size),
       quantity
@@ -104,25 +106,28 @@ export function CartProvider({ children }) {
     trackAddToCart({ ...line, price: line.basePrice }, quantity);
   }, [notify]);
 
-  /** Agregar una línea de pack ya armada (mayorista / personalizados). */
+  /** Agregar una línea de pack ya armada (mayorista). */
   const addPack = useCallback((line) => {
-    dispatch({ type: 'ADD', line: { ...line, type: 'pack' } });
-    notify(`${line.name} agregado`);
-    trackAddToCart({ ...line, price: line.basePrice }, line.quantity || 1);
+    const enriched = { ...line, type: 'pack', catalogSku: line.catalogSku || META_LINE_SKU.mayorista };
+    dispatch({ type: 'ADD', line: enriched });
+    notify(`${enriched.name} agregado`);
+    trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
   }, [notify]);
 
   /** Agregar un calco personalizado ya configurado (Configurador). */
   const addCustom = useCallback((line) => {
-    dispatch({ type: 'ADD', line: { ...line, type: 'custom' } });
-    notify(`${line.name} agregado`);
-    trackAddToCart({ ...line, price: line.basePrice }, line.quantity || 1);
+    const enriched = { ...line, type: 'custom', catalogSku: line.catalogSku || META_LINE_SKU.personalizados };
+    dispatch({ type: 'ADD', line: enriched });
+    notify(`${enriched.name} agregado`);
+    trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
   }, [notify]);
 
   /** Agregar la promo Negocio. */
   const addNegocio = useCallback((line) => {
-    dispatch({ type: 'ADD', line: { ...line, type: 'negocio' } });
-    notify(`${line.name} agregado`);
-    trackAddToCart({ ...line, price: line.basePrice }, 1);
+    const enriched = { ...line, type: 'negocio', catalogSku: line.catalogSku || META_LINE_SKU.negocio };
+    dispatch({ type: 'ADD', line: enriched });
+    notify(`${enriched.name} agregado`);
+    trackAddToCart({ ...enriched, price: enriched.basePrice }, 1);
   }, [notify]);
 
   /**
@@ -140,6 +145,7 @@ export function CartProvider({ children }) {
       name: product.name,
       categoryLabel: product.categoryLabel || 'Especial',
       image: product.image,
+      catalogSku: FIXED_SKU[product.id], // SKU de catálogo (tatuajes / polaroid)
       basePrice: product.price,
       quantity,
       ...(hasMeta ? { meta: product.meta } : {})

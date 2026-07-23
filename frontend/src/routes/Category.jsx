@@ -47,6 +47,7 @@ export default function Category() {
     if (!items) return [];
     const mapped = items.map((it) => ({
       id: it.id,
+      sku: it.sku, // SKU del catálogo de Meta
       image: it.file,
       name: `${category.name} #${it.id.split('-').pop()}`,
       category: slug,
