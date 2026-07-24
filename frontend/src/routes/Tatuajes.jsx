@@ -12,6 +12,7 @@ export default function Tatuajes() {
     <FixedProductPage
       product={{ id: TATUAJES.id, name: TATUAJES.name, price: TATUAJES.price }}
       emoji="💉"
+      photo="/images/tatuajes.webp"
       badge="Novedad"
       breadcrumb="Tatuajes temporales"
       title="Tatuajes temporales"

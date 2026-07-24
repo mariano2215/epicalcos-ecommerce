@@ -9,12 +9,12 @@ import { FIXED_SKU } from '../config/metaCatalog.js';
  * Página de producto de precio fijo (tatuajes / polaroid) con stepper de cantidad.
  * Si se pasa `upload`, muestra un uploader de archivos (mismo que personalizados) y
  * adjunta los archivos al pedido en `meta.archivos` (llegan al CRM vía el checkout).
- * @param {{ product:{id,name,price}, emoji:string, badge:string, title:string,
+ * @param {{ product:{id,name,price}, emoji:string, photo?:string, badge:string, title:string,
  *           subtitle:string, bullets:string[], specs?:{label:string,value:string}[], breadcrumb:string,
  *           upload?:{ titulo?:string, sustantivo?:string, formatos?:string[], descripcion?:import('react').ReactNode,
  *                     tamanoCm?:number|null, preset?:string, perUnit?:number, max?:number } }} props
  */
-export default function FixedProductPage({ product, emoji, badge, title, subtitle, bullets, specs, breadcrumb, upload }) {
+export default function FixedProductPage({ product, emoji, photo, badge, title, subtitle, bullets, specs, breadcrumb, upload }) {
   const { addFixed } = useCart();
   const [qty, setQty] = useState(1);
   const [archivos, setArchivos] = useState([]);
@@ -36,6 +36,7 @@ export default function FixedProductPage({ product, emoji, badge, title, subtitl
   const uploadMax = upload ? (upload.perUnit ? upload.perUnit * qty : upload.max ?? 10) : 0;
 
   const image =
+    photo ??
     'data:image/svg+xml;utf8,' +
     encodeURIComponent(
       `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' rx='24' fill='#202020'/><text x='50%' y='52%' font-size='96' text-anchor='middle' dominant-baseline='middle'>${emoji}</text></svg>`
@@ -52,7 +53,13 @@ export default function FixedProductPage({ product, emoji, badge, title, subtitl
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Categorías', to: '/categorias' }, { name: breadcrumb }]} />
 
         <div className="grid lg:grid-cols-2 gap-6 items-start mt-6">
-          <div className="card-glass aspect-square grid place-items-center text-[8rem]">{emoji}</div>
+          {photo ? (
+            <div className="card-glass aspect-square overflow-hidden">
+              <img src={photo} alt={title} className="w-full h-full object-cover rounded-2xl" loading="eager" />
+            </div>
+          ) : (
+            <div className="card-glass aspect-square grid place-items-center text-[8rem]">{emoji}</div>
+          )}
 
           <div className="card-glass p-6 md:p-8">
             <span className="badge badge-new mb-3">{badge}</span>

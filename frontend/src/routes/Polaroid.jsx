@@ -12,6 +12,7 @@ export default function Polaroid() {
     <FixedProductPage
       product={{ id: POLAROID.id, name: POLAROID.name, price: POLAROID.price }}
       emoji="📸"
+      photo="/images/polaroid.webp"
       badge="Recuerdos"
       breadcrumb="Fotos Polaroid"
       title="Fotos Polaroid x10"
