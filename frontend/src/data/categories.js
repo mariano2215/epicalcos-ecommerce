@@ -154,7 +154,7 @@ export const SPECIALS = [
     to: '/polaroid',
     name: 'Fotos Polaroid',
     emoji: '📸',
-    blurb: 'x10 fotos · $10.000',
+    blurb: 'x10 fotos · desde $9.000',
     accent: 'from-emerald-400 to-teal-500'
   }
 ];

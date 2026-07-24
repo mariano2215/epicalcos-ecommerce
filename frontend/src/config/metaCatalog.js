@@ -20,5 +20,9 @@ export const META_LINE_SKU = {
 /** SKU de catálogo por id de producto de precio fijo (ver pricing.js). */
 export const FIXED_SKU = {
   'tatuajes-hoja': META_LINE_SKU.tatuajes,
-  'polaroid-x10': META_LINE_SKU.polaroid
+  'polaroid-x10': META_LINE_SKU.polaroid,
+  // Variantes por tamaño del pack Polaroid: mismo producto en el catálogo de Meta.
+  'polaroid-x10-5x8': META_LINE_SKU.polaroid,
+  'polaroid-x10-7x10': META_LINE_SKU.polaroid,
+  'polaroid-x10-9x13': META_LINE_SKU.polaroid
 };

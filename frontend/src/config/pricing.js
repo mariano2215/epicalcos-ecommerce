@@ -115,7 +115,17 @@ export const NEGOCIO = { qty: 100, size: '6cm', price: 40000 };
 
 /** Productos de precio fijo. */
 export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 12000 };
-export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 10000 };
+/**
+ * Fotos Polaroid: pack de 10 fotos en 3 tamaños. El id que viaja al carrito es
+ * `polaroid-x10-{size.id}` (espejado en netlify/functions/lib/pricing.js).
+ * `POLAROID.price` queda como precio de referencia para el feed de Meta (mediana).
+ */
+export const POLAROID_SIZES = [
+  { id: '5x8',  label: '5 × 8 cm',  tag: 'Mini',                        price: 9000 },
+  { id: '7x10', label: '7 × 10 cm', tag: 'Medianas',                    price: 12000 },
+  { id: '9x13', label: '9 × 13 cm', tag: 'Grandes · Polaroid original', price: 15000 }
+];
+export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 12000 };
 
 export function priceForSize(sizeId) {
   return SIZES.find((s) => s.id === sizeId)?.price ?? SIZES[0].price;

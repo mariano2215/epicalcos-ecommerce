@@ -9,16 +9,24 @@ import { FIXED_SKU } from '../config/metaCatalog.js';
  * Página de producto de precio fijo (tatuajes / polaroid) con stepper de cantidad.
  * Si se pasa `upload`, muestra un uploader de archivos (mismo que personalizados) y
  * adjunta los archivos al pedido en `meta.archivos` (llegan al CRM vía el checkout).
+ * Si se pasa `sizes`, muestra un selector de tamaño: el precio sale de la opción
+ * elegida y el id del carrito pasa a ser `{product.id}-{size.id}` (el backend
+ * valida cada variante por su id en FIXED_PRICES).
  * @param {{ product:{id,name,price}, emoji:string, photo?:string, badge:string, title:string,
+ *           sizes?:{id:string,label:string,tag?:string,price:number}[],
  *           subtitle:string, bullets:string[], specs?:{label:string,value:string}[], breadcrumb:string,
  *           upload?:{ titulo?:string, sustantivo?:string, formatos?:string[], descripcion?:import('react').ReactNode,
  *                     tamanoCm?:number|null, preset?:string, perUnit?:number, max?:number } }} props
  */
-export default function FixedProductPage({ product, emoji, photo, badge, title, subtitle, bullets, specs, breadcrumb, upload }) {
+export default function FixedProductPage({ product, emoji, photo, badge, title, subtitle, bullets, specs, breadcrumb, upload, sizes }) {
   const { addFixed } = useCart();
   const [qty, setQty] = useState(1);
   const [archivos, setArchivos] = useState([]);
+  const [sizeId, setSizeId] = useState(sizes?.[0]?.id ?? null);
   const onArchivosChange = useCallback((items) => setArchivos(items), []);
+
+  const selectedSize = sizes?.find((s) => s.id === sizeId) ?? null;
+  const unitPrice = selectedSize?.price ?? product.price;
 
   // Meta Pixel / GA4: ViewContent al abrir la página, con el SKU del catálogo.
   useEffect(() => {
@@ -27,7 +35,7 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
       catalogSku: FIXED_SKU[product.id],
       name: product.name,
       categoryLabel: badge || 'Especial',
-      price: product.price
+      price: unitPrice
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
@@ -44,7 +52,10 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
 
   const onAdd = () => {
     const meta = upload && archivos.length ? { archivos } : null;
-    addFixed({ ...product, image, meta }, qty);
+    const cartProduct = selectedSize
+      ? { id: `${product.id}-${selectedSize.id}`, name: `${product.name} · ${selectedSize.label}`, price: selectedSize.price }
+      : product;
+    addFixed({ ...cartProduct, image, meta }, qty);
   };
 
   return (
@@ -68,12 +79,38 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
 
             <div className="mt-5 font-display font-extrabold text-3xl"
               style={{ backgroundImage: 'linear-gradient(135deg,#FF1B8D,#FF5A1F)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
-              {formatPrice(product.price)}
+              {formatPrice(unitPrice)}
             </div>
 
             <ul className="mt-5 space-y-2 text-sm text-white/70">
               {bullets.map((b) => <li key={b}>✅ {b}</li>)}
             </ul>
+
+            {sizes && sizes.length > 0 && (
+              <div className="mt-5">
+                <div className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Tamaño</div>
+                <div className="grid gap-2">
+                  {sizes.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setSizeId(s.id)}
+                      className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                        sizeId === s.id
+                          ? 'border-brand-fuchsia bg-brand-fuchsia/10'
+                          : 'border-white/10 bg-white/[0.04] hover:border-white/25'
+                      }`}
+                    >
+                      <span>
+                        <span className="text-sm font-semibold text-white">{s.label}</span>
+                        {s.tag && <span className="ml-2 text-xs text-white/50">{s.tag}</span>}
+                      </span>
+                      <span className="text-sm font-semibold text-white">{formatPrice(s.price)}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-white/50">El precio es por el pack de 10 fotos.</p>
+              </div>
+            )}
 
             {specs && specs.length > 0 && (
               <dl className="mt-5 grid grid-cols-2 gap-2">
@@ -93,7 +130,7 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
                 <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty((q) => q + 1)} aria-label="Sumar">+</button>
               </div>
               <button onClick={onAdd} className="btn-primary flex-1">
-                Agregar · {formatPrice(product.price * qty)}
+                Agregar · {formatPrice(unitPrice * qty)}
               </button>
             </div>
 

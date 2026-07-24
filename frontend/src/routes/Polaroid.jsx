@@ -1,16 +1,17 @@
 import FixedProductPage from '../components/FixedProductPage.jsx';
-import { POLAROID } from '../config/pricing.js';
+import { POLAROID, POLAROID_SIZES } from '../config/pricing.js';
 import { useSeo } from '../lib/seo.js';
 
 export default function Polaroid() {
   useSeo({
     title: 'Fotos Polaroid x10',
-    description: 'Pack de 10 fotos estilo Polaroid a $10.000. Impresión premium. Pagás online con Mercado Pago.'
+    description: 'Pack de 10 fotos estilo Polaroid desde $9.000 en 3 tamaños. Impresión premium. Pagás online con Mercado Pago.'
   });
 
   return (
     <FixedProductPage
       product={{ id: POLAROID.id, name: POLAROID.name, price: POLAROID.price }}
+      sizes={POLAROID_SIZES}
       emoji="📸"
       photo="/images/polaroid.webp"
       badge="Recuerdos"
@@ -24,7 +25,6 @@ export default function Polaroid() {
       ]}
       specs={[
         { label: 'Cantidad', value: '10 fotos' },
-        { label: 'Tamaño', value: '10 × 15 cm' },
         { label: 'Papel', value: 'Fotográfico mate' },
         { label: 'Producción', value: '2-3 días hábiles' },
       ]}

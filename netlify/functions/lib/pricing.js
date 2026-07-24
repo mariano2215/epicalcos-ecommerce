@@ -60,7 +60,10 @@ const PERSONALIZADOS_DISCOUNT = 0.1;
 const NEGOCIO_PRICE = 40000; // promo negocio: 100u 6 cm precio fijo, 1 por línea
 const FIXED_PRICES = {
   'tatuajes-hoja': 12000,
-  'polaroid-x10': 10000
+  // Fotos Polaroid x10 por tamaño — espejo de POLAROID_SIZES del frontend.
+  'polaroid-x10-5x8': 9000,
+  'polaroid-x10-7x10': 12000,
+  'polaroid-x10-9x13': 15000
 };
 
 // --- Espejo de frontend/src/config/personalizados.js (calcos personalizados) ---
