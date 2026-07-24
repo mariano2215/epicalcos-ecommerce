@@ -24,10 +24,14 @@ function pushDataLayer(event) {
   window.dataLayer.push(event);
 }
 
-function pixel(eventName, data = {}) {
+function pixel(eventName, data = {}, options) {
   if (typeof window === 'undefined') return;
   if (typeof window.fbq === 'function') {
-    window.fbq('track', eventName, data);
+    if (options) {
+      window.fbq('track', eventName, data, options);
+    } else {
+      window.fbq('track', eventName, data);
+    }
   }
 }
 
@@ -179,13 +183,20 @@ export function trackPurchase({ orderId, items, total, shipping }) {
       items: toItems(items)
     }
   });
-  pixel('Purchase', {
-    contents: items.map((i) => ({ id: contentId(i), quantity: i.quantity })),
-    content_type: 'product',
-    currency: 'ARS',
-    value: total,
-    num_items: items.reduce((a, i) => a + i.quantity, 0)
-  });
+  // eventID = mismo event_id que manda el webhook de MP por la API de
+  // conversiones (netlify/functions/lib/metaCapi.js) → Meta deduplica y el
+  // Purchase cuenta una sola vez aunque lleguen los dos.
+  pixel(
+    'Purchase',
+    {
+      contents: items.map((i) => ({ id: contentId(i), quantity: i.quantity })),
+      content_type: 'product',
+      currency: 'ARS',
+      value: total,
+      num_items: items.reduce((a, i) => a + i.quantity, 0)
+    },
+    { eventID: `purchase-${orderId}` }
+  );
   debug('purchase', orderId, total);
 }
 

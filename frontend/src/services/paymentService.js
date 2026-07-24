@@ -4,6 +4,30 @@
  */
 const API_URL = import.meta.env.VITE_API_URL || '';
 
+function getCookie(name) {
+  if (typeof document === 'undefined') return '';
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+/**
+ * Cookies del píxel de Meta para la API de conversiones (el webhook de MP manda
+ * el Purchase server-side con estas señales). Si no hay cookie _fbc pero la URL
+ * trae fbclid (click reciente en un anuncio), la armamos con el formato de Meta.
+ */
+function metaTracking() {
+  const fbp = getCookie('_fbp');
+  let fbc = getCookie('_fbc');
+  if (!fbc && typeof window !== 'undefined') {
+    const fbclid = new URLSearchParams(window.location.search).get('fbclid');
+    if (fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
+  }
+  const tracking = {};
+  if (fbp) tracking.fbp = fbp;
+  if (fbc) tracking.fbc = fbc;
+  return Object.keys(tracking).length ? tracking : undefined;
+}
+
 export async function createPreference({ items, payer, shipping, couponCode }) {
   const payload = {
     items: items.map((i) => ({
@@ -14,7 +38,8 @@ export async function createPreference({ items, payer, shipping, couponCode }) {
     })),
     payer,
     shipping,
-    couponCode: couponCode || undefined
+    couponCode: couponCode || undefined,
+    tracking: metaTracking()
   };
 
   const res = await fetch(`${API_URL}/api/create-preference`, {

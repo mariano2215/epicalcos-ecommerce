@@ -72,6 +72,19 @@ export const handler = async (event) => {
   const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon } = body;
   const couponCode = clip(rawCoupon, 30) || undefined;
 
+  // Señales para la API de conversiones de Meta: cookies del píxel que manda el
+  // frontend + IP y user-agent de ESTE request (el del comprador, no el de MP).
+  // Viajan con el pedido a Blobs y el webhook las usa en el Purchase server-side.
+  const tracking = {
+    fbp: clip(body.tracking?.fbp, 100) || undefined,
+    fbc: clip(body.tracking?.fbc, 500) || undefined,
+    clientIp:
+      event.headers?.['x-nf-client-connection-ip'] ||
+      (event.headers?.['x-forwarded-for'] || '').split(',')[0].trim() ||
+      undefined,
+    userAgent: clip(event.headers?.['user-agent'], 500) || undefined
+  };
+
   // Datos del comprador: requeridos, con formato de email y longitudes acotadas.
   const payer = {
     name: clip(rawPayer?.name, 120),
@@ -183,7 +196,8 @@ export const handler = async (event) => {
       },
       items: mpItems,
       itemsTotal,
-      total: itemsTotal + shippingCost
+      total: itemsTotal + shippingCost,
+      tracking
     };
     await saveOrder(orderId, storedOrder);
 

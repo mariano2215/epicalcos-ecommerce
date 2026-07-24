@@ -24,6 +24,7 @@ import { buildOrderView, sendOrderEmail, sendCustomerEmail } from './lib/notify.
 import { actualizarEstadoPedido, mapEstado } from './_notion.js';
 import { verifyMpSignature } from './lib/mpSignature.js';
 import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
+import { sendPurchaseEvent } from './lib/metaCapi.js';
 
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -148,6 +149,13 @@ export const handler = async (event) => {
         if (stored?.notifiedAt) {
           console.log('[mp-webhook] pedido ya notificado, se omite:', orderId);
         } else {
+          // Meta Conversions API: Purchase server-side con event_id
+          // `purchase-{orderId}`, el mismo que dispara el píxel del navegador
+          // en /pago-exitoso → Meta deduplica. Los reintentos de MP también
+          // se deduplican por event_id del lado de Meta. No-op sin META_CAPI_TOKEN.
+          const capi = await sendPurchaseEvent({ orderId, order: stored, payment });
+          console.log('[mp-webhook] meta capi:', JSON.stringify(capi));
+
           const view = buildOrderView(stored, payment);
           const [internal, customer] = await Promise.all([
             sendOrderEmail(view),
