@@ -13,6 +13,9 @@ const NEGOCIO_IMG =
 /** % de descuento contra el precio de lista, para el badge. */
 const NEGOCIO_OFF = Math.round((1 - NEGOCIO.price / NEGOCIO.listPrice) * 100);
 
+/** Foto real de una tirada de calcos de logo. Si falta el archivo, la card va sin foto. */
+const MUESTRA_SRC = '/images/negocio-muestra.jpg';
+
 /**
  * Promo Negocio: 100 calcos de un solo diseño (el logo del cliente) en 6 cm a $39.999
  * (precio de lista $96.999). El logo se coordina por WhatsApp después de la compra.
@@ -22,6 +25,7 @@ export default function NegocioForm() {
   const navigate = useNavigate();
   const [business, setBusiness] = useState('');
   const [error, setError] = useState('');
+  const [muestraOk, setMuestraOk] = useState(true);
 
   const submit = (e) => {
     e.preventDefault();
@@ -44,7 +48,25 @@ export default function NegocioForm() {
 
   return (
     <div className="grid lg:grid-cols-2 gap-6 items-start">
-      <div className="card-glass p-6 md:p-8">
+      <div className="card-glass overflow-hidden">
+        {muestraOk && (
+          <div className="relative">
+            <img
+              src={MUESTRA_SRC}
+              alt="Tirada de calcos con el logo de un cliente, recién impresos"
+              decoding="async"
+              onError={() => setMuestraOk(false)}
+              className="w-full aspect-[4/3] object-cover"
+            />
+            {/* funde la foto con la card para que no corte como un rectángulo pegado.
+                #1d1d1d es el color efectivo de .card-glass (rgba(32,32,32,.82) sobre #111). */}
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#1d1d1d] via-[#1d1d1d]/70 to-transparent" />
+            <span className="badge absolute top-4 left-4 bg-black/60 text-white backdrop-blur-sm border border-white/15">
+              Muestra real
+            </span>
+          </div>
+        )}
+        <div className="p-6 md:p-8">
         <span className="badge badge-new mb-3">Para tu negocio</span>
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Promo Negocio</h1>
         <p className="text-white/70 mt-3">
@@ -69,6 +91,7 @@ export default function NegocioForm() {
           <li>✅ Vinilo premium resistente al agua y al sol.</li>
           <li>✅ Tu logo lo mandás por WhatsApp después de pagar.</li>
         </ul>
+        </div>
       </div>
 
       <form onSubmit={submit} className="card-glass p-6 md:p-8 space-y-5">

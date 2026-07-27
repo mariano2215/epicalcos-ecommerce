@@ -12,7 +12,7 @@ import Reveal from './Reveal.jsx';
  * un contexto de apilamiento y, si estuviera en el hijo, mezclaría contra el wrapper
  * transparente en vez de contra la página.
  */
-const SRC = '/images/marcas-clientes.png';
+const SRC = '/images/marcas-clientes.webp';
 
 const FADE_Y = 'linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%)';
 const FADE_X = 'linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%)';
