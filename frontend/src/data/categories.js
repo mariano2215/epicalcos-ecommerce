@@ -138,7 +138,7 @@ export const SPECIALS = [
     to: '/negocio',
     name: 'Negocio',
     emoji: '🏪',
-    blurb: '100 calcos de tu logo en 6 cm · $40.000',
+    blurb: '100 calcos de tu logo en 6 cm · $39.999',
     accent: 'from-sky-400 to-blue-600'
   },
   {

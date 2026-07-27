@@ -57,7 +57,7 @@ const WHOLESALE_QTY = 100; // pack mayorista: MÍNIMO 100 calcos (sin tope), 50 
 const WHOLESALE_DISCOUNT = 0.5;
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
 const PERSONALIZADOS_DISCOUNT = 0.1;
-const NEGOCIO_PRICE = 40000; // promo negocio: 100u 6 cm precio fijo, 1 por línea
+const NEGOCIO_PRICE = 39999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
 const FIXED_PRICES = {
   'tatuajes-hoja': 12000,
   // Fotos Polaroid x10 por tamaño — espejo de POLAROID_SIZES del frontend.

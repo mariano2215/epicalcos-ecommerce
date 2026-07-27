@@ -110,8 +110,12 @@ export const WHOLESALE_DISCOUNT = 0.5;
 export const PERSONALIZADOS_MIN = 10;
 export const PERSONALIZADOS_DISCOUNT = 0.10;
 
-/** Promo Negocio: 100 calcos de un solo diseño en 6 cm, precio fijo. */
-export const NEGOCIO = { qty: 100, size: '6cm', price: 40000 };
+/**
+ * Promo Negocio: 100 calcos de un solo diseño en 6 cm, precio fijo.
+ * `listPrice` es el precio de lista tachado (solo display, no se cobra);
+ * `price` es el que viaja al checkout y está espejado en netlify/functions/lib/pricing.js.
+ */
+export const NEGOCIO = { qty: 100, size: '6cm', price: 39999, listPrice: 96999 };
 
 /** Productos de precio fijo. */
 export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 12000 };
