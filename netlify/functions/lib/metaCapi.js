@@ -110,6 +110,10 @@ export async function sendPurchaseEvent({ orderId, order, payment }) {
       zipCode: meta.shipping_zip_code
     };
 
+    const approvedAt = payment?.date_approved || payment?.date_created;
+    const parsed = approvedAt ? Math.floor(new Date(approvedAt).getTime() / 1000) : NaN;
+    const eventTime = Number.isFinite(parsed) ? parsed : Math.floor(Date.now() / 1000);
+
     const items = (order?.items || payment?.additional_info?.items || [])
       .filter((i) => i.id !== 'shipping');
     const contents = items.map((i) => ({
@@ -122,7 +126,10 @@ export async function sendPurchaseEvent({ orderId, order, payment }) {
       data: [
         {
           event_name: 'Purchase',
-          event_time: Math.floor(Date.now() / 1000),
+          // Hora real del pago, no la del envío: en el flujo normal son la misma,
+          // pero si el webhook se reintenta o se reprocesa un pago viejo, Meta
+          // tiene que atribuirlo a cuándo ocurrió. (Rechaza eventos de más de 7 días.)
+          event_time: eventTime,
           event_id: `purchase-${orderId}`,
           action_source: 'website',
           event_source_url: 'https://epicalcos.com/pago-exitoso',
