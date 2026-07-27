@@ -6,6 +6,7 @@ import CartDrawer from './components/CartDrawer.jsx';
 import WelcomePopup from './components/WelcomePopup.jsx';
 import WhatsAppButton from './components/WhatsAppButton.jsx';
 import Home from './routes/Home.jsx'; // Home eager (LCP)
+import { isSectionHidden } from './config/site.js';
 
 // Resto lazy: bajan el initial bundle
 const Categorias = lazy(() => import('./routes/Categorias.jsx'));
@@ -70,7 +71,12 @@ export default function App() {
             <Route path="/categorias" element={<Categorias />} />
             <Route path="/categoria/:slug" element={<Category />} />
             <Route path="/producto/:slug/:num" element={<Producto />} />
-            <Route path="/personalizados" element={<Personalizados />} />
+            {/* Despublicada: la ruta redirige en vez de 404 para no perder los links
+                viejos ni el tráfico de anuncios. Ver HIDDEN_SECTIONS en config/site.js. */}
+            <Route
+              path="/personalizados"
+              element={isSectionHidden('personalizados') ? <Navigate to="/categorias" replace /> : <Personalizados />}
+            />
             <Route path="/mayorista" element={<Mayorista />} />
             <Route path="/negocio" element={<Negocio />} />
             <Route path="/tatuajes" element={<Tatuajes />} />

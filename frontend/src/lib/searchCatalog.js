@@ -9,6 +9,15 @@
 //  4. Ranking por relevancia + tamaño de categoría (no alfabético)
 //  5. Sugerencias para el estado vacío (nunca dejar al usuario sin salida)
 
+import { isSectionHidden } from '../config/site.js';
+
+/**
+ * Si la intención apunta a una sección despublicada (ej. "logo" → /personalizados),
+ * la mandamos a Contacto en vez de a un redirect: el servicio sigue existiendo,
+ * sólo se coordina por WhatsApp. Nunca dejar al usuario sin salida (principio 5).
+ */
+const rutaPublicada = (route) => (isSectionHidden(route) ? '/contacto' : route);
+
 /** Normaliza: minúsculas, sin diacríticos, espacios colapsados. */
 export function norm(str) {
   return (str || '')
@@ -55,7 +64,7 @@ export function searchCatalog(query, categories, counts, aliases) {
     for (const raw of terms) {
       const t = norm(raw);
       if (q === t || (q.length >= 4 && t.includes(q)) || (t.length >= 4 && q.includes(t))) {
-        return { kind: 'route', route, results: [], suggestions: [] };
+        return { kind: 'route', route: rutaPublicada(route), results: [], suggestions: [] };
       }
     }
   }

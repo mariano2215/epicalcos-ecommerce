@@ -159,7 +159,25 @@ export const announcements = [
   '🔒 Pagá seguro con Mercado Pago'
 ];
 
-export const navLinks = [
+/**
+ * Secciones despublicadas temporalmente. El código de la sección queda intacto:
+ * sólo se le sacan las puertas de entrada (nav, menú, footer, Home, Categorías,
+ * buscador, sitemap y feed de Meta) y la ruta redirige a /categorias.
+ *
+ * PARA VOLVER A PUBLICARLA: sacá el slug de esta lista y listo, no hay que tocar
+ * nada más. `/personalizados` está apagada hasta rehacer el configurador con
+ * mejores diseños (pedido de Mariano, 27/7/2026).
+ */
+export const HIDDEN_SECTIONS = ['personalizados'];
+
+/** true si la sección está despublicada. Acepta el slug ('personalizados') o el path ('/personalizados'). */
+export const isSectionHidden = (slugOrPath) =>
+  HIDDEN_SECTIONS.includes(String(slugOrPath).replace(/^\//, ''));
+
+/** Saca de una lista de links los que apuntan a una sección oculta. */
+const visibles = (links) => links.filter((l) => !isSectionHidden(l.to));
+
+export const navLinks = visibles([
   { to: '/', label: 'Inicio' },
   { to: '/categorias', label: 'Categorías' },
   { to: '/personalizados', label: 'Personalizados' },
@@ -168,17 +186,17 @@ export const navLinks = [
   { to: '/contacto', label: 'Contacto' },
   // FAQ es una sección del Home (id="faq"); el hash hace que el header scrollee hasta ahí.
   { to: '/#faq', label: 'FAQ', hash: true }
-];
+]);
 
 export const footerLinks = {
-  tienda: [
+  tienda: visibles([
     { to: '/categorias', label: 'Todas las categorías' },
     { to: '/personalizados', label: 'Personalizados' },
     { to: '/mayorista', label: 'Pack Mayorista x100' },
     { to: '/negocio', label: 'Negocio' },
     { to: '/tatuajes', label: 'Tatuajes temporales' },
     { to: '/polaroid', label: 'Fotos Polaroid' }
-  ],
+  ]),
   ayuda: [
     { to: '/contacto', label: 'Contacto' },
     { to: '/politicas/envios', label: 'Envíos' },

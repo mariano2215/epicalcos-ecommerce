@@ -26,7 +26,8 @@ const BASE = 'https://epicalcos.com';
 const STATIC_ROUTES = [
   { path: '/', priority: 1.0 },
   { path: '/categorias', priority: 0.9 },
-  { path: '/personalizados', priority: 0.9 },
+  // /personalizados queda fuera mientras esté en HIDDEN_SECTIONS (frontend/src/config/site.js):
+  // la ruta redirige, así que indexarla sería una URL muerta.
   { path: '/negocio', priority: 0.8 },
   { path: '/mayorista', priority: 0.8 },
   { path: '/tatuajes', priority: 0.8 },

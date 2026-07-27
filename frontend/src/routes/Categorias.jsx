@@ -146,11 +146,8 @@ export default function Categorias() {
             </p>
 
             <div className="mt-5 flex flex-wrap justify-center gap-3">
-              <Link to="/personalizados" className="btn-primary min-h-[44px]">
-                Pedilo personalizado
-              </Link>
               <a
-                className="btn-secondary min-h-[44px]"
+                className="btn-primary min-h-[44px]"
                 target="_blank"
                 rel="noopener noreferrer"
                 href={whatsappHref}

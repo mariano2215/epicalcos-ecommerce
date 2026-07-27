@@ -1,3 +1,5 @@
+import { isSectionHidden } from '../config/site.js';
+
 /**
  * Catálogo de categorías de EPICALCOS.
  * El `slug` coincide con la carpeta en frontend/public/stickers/<slug>/ y con
@@ -116,7 +118,7 @@ export const categoryName = (slug) => BY_SLUG[slug]?.name ?? slug;
  * Secciones "especiales" que viven fuera del catálogo de imágenes y aparecen
  * como cards propias en la página de Categorías y en el Home.
  */
-export const SPECIALS = [
+const ALL_SPECIALS = [
   {
     slug: 'personalizados',
     to: '/personalizados',
@@ -158,3 +160,6 @@ export const SPECIALS = [
     accent: 'from-emerald-400 to-teal-500'
   }
 ];
+
+/** Las especiales publicadas. Las despublicadas se listan en HIDDEN_SECTIONS (config/site.js). */
+export const SPECIALS = ALL_SPECIALS.filter((s) => !isSectionHidden(s.slug));

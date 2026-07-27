@@ -32,6 +32,8 @@ export default function Home() {
 
   const featured = CATEGORIES.filter((c) => FEATURED_SLUGS.includes(c.slug) && catalog[c.slug]).slice(0, 10);
   const services = SPECIALS.filter((s) => SERVICE_SLUGS.includes(s.slug));
+  // SPECIALS ya viene sin las secciones despublicadas: el grid se adapta para no dejar huecos.
+  const servicesCols = services.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4';
 
   return (
     <>
@@ -39,14 +41,14 @@ export default function Home() {
 
       <FeaturedStickers />
 
-      {/* Servicios: personalizados, mayorista, tatuajes, polaroid */}
+      {/* Servicios: mayorista, tatuajes, polaroid (+ personalizados cuando se republique) */}
       <section className="py-10">
         <div className="container-app">
           <div className="mb-6">
             <span className="badge badge-soft mb-2">Además del catálogo</span>
             <h2 className="font-display font-extrabold text-3xl md:text-4xl">Packs y servicios</h2>
           </div>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          <div className={`grid gap-3 grid-cols-2 ${servicesCols}`}>
             {services.map((s, i) => (
               <Reveal key={s.slug} delay={i * 80} className="h-full">
                 <Link to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] h-full relative overflow-hidden">
