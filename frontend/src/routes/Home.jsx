@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
-import AnnouncementBar from '../components/AnnouncementBar.jsx';
 import Benefits from '../components/Benefits.jsx';
 import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import Testimonials from '../components/Testimonials.jsx';
@@ -37,9 +36,6 @@ export default function Home() {
   return (
     <>
       <Hero />
-
-      {/* Ticker de novedades: pasa despacio entre la portada y los destacados. */}
-      <AnnouncementBar durationSec={90} />
 
       <FeaturedStickers />
 
