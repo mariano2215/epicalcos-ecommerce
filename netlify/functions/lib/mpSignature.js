@@ -42,23 +42,47 @@ export function verifyMpSignature(event) {
   if (!ts || !v1) return { ok: false, mode: 'malformed' };
 
   const query = event.queryStringParameters || {};
-  // Solo el data.id de los QUERY PARAMS entra en el manifest, en minúsculas si es
-  // alfanumérico (requisito de la doc de MP). Ojo: NO vale caer a query.id — las
-  // notificaciones IPN (?topic=payment&id=123) no traen data.id, así que MP firma
-  // el manifest SIN el segmento id; agregarlo desde query.id rompe el HMAC y
-  // rechaza pagos reales con 401.
-  const dataId = String(query['data.id'] || '').toLowerCase();
   const requestId = headers['x-request-id'] || headers['X-Request-Id'] || '';
 
-  const manifestParts = [];
-  if (dataId) manifestParts.push(`id:${dataId}`);
-  if (requestId) manifestParts.push(`request-id:${requestId}`);
-  manifestParts.push(`ts:${ts}`);
-  const manifest = manifestParts.join(';') + ';';
+  // De dónde sale el data.id que entra al manifest (en minúsculas, requisito de
+  // la doc de MP):
+  //   - El simulador del panel y las notificaciones con querystring lo mandan
+  //     como ?data.id=123.
+  //   - Las notificaciones REALES del webhook llegan sin querystring: el id
+  //     viaja solo en el body ({"data":{"id":"123"}}), pero MP igual firma el
+  //     manifest incluyéndolo. Leerlo solo de la query hacía que armáramos el
+  //     manifest sin el segmento `id:` y rechazáramos el 100% de los pagos.
+  //   - Las IPN viejas (?topic=payment&id=123) no traen data.id en ningún lado
+  //     y MP firma sin ese segmento; por eso queda el candidato sin id.
+  // Ojo: NO vale caer a query.id — ese es el id de la IPN, no el de data.id, y
+  // agregarlo rompe el HMAC.
+  let bodyDataId = '';
+  try {
+    bodyDataId = String(JSON.parse(event.body || '{}')?.data?.id || '');
+  } catch { /* body no-JSON: nos quedamos con los otros candidatos */ }
 
-  const computed = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
-  const a = Buffer.from(computed);
-  const b = Buffer.from(String(v1));
-  const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
-  return { ok, mode: ok ? 'valid' : 'invalid' };
+  const ids = [...new Set(
+    [query['data.id'], bodyDataId].map((v) => String(v || '').toLowerCase()).filter(Boolean)
+  )];
+
+  const buildManifest = (dataId) => {
+    const parts = [];
+    if (dataId) parts.push(`id:${dataId}`);
+    if (requestId) parts.push(`request-id:${requestId}`);
+    parts.push(`ts:${ts}`);
+    return parts.join(';') + ';';
+  };
+
+  const expected = Buffer.from(String(v1));
+  const matches = (manifest) => {
+    const computed = Buffer.from(crypto.createHmac('sha256', secret).update(manifest).digest('hex'));
+    return computed.length === expected.length && crypto.timingSafeEqual(computed, expected);
+  };
+
+  // Probar cada origen posible del id, más la variante sin id (IPN). Todas
+  // exigen un HMAC válido con el secreto, así que no se debilita la verificación.
+  for (const dataId of [...ids, '']) {
+    if (matches(buildManifest(dataId))) return { ok: true, mode: 'valid' };
+  }
+  return { ok: false, mode: 'invalid' };
 }
