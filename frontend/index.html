@@ -75,6 +75,26 @@
       Google Tag Manager — se activa solo si VITE_GTM_ID está definido.
       El snippet completo se inyecta desde main.jsx para poder leer la env var.
     -->
+
+    <!--
+      Microsoft Clarity (mapas de calor + grabaciones de sesión).
+      Va inline en el <head> a propósito: el ID de proyecto es público y así
+      empieza a grabar antes de que monte React (no depende de env vars).
+    -->
+    <script type="text/javascript">
+      (function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            (c[a].q = c[a].q || []).push(arguments);
+          };
+        t = l.createElement(r);
+        t.async = 1;
+        t.src = 'https://www.clarity.ms/tag/' + i;
+        y = l.getElementsByTagName(r)[0];
+        y.parentNode.insertBefore(t, y);
+      })(window, document, 'clarity', 'script', 'xt45d8xn75');
+    </script>
   </head>
   <body>
     <!-- GTM noscript fallback se inyecta también desde main.jsx si hay ID -->
