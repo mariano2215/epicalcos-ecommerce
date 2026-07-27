@@ -83,9 +83,16 @@ export function setAdvancedMatching(checkoutData) {
     // sessionStorage bloqueado: el init de esta página igual sirve.
   }
 
+  // El re-init del píxel va en try/catch: se llama en el submit del checkout y
+  // en el navegador embebido de Instagram fbevents.js puede tirar excepción
+  // (storage/cookies restringidos). Un fallo de tracking no puede abortar el pedido.
   const pixelId = import.meta.env.VITE_META_PIXEL_ID;
   if (pixelId && typeof window.fbq === 'function') {
-    window.fbq('init', pixelId, data);
+    try {
+      window.fbq('init', pixelId, data);
+    } catch {
+      // no-op: las coincidencias avanzadas ya quedaron en sessionStorage.
+    }
   }
   return data;
 }

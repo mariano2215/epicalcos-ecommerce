@@ -20,26 +20,44 @@ const DEV = import.meta.env.DEV;
 
 function pushDataLayer(event) {
   if (typeof window === 'undefined') return;
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(event);
+  try {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(event);
+  } catch (err) {
+    // El tracking NUNCA puede romper el flujo de compra (ver pixel()).
+    debug('dataLayer falló', err);
+  }
 }
 
+/**
+ * Meta Pixel. El try/catch es obligatorio: dentro del navegador embebido de
+ * Instagram/Facebook, `fbevents.js` corre en un entorno con storage y cookies
+ * restringidos y puede tirar una excepción sincrónica. Sin esta guarda, un
+ * fallo de tracking aborta el checkout (era el bug de "No pudimos registrar tu
+ * pedido" al entrar desde una publicidad de Instagram).
+ */
 function pixel(eventName, data = {}, options) {
   if (typeof window === 'undefined') return;
-  if (typeof window.fbq === 'function') {
+  if (typeof window.fbq !== 'function') return;
+  try {
     if (options) {
       window.fbq('track', eventName, data, options);
     } else {
       window.fbq('track', eventName, data);
     }
+  } catch (err) {
+    debug('fbq track falló', err);
   }
 }
 
 /** Eventos NO estándar de Meta (los del configurador) → trackCustom. */
 function pixelCustom(eventName, data = {}) {
   if (typeof window === 'undefined') return;
-  if (typeof window.fbq === 'function') {
+  if (typeof window.fbq !== 'function') return;
+  try {
     window.fbq('trackCustom', eventName, data);
+  } catch (err) {
+    debug('fbq trackCustom falló', err);
   }
 }
 

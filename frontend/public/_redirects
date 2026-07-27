@@ -1,3 +1,11 @@
+# Espejo de los redirects de netlify.toml (que se aplican primero). Tienen que
+# estar acá los MISMOS /api/*: si esta lista queda corta, el fallback SPA de
+# abajo se traga el POST y devuelve index.html con status 200 — el checkout
+# rompe con un error de JSON imposible de diagnosticar.
 /api/create-preference      /.netlify/functions/create-preference      200
+/api/create-order-transfer  /.netlify/functions/create-order-transfer  200
+/api/capture-lead           /.netlify/functions/capture-lead           200
 /api/mercadopago-webhook    /.netlify/functions/mercadopago-webhook    200
+
+# SPA fallback (SIEMPRE al final)
 /*  /index.html  200

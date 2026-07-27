@@ -196,7 +196,14 @@ export default function Checkout() {
   const handleSubmit = async ({ payer, shipping, paymentMethod: method }) => {
     setSubmitting(true);
     setErrorMsg('');
-    setAdvancedMatching({ payer, shipping });
+    // Tracking best-effort: si el píxel falla (típico en el navegador embebido de
+    // Instagram) el pedido tiene que seguir igual. Sin esta guarda la promesa
+    // quedaba rechazada acá afuera y el botón se colgaba en "Procesando…".
+    try {
+      setAdvancedMatching({ payer, shipping });
+    } catch (err) {
+      console.warn('[checkout] tracking falló, sigo con el pedido:', err);
+    }
     try {
       const designSummary = buildDesignSummary(items);
       const comments = [shipping.comments, designSummary].filter(Boolean).join(' || ');
@@ -218,10 +225,14 @@ export default function Checkout() {
       window.location.href = init_point;
     } catch (err) {
       console.error(err);
+      // El código (status HTTP + error del backend, o "red" si la request no
+      // llegó) va en el mensaje: sin esto, una captura de pantalla del cliente
+      // no alcanza para saber si falló la validación, el backend o la conexión.
+      const code = err?.code ? ` [${err.code}]` : '';
       setErrorMsg(
         method === 'transferencia'
-          ? 'No pudimos registrar tu pedido. Probá de nuevo en unos segundos.'
-          : 'No pudimos iniciar el pago. Revisá que el backend esté corriendo y que estén configuradas las credenciales de Mercado Pago.'
+          ? `No pudimos registrar tu pedido. Probá de nuevo en unos segundos o escribinos por WhatsApp.${code}`
+          : `No pudimos iniciar el pago. Probá de nuevo o escribinos por WhatsApp.${code}`
       );
       setSubmitting(false);
     }
