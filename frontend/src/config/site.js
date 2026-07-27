@@ -164,6 +164,7 @@ export const navLinks = [
   { to: '/categorias', label: 'Categorías' },
   { to: '/personalizados', label: 'Personalizados' },
   { to: '/mayorista', label: 'Mayorista' },
+  { to: '/negocio', label: 'Negocio' },
   { to: '/contacto', label: 'Contacto' },
   // FAQ es una sección del Home (id="faq"); el hash hace que el header scrollee hasta ahí.
   { to: '/#faq', label: 'FAQ', hash: true }

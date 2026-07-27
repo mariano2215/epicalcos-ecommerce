@@ -19,7 +19,8 @@ export default function Header() {
           <img src="/favicon.png" alt={site.name} className="h-11 w-11 rounded-lg" />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
+        {/* lg y no md: con 7 links el nav no entra en 768 px y desbordaba la página */}
+        <nav className="hidden lg:flex items-center gap-1">
           {navLinks.map((l) =>
             l.hash ? (
               <Link key={l.to} to={l.to} className="btn-ghost">
@@ -52,7 +53,7 @@ export default function Header() {
             )}
           </button>
           <button
-            className="md:hidden btn-secondary !py-2 !px-3"
+            className="lg:hidden btn-secondary !py-2 !px-3"
             aria-label="Abrir menú"
             onClick={() => setOpen((o) => !o)}
           >
@@ -62,7 +63,7 @@ export default function Header() {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-white/10 bg-black/80">
+        <div className="lg:hidden border-t border-white/10 bg-black/80">
           <div className="container-app py-3 flex flex-col gap-1">
             {navLinks.map((l) =>
               l.hash ? (

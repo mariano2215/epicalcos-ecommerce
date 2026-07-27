@@ -14,7 +14,7 @@ const NEGOCIO_IMG =
 const NEGOCIO_OFF = Math.round((1 - NEGOCIO.price / NEGOCIO.listPrice) * 100);
 
 /** Foto real de una tirada de calcos de logo. Si falta el archivo, la card va sin foto. */
-const MUESTRA_SRC = '/images/negocio-muestra.jpg';
+const MUESTRA_SRC = '/images/negocio-muestra.webp';
 
 /**
  * Promo Negocio: 100 calcos de un solo diseño (el logo del cliente) en 6 cm a $39.999
