@@ -42,7 +42,12 @@ function validate(form) {
   return errors;
 }
 
-export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, submitting, errorMsg }) {
+/**
+ * `percentBlocked` = hay un cupón de bundle (2x1) aplicado, que NO se acumula
+ * con el 10 % por transferencia ni con el 10 % por volumen: con eso en true no
+ * se promete ningún % acá adentro.
+ */
+export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, submitting, errorMsg, percentBlocked = false }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
   const { bulkEligible, unitsToBulk } = useCart();
@@ -195,7 +200,9 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
 
       {isTransfer && (
         <div className="rounded-xl p-4 border border-white/10 bg-white/5 space-y-2 text-sm">
-          {bulkEligible ? (
+          {percentBlocked ? (
+            <div className="text-white/60">Ya tenés un cupón aplicado: no se le suma el 10% por transferencia.</div>
+          ) : bulkEligible ? (
             <div className="text-emerald-400 font-semibold">🎉 Tu pedido ya tiene 10% off por transferencia.</div>
           ) : unitsToBulk > 0 ? (
             <div className="text-white/60">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off.</div>

@@ -16,11 +16,20 @@ const BULK_DISCOUNT = 0.1;
 const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia'; // el 10 % solo aplica pagando por transferencia
 
 // Cupones de descuento (mismo alcance que el descuento por volumen: solo
-// calcos sueltos). El cupón es ACUMULABLE con el 10 % por transferencia: los
-// descuentos se SUMAN (ej. transferencia 10 % + EPICA10 10 % = 20 % off),
+// calcos sueltos). El cupón de % es ACUMULABLE con el 10 % por transferencia:
+// los descuentos se SUMAN (ej. transferencia 10 % + EPICA10 10 % = 20 % off),
 // con un tope de seguridad para no llegar a precio negativo.
 const COUPONS = { EPICA10: 0.1 };
 const MAX_STICKER_DISCOUNT = 0.9;
+
+// Cupones de BUNDLE (N x M sobre calcos de catálogo + personalizados: cada
+// `buy` unidades, las `buy - pay` más baratas gratis). EMOJI50 = 2x1, cupón
+// OCULTO que no se anuncia en el sitio (se pasa por mensaje privado) y que NO
+// es acumulable con ningún %: con el bundle aplicado no corren el 10 % por
+// transferencia, el 10 % por volumen (+10 calcos) ni otro cupón. También pisa
+// a la promo 3x2 por fecha si estuviera vigente.
+// ⚠️ Espejo de COUPONS/EMOJI50 en frontend/src/config/pricing.js.
+export const COUPON_BUNDLES = { EMOJI50: { buy: 2, pay: 1 } };
 
 // --- Espejo de la PROMO 3x2 de frontend/src/config/pricing.js ---
 // "3x2 en TODAS las calcos": cada 3 calcos elegibles (sticker + custom), la más
@@ -219,18 +228,21 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     clean.push({ id, title, quantity, unitPrice });
   }
 
+  // Cupón: el de % es ACUMULABLE con el descuento por transferencia (se SUMAN)
+  // y no requiere umbral de cantidad ni medio de pago. El de bundle (2x1) NO se
+  // acumula con nada: anula todos los %.
+  const normalizedCoupon = String(couponCode || '').trim().toUpperCase();
+  const bundle = COUPON_BUNDLES[normalizedCoupon] || null;
+  const couponDiscount = bundle ? 0 : COUPONS[normalizedCoupon] || 0;
+  const couponApplied = bundle || couponDiscount > 0 ? normalizedCoupon : null;
+
   // El 10 % por volumen aplica a calcos sueltos cuando el carrito suma ≥ 10
   // calcos TOTALES (se pueden combinar tamaños) Y el pago es por transferencia.
   const stickerUnits = clean
     .filter((i) => i.id.startsWith('sticker:'))
     .reduce((a, i) => a + i.quantity, 0);
-  const bulkDiscount = stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
-
-  // Cupón: ACUMULABLE con el descuento por transferencia (se SUMAN). No
-  // requiere umbral de cantidad ni medio de pago.
-  const normalizedCoupon = String(couponCode || '').trim().toUpperCase();
-  const couponDiscount = COUPONS[normalizedCoupon] || 0;
-  const couponApplied = couponDiscount > 0 ? normalizedCoupon : null;
+  const bulkDiscount =
+    !bundle && stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
 
   // Durante la promo 3x2 el % (cupón + transferencia) queda topeado en
   // PROMO_PERCENT_CAP (10 %); fuera de la promo, el tope es MAX_STICKER_DISCOUNT.
@@ -248,17 +260,19 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     bases.push(lb);
   }
 
-  // 3x2 (solo en promo): bolsa común de unidades elegibles (sticker + custom),
-  // se regalan las más baratas de cada 3 → keepFraction uniforme por línea.
+  // N x M: bolsa común de unidades elegibles (sticker + custom), se regalan las
+  // más baratas de cada `buy` → keepFraction uniforme por línea. Vale el bundle
+  // del cupón (2x1) y, si no hay, la promo 3x2 por fecha.
+  const grouping = bundle || (promoActive ? { buy: PROMO_BUY, pay: PROMO_PAY } : null);
   let keepFraction = 1;
-  if (promoActive) {
+  if (grouping) {
     const unitBasePrices = [];
     clean.forEach((item, idx) => {
       if (bases[idx].discountable) {
         for (let k = 0; k < item.quantity; k++) unitBasePrices.push(bases[idx].base);
       }
     });
-    keepFraction = promo3x2(unitBasePrices).keepFraction;
+    keepFraction = promo3x2(unitBasePrices, grouping.buy, grouping.pay).keepFraction;
   }
 
   const priced = [];
@@ -268,8 +282,8 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     let expected;
     if (!lb.discountable) {
       expected = lb.base; // packs / negocio / fijos: ya traen su precio final.
-    } else if (promoActive) {
-      // Elegibles en promo (catálogo + personalizados): 3x2 y luego % topeado.
+    } else if (grouping) {
+      // Elegibles (catálogo + personalizados): N x M y luego el % (0 con bundle).
       expected = round(lb.base * keepFraction * (1 - percentRate));
     } else if (lb.kind === 'sticker') {
       // Fuera de promo, el cupón/transferencia solo tocan calcos de catálogo.

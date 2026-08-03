@@ -22,17 +22,35 @@ export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
 
 /**
  * Cupones de descuento sobre calcos sueltos (mismo alcance que el descuento por
- * volumen: solo type === 'sticker'). El cupón es ACUMULABLE con el descuento
- * por transferencia: los descuentos se SUMAN (ej. transferencia 10 % + EPICA10
- * 10 % = 20 % off), con un tope de seguridad (MAX_STICKER_DISCOUNT).
+ * volumen: solo type === 'sticker'). Un cupón de % es ACUMULABLE con el
+ * descuento por transferencia: los descuentos se SUMAN (ej. transferencia 10 %
+ * + EPICA10 10 % = 20 % off), con un tope de seguridad (MAX_STICKER_DISCOUNT).
+ *
+ * Un cupón con `bundle` NO es de %: aplica un "N x M" (cada `buy` unidades
+ * elegibles, las `buy - pay` más baratas gratis) sobre calcos de catálogo +
+ * personalizados, y NO es acumulable con NINGÚN %: mientras esté aplicado no
+ * corren ni el 10 % por transferencia ni el 10 % por volumen (+10 calcos) ni
+ * otro cupón. `hidden: true` = no se anuncia en ningún lado del sitio; el
+ * código se pasa a mano por mensaje privado y el sitio solo lo acepta si el
+ * cliente lo escribe en el checkout.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (COUPONS y
+ * COUPON_BUNDLES). Si agregás o cambiás un cupón acá, cambialo TAMBIÉN allá o
+ * el checkout se rechaza con `price_mismatch`.
  */
 export const COUPONS = {
-  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF' }
+  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF' },
+  EMOJI50: { discount: 0, bundle: { buy: 2, pay: 1 }, label: '2x1 en calcos', hidden: true }
 };
 export const MAX_STICKER_DISCOUNT = 0.9;
 
 export function findCoupon(code) {
   return COUPONS[String(code || '').trim().toUpperCase()] || null;
+}
+
+/** Bundle (N x M) del cupón, si es de ese tipo. Null para los cupones de %. */
+export function couponBundle(code) {
+  return findCoupon(code)?.bundle || null;
 }
 
 /**
@@ -72,8 +90,10 @@ export function isPromoActive(now = Date.now()) {
 }
 
 /**
- * 3x2 sobre una "bolsa" de unidades elegibles (cada `buy`, se regalan las
- * `buy - pay` más baratas). Devuelve el ahorro y `keepFraction` = fracción del
+ * N x M sobre una "bolsa" de unidades elegibles (cada `buy`, se regalan las
+ * `buy - pay` más baratas). Genérica: la usa la promo 3x2 por fecha y también
+ * el cupón de bundle (EMOJI50 = 2x1).
+ * Devuelve el ahorro y `keepFraction` = fracción del
  * subtotal elegible que efectivamente SE PAGA. Se aplica uniforme a cada línea
  * (así el precio por unidad queda POSITIVO y verificable idéntico en el server;
  * Mercado Pago no admite líneas con precio ≤ 0, por eso no se manda un ítem de

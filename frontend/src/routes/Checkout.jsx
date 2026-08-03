@@ -5,7 +5,7 @@ import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
 import { calculateShipping } from '../config/site.js';
-import { findCoupon, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
+import { findCoupon, couponBundle, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
 import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
@@ -142,10 +142,13 @@ export default function Checkout() {
   // sueltos se les aplica el MAYOR entre el 10% por transferencia y el cupón
   // (ver CartContext.pricedItems) — nunca se suman.
   const items = pricedItems(paymentMethod, appliedCoupon);
+  // Cupón de bundle (2x1): no se acumula con ningún % — ni transferencia, ni volumen.
+  const appliedBundle = couponBundle(appliedCoupon);
   const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
   const listSubtotal = items.reduce((a, i) => a + i.basePrice * i.quantity, 0);
   const discount = listSubtotal - subtotal;
   const discountLabel = (() => {
+    if (appliedBundle) return `${appliedCoupon} · ${appliedBundle.buy}x${appliedBundle.pay}`;
     const parts = [];
     if (promoActive) parts.push('3x2');
     if (appliedCoupon) parts.push(appliedCoupon);
@@ -252,6 +255,7 @@ export default function Checkout() {
               onPaymentMethodChange={onPaymentMethodChange}
               submitting={submitting}
               errorMsg={errorMsg}
+              percentBlocked={Boolean(appliedBundle)}
             />
           </div>
 
@@ -329,10 +333,17 @@ export default function Checkout() {
               ) : (
                 <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
               )}
-              {promoActive && (
+              {promoActive && !appliedBundle && (
                 <div className="text-emerald-400">🎉 Promo 3x2 en calcos y personalizados. Sumá <strong>EPICA10</strong> para 10% extra.</div>
               )}
-              <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>
+              {appliedBundle ? (
+                <div className="text-emerald-400">
+                  🎟️ Cupón {appliedBundle.buy}x{appliedBundle.pay} en calcos y personalizados: cada {appliedBundle.buy},
+                  la más barata gratis. No se combina con el 10% por transferencia ni con el 10% desde 10 calcos.
+                </div>
+              ) : (
+                <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>
+              )}
             </div>
           </aside>
         </div>

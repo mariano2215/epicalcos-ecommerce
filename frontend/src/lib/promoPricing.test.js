@@ -7,6 +7,8 @@ import {
   isPromoActive as feActive,
   priceForSize,
   findCoupon,
+  couponBundle,
+  COUPONS,
   round,
   BULK_THRESHOLD,
   BULK_DISCOUNT,
@@ -16,6 +18,7 @@ import {
 import {
   PROMO_END_MS as BE_END,
   PROMO_PERCENT_CAP,
+  COUPON_BUNDLES,
   promo3x2 as bePromo3x2,
   isPromoActive as beActive,
   validateAndPriceOrder
@@ -30,23 +33,25 @@ afterEach(() => vi.useRealTimers());
 /** Espejo de CartContext.pricedItems: arma el payload que MANDA el cliente. */
 function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) {
   const promoActive = feActive();
+  const bundle = couponBundle(coupon); // cupón N x M (EMOJI50): anula todos los %
   const stickerUnits = cart.filter((l) => l.type === 'sticker').reduce((a, l) => a + l.quantity, 0);
-  const bulkRate = stickerUnits >= BULK_THRESHOLD && paymentMethod === 'transferencia' ? BULK_DISCOUNT : 0;
-  const couponRate = findCoupon(coupon)?.discount || 0;
+  const bulkRate = !bundle && stickerUnits >= BULK_THRESHOLD && paymentMethod === 'transferencia' ? BULK_DISCOUNT : 0;
+  const couponRate = bundle ? 0 : findCoupon(coupon)?.discount || 0;
   const cap = promoActive ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
   const percentRate = Math.min(bulkRate + couponRate, cap);
 
+  const grouping = bundle || (promoActive ? PROMO_3X2 : null);
   let keep = 1;
-  if (promoActive) {
+  if (grouping) {
     const prices = [];
     for (const l of cart) if (PROMO_ELIGIBLE.has(l.type)) for (let k = 0; k < l.quantity; k++) prices.push(l.basePrice);
-    keep = fePromo3x2({ unitBasePrices: prices }).keepFraction;
+    keep = fePromo3x2({ unitBasePrices: prices, buy: grouping.buy, pay: grouping.pay }).keepFraction;
   }
 
   return cart.map((l) => {
     let price;
-    if (promoActive && PROMO_ELIGIBLE.has(l.type)) price = round(l.basePrice * keep * (1 - percentRate));
-    else if (!promoActive && l.type === 'sticker') price = round(l.basePrice * (1 - percentRate));
+    if (grouping && PROMO_ELIGIBLE.has(l.type)) price = round(l.basePrice * keep * (1 - percentRate));
+    else if (!grouping && l.type === 'sticker') price = round(l.basePrice * (1 - percentRate));
     else price = l.basePrice;
     return { id: l.id, title: l.title, quantity: l.quantity, unit_price: price };
   });
@@ -154,6 +159,64 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
     expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.7 * 0.9)); // = 1008
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
+  });
+
+  it('EMOJI50 (2x1 oculto) fuera de promo: catálogo + personalizados, pack intacto', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(AFTER_PROMO);
+    // 13 elegibles → 6 gratis (los 6 más baratos = 6×1200). eligibleBase=17200, keep=10000/17200.
+    const keep = 10000 / 17200;
+    const items = clientItems(cart, { coupon: 'EMOJI50' });
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * keep));
+    expect(price(items, 'sticker:naruto:9cm')).toBe(round(2000 * keep));
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(1600 * 0.5)); // pack intacto
+
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EMOJI50' });
+    expect(res.ok).toBe(true);
+    expect(res.couponApplied).toBe('EMOJI50');
+  });
+
+  it('EMOJI50 NO es acumulable: ni 10% por transferencia ni 10% desde 10 calcos', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(AFTER_PROMO);
+    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: 1600, quantity: 10 }];
+
+    // Sin cupón y con transferencia, ese carrito sí tiene el 10% por volumen.
+    expect(price(clientItems(bulkCart, { paymentMethod: 'transferencia' }), 'sticker:goku:6cm')).toBe(round(1600 * 0.9));
+
+    // Con EMOJI50: solo el 2x1 (10 unidades → 5 gratis, keep = 0.5), sin ningún %.
+    const mp = clientItems(bulkCart, { coupon: 'EMOJI50' });
+    const transfer = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EMOJI50' });
+    expect(price(mp, 'sticker:goku:6cm')).toBe(800);
+    expect(price(transfer, 'sticker:goku:6cm')).toBe(800); // el medio de pago no cambia nada
+    expect(
+      validateAndPriceOrder({ items: transfer, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EMOJI50' }).ok
+    ).toBe(true);
+
+    // Si el cliente intenta sumarle el 10% al 2x1, el server lo rechaza.
+    const tramposo = transfer.map((i) => ({ ...i, unit_price: round(i.unit_price * 0.9) }));
+    const res = validateAndPriceOrder({ items: tramposo, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EMOJI50' });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('price_mismatch');
+  });
+
+  it('EMOJI50 durante la promo 3x2: manda el 2x1 del cupón, sin %', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    const keep = 10000 / 17200; // 2x1, no el 3x2
+    const items = clientItems(cart, { paymentMethod: 'transferencia', coupon: 'EMOJI50' });
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EMOJI50' });
+    expect(res.ok).toBe(true);
+  });
+
+  it('los cupones de bundle están espejados frontend ↔ backend', () => {
+    const feBundles = Object.fromEntries(
+      Object.entries(COUPONS).filter(([, c]) => c.bundle).map(([code, c]) => [code, c.bundle])
+    );
+    expect(feBundles).toEqual(COUPON_BUNDLES);
+    expect(couponBundle('emoji50')).toEqual({ buy: 2, pay: 1 }); // case-insensitive
   });
 
   it('un precio adulterado se rechaza con price_mismatch', () => {

@@ -9,13 +9,17 @@ import {
   BULK_DISCOUNT,
   BULK_DISCOUNT_PAYMENT_METHOD,
   findCoupon,
+  couponBundle,
   MAX_STICKER_DISCOUNT,
   PROMO_3X2,
   isPromoActive,
   promo3x2
 } from '../config/pricing.js';
 
-/** Tipos de línea que entran en la promo 3x2 (calcos de catálogo + personalizados). */
+/**
+ * Tipos de línea que entran en las promos N x M — la 3x2 por fecha y el cupón
+ * de bundle (EMOJI50 = 2x1): calcos de catálogo + personalizados.
+ */
 const PROMO_ELIGIBLE_TYPES = new Set(['sticker', 'custom']);
 
 const CartContext = createContext(null);
@@ -205,21 +209,23 @@ export function CartProvider({ children }) {
       : 0;
     const unitsToBulk = bulkEligible ? 0 : BULK_THRESHOLD - bulkUnits;
 
-    // Promo 3x2 (por tiempo limitado): bolsa común de calcos elegibles
-    // (catálogo + personalizados). Independiente del medio de pago y del cupón,
-    // así ya se puede mostrar en el carrito. El % (EPICA10 / transferencia) se
-    // suma recién en el checkout, en pricedItems.
-    const promoActive = isPromoActive();
-    const unitBasePrices = [];
-    if (promoActive) {
-      for (const i of state.items) {
-        if (PROMO_ELIGIBLE_TYPES.has(i.type)) {
-          for (let k = 0; k < i.quantity; k++) unitBasePrices.push(i.basePrice);
-        }
+    // Bolsa común de calcos elegibles (catálogo + personalizados) para las
+    // promos N x M. La usan la promo 3x2 por fecha (acá abajo, para mostrarla
+    // en el carrito) y el cupón de bundle (recién en el checkout, en
+    // pricedItems, porque el cupón se escribe ahí).
+    const eligibleUnitBasePrices = [];
+    for (const i of state.items) {
+      if (PROMO_ELIGIBLE_TYPES.has(i.type)) {
+        for (let k = 0; k < i.quantity; k++) eligibleUnitBasePrices.push(i.basePrice);
       }
     }
-    const promo = promo3x2({ unitBasePrices });
-    const promoUnits = unitBasePrices.length;
+
+    // Promo 3x2 (por tiempo limitado): independiente del medio de pago y del
+    // cupón, así ya se puede mostrar en el carrito. El % (EPICA10 /
+    // transferencia) se suma recién en el checkout, en pricedItems.
+    const promoActive = isPromoActive();
+    const promo = promo3x2({ unitBasePrices: promoActive ? eligibleUnitBasePrices : [] });
+    const promoUnits = promoActive ? eligibleUnitBasePrices.length : 0;
     const promoToNextFree = promoActive
       ? (PROMO_3X2.buy - (promoUnits % PROMO_3X2.buy)) % PROMO_3X2.buy
       : 0;
@@ -232,6 +238,7 @@ export function CartProvider({ children }) {
       bulkEligible,
       bulkSavings,
       unitsToBulk,
+      eligibleUnitBasePrices,
       promoActive,
       promoUnits,
       promoFreeUnits: promo.freeUnits,
@@ -252,23 +259,34 @@ export function CartProvider({ children }) {
    * les aplica primero el 3x2 (uniforme vía keepFraction) y después el % (cupón
    * + transferencia) topeado en PROMO_3X2.percentCap (10 %). Espejado en
    * netlify/functions/lib/pricing.js.
+   *
+   * Con un CUPÓN DE BUNDLE (EMOJI50 = 2x1): manda el bundle del cupón — 2x1
+   * sobre los elegibles y NINGÚN % (ni transferencia, ni volumen, ni otro
+   * cupón), y reemplaza a la promo 3x2 si estuviera vigente.
    */
   const pricedItems = useCallback(
     (paymentMethod, couponCode) => {
-      const bulkRate = derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
-      const couponRate = findCoupon(couponCode)?.discount || 0;
+      const bundle = couponBundle(couponCode); // 2x1 del cupón oculto, si aplica
+      const bulkRate =
+        !bundle && derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
+      const couponRate = bundle ? 0 : findCoupon(couponCode)?.discount || 0;
       const cap = derived.promoActive ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
       const percentRate = Math.min(bulkRate + couponRate, cap);
-      const keep = derived.promoKeepFraction;
 
-      if (!derived.promoActive) {
+      // Agrupación N x M vigente: el cupón de bundle pisa a la promo por fecha.
+      const grouping = bundle || (derived.promoActive ? PROMO_3X2 : null);
+      const keep = bundle
+        ? promo3x2({ unitBasePrices: derived.eligibleUnitBasePrices, buy: bundle.buy, pay: bundle.pay }).keepFraction
+        : derived.promoKeepFraction;
+
+      if (!grouping) {
         if (percentRate === 0) return derived.items;
         return derived.items.map((i) =>
           i.type === 'sticker' ? { ...i, price: round(i.basePrice * (1 - percentRate)) } : i
         );
       }
 
-      // Promo activa: 3x2 + % (con tope) a los elegibles; el resto intacto.
+      // N x M + % (con tope) a los elegibles; el resto intacto.
       return derived.items.map((i) =>
         PROMO_ELIGIBLE_TYPES.has(i.type)
           ? { ...i, price: round(i.basePrice * keep * (1 - percentRate)) }
