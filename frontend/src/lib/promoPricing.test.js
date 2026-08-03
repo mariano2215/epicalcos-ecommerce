@@ -56,7 +56,7 @@ function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) 
 const cart = [
   { id: 'sticker:goku:6cm', title: 'Goku 6cm', type: 'sticker', basePrice: priceForSize('6cm'), quantity: 2 },
   { id: 'sticker:naruto:9cm', title: 'Naruto 9cm', type: 'sticker', basePrice: priceForSize('9cm'), quantity: 1 },
-  { id: 'custom:vinilo-blanco:4cm:silueta:1', title: 'Custom 4cm x10', type: 'custom', basePrice: 1200, quantity: 10 },
+  { id: 'custom:4cm:silueta:1', title: 'Custom 4cm x10', type: 'custom', basePrice: 1200, quantity: 10 },
   { id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista', type: 'pack', basePrice: round(priceForSize('6cm') * 0.5), quantity: 100 }
 ];
 const retiro = { methodValue: 'retiro' };
@@ -107,7 +107,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     const items = clientItems(cart);
     expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * keep));
     expect(price(items, 'sticker:naruto:9cm')).toBe(round(2000 * keep));
-    expect(price(items, 'custom:vinilo-blanco:4cm:silueta:1')).toBe(round(1200 * keep));
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
     expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(1600 * 0.5)); // pack intacto
 
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
@@ -120,7 +120,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     const items = clientItems(cart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
     // transferencia 10% + EPICA10 10% = 20% pero el tope de promo lo deja en 10%.
     const keep = 12400 / 17200;
-    expect(price(items, 'custom:vinilo-blanco:4cm:silueta:1')).toBe(round(1200 * keep * 0.9));
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep * 0.9));
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' });
     expect(res.ok).toBe(true);
     expect(res.couponApplied).toBe('EPICA10');
@@ -133,7 +133,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     // El carrito tiene 3 calcos de catálogo (<10): no llega al 10% por transferencia,
     // así que el sticker solo recibe el 10% del cupón. Custom sin cupón; pack intacto.
     expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.9));
-    expect(price(items, 'custom:vinilo-blanco:4cm:silueta:1')).toBe(1200);
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(1200);
     expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(1600 * 0.5));
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' });
     expect(res.ok).toBe(true);

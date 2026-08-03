@@ -1,11 +1,11 @@
 import { Swatch } from './swatches.jsx';
 
 /**
- * Grupo de swatches genérico. Reusado para material, tamaño, corte y cantidad.
+ * Grupo de swatches genérico. Reusado para tamaño y corte.
  *
  * @param {{
  *   paso: number, titulo: string, ayuda?: string,
- *   kind: 'material'|'tamano'|'corte',       // qué swatch dibujar (omitir para cantidad)
+ *   kind: 'tamano'|'corte',                   // qué swatch dibujar (omitir para no dibujar ninguno)
  *   opciones: Array<{ id, label, descripcion? }>,
  *   value: string|number|null,
  *   onSelect: (id) => void,

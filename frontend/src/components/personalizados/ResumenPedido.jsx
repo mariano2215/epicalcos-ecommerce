@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { formatPrice } from '../../context/CartContext.jsx';
 import { isPromoActive } from '../../config/pricing.js';
+import { CANTIDAD } from '../../config/personalizados.js';
 
 function ctaLabel(precio) {
   if (!precio.configuracionCompleta) return `Elegí ${precio.faltante} para ver el precio`;
@@ -10,55 +10,55 @@ function ctaLabel(precio) {
 /** Filas "campo → valor" de la especificación elegida. */
 function specRows(sel) {
   return [
-    ['Material', sel.materialLabel],
     ['Tamaño', sel.tamanoLabel],
-    ['Corte', sel.corteLabel],
-    ['Cantidad', sel.cantidad ? `${sel.cantidad} u` : null]
+    ['Corte', sel.corteLabel]
   ].filter(([, v]) => v);
 }
 
-/** Desglose "¿Cómo se calcula?" (acordeón). */
-function Desglose({ desglose }) {
-  const [open, setOpen] = useState(false);
-  if (!desglose) return null;
-  const { precioTamano, multiplicadorMaterial, factorVolumen, unitarioLista, unitario } = desglose;
-  const recargo = Math.round((multiplicadorMaterial - 1) * 100);
+/** Cantidad: SIN mínimo de compra, arranca en 1. Stepper + input libre. */
+function SelectorCantidad({ cantidad, onChange }) {
   return (
-    <div className="mt-3 border-t border-white/10 pt-3">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="w-full flex items-center justify-between text-xs text-white/60 hover:text-white"
-      >
-        <span>¿Cómo se calcula?</span>
-        <span>{open ? '−' : '+'}</span>
-      </button>
-      {open && (
-        <dl className="mt-2 space-y-1 text-xs text-white/60">
-          <div className="flex justify-between"><dt>Precio del tamaño</dt><dd>{formatPrice(precioTamano)}</dd></div>
-          <div className="flex justify-between">
-            <dt>Recargo del material</dt>
-            <dd>{recargo > 0 ? `+${recargo}%` : 'sin recargo'}</dd>
-          </div>
-          <div className="flex justify-between border-t border-white/5 pt-1">
-            <dt>Precio de lista (c/u)</dt><dd>{formatPrice(unitarioLista)}</dd>
-          </div>
-          <div className="flex justify-between text-emerald-400">
-            <dt>Descuento por volumen</dt>
-            <dd>×{factorVolumen}{unitarioLista > unitario ? ` (−${formatPrice(unitarioLista - unitario)})` : ''}</dd>
-          </div>
-          <div className="flex justify-between font-semibold text-white border-t border-white/5 pt-1">
-            <dt>Unitario final</dt><dd>{formatPrice(unitario)}</dd>
-          </div>
-        </dl>
-      )}
+    <div className="mt-4 border-t border-white/10 pt-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-white/50 text-sm">Cantidad</span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onChange(cantidad - 1)}
+            disabled={cantidad <= CANTIDAD.min}
+            aria-label="Quitar una unidad"
+            className="btn-ghost !px-3 !py-1 disabled:opacity-30"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={CANTIDAD.min}
+            max={CANTIDAD.max}
+            value={cantidad}
+            onChange={(e) => onChange(e.target.value)}
+            aria-label="Cantidad de calcos"
+            className="input-dark !w-16 text-center !py-1"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(cantidad + 1)}
+            disabled={cantidad >= CANTIDAD.max}
+            aria-label="Sumar una unidad"
+            className="btn-ghost !px-3 !py-1 disabled:opacity-30"
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <p className="text-[11px] text-white/40 mt-1.5 text-right">Sin mínimo: podés llevar una sola.</p>
     </div>
   );
 }
 
 /** Tarjeta de resumen (columna sticky en desktop, en el flujo en mobile). */
-export default function ResumenPedido({ precio, seleccion, onAdd }) {
+export default function ResumenPedido({ precio, seleccion, cantidad, onCantidadChange, onAdd }) {
   const completa = precio.configuracionCompleta;
   return (
     <aside className="card-glass p-5 lg:sticky lg:top-24 h-fit">
@@ -76,6 +76,8 @@ export default function ResumenPedido({ precio, seleccion, onAdd }) {
         )}
       </dl>
 
+      <SelectorCantidad cantidad={cantidad} onChange={onCantidadChange} />
+
       {completa && (
         <div className="mt-4 border-t border-white/10 pt-3">
           <div className="flex justify-between text-white/70 text-sm mb-1">
@@ -86,12 +88,7 @@ export default function ResumenPedido({ precio, seleccion, onAdd }) {
             <span>Total</span>
             <span>{formatPrice(precio.total)}</span>
           </div>
-          {precio.porcentajeAhorro > 0 && (
-            <p className="text-xs text-emerald-400 mt-1">
-              {precio.porcentajeAhorro}% off por volumen · ahorrás {formatPrice(precio.ahorro)}
-            </p>
-          )}
-          <Desglose desglose={precio.desglose} />
+          <p className="text-xs text-white/45 mt-1">Mismo precio que los calcos del catálogo.</p>
         </div>
       )}
 
@@ -123,10 +120,12 @@ export function BarraResumenMovil({ precio, onAdd }) {
           {completa ? (
             <>
               <div className="font-display font-extrabold text-lg leading-none">{formatPrice(precio.total)}</div>
-              <div className="text-[11px] text-white/50">{formatPrice(precio.unitario)} c/u</div>
+              <div className="text-[11px] text-white/50">
+                {formatPrice(precio.unitario)} c/u · {precio.cantidad} u
+              </div>
             </>
           ) : (
-            <div className="text-xs text-white/60">Completá la config para ver el precio</div>
+            <div className="text-xs text-white/60">Elegí tamaño y corte para ver el precio</div>
           )}
         </div>
         <button

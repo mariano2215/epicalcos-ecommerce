@@ -1,16 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../../context/CartContext.jsx';
-import {
-  MATERIALES,
-  TAMANOS,
-  CORTES,
-  TIERS,
-  getMaterial,
-  getTamano,
-  getCorte
-} from '../../config/personalizados.js';
-import { calcularPrecio, unitarioParaTier } from '../../lib/precioPersonalizados.js';
+import { TAMANOS, CORTES, CANTIDAD, getTamano, getCorte, clampCantidad } from '../../config/personalizados.js';
+import { calcularPrecio } from '../../lib/precioPersonalizados.js';
 import {
   trackPersonalizadoInicio,
   trackPersonalizadoPaso,
@@ -21,23 +13,23 @@ import PasoSelector from './PasoSelector.jsx';
 import SubidaArchivo from './SubidaArchivo.jsx';
 import ResumenPedido, { BarraResumenMovil } from './ResumenPedido.jsx';
 import QueSigue from './QueSigue.jsx';
-import { materialImageDataUri } from './swatches.jsx';
+import { customImageDataUri } from './swatches.jsx';
 
+/**
+ * Configurador de /personalizados: SOLO tres decisiones — tamaño, corte y el
+ * archivo. El precio es el mismo que el del catálogo y no hay mínimo de compra.
+ */
 export default function Configurador() {
   const { addCustom } = useCart();
   const navigate = useNavigate();
 
-  const [material, setMaterial] = useState(null);
   const [tamano, setTamano] = useState(null);
   const [corte, setCorte] = useState(null);
-  const [cantidad, setCantidad] = useState(null);
+  const [cantidad, setCantidad] = useState(CANTIDAD.default);
   const [archivos, setArchivos] = useState([]); // [{ nombre, pesoMB, url }]
   const [instrucciones, setInstrucciones] = useState('');
 
-  const precio = useMemo(
-    () => calcularPrecio({ material, tamano, corte, cantidad }),
-    [material, tamano, corte, cantidad]
-  );
+  const precio = useMemo(() => calcularPrecio({ tamano, corte, cantidad }), [tamano, corte, cantidad]);
 
   // ── Tracking ──
   useEffect(() => {
@@ -52,68 +44,38 @@ export default function Configurador() {
   // Cotización en vivo cada vez que la config queda completa.
   useEffect(() => {
     if (precio.configuracionCompleta) {
-      trackPersonalizadoPrecio({ valor: precio.total, material, cantidad });
+      trackPersonalizadoPrecio({ valor: precio.total, tamano, cantidad: precio.cantidad });
     }
-  }, [precio.configuracionCompleta, precio.total, material, cantidad]);
+  }, [precio.configuracionCompleta, precio.total, tamano, precio.cantidad]);
 
   const onArchivosChange = useCallback((items) => setArchivos(items), []);
   const onArchivoAdd = useCallback((info) => trackPersonalizadoArchivo(info), []);
-
-  // ── Sub-línea de cada tier de cantidad: $/u + % off ──
-  const renderCantidadSub = (op) => {
-    const factorBase = TIERS[0].factor;
-    const tier = TIERS.find((t) => t.cantidad === op.id);
-    const pct = Math.round((1 - tier.factor / factorBase) * 100);
-    const unit = unitarioParaTier({ material, tamano, corte, cantidad: op.id });
-    return (
-      <div className="text-[11px] leading-tight">
-        {unit > 0 && <span className="text-white/70">{formatPrice(unit)} c/u</span>}
-        {pct > 0 && <span className="text-emerald-400 ml-1">· {pct}% off</span>}
-      </div>
-    );
-  };
-
-  // ── Nudge al siguiente tier ──
-  const nudge = useMemo(() => {
-    if (!cantidad || !material || !tamano) return null;
-    const idx = TIERS.findIndex((t) => t.cantidad === cantidad);
-    const next = TIERS[idx + 1];
-    if (!next) return null;
-    const actual = unitarioParaTier({ material, tamano, corte, cantidad });
-    const conMas = unitarioParaTier({ material, tamano, corte, cantidad: next.cantidad });
-    const ahorroUnit = actual - conMas;
-    if (ahorroUnit <= 0) return null;
-    return `Sumando ${next.cantidad - cantidad} más pagás ${formatPrice(ahorroUnit)} menos por unidad.`;
-  }, [cantidad, material, tamano, corte]);
+  const onCantidadChange = useCallback((n) => setCantidad(clampCantidad(n)), []);
 
   const seleccion = {
-    materialLabel: getMaterial(material)?.label,
     tamanoLabel: getTamano(tamano)?.label,
-    corteLabel: getCorte(corte)?.label,
-    cantidad
+    corteLabel: getCorte(corte)?.label
   };
 
   const onAdd = () => {
     if (!precio.configuracionCompleta) return;
-    const mat = getMaterial(material);
     const tam = getTamano(tamano);
     const cor = getCorte(corte);
+    const unidades = precio.cantidad;
     addCustom({
-      id: `custom:${material}:${tamano}:${corte}:${Date.now()}`,
-      name: `Personalizado · ${mat.label} · ${tam.label} · ${cor.label} · x${cantidad}`,
+      id: `custom:${tamano}:${corte}:${Date.now()}`,
+      name: `Personalizado · ${tam.label} · ${cor.label} · x${unidades}`,
       categoryLabel: 'Personalizados',
-      image: materialImageDataUri(material),
+      image: customImageDataUri(),
       basePrice: precio.unitario,
-      quantity: cantidad,
+      quantity: unidades,
       meta: {
         tipo: 'calcos',
-        material,
-        materialLabel: mat.label,
         tamano,
         tamanoLabel: tam.label,
         corte,
         corteLabel: cor.label,
-        cantidad,
+        cantidad: unidades,
         instrucciones: instrucciones.trim() || null,
         archivos: archivos.length ? archivos : null
       }
@@ -126,10 +88,11 @@ export default function Configurador() {
   return (
     <div className="pb-24 lg:pb-0">
       <header className="mb-6">
-        <span className="badge badge-hot mb-3">Cotizás antes de pagar</span>
+        <span className="badge badge-hot mb-3">Sin mínimo de compra</span>
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Armá tu calco personalizado</h1>
         <p className="text-white/60 mt-2 max-w-xl">
-          Elegí material, tamaño y cantidad. Subí tu diseño. Ves el precio final antes de pagar.
+          Elegí el tamaño y el corte, subí tu diseño y listo. Mismo precio que los calcos del catálogo,
+          desde una sola unidad.
         </p>
       </header>
 
@@ -137,55 +100,30 @@ export default function Configurador() {
         <div className="lg:col-span-2 min-w-0 space-y-4">
           <PasoSelector
             paso={1}
-            titulo="Elegí el material"
-            kind="material"
-            opciones={MATERIALES}
-            value={material}
-            onSelect={seleccionar(setMaterial, 'material')}
-          />
-          <PasoSelector
-            paso={2}
             titulo="¿De qué tamaño?"
             kind="tamano"
             opciones={TAMANOS}
             value={tamano}
             onSelect={seleccionar(setTamano, 'tamano')}
-            renderSub={(op) => {
-              const u = unitarioParaTier({ material, tamano: op.id, corte, cantidad: cantidad || TIERS[0].cantidad });
-              return u > 0 ? <span className="text-[11px] text-white/60">desde {formatPrice(u)} c/u</span> : null;
-            }}
+            columnas="grid-cols-1 sm:grid-cols-3"
+            renderSub={(op) => <span className="text-[11px] text-white/60">{formatPrice(op.precio)} c/u</span>}
           />
           <PasoSelector
-            paso={3}
+            paso={2}
             titulo="¿Cómo lo cortamos?"
             kind="corte"
             opciones={CORTES}
             value={corte}
             onSelect={seleccionar(setCorte, 'corte')}
+            columnas="grid-cols-1 sm:grid-cols-3"
           />
-          <div>
-            <PasoSelector
-              paso={4}
-              titulo="¿Cuántos querés?"
-              opciones={TIERS.map((t) => ({ id: t.cantidad, label: `${t.cantidad} u` }))}
-              value={cantidad}
-              onSelect={seleccionar(setCantidad, 'cantidad')}
-              renderSub={renderCantidadSub}
-              columnas="grid-cols-3 sm:grid-cols-6"
-            />
-            {nudge && (
-              <p className="text-xs text-brand-yellow bg-brand-yellow/10 border border-brand-yellow/25 rounded-lg px-3 py-2 mt-2">
-                💡 {nudge}
-              </p>
-            )}
-          </div>
 
-          <SubidaArchivo tamanoCm={tamanoCm} onChange={onArchivosChange} onAdd={onArchivoAdd} />
+          <SubidaArchivo paso={3} tamanoCm={tamanoCm} onChange={onArchivosChange} onAdd={onArchivoAdd} />
 
           <section className="card-glass p-5">
             <div className="flex items-baseline gap-2 mb-1">
               <span className="grid place-items-center w-6 h-6 rounded-full bg-brand-fuchsia/20 text-brand-fuchsia text-xs font-bold shrink-0">
-                6
+                4
               </span>
               <h2 className="font-display font-extrabold text-lg">¿Algo que tengamos que saber?</h2>
             </div>
@@ -203,7 +141,13 @@ export default function Configurador() {
         </div>
 
         <div className="min-w-0">
-          <ResumenPedido precio={precio} seleccion={seleccion} onAdd={onAdd} />
+          <ResumenPedido
+            precio={precio}
+            seleccion={seleccion}
+            cantidad={cantidad}
+            onCantidadChange={onCantidadChange}
+            onAdd={onAdd}
+          />
         </div>
       </div>
 

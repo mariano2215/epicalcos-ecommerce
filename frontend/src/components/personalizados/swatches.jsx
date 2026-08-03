@@ -3,68 +3,6 @@
  * cada opción se representa con el color/forma que la identifica.
  */
 
-/** Material: rectángulo que insinúa la terminación real del vinilo. */
-function MaterialSwatch({ id }) {
-  const gid = `mat-${id}`;
-  const common = { width: 56, height: 56, viewBox: '0 0 56 56', 'aria-hidden': true };
-  if (id === 'vinilo-blanco') {
-    return (
-      <svg {...common}>
-        <rect x="4" y="4" width="48" height="48" rx="12" fill="#FAFAF5" />
-        <path d="M10 40 L30 12" stroke="#fff" strokeWidth="8" opacity="0.6" />
-        <rect x="4" y="4" width="48" height="48" rx="12" fill="none" stroke="rgba(0,0,0,0.15)" />
-      </svg>
-    );
-  }
-  if (id === 'transparente') {
-    return (
-      <svg {...common}>
-        <defs>
-          <pattern id={gid} width="12" height="12" patternUnits="userSpaceOnUse">
-            <rect width="12" height="12" fill="#2b2b2b" />
-            <rect width="6" height="6" fill="#3f3f3f" />
-            <rect x="6" y="6" width="6" height="6" fill="#3f3f3f" />
-          </pattern>
-        </defs>
-        <rect x="4" y="4" width="48" height="48" rx="12" fill={`url(#${gid})`} />
-        <rect x="4" y="4" width="48" height="48" rx="12" fill="none" stroke="rgba(255,255,255,0.25)" />
-      </svg>
-    );
-  }
-  if (id === 'holografico') {
-    return (
-      <svg {...common}>
-        <defs>
-          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#8B5CF6" />
-            <stop offset="30%" stopColor="#3A86FF" />
-            <stop offset="55%" stopColor="#FF4DCA" />
-            <stop offset="80%" stopColor="#FFD84D" />
-            <stop offset="100%" stopColor="#FF5A1F" />
-          </linearGradient>
-        </defs>
-        <rect x="4" y="4" width="48" height="48" rx="12" fill={`url(#${gid})`} />
-        <path d="M10 42 L34 10" stroke="#fff" strokeWidth="6" opacity="0.45" />
-      </svg>
-    );
-  }
-  // dtf-uv: iridiscente con insinuación de relieve
-  return (
-    <svg {...common}>
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#c7f9ff" />
-          <stop offset="50%" stopColor="#e9d5ff" />
-          <stop offset="100%" stopColor="#ffe4f3" />
-        </linearGradient>
-      </defs>
-      <rect x="4" y="4" width="48" height="48" rx="12" fill={`url(#${gid})`} />
-      <rect x="12" y="12" width="32" height="32" rx="8" fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="2" />
-      <rect x="4" y="4" width="48" height="48" rx="12" fill="none" stroke="rgba(0,0,0,0.12)" />
-    </svg>
-  );
-}
-
 /** Tamaño: cuadrado proporcional al cm, para comparar visualmente. */
 function TamanoSwatch({ id }) {
   const cm = { '4cm': 4, '6cm': 6, '9cm': 9, '12cm': 12 }[id] || 6;
@@ -131,23 +69,16 @@ function CorteSwatch({ id }) {
 }
 
 export function Swatch({ kind, id }) {
-  if (kind === 'material') return <MaterialSwatch id={id} />;
   if (kind === 'tamano') return <TamanoSwatch id={id} />;
   if (kind === 'corte') return <CorteSwatch id={id} />;
   return null;
 }
 
-/** Imagen (data-URI) del material para la miniatura del carrito (se serializa a localStorage). */
-export function materialImageDataUri(materialId) {
-  const bg = {
-    'vinilo-blanco': '#FAFAF5',
-    transparente: '#3f3f3f',
-    holografico: '#8B5CF6',
-    'dtf-uv': '#e9d5ff'
-  }[materialId] || '#202020';
+/** Imagen (data-URI) de la línea personalizada para la miniatura del carrito (se serializa a localStorage). */
+export function customImageDataUri() {
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'>` +
-    `<rect width='200' height='200' rx='24' fill='${bg}'/>` +
+    `<rect width='200' height='200' rx='24' fill='#FF1B8D'/>` +
     `<text x='50%' y='54%' font-size='72' text-anchor='middle' dominant-baseline='middle'>✏️</text>` +
     `</svg>`;
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);

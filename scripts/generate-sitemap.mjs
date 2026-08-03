@@ -14,6 +14,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isSectionHidden } from '../frontend/src/config/site.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '..', 'frontend', 'public');
@@ -23,11 +24,12 @@ const OUTPUT = join(PUBLIC, 'sitemap.xml');
 const BASE = 'https://epicalcos.com';
 
 // Rutas estáticas indexables (excluye checkout, pago-* y búsqueda interna).
+// Las secciones despublicadas (HIDDEN_SECTIONS en frontend/src/config/site.js)
+// se filtran solas: su ruta redirige, así que indexarlas sería una URL muerta.
 const STATIC_ROUTES = [
   { path: '/', priority: 1.0 },
   { path: '/categorias', priority: 0.9 },
-  // /personalizados queda fuera mientras esté en HIDDEN_SECTIONS (frontend/src/config/site.js):
-  // la ruta redirige, así que indexarla sería una URL muerta.
+  { path: '/personalizados', priority: 0.8 },
   { path: '/negocio', priority: 0.8 },
   { path: '/mayorista', priority: 0.8 },
   { path: '/tatuajes', priority: 0.8 },
@@ -50,7 +52,7 @@ const escapeXml = (v) =>
 const catalog = JSON.parse(readFileSync(CATALOG, 'utf8'));
 
 const routes = [
-  ...STATIC_ROUTES,
+  ...STATIC_ROUTES.filter((r) => !isSectionHidden(r.path)),
   ...catalog.map((c) => ({ path: `/categoria/${c.slug}`, priority: 0.8 }))
 ];
 

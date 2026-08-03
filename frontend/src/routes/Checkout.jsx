@@ -41,7 +41,7 @@ function buildDesignSummary(items) {
       }
       const notas = m.instrucciones ? ` | notas: ${m.instrucciones}` : '';
       parts.push(
-        `Personalizado (${m.materialLabel}, ${m.tamanoLabel}, corte ${m.corteLabel}, x${m.cantidad}) | ${arch}${notas}`
+        `Personalizado (${m.tamanoLabel}, corte ${m.corteLabel}, x${m.cantidad}) | ${arch}${notas}`
       );
     } else if (it.type === 'fixed' && it.meta?.archivos?.length) {
       // Producto de precio fijo con fotos adjuntas (ej. Polaroid).
@@ -69,7 +69,6 @@ function stashDesignSpec(items, payerName) {
       if (it.type === 'custom' && it.meta) {
         spec.push({
           tipo: 'custom',
-          material: it.meta.materialLabel,
           tamano: it.meta.tamanoLabel,
           corte: it.meta.corteLabel,
           cantidad: it.meta.cantidad,

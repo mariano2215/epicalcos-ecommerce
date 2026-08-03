@@ -23,11 +23,24 @@ const STORAGE_KEY = 'epicalcos.cart.v2';
 
 const initialState = { items: [], drawerOpen: false };
 
+/**
+ * Líneas de personalizados del configurador VIEJO (`custom:{material}:{tamano}:{corte}:{ts}`,
+ * con precio por material y mínimo de 10). El configurador nuevo emite
+ * `custom:{tamano}:{corte}:{ts}`: si una de esas líneas sobrevivió en el
+ * localStorage de alguien, el servidor la rechazaría y le trabaría TODO el
+ * checkout, así que se descartan al hidratar.
+ */
+const esCustomViejo = (id) => String(id).startsWith('custom:') && String(id).split(':').length > 4;
+
 /** Hidratación síncrona desde localStorage en el primer render (evita el race con el persist). */
 function initState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return { items: raw ? JSON.parse(raw) : [], drawerOpen: false };
+    const items = raw ? JSON.parse(raw) : [];
+    return {
+      items: Array.isArray(items) ? items.filter((i) => !esCustomViejo(i?.id)) : [],
+      drawerOpen: false
+    };
   } catch {
     return initialState;
   }

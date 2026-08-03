@@ -164,11 +164,11 @@ export const announcements = [
  * sólo se le sacan las puertas de entrada (nav, menú, footer, Home, Categorías,
  * buscador, sitemap y feed de Meta) y la ruta redirige a /categorias.
  *
- * PARA VOLVER A PUBLICARLA: sacá el slug de esta lista y listo, no hay que tocar
- * nada más. `/personalizados` está apagada hasta rehacer el configurador con
- * mejores diseños (pedido de Mariano, 27/7/2026).
+ * PARA DESPUBLICAR UNA: agregá su slug acá y listo, no hay que tocar nada más.
+ * (`/personalizados` estuvo apagada del 27/7/2026 al 3/8/2026, hasta rehacer el
+ * configurador: hoy son tres pasos —tamaño, corte y archivo— y volvió a estar viva.)
  */
-export const HIDDEN_SECTIONS = ['personalizados'];
+export const HIDDEN_SECTIONS = [];
 
 /** true si la sección está despublicada. Acepta el slug ('personalizados') o el path ('/personalizados'). */
 export const isSectionHidden = (slugOrPath) =>

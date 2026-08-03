@@ -67,24 +67,11 @@ const FIXED_PRICES = {
 };
 
 // --- Espejo de frontend/src/config/personalizados.js (calcos personalizados) ---
-// ⚠️ Si cambiás la grilla de personalizados en el frontend, cambiala TAMBIÉN acá.
-// El test frontend/src/lib/precioPersonalizados.test.js verifica que coincidan.
-// unitario = round( SIZE_PRICES[tamaño] × multiplicador(material) × factorVolumen(cantidad) )
-// El precio por tamaño es el mismo SIZE_PRICES de arriba: no se duplica.
-export const CUSTOM_MATERIAL_MULT = {
-  'vinilo-blanco': 1,
-  transparente: 1,
-  holografico: 1.3,
-  'dtf-uv': 1.2
-};
-export const CUSTOM_TIERS = [
-  { cantidad: 10, factor: 1 },
-  { cantidad: 25, factor: 0.92 },
-  { cantidad: 50, factor: 0.85 },
-  { cantidad: 100, factor: 0.78 },
-  { cantidad: 250, factor: 0.7 },
-  { cantidad: 500, factor: 0.62 }
-];
+// Un calco personalizado vale lo MISMO que uno del catálogo, según su tamaño:
+//   unitario = SIZE_PRICES[tamaño]
+// No hay recargo por material ni mínimo de compra (antes eran 10 unidades), así
+// que no hace falta ninguna grilla extra: el precio por tamaño es el SIZE_PRICES
+// de arriba. El test frontend/src/lib/precioPersonalizados.test.js lo verifica.
 
 // --- Espejo de frontend/src/config/site.js (envío) ---
 const FREE_SHIPPING_THRESHOLD_ROSARIO = 50000;
@@ -138,7 +125,7 @@ export function shippingMethodLabel(method, city, province) {
  * Precio de LISTA por unidad de un item según su id, antes de descuentos por
  * cupón/transferencia/promo. Los ids los genera el frontend con estructura fija:
  *   sticker:{stickerId}:{size} · pack:{tipo}:{size}:{ts} · negocio:{ts} · fixed:{productId}
- *   custom:{material}:{tamano}:{corte}:{ts}
+ *   custom:{tamano}:{corte}:{ts}
  *
  * `discountable` marca las líneas que participan de los descuentos a calcos
  * sueltos (cupón/transferencia/promo 3x2): SOLO catálogo (sticker) y
@@ -186,16 +173,13 @@ function lineBase(id, quantity) {
     return { base: price, kind, discountable: false };
   }
 
-  // custom:{material}:{tamano}:{corte}:{ts} — calco personalizado.
-  // El corte (parts[3]) es especificación (modificador 0 %), no afecta el precio.
+  // custom:{tamano}:{corte}:{ts} — calco personalizado, al precio del catálogo.
+  // El corte (parts[2]) es especificación pura y no afecta el precio, y no hay
+  // mínimo de compra: cualquier cantidad ≥ 1 es válida.
   if (kind === 'custom') {
-    const mult = CUSTOM_MATERIAL_MULT[parts[1]];
-    if (mult === undefined) return { error: `material inválido en "${id}"` };
-    const base = SIZE_PRICES[parts[2]];
+    const base = SIZE_PRICES[parts[1]];
     if (!base) return { error: `tamaño inválido en "${id}"` };
-    const tier = CUSTOM_TIERS.find((t) => t.cantidad === quantity);
-    if (!tier) return { error: `cantidad inválida para personalizado en "${id}"` };
-    return { base: round(base * mult * tier.factor), kind, discountable: true };
+    return { base, kind, discountable: true };
   }
 
   return { error: `item desconocido "${id}"` };

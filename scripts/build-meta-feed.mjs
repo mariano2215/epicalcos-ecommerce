@@ -29,8 +29,6 @@ import {
   priceForSize,
   WHOLESALE_QTY,
   WHOLESALE_DISCOUNT,
-  PERSONALIZADOS_MIN,
-  PERSONALIZADOS_DISCOUNT,
   NEGOCIO,
   TATUAJES,
   POLAROID
@@ -131,7 +129,8 @@ for (const { slug } of catalog) {
 function specialPrice(slug) {
   switch (slug) {
     case 'personalizados':
-      return PERSONALIZADOS_MIN * priceForSize(DEFAULT_SIZE) * (1 - PERSONALIZADOS_DISCOUNT);
+      // Sin mínimo de compra: un personalizado vale lo mismo que uno del catálogo.
+      return priceForSize(DEFAULT_SIZE);
     case 'mayorista':
       return WHOLESALE_QTY * priceForSize(DEFAULT_SIZE) * (1 - WHOLESALE_DISCOUNT);
     case 'negocio':

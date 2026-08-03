@@ -31,7 +31,6 @@ function buildWhatsappMessage(spec, orderId) {
       return;
     }
     lines.push(spec.items.length > 1 ? `— Calco ${i + 1}:` : 'Configuración:');
-    lines.push(`• Material: ${it.material}`);
     lines.push(`• Tamaño: ${it.tamano}`);
     lines.push(`• Corte: ${it.corte}`);
     lines.push(`• Cantidad: ${it.cantidad}`);

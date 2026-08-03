@@ -6,7 +6,7 @@ export default function Personalizados() {
   useSeo({
     title: 'Personalizados',
     description:
-      'Armá tu calco personalizado: elegí material, tamaño, corte y cantidad, subí tu diseño y ves el precio final antes de pagar. Producción en 2 a 3 días hábiles.'
+      'Armá tu calco personalizado: elegí tamaño y corte, subí tu diseño y ves el precio final antes de pagar. Sin mínimo de compra, desde $1.200. Producción en 2 a 3 días hábiles.'
   });
 
   return (

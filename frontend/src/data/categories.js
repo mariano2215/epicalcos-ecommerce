@@ -124,7 +124,7 @@ const ALL_SPECIALS = [
     to: '/personalizados',
     name: 'Personalizados',
     emoji: '🎨',
-    blurb: 'Tus propios diseños, mínimo 10 · 10% off',
+    blurb: 'Tu diseño, sin mínimo · desde $1.200',
     accent: 'from-fuchsia-500 to-pink-500'
   },
   {
