@@ -135,8 +135,8 @@ export const shippingMethods = [
 ];
 
 export const order = {
-  /** Pedido mínimo: 10 calcos por pedido (todos los packs ya cumplen por defecto) */
-  minimumCalcos: 10,
+  /** No hay pedido mínimo: se puede comprar un solo calco (catálogo o personalizado). */
+  minimumCalcos: 1,
   paymentMethods: ['Mercado Pago', 'Transferencia bancaria']
 };
 

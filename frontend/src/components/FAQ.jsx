@@ -4,7 +4,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Cuál es el pedido mínimo?',
-    a: 'El pedido mínimo es de 10 calcos. Todos nuestros packs ya cumplen ese mínimo, así que con cualquier pack vas a estar listo.'
+    a: 'No hay pedido mínimo: podés llevar un solo calco, del catálogo o con tu propio diseño. Si querés más cantidad, están los packs y el mayorista con descuento.'
   },
   {
     tag: 'general',
@@ -19,7 +19,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Hacen diseños personalizados?',
-    a: 'Sí. Comprás el pack personalizado y después coordinamos por WhatsApp el diseño, logo, frase o referencia que quieras imprimir. Te enviamos vista previa antes de producir.'
+    a: 'Sí. En Personalizados elegís tamaño y corte, subís tu diseño (logo, frase o foto) y comprás desde una unidad. Te enviamos vista previa por WhatsApp antes de producir.'
   },
   {
     tag: 'general',
