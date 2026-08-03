@@ -138,7 +138,7 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
               <p className="mt-3 text-xs text-white/50">
                 📸 {archivos.length > 0
                   ? `${archivos.length} archivo${archivos.length > 1 ? 's' : ''} listo${archivos.length > 1 ? 's' : ''} — se suman al pedido.`
-                  : 'Subí tus fotos abajo antes de agregar (o mandalas por WhatsApp después).'}
+                  : `Subí tus ${upload.sustantivo ?? 'archivos'} abajo antes de agregar, o mandá todo por WhatsApp después.`}
               </p>
             )}
           </div>

@@ -44,11 +44,11 @@ function buildDesignSummary(items) {
         `Personalizado (${m.tamanoLabel}, corte ${m.corteLabel}, x${m.cantidad}) | ${arch}${notas}`
       );
     } else if (it.type === 'fixed' && it.meta?.archivos?.length) {
-      // Producto de precio fijo con fotos adjuntas (ej. Polaroid).
+      // Producto de precio fijo con archivos adjuntos (fotos de Polaroid, diseños de tatuajes).
       const files = it.meta.archivos;
       const arch = files.some((f) => f.url)
-        ? `fotos (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`
-        : `fotos (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
+        ? `archivos (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`
+        : `archivos (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
       parts.push(`${it.name} | ${arch}`);
     }
   }

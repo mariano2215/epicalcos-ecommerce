@@ -8,10 +8,9 @@ import { useSeo } from '../lib/seo.js';
 
 /** Sustantivo plural según el contenido: solo personalizados → "diseños", solo fotos → "fotos", mezcla → "archivos". */
 function designNoun(items) {
+  // Los fijos con adjuntos son varios (fotos de Polaroid, diseños de tatuajes): término neutro.
   const hasFixed = items.some((it) => it.tipo === 'fixed');
-  const hasCustom = items.some((it) => it.tipo !== 'fixed'); // items viejos sin `tipo` = custom
-  if (hasFixed && hasCustom) return 'archivos';
-  return hasFixed ? 'fotos' : 'diseños';
+  return hasFixed ? 'archivos' : 'diseños';
 }
 
 /** Arma el mensaje de WhatsApp pre-cargado con la spec de los personalizados y/o las fotos. */
@@ -27,7 +26,7 @@ function buildWhatsappMessage(spec, orderId) {
     if (it.tipo === 'fixed') {
       lines.push(`— ${it.nombre}:`);
       lines.push(`• Cantidad: ${it.cantidad}`);
-      if (files.length) lines.push(`• Fotos: ${files.map((f) => f.nombre).join(', ')}`);
+      if (files.length) lines.push(`• Archivos: ${files.map((f) => f.nombre).join(', ')}`);
       return;
     }
     lines.push(spec.items.length > 1 ? `— Calco ${i + 1}:` : 'Configuración:');
