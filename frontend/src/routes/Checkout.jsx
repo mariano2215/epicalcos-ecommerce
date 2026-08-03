@@ -334,7 +334,7 @@ export default function Checkout() {
                 <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
               )}
               {promoActive && !appliedBundle && (
-                <div className="text-emerald-400">🎉 Promo 3x2 en calcos y personalizados. Sumá <strong>EPICA10</strong> para 10% extra.</div>
+                <div className="text-emerald-400">🎉 Promo 3x2 en calcos y personalizados: cada 3, la más barata gratis.</div>
               )}
               {appliedBundle ? (
                 <div className="text-emerald-400">

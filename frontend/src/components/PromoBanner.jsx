@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import StickerField from './StickerField.jsx';
 import { useCountdown } from '../lib/promo.js';
-import { PROMO_END_MS, PROMO_3X2 } from '../config/pricing.js';
+import { PROMO_END_MS } from '../config/pricing.js';
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -49,7 +49,7 @@ export default function PromoBanner() {
             <Link to="/categorias" className="group inline-flex flex-col items-center sm:items-start">
               <span className="promo-banner__title gradient-text">3×2 EN TODAS LAS CALCOS</span>
               <span className="promo-banner__sub">
-                Sumá <strong>{PROMO_3X2.couponCode}</strong> y llevate 10% extra · hasta {endLabel}
+                Cada 3, la más barata gratis · hasta {endLabel}
               </span>
             </Link>
           </div>

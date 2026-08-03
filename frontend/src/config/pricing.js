@@ -30,16 +30,21 @@ export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
  * elegibles, las `buy - pay` más baratas gratis) sobre calcos de catálogo +
  * personalizados, y NO es acumulable con NINGÚN %: mientras esté aplicado no
  * corren ni el 10 % por transferencia ni el 10 % por volumen (+10 calcos) ni
- * otro cupón. `hidden: true` = no se anuncia en ningún lado del sitio; el
- * código se pasa a mano por mensaje privado y el sitio solo lo acepta si el
- * cliente lo escribe en el checkout.
+ * otro cupón.
+ *
+ * `hidden: true` = el código NO se nombra en ninguna pantalla del sitio (ni
+ * banners, ni carrito, ni checkout). HOY LOS DOS CUPONES SON OCULTOS: EPICA10
+ * es solo para quien deja su mail en el popup de bienvenida (se lo muestra el
+ * popup y se autocompleta en el checkout) y EMOJI50 se pasa a mano por mensaje
+ * privado. El sitio los sigue aceptando si el cliente los escribe: "oculto" es
+ * no publicitarlos, no un secreto criptográfico (viajan en el bundle JS).
  *
  * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (COUPONS y
  * COUPON_BUNDLES). Si agregás o cambiás un cupón acá, cambialo TAMBIÉN allá o
  * el checkout se rechaza con `price_mismatch`.
  */
 export const COUPONS = {
-  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF' },
+  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF', hidden: true },
   EMOJI50: { discount: 0, bundle: { buy: 2, pay: 1 }, label: '2x1 en calcos', hidden: true }
 };
 export const MAX_STICKER_DISCOUNT = 0.9;
@@ -59,8 +64,8 @@ export function couponBundle(code) {
  * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom').
  * NO incluye packs mayoristas ni la promo Negocio.
  *
- * ACUMULABLE con el cupón EPICA10, pero durante la promo el descuento en % está
- * topeado en `percentCap` (10 %): EPICA10 y el 10 % por transferencia NO se
+ * ACUMULABLE con un cupón de % (EPICA10), pero durante la promo el descuento en
+ * % está topeado en `percentCap` (10 %): el cupón y el 10 % por transferencia NO se
  * suman por encima de ese tope (fuera de la promo, el tope sigue siendo
  * MAX_STICKER_DISCOUNT y el cupón sí se suma a la transferencia como siempre).
  *
@@ -78,8 +83,9 @@ export const PROMO_3X2 = {
   buy: 3,
   pay: 2,
   /** Tope del descuento en % durante la promo (transferencia + cupón no superan esto). */
-  percentCap: 0.10,
-  couponCode: 'EPICA10'
+  percentCap: 0.10
+  // Ojo: NO agregar acá el código de un cupón para mostrarlo en el banner —
+  // los cupones son ocultos (ver COUPONS arriba).
 };
 
 export const PROMO_END_MS = Date.parse(PROMO_3X2.endsAt);

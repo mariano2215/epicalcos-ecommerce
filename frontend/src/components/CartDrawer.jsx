@@ -100,7 +100,7 @@ export default function CartDrawer() {
             </div>
             {promoActive && (
               <p className="text-[11px] text-white/40 leading-snug">
-                El cupón EPICA10 y el medio de pago se aplican en el checkout.
+                El medio de pago y tu cupón (si tenés uno) se aplican en el checkout.
               </p>
             )}
             <button onClick={goCheckout} className="btn-primary w-full">

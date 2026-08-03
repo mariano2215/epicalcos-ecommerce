@@ -43,7 +43,7 @@ export default function Cart() {
         {/* Banner de la promo 3x2 (o del descuento por volumen fuera de la promo) */}
         {promoActive ? (
           <div className="mt-4 rounded-xl p-3 text-sm border border-brand-fuchsia/30 bg-brand-fuchsia/10 text-white/85">
-            🎉 <strong>Promo 3x2 en todas las calcos</strong> — cada 3 (catálogo o personalizados), la más barata gratis. Sumá <strong>EPICA10</strong> en el checkout para 10% extra.
+            🎉 <strong>Promo 3x2 en todas las calcos</strong> — cada 3 (catálogo o personalizados), la más barata gratis.
           </div>
         ) : bulkEligible ? (
           <div className="mt-4 rounded-xl p-3 text-sm border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
@@ -125,7 +125,7 @@ export default function Cart() {
             </div>
             {promoActive && (
               <p className="text-xs text-white/50 mt-2">
-                El cupón EPICA10 y el 10% por transferencia se suman en el checkout (tope 10%).
+                El 10% por transferencia y tu cupón (si tenés uno) se suman en el checkout (tope 10%).
               </p>
             )}
             <button onClick={() => navigate('/checkout')} className="btn-primary w-full mt-5">
