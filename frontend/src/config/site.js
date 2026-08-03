@@ -39,7 +39,7 @@ export const shipping = {
   pickupZone: 'Ov. Lagos y Bv. Seguí, Rosario',
   /** Plazos de producción/entrega */
   productionDaysRosario: '2 a 3 días hábiles',
-  productionDaysInterior: '7 a 10 días hábiles'
+  productionDaysInterior: '5 a 7 días hábiles'
 };
 
 /** Provincias y jurisdicciones de Argentina (orden alfabético) para el select del checkout. */

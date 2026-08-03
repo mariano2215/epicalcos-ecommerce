@@ -32,7 +32,7 @@ export default function Terminos() {
         <li>Los productos publicados son <strong>calcomanías, stickers, vinilos y fotos</strong> de fabricación propia.</li>
         <li>Los precios están expresados en <strong>pesos argentinos (ARS)</strong> e incluyen impuestos cuando corresponda.</li>
         <li>Los precios pueden actualizarse sin previo aviso. El precio aplicable es el vigente al momento de generar la orden de pago.</li>
-        <li>El <strong>pedido mínimo</strong> es de 10 calcos por orden.</li>
+        <li><strong>No hay pedido mínimo</strong>: podés comprar desde una unidad.</li>
       </ul>
 
       <h2>4. Forma de pago</h2>
@@ -57,9 +57,11 @@ export default function Terminos() {
 
       <h2>7. Productos personalizados</h2>
       <p>
-        Para productos personalizados, el cliente debe enviar el archivo o la referencia de diseño dentro
-        de las 48 horas posteriores al pago. EPICALCOS envía una vista previa por WhatsApp antes de imprimir.
-        Una vez aprobada por el cliente, comienza la producción.
+        Para productos personalizados, el cliente elige tamaño y corte y carga el archivo al hacer el pedido.
+        EPICALCOS produce con esos datos, sin envío de vista previa para aprobación, por lo que es
+        responsabilidad del cliente verificarlos antes de pagar. Si el archivo no es apto para impresión,
+        EPICALCOS se comunica por WhatsApp antes de producir. Si el cliente no cargó el archivo al comprar,
+        debe enviarlo dentro de las 48 horas posteriores al pago.
       </p>
 
       <h2>8. Propiedad intelectual</h2>

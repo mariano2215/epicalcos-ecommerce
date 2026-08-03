@@ -117,7 +117,8 @@ export default function PaymentSuccess() {
                 <Link to="/" className="btn-secondary">Volver al inicio</Link>
               </div>
               <p className="text-white/40 text-xs mt-4">
-                Revisamos tu archivo y te mandamos la vista previa antes de producir. No producimos nada sin tu OK.
+                Revisamos tu archivo y lo producimos con el tamaño y el corte que elegiste. Si algo no da, te
+                escribimos por WhatsApp.
               </p>
             </>
           ) : (

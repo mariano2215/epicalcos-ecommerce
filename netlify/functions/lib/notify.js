@@ -264,7 +264,7 @@ function customerTimeline(o) {
     return 'Tu pedido va a estar listo en 2 a 3 días hábiles. Te escribimos por WhatsApp para coordinar el retiro.';
   }
   if (/resto del país/i.test(method)) {
-    return 'Tu pedido llega en 7 a 10 días hábiles. Te avisamos cuando lo despachemos.';
+    return 'Tu pedido llega en 5 a 7 días hábiles. Te avisamos cuando lo despachemos.';
   }
   return 'Tu pedido llega en 2 a 3 días hábiles. Te avisamos cuando salga en camino.';
 }

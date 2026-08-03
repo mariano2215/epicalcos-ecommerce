@@ -38,17 +38,19 @@ export default function Cambios() {
         del contenido. Te enviamos lo correcto sin costo.
       </p>
 
-      <h2>Productos personalizados con error de aprobación</h2>
+      <h2>Productos personalizados</h2>
       <p>
-        Para diseños personalizados (logos, frases, fotos), te enviamos una <strong>vista previa por WhatsApp
-        antes de imprimir</strong>. Una vez aprobada, no aceptamos cambios sobre el diseño impreso.
+        Los diseños personalizados (logos, frases, fotos) se producen <strong>tal como los cargaste</strong>:
+        con el tamaño, el corte y el archivo que elegiste en el pedido. No enviamos vista previa para aprobar,
+        así que revisá bien esos datos antes de pagar. Si el archivo no es apto para impresión, te escribimos
+        por WhatsApp antes de producir. Una vez impreso, no aceptamos cambios sobre el diseño.
       </p>
 
       <h2>Cancelación de pedidos</h2>
       <p>
-        Podés cancelar tu pedido <strong>antes de que entre a producción</strong> (te avisamos cuando arranca,
-        en general dentro de las primeras 24 horas). Pasado ese punto, no podemos cancelar porque ya se
-        consumió material y tiempo de impresión.
+        La producción arranca apenas se confirma el pago, así que si querés cancelar escribinos
+        <strong> lo antes posible</strong> por WhatsApp. Si el pedido ya entró a producción no podemos
+        cancelarlo, porque ya se consumió material y tiempo de impresión.
       </p>
     </LegalLayout>
   );

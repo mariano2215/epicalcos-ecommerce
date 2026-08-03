@@ -19,7 +19,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Hacen diseños personalizados?',
-    a: 'Sí. En Personalizados elegís tamaño y corte, subís tu diseño (logo, frase o foto) y comprás desde una unidad. Te enviamos vista previa por WhatsApp antes de producir.'
+    a: 'Sí. En Personalizados elegís tamaño y corte, subís tu diseño (logo, frase o foto) y comprás desde una unidad. Lo producimos con el tamaño, el corte y el archivo que elegiste, sin vueltas.'
   },
   {
     tag: 'general',
@@ -29,7 +29,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Cuánto tarda la producción?',
-    a: 'En Rosario, 2 a 3 días hábiles desde la confirmación del pago. Al resto del país, 7 a 10 días hábiles incluyendo el tiempo del correo.'
+    a: 'En Rosario, 2 a 3 días hábiles desde la confirmación del pago. Al resto del país, 5 a 7 días hábiles incluyendo el tiempo del correo.'
   },
   {
     tag: 'general',

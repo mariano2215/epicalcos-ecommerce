@@ -33,7 +33,7 @@ export default function Envios() {
       <h2>Plazos de producción y entrega</h2>
       <ul>
         <li><strong>Rosario:</strong> 2 a 3 días hábiles desde la confirmación del pago.</li>
-        <li><strong>Resto del país:</strong> 7 a 10 días hábiles desde la confirmación del pago.</li>
+        <li><strong>Resto del país:</strong> 5 a 7 días hábiles desde la confirmación del pago.</li>
         <li>Los productos personalizados pueden requerir 1 a 2 días adicionales para diseño.</li>
       </ul>
 
