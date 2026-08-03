@@ -14,11 +14,7 @@ const PASOS = [
 export default function QueSigue() {
   return (
     <section className="card-glass p-5">
-      <h2 className="font-display font-extrabold text-lg mb-1">Qué pasa después de comprar</h2>
-      <p className="text-white/50 text-sm mb-4">
-        No mandamos vista previa: producimos con lo que cargaste. Si algo del archivo no da, te escribimos y
-        lo resolvemos.
-      </p>
+      <h2 className="font-display font-extrabold text-lg mb-4">Qué pasa después de comprar</h2>
       <ol className="space-y-3">
         {PASOS.map((p, i) => (
           <li key={i} className="flex items-start gap-3">
