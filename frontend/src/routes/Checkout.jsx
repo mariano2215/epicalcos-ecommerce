@@ -26,7 +26,16 @@ function buildDesignSummary(items) {
       }
       parts.push(`${it.name} → ${designs || 'sin catálogo'}${custom}${arch}`);
     } else if (it.type === 'negocio' && it.meta) {
-      parts.push(`Negocio "${it.meta.business}": ${it.meta.qty}u ${it.meta.size} (logo por WhatsApp)`);
+      const files = it.meta.archivos || [];
+      let logo;
+      if (files.length === 0) {
+        logo = 'logo por WhatsApp';
+      } else if (files.some((f) => f.url)) {
+        logo = `logo (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`;
+      } else {
+        logo = `logo (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envía por WhatsApp`;
+      }
+      parts.push(`Negocio "${it.meta.business}": ${it.meta.qty}u ${it.meta.size} (${logo})`);
     } else if (it.type === 'custom' && it.meta) {
       const m = it.meta;
       const files = m.archivos || [];
@@ -75,7 +84,8 @@ function stashDesignSpec(items, payerName) {
           archivos: (it.meta.archivos || []).map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) })),
           instrucciones: it.meta.instrucciones || null
         });
-      } else if (it.type === 'fixed' && it.meta?.archivos?.length) {
+      } else if ((it.type === 'fixed' || it.type === 'negocio') && it.meta?.archivos?.length) {
+        // `fixed` y `negocio` comparten forma: nombre + adjuntos (fotos, diseños, logo).
         spec.push({
           tipo: 'fixed',
           nombre: it.name,

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { NEGOCIO } from '../config/pricing.js';
 import { contact } from '../config/site.js';
+import SubidaArchivo from './personalizados/SubidaArchivo.jsx';
 
 const NEGOCIO_IMG =
   'data:image/svg+xml;utf8,' +
@@ -18,7 +19,8 @@ const MUESTRA_SRC = '/images/negocio-muestra.webp';
 
 /**
  * Promo Negocio: 100 calcos de un solo diseño (el logo del cliente) en 6 cm a $39.999
- * (precio de lista $96.999). El logo se coordina por WhatsApp después de la compra.
+ * (precio de lista $96.999). El logo se sube acá (va con el pedido) o, si no, se
+ * coordina por WhatsApp después de la compra.
  */
 export default function NegocioForm() {
   const { addNegocio } = useCart();
@@ -26,6 +28,9 @@ export default function NegocioForm() {
   const [business, setBusiness] = useState('');
   const [error, setError] = useState('');
   const [muestraOk, setMuestraOk] = useState(true);
+  const [archivos, setArchivos] = useState([]); // [{ nombre, pesoMB, url }]
+
+  const onArchivosChange = useCallback((items) => setArchivos(items), []);
 
   const submit = (e) => {
     e.preventDefault();
@@ -41,7 +46,12 @@ export default function NegocioForm() {
       size: NEGOCIO.size,
       basePrice: NEGOCIO.price,
       quantity: 1,
-      meta: { business: business.trim(), qty: NEGOCIO.qty, size: NEGOCIO.size }
+      meta: {
+        business: business.trim(),
+        qty: NEGOCIO.qty,
+        size: NEGOCIO.size,
+        archivos: archivos.length ? archivos : null
+      }
     });
     navigate('/carrito');
   };
@@ -89,45 +99,61 @@ export default function NegocioForm() {
         <ul className="mt-5 space-y-2 text-sm text-white/70">
           <li>✅ Ideal para bares, kioscos, peluquerías, marcas y emprendimientos.</li>
           <li>✅ Vinilo premium resistente al agua y al sol.</li>
-          <li>✅ Tu logo lo mandás por WhatsApp después de pagar.</li>
+          <li>✅ Subí tu logo acá o mandalo por WhatsApp después de pagar.</li>
         </ul>
         </div>
       </div>
 
-      <form onSubmit={submit} className="card-glass p-6 md:p-8 space-y-5">
-        <h3 className="font-display font-extrabold text-xl">Pedí tu promo</h3>
-        <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">Nombre del negocio / marca *</span>
-          <input
-            type="text"
-            value={business}
-            onChange={(e) => { setBusiness(e.target.value); setError(''); }}
-            placeholder="Ej: Bar La Esquina"
-            className="input-dark"
-          />
-          {error && <span className="text-xs text-brand-pink mt-1 block">{error}</span>}
-        </label>
+      <div className="space-y-4">
+        {/* El logo se puede subir acá (va con el pedido) o mandar por WhatsApp después de pagar. */}
+        <SubidaArchivo
+          tamanoCm={6}
+          max={3}
+          paso={null}
+          titulo="Subí tu logo"
+          sustantivo="archivos"
+          preset={import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET_NEGOCIO || undefined}
+          descripcion="PNG, JPG, PDF, SVG o AI, hasta 10 MB cada uno. Si tenés el vectorial (AI, SVG, PDF), mejor: el corte sale más preciso. También podés mandarlo por WhatsApp después de pagar."
+          onChange={onArchivosChange}
+        />
 
-        <div className="rounded-xl p-4 border border-white/10 bg-white/5 text-sm space-y-1.5">
-          <div className="flex justify-between"><span className="text-white/60">Cantidad</span><span>100 calcos</span></div>
-          <div className="flex justify-between"><span className="text-white/60">Tamaño</span><span>6 cm</span></div>
-          <div className="flex justify-between"><span className="text-white/60">Diseño</span><span>1 (tu logo)</span></div>
-          <div className="flex justify-between items-baseline font-display font-extrabold text-lg pt-1">
-            <span>Total</span>
-            <span className="flex items-baseline gap-2">
-              <span className="text-sm font-normal text-white/40 line-through decoration-white/40">
-                {formatPrice(NEGOCIO.listPrice)}
+        <form onSubmit={submit} className="card-glass p-6 md:p-8 space-y-5">
+          <h3 className="font-display font-extrabold text-xl">Pedí tu promo</h3>
+          <label className="block">
+            <span className="text-sm text-white/70 mb-1.5 block">Nombre del negocio / marca *</span>
+            <input
+              type="text"
+              value={business}
+              onChange={(e) => { setBusiness(e.target.value); setError(''); }}
+              placeholder="Ej: Bar La Esquina"
+              className="input-dark"
+            />
+            {error && <span className="text-xs text-brand-pink mt-1 block">{error}</span>}
+          </label>
+
+          <div className="rounded-xl p-4 border border-white/10 bg-white/5 text-sm space-y-1.5">
+            <div className="flex justify-between"><span className="text-white/60">Cantidad</span><span>100 calcos</span></div>
+            <div className="flex justify-between"><span className="text-white/60">Tamaño</span><span>6 cm</span></div>
+            <div className="flex justify-between"><span className="text-white/60">Diseño</span><span>1 (tu logo)</span></div>
+            <div className="flex justify-between items-baseline font-display font-extrabold text-lg pt-1">
+              <span>Total</span>
+              <span className="flex items-baseline gap-2">
+                <span className="text-sm font-normal text-white/40 line-through decoration-white/40">
+                  {formatPrice(NEGOCIO.listPrice)}
+                </span>
+                <span>{formatPrice(NEGOCIO.price)}</span>
               </span>
-              <span>{formatPrice(NEGOCIO.price)}</span>
-            </span>
+            </div>
           </div>
-        </div>
 
-        <button type="submit" className="btn-primary w-full">Agregar al carrito →</button>
-        <p className="text-xs text-white/50 text-center">
-          Después del pago coordinamos tu logo por WhatsApp ({contact.whatsappDisplay}).
-        </p>
-      </form>
+          <button type="submit" className="btn-primary w-full">Agregar al carrito →</button>
+          <p className="text-xs text-white/50 text-center">
+            {archivos.length > 0
+              ? `Ya tenemos tu logo. Cualquier detalle lo coordinamos por WhatsApp (${contact.whatsappDisplay}).`
+              : `Si no lo subís acá, coordinamos tu logo por WhatsApp después del pago (${contact.whatsappDisplay}).`}
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
