@@ -19,6 +19,8 @@ import {
   PROMO_END_MS as BE_END,
   PROMO_PERCENT_CAP,
   COUPON_BUNDLES,
+  COUPON_ENDS_MS,
+  isCouponActive as beCouponActive,
   promo3x2 as bePromo3x2,
   isPromoActive as beActive,
   validateAndPriceOrder
@@ -27,6 +29,7 @@ import {
 const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
 const DURING_PROMO = new Date('2026-07-24T12:00:00-03:00'); // vie 24/7, promo vigente
 const AFTER_PROMO = new Date('2026-07-27T12:00:00-03:00'); // lun 27/7, promo vencida
+const AFTER_EMOJI50 = new Date('2026-08-05T00:30:00-03:00'); // mié 5/8, EMOJI50 ya vencido
 
 afterEach(() => vi.useRealTimers());
 
@@ -212,11 +215,54 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
   });
 
   it('los cupones de bundle están espejados frontend ↔ backend', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(AFTER_PROMO);
     const feBundles = Object.fromEntries(
       Object.entries(COUPONS).filter(([, c]) => c.bundle).map(([code, c]) => [code, c.bundle])
     );
     expect(feBundles).toEqual(COUPON_BUNDLES);
     expect(couponBundle('emoji50')).toEqual({ buy: 2, pay: 1 }); // case-insensitive
+  });
+
+  it('los vencimientos de cupón están espejados frontend ↔ backend', () => {
+    const feEnds = Object.fromEntries(
+      Object.entries(COUPONS).filter(([, c]) => c.endsAt).map(([code, c]) => [code, Date.parse(c.endsAt)])
+    );
+    expect(feEnds).toEqual(COUPON_ENDS_MS);
+    expect(Number.isFinite(COUPON_ENDS_MS.EMOJI50)).toBe(true);
+  });
+
+  it('EMOJI50 vencido: no aplica en el cliente ni en el server (EPICA10 sigue vivo)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(AFTER_EMOJI50);
+
+    // El cliente deja de reconocerlo: sin bundle, sin descuento.
+    expect(couponBundle('EMOJI50')).toBeNull();
+    expect(findCoupon('EMOJI50')).toBeNull();
+    expect(beCouponActive('EMOJI50')).toBe(false);
+
+    // El carrito se cotiza a precio de lista aunque el cliente mande el código.
+    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: 1600, quantity: 10 }];
+    const items = clientItems(bulkCart, { coupon: 'EMOJI50' });
+    expect(price(items, 'sticker:goku:6cm')).toBe(1600);
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EMOJI50' });
+    expect(res.ok).toBe(true);
+    expect(res.couponApplied).toBeNull();
+
+    // Y si intenta cobrar el 2x1 con el cupón vencido, el server lo rechaza.
+    const conBundle = bulkCart.map((l) => ({ id: l.id, title: l.title, quantity: l.quantity, unit_price: 800 }));
+    const rechazado = validateAndPriceOrder({ items: conBundle, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EMOJI50' });
+    expect(rechazado.ok).toBe(false);
+    expect(rechazado.error).toBe('price_mismatch');
+
+    // EPICA10 (el del popup de bienvenida) no vence: sigue dando su 10 %.
+    expect(findCoupon('EPICA10')?.discount).toBe(0.10);
+    expect(beCouponActive('EPICA10')).toBe(true);
+    const conEpica = clientItems(bulkCart, { coupon: 'EPICA10' });
+    expect(price(conEpica, 'sticker:goku:6cm')).toBe(round(1600 * 0.9));
+    expect(
+      validateAndPriceOrder({ items: conEpica, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10' }).couponApplied
+    ).toBe('EPICA10');
   });
 
   it('un precio adulterado se rechaza con price_mismatch', () => {

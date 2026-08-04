@@ -33,29 +33,50 @@ export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
  * otro cupón.
  *
  * `hidden: true` = el código NO se nombra en ninguna pantalla del sitio (ni
- * banners, ni carrito, ni checkout). HOY LOS DOS CUPONES SON OCULTOS: EPICA10
- * es solo para quien deja su mail en el popup de bienvenida (se lo muestra el
- * popup y se autocompleta en el checkout) y EMOJI50 se pasa a mano por mensaje
- * privado. El sitio los sigue aceptando si el cliente los escribe: "oculto" es
- * no publicitarlos, no un secreto criptográfico (viajan en el bundle JS).
+ * banners, ni carrito, ni checkout). HOY EL ÚNICO CUPÓN VIVO ES EPICA10, y es
+ * oculto: solo para quien deja su mail en el popup de bienvenida (se lo muestra
+ * el popup y se autocompleta en el checkout). El sitio lo sigue aceptando si el
+ * cliente lo escribe: "oculto" es no publicitarlo, no un secreto criptográfico
+ * (viaja en el bundle JS).
  *
- * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (COUPONS y
- * COUPON_BUNDLES). Si agregás o cambiás un cupón acá, cambialo TAMBIÉN allá o
- * el checkout se rechaza con `price_mismatch`.
+ * `endsAt` = fecha de vencimiento (hora Argentina, inclusive). Pasado ese
+ * instante el cupón deja de existir para todo el sitio: no se aplica en el
+ * carrito ni en el checkout (que responde "no existe o venció") y el servidor
+ * tampoco lo acepta. EMOJI50 (2x1 por mensaje privado) se apaga solo el martes
+ * 4/8/2026 a las 23:59; no hace falta tocar nada ese día.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (COUPONS,
+ * COUPON_BUNDLES y COUPON_ENDS_MS). Si agregás, vencés o cambiás un cupón acá,
+ * cambialo TAMBIÉN allá o el checkout se rechaza con `price_mismatch`.
  */
 export const COUPONS = {
   EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF', hidden: true },
-  EMOJI50: { discount: 0, bundle: { buy: 2, pay: 1 }, label: '2x1 en calcos', hidden: true }
+  EMOJI50: {
+    discount: 0,
+    bundle: { buy: 2, pay: 1 },
+    label: '2x1 en calcos',
+    hidden: true,
+    endsAt: '2026-08-04T23:59:59-03:00'
+  }
 };
 export const MAX_STICKER_DISCOUNT = 0.9;
 
-export function findCoupon(code) {
-  return COUPONS[String(code || '').trim().toUpperCase()] || null;
+/** ¿El cupón sigue vigente en este instante? Sin `endsAt`, no vence nunca. */
+export function isCouponActive(coupon, now = Date.now()) {
+  if (!coupon?.endsAt) return true;
+  const end = Date.parse(coupon.endsAt);
+  return !Number.isFinite(end) || now <= end;
 }
 
-/** Bundle (N x M) del cupón, si es de ese tipo. Null para los cupones de %. */
-export function couponBundle(code) {
-  return findCoupon(code)?.bundle || null;
+/** El cupón, si existe Y no venció. Null en cualquier otro caso. */
+export function findCoupon(code, now = Date.now()) {
+  const coupon = COUPONS[String(code || '').trim().toUpperCase()] || null;
+  return coupon && isCouponActive(coupon, now) ? coupon : null;
+}
+
+/** Bundle (N x M) del cupón, si es de ese tipo y sigue vigente. Null si no. */
+export function couponBundle(code, now = Date.now()) {
+  return findCoupon(code, now)?.bundle || null;
 }
 
 /**

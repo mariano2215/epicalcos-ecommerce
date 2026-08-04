@@ -31,6 +31,17 @@ const MAX_STICKER_DISCOUNT = 0.9;
 // ⚠️ Espejo de COUPONS/EMOJI50 en frontend/src/config/pricing.js.
 export const COUPON_BUNDLES = { EMOJI50: { buy: 2, pay: 1 } };
 
+// Vencimiento de cada cupón (hora Argentina, inclusive). Pasado ese instante el
+// cupón se trata como inexistente: no descuenta nada acá y el frontend tampoco
+// lo aplica. EMOJI50 se apaga solo el martes 4/8/2026 a las 23:59.
+// ⚠️ Espejo de `endsAt` en COUPONS del frontend (lo verifica promoPricing.test.js).
+export const COUPON_ENDS_MS = { EMOJI50: Date.parse('2026-08-04T23:59:59-03:00') };
+
+export function isCouponActive(code, now = Date.now()) {
+  const end = COUPON_ENDS_MS[String(code || '').trim().toUpperCase()];
+  return !Number.isFinite(end) || now <= end;
+}
+
 // --- Espejo de la PROMO 3x2 de frontend/src/config/pricing.js ---
 // "3x2 en TODAS las calcos": cada 3 calcos elegibles (sticker + custom), la más
 // barata gratis. ACUMULABLE con EPICA10, pero durante la promo el % está topeado
@@ -231,7 +242,9 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   // Cupón: el de % es ACUMULABLE con el descuento por transferencia (se SUMAN)
   // y no requiere umbral de cantidad ni medio de pago. El de bundle (2x1) NO se
   // acumula con nada: anula todos los %.
-  const normalizedCoupon = String(couponCode || '').trim().toUpperCase();
+  // Un cupón vencido (COUPON_ENDS_MS) es como si no existiera.
+  const rawCoupon = String(couponCode || '').trim().toUpperCase();
+  const normalizedCoupon = isCouponActive(rawCoupon) ? rawCoupon : '';
   const bundle = COUPON_BUNDLES[normalizedCoupon] || null;
   const couponDiscount = bundle ? 0 : COUPONS[normalizedCoupon] || 0;
   const couponApplied = bundle || couponDiscount > 0 ? normalizedCoupon : null;
