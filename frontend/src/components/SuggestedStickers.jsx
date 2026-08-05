@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { categoryName, CATEGORIES } from '../data/categories.js';
-import { DEFAULT_SIZE, priceForSize, sizeLabel } from '../config/pricing.js';
+import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
 
 /**
  * Upsell del checkout: "Calcos sugeridas" al azar de las MISMAS categorías que
@@ -29,6 +29,7 @@ const FALLBACK_CATEGORIES = [
 const MAX_SOURCE_CATEGORIES = 4; // manifests que traemos por vez
 const VISIBLE = 4;               // cards en pantalla
 const ROTATE_MS = 7000;
+const ENGAGED_MS = 20000;        // pausa después de tocar una card (mobile)
 
 /** Manifests ya bajados (persisten entre rotaciones y montajes). */
 const manifestCache = new Map();
@@ -80,13 +81,84 @@ function preloadImages(list) {
   return Promise.race([cargas, new Promise((resolve) => setTimeout(resolve, PRELOAD_TIMEOUT_MS))]);
 }
 
+/**
+ * Card de sugerencia: mismo selector de tamaño que las del catálogo (4/6/9 cm)
+ * pero compacto y sin link al detalle — desde el checkout no queremos que se
+ * vaya a otra página.
+ */
+function SugerenciaCard({ sticker, onAdd }) {
+  const [size, setSize] = useState(DEFAULT_SIZE);
+
+  return (
+    <article className="card-glass card-glass-hover overflow-hidden flex flex-col">
+      <div className="aspect-square bg-white/[0.03] grid place-items-center p-3">
+        <img
+          src={sticker.image}
+          alt={sticker.name}
+          loading="lazy"
+          className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)]"
+        />
+      </div>
+      <div className="p-3 flex-1 flex flex-col">
+        <h3 className="text-sm font-semibold leading-snug truncate">{sticker.name}</h3>
+        <span className="text-white/50 text-xs mt-0.5">{sticker.categoryLabel}</span>
+
+        <div className="mt-2.5 grid grid-cols-3 gap-1.5" role="group" aria-label="Elegir tamaño">
+          {SIZES.map((s) => {
+            const active = s.id === size;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSize(s.id)}
+                aria-pressed={active}
+                className={`rounded-xl min-h-[44px] flex flex-col items-center justify-center border transition-colors ${
+                  active
+                    ? 'border-brand-fuchsia bg-brand-fuchsia/15 text-white'
+                    : 'border-white/10 bg-white/[0.03] text-white/60 hover:border-white/25'
+                }`}
+              >
+                <span className="block text-xs font-bold leading-none">{s.label}</span>
+                <span className="block text-[10px] text-white/50 mt-0.5">{formatPrice(s.price)}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onAdd(size)}
+          className="btn-primary w-full mt-2 !py-2.5 !px-3 text-xs min-h-[44px]"
+        >
+          Agregar · {formatPrice(priceForSize(size))}
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export default function SuggestedStickers() {
   const { items, addSticker } = useCart();
   const [pool, setPool] = useState(null); // null = cargando
   const [picks, setPicks] = useState([]);
   const [tick, setTick] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const vivo = useRef(true); // evita setState después de desmontar
+  const [hover, setHover] = useState(false);
+  const [tocado, setTocado] = useState(false); // interactuó recién (táctil: no hay hover)
+  const vivo = useRef(true);                   // evita setState después de desmontar
+  const reanudar = useRef(null);
+  const paused = hover || tocado;
+
+  /**
+   * Un tap en el selector de tamaño frena la rotación un rato: en mobile no hay
+   * hover, y si la tanda cambia mientras elige el tamaño le borra la elección.
+   */
+  const marcarInteraccion = useCallback(() => {
+    setTocado(true);
+    clearTimeout(reanudar.current);
+    reanudar.current = setTimeout(() => setTocado(false), ENGAGED_MS);
+  }, []);
+
+  useEffect(() => () => clearTimeout(reanudar.current), []);
 
   // Categorías del carrito (+ relleno al azar hasta MAX_SOURCE_CATEGORIES).
   const cartCategories = [...new Set(items.filter((i) => i.type === 'sticker' && i.category).map((i) => i.category))];
@@ -218,7 +290,6 @@ export default function SuggestedStickers() {
     return () => clearInterval(t);
   }, [paused, pool, rotar]);
 
-  const unit = priceForSize(DEFAULT_SIZE);
   const loading = picks.length === 0;
 
   if (!hayParaSugerir) return null;
@@ -226,17 +297,18 @@ export default function SuggestedStickers() {
   return (
     <section
       className="mt-12"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={() => setHover(false)}
+      onPointerDown={marcarInteraccion}
     >
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
         <div>
           <span className="badge badge-soft mb-2">✨ Sumalos a este pedido</span>
           <h2 className="font-display font-extrabold text-2xl md:text-3xl">Calcos sugeridas</h2>
           <p className="text-white/60 text-sm mt-1">
-            Parecidas a las que llevás · {sizeLabel(DEFAULT_SIZE)} · se suman sin costo de envío extra.
+            Parecidas a las que llevás · elegí el tamaño y se suman a este pedido, sin costo de envío extra.
           </p>
         </div>
         <button
@@ -258,27 +330,11 @@ export default function SuggestedStickers() {
       ) : (
         <div key={tick} className="grid gap-3 grid-cols-2 md:grid-cols-4 grid-rise">
           {picks.map((s) => (
-            <article key={s.id} className="card-glass card-glass-hover overflow-hidden flex flex-col">
-              <div className="aspect-square bg-white/[0.03] grid place-items-center p-3">
-                <img
-                  src={s.image}
-                  alt={s.name}
-                  loading="lazy"
-                  className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)]"
-                />
-              </div>
-              <div className="p-3 flex-1 flex flex-col">
-                <h3 className="text-sm font-semibold leading-snug truncate">{s.name}</h3>
-                <span className="text-white/50 text-xs mt-0.5">{s.categoryLabel}</span>
-                <button
-                  type="button"
-                  onClick={() => addSticker(s, DEFAULT_SIZE, 1, { openDrawer: false })}
-                  className="btn-primary w-full mt-3 !py-2.5 !px-3 text-xs min-h-[44px]"
-                >
-                  Agregar · {formatPrice(unit)}
-                </button>
-              </div>
-            </article>
+            <SugerenciaCard
+              key={s.id}
+              sticker={s}
+              onAdd={(size) => addSticker(s, size, 1, { openDrawer: false })}
+            />
           ))}
         </div>
       )}
