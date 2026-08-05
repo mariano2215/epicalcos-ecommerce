@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
+import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
 import { calculateShipping } from '../config/site.js';
 import { findCoupon, couponBundle, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
@@ -357,6 +358,9 @@ export default function Checkout() {
             </div>
           </aside>
         </div>
+
+        {/* Upsell: calcos al azar de las categorías que ya tiene en el carrito */}
+        <SuggestedStickers />
       </div>
     </div>
   );

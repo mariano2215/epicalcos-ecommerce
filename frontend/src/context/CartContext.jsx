@@ -62,7 +62,9 @@ function reducer(state, action) {
             i.id === line.id ? { ...i, quantity: i.quantity + (line.quantity || 1) } : i
           )
         : [...state.items, line];
-      return { ...state, items, drawerOpen: true };
+      // `openDrawer: false` → agregar sin abrir el carrito (upsell del checkout:
+      // taparle el formulario con el drawer lo sacaría de la compra).
+      return { ...state, items, drawerOpen: action.openDrawer === false ? state.drawerOpen : true };
     }
     case 'REMOVE':
       return { ...state, items: state.items.filter((i) => i.id !== action.id) };
@@ -104,8 +106,11 @@ export function CartProvider({ children }) {
 
   const notify = useCallback((msg) => setToast(msg), []);
 
-  /** Agregar un calco del catálogo con tamaño elegido. */
-  const addSticker = useCallback((sticker, size, quantity = 1) => {
+  /**
+   * Agregar un calco del catálogo con tamaño elegido.
+   * `opts.openDrawer === false` agrega sin abrir el carrito (ver reducer ADD).
+   */
+  const addSticker = useCallback((sticker, size, quantity = 1, opts = {}) => {
     const line = {
       id: `sticker:${sticker.id}:${size}`,
       type: 'sticker',
@@ -118,7 +123,7 @@ export function CartProvider({ children }) {
       basePrice: priceForSize(size),
       quantity
     };
-    dispatch({ type: 'ADD', line });
+    dispatch({ type: 'ADD', line, openDrawer: opts.openDrawer });
     notify(`${line.name} agregado`);
     trackAddToCart({ ...line, price: line.basePrice }, quantity);
   }, [notify]);
