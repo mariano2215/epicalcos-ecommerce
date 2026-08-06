@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calcularPrecio } from './precioPersonalizados.js';
-import { TAMANOS, CORTES, CANTIDAD, clampCantidad } from '../config/personalizados.js';
+import { TAMANOS, CORTES, CANTIDAD, ARCHIVO, clampCantidad } from '../config/personalizados.js';
 import { SIZES } from '../config/pricing.js';
 // Espejo del backend: la fuente de verdad del servidor que re-precia el checkout.
 import { SIZE_PRICES, validateAndPriceOrder } from '../../../netlify/functions/lib/pricing.js';
@@ -96,6 +96,24 @@ describe('paridad frontend ↔ backend (evita price_mismatch en el checkout)', (
         }
       }
     }
+  });
+
+  it('el servidor acepta UNA línea por diseño con el tope de archivos lleno', () => {
+    // El configurador manda una línea por archivo subido (hasta ARCHIVO.maxArchivos):
+    // si MAX_LINES del servidor quedara por debajo, el checkout se caería con too_many_lines.
+    const items = Array.from({ length: ARCHIVO.maxArchivos }, (_, i) => ({
+      id: `custom:4cm:silueta:f${i}`,
+      title: `Personalizado 4 cm Silueta diseño-${i}.png`,
+      quantity: 1,
+      unit_price: SIZE_PRICES['4cm']
+    }));
+    const res = validateAndPriceOrder({
+      items,
+      shipping: { methodValue: 'retiro' },
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(SIZE_PRICES['4cm'] * ARCHIVO.maxArchivos);
   });
 
   it('el servidor rechaza un tamaño inventado o un precio adulterado', () => {

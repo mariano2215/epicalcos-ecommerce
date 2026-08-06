@@ -68,6 +68,20 @@ function reducer(state, action) {
     }
     case 'REMOVE':
       return { ...state, items: state.items.filter((i) => i.id !== action.id) };
+    case 'PATCH': {
+      // Actualiza una línea ya agregada (ej. el configurador de personalizados
+      // parchea la URL de Cloudinary cuando termina de subir el diseño, o las
+      // notas del pedido). `meta` se mergea; el resto se pisa.
+      const { id, changes } = action;
+      return {
+        ...state,
+        items: state.items.map((i) =>
+          i.id === id
+            ? { ...i, ...changes, ...(changes.meta ? { meta: { ...i.meta, ...changes.meta } } : {}) }
+            : i
+        )
+      };
+    }
     case 'SET_QTY': {
       const qty = Math.max(1, Number(action.quantity) || 1);
       return {
@@ -136,11 +150,16 @@ export function CartProvider({ children }) {
     trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
   }, [notify]);
 
-  /** Agregar un calco personalizado ya configurado (Configurador). */
-  const addCustom = useCallback((line) => {
+  /**
+   * Agregar un calco personalizado ya configurado (Configurador).
+   * `opts.openDrawer === false` agrega sin abrir el carrito y `opts.silent`
+   * omite el toast: el configurador agrega UNA línea por diseño subido, y con
+   * 20 archivos serían 20 drawers y 20 toasts encima de la subida.
+   */
+  const addCustom = useCallback((line, opts = {}) => {
     const enriched = { ...line, type: 'custom', catalogSku: line.catalogSku || META_LINE_SKU.personalizados };
-    dispatch({ type: 'ADD', line: enriched });
-    notify(`${enriched.name} agregado`);
+    dispatch({ type: 'ADD', line: enriched, openDrawer: opts.openDrawer });
+    if (!opts.silent) notify(`${enriched.name} agregado`);
     trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
   }, [notify]);
 
@@ -186,6 +205,8 @@ export function CartProvider({ children }) {
     [state.items]
   );
   const setQty = useCallback((id, quantity) => dispatch({ type: 'SET_QTY', id, quantity }), []);
+  /** Parche puntual de una línea existente (ver reducer PATCH). */
+  const patchLine = useCallback((id, changes) => dispatch({ type: 'PATCH', id, changes }), []);
   const clear = useCallback(() => dispatch({ type: 'CLEAR' }), []);
   const openDrawer = useCallback(() => dispatch({ type: 'OPEN_DRAWER' }), []);
   const closeDrawer = useCallback(() => dispatch({ type: 'CLOSE_DRAWER' }), []);
@@ -312,6 +333,7 @@ export function CartProvider({ children }) {
     addFixed,
     removeItem,
     setQty,
+    patchLine,
     clear,
     openDrawer,
     closeDrawer

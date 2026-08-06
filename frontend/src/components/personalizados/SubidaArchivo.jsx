@@ -4,7 +4,10 @@ import { uploadDesign, uploadEnabled } from '../../services/uploadService.js';
 import { comprimirImagen } from '../../lib/comprimirImagen.js';
 
 let uid = 0;
-const nextId = () => `f${++uid}`;
+// El id viaja dentro del id de la línea del carrito (`custom:{tamano}:{corte}:{fileId}`),
+// que se persiste en localStorage: si al recargar volviéramos a emitir "f1", el
+// diseño nuevo se mergearía con la línea vieja. Por eso lleva el timestamp.
+const nextId = () => `f${Date.now().toString(36)}${++uid}`;
 const ext = (name) => name.split('.').pop()?.toLowerCase() || '';
 
 /**
@@ -16,10 +19,16 @@ const ext = (name) => name.split('.').pop()?.toLowerCase() || '';
  * (ej. fotos en Polaroid): `paso` (badge numérico; null lo oculta), `titulo`,
  * `sustantivo` (plural para los avisos), `formatos` aceptados y `descripcion`.
  *
+ * `bloqueo` desactiva la zona de subida con un motivo (el configurador exige
+ * elegir tamaño y corte antes, porque cada diseño entra al carrito con esa
+ * especificación ya puesta). `apiRef` recibe `{ quitar(id) }` para que el padre
+ * pueda sacar un archivo de la lista (ej. si su línea se borró desde el carrito).
+ *
  * @param {{ tamanoCm: number|null, max?: number, paso?: number|null, titulo?: string,
  *           sustantivo?: string, formatos?: string[], descripcion?: import('react').ReactNode,
- *           preset?: string,
- *           onChange: (items:Array<{nombre,pesoMB,url}>) => void,
+ *           preset?: string, bloqueo?: import('react').ReactNode,
+ *           apiRef?: import('react').MutableRefObject<{quitar:(id:string)=>void}|null>,
+ *           onChange: (items:Array<{id,nombre,pesoMB,url}>) => void,
  *           onAdd?: (info:{nombre,pesoMB}) => void }} props
  */
 export default function SubidaArchivo({
@@ -31,6 +40,8 @@ export default function SubidaArchivo({
   formatos = ARCHIVO.formatos,
   descripcion,
   preset,
+  bloqueo,
+  apiRef,
   onChange,
   onAdd
 }) {
@@ -41,7 +52,7 @@ export default function SubidaArchivo({
 
   // Reportar la lista válida al padre cada vez que cambia.
   useEffect(() => {
-    onChange(archivos.map((a) => ({ nombre: a.nombre, pesoMB: a.pesoMB, url: a.url || null })));
+    onChange(archivos.map((a) => ({ id: a.id, nombre: a.nombre, pesoMB: a.pesoMB, url: a.url || null })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archivos]);
 
@@ -180,6 +191,16 @@ export default function SubidaArchivo({
     });
   };
 
+  // Handle imperativo para el padre (ver `apiRef` en el docblock).
+  useEffect(() => {
+    if (!apiRef) return undefined;
+    apiRef.current = { quitar };
+    return () => {
+      apiRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiRef]);
+
   const lleno = archivos.length >= max;
 
   return (
@@ -202,7 +223,13 @@ export default function SubidaArchivo({
         )}
       </p>
 
-      {!lleno && (
+      {bloqueo && (
+        <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-6 text-center text-sm text-white/50">
+          {bloqueo}
+        </div>
+      )}
+
+      {!bloqueo && !lleno && (
         <label
           onDragOver={(e) => {
             e.preventDefault();

@@ -99,7 +99,11 @@ const SHIPPING_COST = { rosario: 4500, nearby: 6500, interior: 8500 }; // rosari
 const NEARBY_CITIES = ['funes', 'granadero baigorria', 'villa gobernador galvez'];
 
 // --- Límites anti-abuso del payload ---
-const MAX_LINES = 30;
+// El configurador de /personalizados agrega UNA línea por diseño subido y admite
+// hasta ARCHIVO.maxArchivos (100) archivos por pedido, así que el tope tiene que
+// dejar pasar esas 100 líneas más los calcos de catálogo del mismo carrito.
+// ⚠️ Si sube el tope de archivos del frontend, subí este también.
+const MAX_LINES = 130;
 const MAX_QTY_PER_LINE = 1000;
 const MAX_TITLE_LENGTH = 150;
 

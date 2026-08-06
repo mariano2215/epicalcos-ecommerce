@@ -5,7 +5,9 @@ import { trackViewCart } from '../lib/analytics.js';
 import { useSeo } from '../lib/seo.js';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 
-const EDITABLE = new Set(['sticker', 'fixed']);
+// `custom` = una línea por diseño personalizado: la cantidad son las copias de
+// ESE diseño, así que se edita como cualquier calco del catálogo.
+const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 
 export default function Cart() {
   const {
@@ -74,11 +76,16 @@ export default function Cart() {
                           {it.meta.customCount > 0 ? `${it.meta.customCount} propio(s)` : ''}
                         </div>
                       )}
-                      {it.meta?.archivos?.length > 0 && (
+                      {/* El nombre de una línea `custom` ya trae el archivo: alcanza con el estado de la subida. */}
+                      {it.type === 'custom' && it.meta?.archivos?.length === 1 ? (
+                        <div className="text-xs text-white/50 mt-1">
+                          {it.meta.archivos[0].url ? '📎 Diseño subido ✓' : '📎 Diseño: lo mandás por WhatsApp'}
+                        </div>
+                      ) : it.meta?.archivos?.length > 0 ? (
                         <div className="text-xs text-white/50 mt-1">
                           📎 {it.meta.archivos.length} archivo{it.meta.archivos.length > 1 ? 's' : ''} adjunto{it.meta.archivos.length > 1 ? 's' : ''}
                         </div>
-                      )}
+                      ) : null}
                     </div>
                     <button onClick={() => removeItem(it.id)} className="text-white/40 hover:text-white" aria-label="Quitar">✕</button>
                   </div>

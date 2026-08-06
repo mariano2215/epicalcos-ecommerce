@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 
-const EDITABLE = new Set(['sticker', 'fixed']);
+// `custom`: cada línea es UN diseño personalizado y su cantidad son las copias.
+const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 
 export default function CartDrawer() {
   const {

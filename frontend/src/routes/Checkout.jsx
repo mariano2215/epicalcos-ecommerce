@@ -10,60 +10,7 @@ import { findCoupon, couponBundle, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORA
 import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
-
-/** Resumen legible de packs/personalizados/negocio para que le llegue al vendedor. */
-function buildDesignSummary(items) {
-  const parts = [];
-  for (const it of items) {
-    if (it.type === 'pack' && it.meta) {
-      const designs = (it.meta.items || []).map((d) => `${d.name} x${d.qty}`).join(', ');
-      const custom = it.meta.customCount ? ` + ${it.meta.customCount} diseño(s) propio(s)` : '';
-      const files = it.meta.archivos || [];
-      let arch = '';
-      if (files.length) {
-        arch = files.some((f) => f.url)
-          ? ` | archivos (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`
-          : ` | archivos (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
-      }
-      parts.push(`${it.name} → ${designs || 'sin catálogo'}${custom}${arch}`);
-    } else if (it.type === 'negocio' && it.meta) {
-      const files = it.meta.archivos || [];
-      let logo;
-      if (files.length === 0) {
-        logo = 'logo por WhatsApp';
-      } else if (files.some((f) => f.url)) {
-        logo = `logo (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`;
-      } else {
-        logo = `logo (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envía por WhatsApp`;
-      }
-      parts.push(`Negocio "${it.meta.business}": ${it.meta.qty}u ${it.meta.size} (${logo})`);
-    } else if (it.type === 'custom' && it.meta) {
-      const m = it.meta;
-      const files = m.archivos || [];
-      let arch;
-      if (files.length === 0) {
-        arch = 'diseños: se envían por WhatsApp';
-      } else if (files.some((f) => f.url)) {
-        // Con URL de Cloudinary: los diseños llegan al CRM/mail como links.
-        arch = `diseños (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`;
-      } else {
-        arch = `diseños (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
-      }
-      const notas = m.instrucciones ? ` | notas: ${m.instrucciones}` : '';
-      parts.push(
-        `Personalizado (${m.tamanoLabel}, corte ${m.corteLabel}, x${m.cantidad}) | ${arch}${notas}`
-      );
-    } else if (it.type === 'fixed' && it.meta?.archivos?.length) {
-      // Producto de precio fijo con archivos adjuntos (fotos de Polaroid, diseños de tatuajes).
-      const files = it.meta.archivos;
-      const arch = files.some((f) => f.url)
-        ? `archivos (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`
-        : `archivos (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
-      parts.push(`${it.name} | ${arch}`);
-    }
-  }
-  return parts.length ? `PEDIDO: ${parts.join(' ; ')}` : '';
-}
+import { buildDesignSummary, groupCustomItems } from '../lib/resumenPedido.js';
 
 /**
  * Guarda la especificación de los ítems con diseño/fotos (+ nombre del comprador) en
@@ -75,17 +22,20 @@ function buildDesignSummary(items) {
 function stashDesignSpec(items, payerName) {
   try {
     const spec = [];
+    // Personalizados agrupados por especificación: una entrada por tamaño+corte,
+    // no una por diseño (ver groupCustomItems).
+    for (const g of groupCustomItems(items)) {
+      spec.push({
+        tipo: 'custom',
+        tamano: g.tamanoLabel,
+        corte: g.corteLabel,
+        cantidad: g.unidades,
+        archivos: g.archivos.map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) })),
+        instrucciones: g.instrucciones
+      });
+    }
     for (const it of items) {
-      if (it.type === 'custom' && it.meta) {
-        spec.push({
-          tipo: 'custom',
-          tamano: it.meta.tamanoLabel,
-          corte: it.meta.corteLabel,
-          cantidad: it.meta.cantidad,
-          archivos: (it.meta.archivos || []).map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) })),
-          instrucciones: it.meta.instrucciones || null
-        });
-      } else if ((it.type === 'fixed' || it.type === 'negocio') && it.meta?.archivos?.length) {
+      if ((it.type === 'fixed' || it.type === 'negocio') && it.meta?.archivos?.length) {
         // `fixed` y `negocio` comparten forma: nombre + adjuntos (fotos, diseños, logo).
         spec.push({
           tipo: 'fixed',
