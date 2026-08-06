@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ARCHIVO, recomendacionPx } from '../../config/personalizados.js';
 import { uploadDesign, uploadEnabled } from '../../services/uploadService.js';
+import { comprimirImagen } from '../../lib/comprimirImagen.js';
 
 let uid = 0;
 const nextId = () => `f${++uid}`;
@@ -63,18 +64,24 @@ export default function SubidaArchivo({
   const cola = useRef([]);
   const enVuelo = useRef(0);
 
+  const subirUno = async (id, file) => {
+    patch(id, { uploading: true, progress: 0, error: '' });
+    try {
+      const url = await uploadDesign(file, { preset, onProgress: (pct) => patch(id, { progress: pct }) });
+      patch(id, { uploading: false, url: url || null });
+    } catch {
+      patch(id, { uploading: false, error: 'No se pudo subir — mandalo por WhatsApp.' });
+    }
+  };
+
   const bombearCola = () => {
     while (enVuelo.current < ARCHIVO.subidasEnParalelo && cola.current.length) {
       const { id, file } = cola.current.shift();
       enVuelo.current += 1;
-      patch(id, { uploading: true, progress: 0, error: '' });
-      uploadDesign(file, { preset, onProgress: (pct) => patch(id, { progress: pct }) })
-        .then((url) => patch(id, { uploading: false, url: url || null }))
-        .catch(() => patch(id, { uploading: false, error: 'No se pudo subir — mandalo por WhatsApp.' }))
-        .finally(() => {
-          enVuelo.current -= 1;
-          bombearCola();
-        });
+      subirUno(id, file).finally(() => {
+        enVuelo.current -= 1;
+        bombearCola();
+      });
     }
   };
 
@@ -90,14 +97,25 @@ export default function SubidaArchivo({
       setErrorGlobal(`Formato .${e} no soportado. Usá ${formatos.join(', ').toUpperCase()}.`);
       return false;
     }
-    const pesoMB = file.size / (1024 * 1024);
-    if (pesoMB > ARCHIVO.pesoMaximoMB) {
-      setErrorGlobal(`"${file.name}" pesa ${pesoMB.toFixed(1)} MB. El máximo es ${ARCHIVO.pesoMaximoMB} MB.`);
-      return false;
-    }
     if (cupo <= 0) return false;
 
-    const { width, height, preview } = await medirImagen(file);
+    // La compresión va ANTES de validar el peso: una foto de 30 MB del celular
+    // queda en ~1 MB y entra igual. Los vectoriales (PDF/SVG/AI) pasan intactos.
+    const listo = await comprimirImagen(file, { maxMB: ARCHIVO.pesoMaximoMB });
+    const optimizado = listo !== file;
+    const pesoMB = listo.size / (1024 * 1024);
+    if (pesoMB > ARCHIVO.pesoMaximoMB) {
+      setErrorGlobal(
+        optimizado
+          ? `"${file.name}" quedó en ${pesoMB.toFixed(1)} MB incluso optimizado. El máximo es ${ARCHIVO.pesoMaximoMB} MB — mandalo por WhatsApp.`
+          : `"${file.name}" pesa ${pesoMB.toFixed(1)} MB. El máximo es ${ARCHIVO.pesoMaximoMB} MB.`
+      );
+      return false;
+    }
+
+    // Medimos el archivo que REALMENTE se sube: el aviso de resolución tiene que
+    // hablar de lo que se va a imprimir.
+    const { width, height, preview } = await medirImagen(listo);
     let aviso = '';
     if (width && tamanoCm) {
       const min = recomendacionPx(tamanoCm);
@@ -108,10 +126,24 @@ export default function SubidaArchivo({
     const id = nextId();
     setArchivos((list) => [
       ...list,
-      { id, nombre: file.name, pesoMB: Number(pesoMB.toFixed(2)), width, height, preview, aviso, url: null, uploading: false, progress: 0, error: '' }
+      {
+        id,
+        nombre: file.name,
+        pesoMB: Number(pesoMB.toFixed(2)),
+        pesoOriginalMB: optimizado ? Number((file.size / (1024 * 1024)).toFixed(2)) : null,
+        optimizado,
+        width,
+        height,
+        preview,
+        aviso,
+        url: null,
+        uploading: false,
+        progress: 0,
+        error: ''
+      }
     ]);
     if (onAdd) onAdd({ nombre: file.name, pesoMB: Number(pesoMB.toFixed(2)) });
-    subir(id, file);
+    subir(id, listo);
     return true;
   };
 
@@ -185,7 +217,9 @@ export default function SubidaArchivo({
           <div className="text-3xl">🖼️</div>
           <div className="text-sm font-semibold">Arrastrá tus archivos o tocá para elegirlos</div>
           <div className="text-xs text-white/40">
-            {uploadEnabled ? 'Se suben con tu pedido.' : 'Opcional: también podés mandarlos por WhatsApp después de pagar.'}
+            {uploadEnabled
+              ? 'Se suben con tu pedido. Las fotos pesadas se optimizan solas para que la subida no tarde.'
+              : 'Opcional: también podés mandarlos por WhatsApp después de pagar.'}
           </div>
           <input
             ref={inputRef}
@@ -214,6 +248,7 @@ export default function SubidaArchivo({
                   <div className="text-sm font-semibold truncate">{a.nombre}</div>
                   <div className="text-xs text-white/45">
                     {a.pesoMB} MB{a.width ? ` · ${a.width}×${a.height} px` : ''}
+                    {a.optimizado && <span className="text-white/40"> · optimizado de {a.pesoOriginalMB} MB</span>}
                     {a.url && <span className="text-emerald-400"> · subido ✓</span>}
                     {a.uploading && <span className="text-white/50"> · subiendo {a.progress}%</span>}
                     {uploadEnabled && !a.uploading && !a.url && !a.error && (
