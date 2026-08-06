@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
 import Benefits from '../components/Benefits.jsx';
@@ -10,12 +10,16 @@ import CategoryCard from '../components/CategoryCard.jsx';
 import Reveal from '../components/Reveal.jsx';
 import { CATEGORIES, SPECIALS } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
+import { useReducedMotion } from '../lib/motion.js';
 
 const FEATURED_SLUGS = ['anime', 'futbol', 'disney', 'pokemon', 'memes', 'gamer', 'superheroes', 'cute', 'autos-y-motos', 'musica'];
 const SERVICE_SLUGS = ['personalizados', 'mayorista', 'tatuajes', 'polaroid'];
 
 export default function Home() {
   const [catalog, setCatalog] = useState({});
+  const [rotation, setRotation] = useState(0);
+  const featuredRef = useRef(null);
+  const reducedMotion = useReducedMotion();
 
   useSeo({ title: undefined, description: undefined });
 
@@ -29,6 +33,32 @@ export default function Home() {
       })
       .catch(() => setCatalog({}));
   }, []);
+
+  // Cada vez que las categorías destacadas vuelven a entrar en viewport mostramos
+  // otra tanda de portadas: la primera vista se queda con la portada base y a
+  // partir de ahí cada scroll de vuelta rota los diseños.
+  useEffect(() => {
+    const el = featuredRef.current;
+    if (!el || reducedMotion || typeof IntersectionObserver === 'undefined') return;
+    let visible = false;
+    let seen = false;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            if (seen && !visible) setRotation((r) => r + 1);
+            seen = true;
+            visible = true;
+          } else {
+            visible = false;
+          }
+        }
+      },
+      { threshold: 0.15 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [reducedMotion]);
 
   const featured = CATEGORIES.filter((c) => FEATURED_SLUGS.includes(c.slug) && catalog[c.slug]).slice(0, 10);
   const services = SPECIALS.filter((s) => SERVICE_SLUGS.includes(s.slug));
@@ -66,7 +96,7 @@ export default function Home() {
       </section>
 
       {/* Categorías destacadas — id usado por WelcomePopup para dispararse al llegar acá con el scroll */}
-      <section id="categorias-destacadas" className="py-10 scroll-mt-24">
+      <section ref={featuredRef} id="categorias-destacadas" className="py-10 scroll-mt-24">
         <div className="container-app">
           <div className="flex items-end justify-between mb-6">
             <div>
@@ -91,7 +121,7 @@ export default function Home() {
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {featured.map((c, i) => (
                 <Reveal key={c.slug} delay={i * 60} className="h-full">
-                  <CategoryCard slug={c.slug} name={c.name} emoji={c.emoji} cover={catalog[c.slug]?.cover} count={catalog[c.slug]?.count} />
+                  <CategoryCard slug={c.slug} name={c.name} emoji={c.emoji} cover={catalog[c.slug]?.cover} count={catalog[c.slug]?.count} rotation={rotation} />
                 </Reveal>
               ))}
             </div>
