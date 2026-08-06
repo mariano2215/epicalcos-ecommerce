@@ -112,6 +112,23 @@ export function mapEstado(mpStatus) {
   }
 }
 
+const NOTION_RICH_TEXT_MAX = 2000; // Notion corta cada elemento rich_text acá
+const NOTION_MAX_CHUNKS = 10; // 10 × 2.000 = 20.000 chars (el tope de comments del checkout)
+
+/**
+ * Parte un texto largo en varios elementos rich_text. Un pedido con 50 o 100
+ * archivos manda esa misma cantidad de links de Cloudinary en las observaciones:
+ * con un solo elemento, Notion se quedaba con los primeros ~8 links.
+ */
+function richText(texto) {
+  const limpio = String(texto ?? '');
+  const chunks = [];
+  for (let i = 0; i < limpio.length && chunks.length < NOTION_MAX_CHUNKS; i += NOTION_RICH_TEXT_MAX) {
+    chunks.push({ text: { content: limpio.slice(i, i + NOTION_RICH_TEXT_MAX) } });
+  }
+  return chunks.length ? chunks : [{ text: { content: '' } }];
+}
+
 function buildObservaciones({ orderId, shipping, payer, items }) {
   const itemsTexto = (items || [])
     .map((it) => {
@@ -134,7 +151,7 @@ function buildObservaciones({ orderId, shipping, payer, items }) {
   ]
     .filter((l) => l !== null)
     .join('\n')
-    .slice(0, 2000); // límite de Notion para rich_text
+    .slice(0, NOTION_RICH_TEXT_MAX * NOTION_MAX_CHUNKS);
 }
 
 function buildProperties({ payer, shipping, items, total, orderId, estado }) {
@@ -142,7 +159,7 @@ function buildProperties({ payer, shipping, items, total, orderId, estado }) {
     Nombre: { title: [{ text: { content: String(payer?.name || 'Sin nombre').slice(0, 200) } }] },
     Orden: { rich_text: [{ text: { content: String(orderId || '') } }] },
     Estado: { select: { name: estado } },
-    Observaciones: { rich_text: [{ text: { content: buildObservaciones({ orderId, shipping, payer, items }) } }] },
+    Observaciones: { rich_text: richText(buildObservaciones({ orderId, shipping, payer, items })) },
     // Momento en que entró la fila al CRM: permite ordenar/filtrar por más reciente.
     Fecha: { date: { start: ahoraEnArgentina() } },
   };

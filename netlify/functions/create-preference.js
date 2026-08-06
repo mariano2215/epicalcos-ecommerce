@@ -32,7 +32,15 @@ const corsHeadersFor = (origin) => ({
 });
 
 // Límites anti-abuso: payload acotado y campos de texto con tope de longitud.
-const MAX_BODY_BYTES = 50_000;
+// El body y los comentarios son grandes a propósito: en `shipping.comments`
+// viajan los links de Cloudinary de los archivos que subió el cliente, y un
+// pedido de 100 fotos son ~11 KB de URLs. Con el tope viejo (1.000 chars) el
+// mail y el CRM recibían el pedido con los links cortados.
+const MAX_BODY_BYTES = 200_000;
+const MAX_COMMENTS = 20_000;
+// El metadata de Mercado Pago sí es chico (solo se usa como fallback si el lead
+// de Notion no se llegó a crear): ahí manda un resumen recortado.
+const MAX_MP_COMMENTS = 900;
 const clip = (v, max) => String(v ?? '').slice(0, max).trim();
 
 export const handler = async (event) => {
@@ -102,7 +110,7 @@ export const handler = async (event) => {
     city: clip(rawShipping?.city, 80),
     province: clip(rawShipping?.province, 80),
     zipCode: clip(rawShipping?.zipCode, 20),
-    comments: clip(rawShipping?.comments, 1000) || undefined
+    comments: clip(rawShipping?.comments, MAX_COMMENTS) || undefined
   };
 
   // Precios y envío: SIEMPRE recalculados en el servidor a partir del id de
@@ -161,7 +169,7 @@ export const handler = async (event) => {
           shipping_province: shipping?.province,
           shipping_zip_code: shipping?.zipCode,
           shipping_address: payer?.address,
-          comments: shipping?.comments,
+          comments: clip(shipping?.comments, MAX_MP_COMMENTS) || undefined,
           notion_page_id: notionPageId || undefined
         },
         notification_url: `${siteUrl}/api/mercadopago-webhook`

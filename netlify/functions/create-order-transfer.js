@@ -28,7 +28,10 @@ const corsHeadersFor = (origin) => ({
   Vary: 'Origin'
 });
 
-const MAX_BODY_BYTES = 50_000;
+// Mismos topes que create-preference.js: en `shipping.comments` viajan los links
+// de Cloudinary de los archivos subidos (un pedido de 100 fotos son ~11 KB).
+const MAX_BODY_BYTES = 200_000;
+const MAX_COMMENTS = 20_000;
 const clip = (v, max) => String(v ?? '').slice(0, max).trim();
 
 export const handler = async (event) => {
@@ -75,7 +78,7 @@ export const handler = async (event) => {
     city: clip(rawShipping?.city, 80),
     province: clip(rawShipping?.province, 80),
     zipCode: clip(rawShipping?.zipCode, 20),
-    comments: clip(rawShipping?.comments, 1000) || undefined
+    comments: clip(rawShipping?.comments, MAX_COMMENTS) || undefined
   };
 
   // Precios y envío: SIEMPRE recalculados en el servidor. paymentMethod

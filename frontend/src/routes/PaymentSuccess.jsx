@@ -13,6 +13,19 @@ function designNoun(items) {
   return hasFixed ? 'archivos' : 'diseños';
 }
 
+/**
+ * Nombres de archivo para el mensaje de WhatsApp. Se listan hasta 8: un pedido de
+ * 50 fotos generaba un link wa.me de varios KB que WhatsApp corta o rechaza.
+ */
+const MAX_NOMBRES_WA = 8;
+function listaArchivos(files) {
+  const nombres = files.map((f) => f.nombre);
+  if (nombres.length <= MAX_NOMBRES_WA) return nombres.join(', ');
+  return `${nombres.length} archivos — ${nombres.slice(0, MAX_NOMBRES_WA).join(', ')} y ${
+    nombres.length - MAX_NOMBRES_WA
+  } más`;
+}
+
 /** Arma el mensaje de WhatsApp pre-cargado con la spec de los personalizados y/o las fotos. */
 function buildWhatsappMessage(spec, orderId) {
   const nombre = (spec.nombre || '').trim();
@@ -26,14 +39,14 @@ function buildWhatsappMessage(spec, orderId) {
     if (it.tipo === 'fixed') {
       lines.push(`— ${it.nombre}:`);
       lines.push(`• Cantidad: ${it.cantidad}`);
-      if (files.length) lines.push(`• Archivos: ${files.map((f) => f.nombre).join(', ')}`);
+      if (files.length) lines.push(`• Archivos: ${listaArchivos(files)}`);
       return;
     }
     lines.push(spec.items.length > 1 ? `— Calco ${i + 1}:` : 'Configuración:');
     lines.push(`• Tamaño: ${it.tamano}`);
     lines.push(`• Corte: ${it.corte}`);
     lines.push(`• Cantidad: ${it.cantidad}`);
-    if (files.length) lines.push(`• Diseños: ${files.map((f) => f.nombre).join(', ')}`);
+    if (files.length) lines.push(`• Diseños: ${listaArchivos(files)}`);
     if (it.instrucciones) lines.push(`• Notas: ${it.instrucciones}`);
   });
   lines.push(algunoSubido ? `Ya subí mis ${noun} con el pedido. 🎨` : `Te adjunto mis ${noun}. 🎨`);

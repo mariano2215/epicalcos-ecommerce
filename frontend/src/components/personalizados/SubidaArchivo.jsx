@@ -57,12 +57,31 @@ export default function SubidaArchivo({
       img.src = url;
     });
 
+  // Cola de subidas: con 50 o 100 archivos, largar todas las requests juntas las
+  // estrangula entre sí (progreso congelado y timeouts en 4G). Subimos de a
+  // `ARCHIVO.subidasEnParalelo` y el resto espera turno.
+  const cola = useRef([]);
+  const enVuelo = useRef(0);
+
+  const bombearCola = () => {
+    while (enVuelo.current < ARCHIVO.subidasEnParalelo && cola.current.length) {
+      const { id, file } = cola.current.shift();
+      enVuelo.current += 1;
+      patch(id, { uploading: true, progress: 0, error: '' });
+      uploadDesign(file, { preset, onProgress: (pct) => patch(id, { progress: pct }) })
+        .then((url) => patch(id, { uploading: false, url: url || null }))
+        .catch(() => patch(id, { uploading: false, error: 'No se pudo subir — mandalo por WhatsApp.' }))
+        .finally(() => {
+          enVuelo.current -= 1;
+          bombearCola();
+        });
+    }
+  };
+
   const subir = (id, file) => {
     if (!uploadEnabled) return;
-    patch(id, { uploading: true, progress: 0, error: '' });
-    uploadDesign(file, { preset, onProgress: (pct) => patch(id, { progress: pct }) })
-      .then((url) => patch(id, { uploading: false, url: url || null }))
-      .catch(() => patch(id, { uploading: false, error: 'No se pudo subir — mandalo por WhatsApp.' }));
+    cola.current.push({ id, file });
+    bombearCola();
   };
 
   const procesarUno = async (file, cupo) => {
@@ -121,6 +140,7 @@ export default function SubidaArchivo({
   };
 
   const quitar = (id) => {
+    cola.current = cola.current.filter((x) => x.id !== id); // si todavía esperaba turno, no lo subimos
     setArchivos((list) => {
       const a = list.find((x) => x.id === id);
       if (a?.preview) URL.revokeObjectURL(a.preview);
@@ -179,12 +199,14 @@ export default function SubidaArchivo({
       )}
 
       {archivos.length > 0 && (
-        <ul className="mt-3 space-y-2">
+        <ul
+          className={`mt-3 space-y-2 ${archivos.length > 8 ? 'max-h-[26rem] overflow-y-auto pr-1' : ''}`}
+        >
           {archivos.map((a) => (
             <li key={a.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
                 {a.preview ? (
-                  <img src={a.preview} alt={a.nombre} className="w-12 h-12 rounded-xl object-contain bg-black/20 shrink-0" />
+                  <img src={a.preview} alt={a.nombre} loading="lazy" className="w-12 h-12 rounded-xl object-contain bg-black/20 shrink-0" />
                 ) : (
                   <div className="w-12 h-12 rounded-xl bg-black/20 grid place-items-center text-2xl shrink-0">📄</div>
                 )}
@@ -194,6 +216,9 @@ export default function SubidaArchivo({
                     {a.pesoMB} MB{a.width ? ` · ${a.width}×${a.height} px` : ''}
                     {a.url && <span className="text-emerald-400"> · subido ✓</span>}
                     {a.uploading && <span className="text-white/50"> · subiendo {a.progress}%</span>}
+                    {uploadEnabled && !a.uploading && !a.url && !a.error && (
+                      <span className="text-white/40"> · en cola</span>
+                    )}
                   </div>
                 </div>
                 <button type="button" onClick={() => quitar(a.id)} className="btn-ghost text-xs shrink-0">

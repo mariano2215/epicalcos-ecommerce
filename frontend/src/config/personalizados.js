@@ -39,14 +39,23 @@ export const CORTES = [
 /** Cantidad: SIN mínimo de compra. El tope espeja MAX_QTY_PER_LINE del backend. */
 export const CANTIDAD = { min: 1, max: 1000, default: 1 };
 
-/** Reglas de validación del archivo (cliente). Hasta 10 diseños por pedido. */
+/**
+ * Reglas de validación del archivo (cliente).
+ *
+ * `maxArchivos` es un tope anti-abuso, no una regla comercial: hay clientes que
+ * suben 50 fotos propias, así que el límite vive alto (100). Si se toca, ojo con
+ * los links que viajan en `shipping.comments` hasta el mail/CRM: las Netlify
+ * Functions recortan ese texto (ver MAX_COMMENTS en create-preference.js).
+ */
 export const ARCHIVO = {
   formatos: ['png', 'jpg', 'jpeg', 'pdf', 'svg', 'ai'],
   /** Formatos raster a los que se les puede medir la resolución en px. */
   formatosRaster: ['png', 'jpg', 'jpeg'],
   pesoMaximoMB: 10,
   resolucionMinimaDPI: 150,
-  maxArchivos: 10
+  maxArchivos: 100,
+  /** Subidas simultáneas a Cloudinary: con 50+ archivos, todas juntas se cuelgan. */
+  subidasEnParalelo: 4
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
