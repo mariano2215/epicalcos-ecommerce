@@ -5,6 +5,7 @@ import AnnouncementBar from '../components/AnnouncementBar.jsx';
 import Benefits from '../components/Benefits.jsx';
 import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import Testimonials from '../components/Testimonials.jsx';
+import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
 import HowToBuy from '../components/HowToBuy.jsx';
 import FAQ from '../components/FAQ.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
@@ -151,6 +152,10 @@ export default function Home() {
       <Benefits />
 
       <Testimonials />
+
+      {/* Prueba social: los testimonios de clientes y, abajo, los logos de las
+          marcas. Mismo componente que usa /negocio. */}
+      <MarcasConfiaron />
 
       {/* Banner descuento por volumen */}
       <section className="py-10">
