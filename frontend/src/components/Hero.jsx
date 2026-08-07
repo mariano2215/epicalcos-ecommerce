@@ -4,18 +4,14 @@ import { trackSearch } from '../lib/analytics.js';
 import { suggest } from '../lib/searchCatalog.js';
 import { CATEGORIES } from '../data/categories.js';
 import { formatPrice } from '../context/CartContext.jsx';
-import { PROMO_MAYORISTA_100 } from '../config/pricing.js';
+import { PROMO_MAYORISTA_100, PROMO_MAYORISTA_END_MS } from '../config/pricing.js';
 import { useMayoristaPromoActive } from '../lib/promo.js';
+import { endLabel } from './PromoBanner.jsx';
 import StickerField from './StickerField.jsx';
 import RotatingHeadline from './RotatingHeadline.jsx';
 
-const quickTags = [
-  { label: 'Anime', slug: 'anime' },
-  { label: 'Fútbol', slug: 'futbol' },
-  { label: 'Memes', slug: 'memes' },
-  { label: 'Disney', slug: 'disney' },
-  { label: 'Pokémon', slug: 'pokemon' }
-];
+/** "viernes 14/8" — el cierre de la promo, para la card del hero. */
+const PROMO_END_LABEL = endLabel(PROMO_MAYORISTA_END_MS, 'el viernes 14/8');
 
 export default function Hero() {
   const navigate = useNavigate();
@@ -64,21 +60,38 @@ export default function Hero() {
       <div className="hero-aurora" aria-hidden="true" />
       <StickerField count={14} opacity={0.34} />
 
-      <div className="container-app pt-8 pb-8 md:pt-10 md:pb-10 text-center relative z-10">
-        <span className="badge badge-soft mb-3 hidden sm:inline-flex">🔥 Calcos premium · Resistentes al agua y al sol</span>
+      <div className="container-app pt-14 pb-12 md:pt-20 md:pb-16 text-center relative z-10">
+        <span className="badge badge-soft mb-4 hidden sm:inline-flex">🔥 Calcos premium · Resistentes al agua y al sol</span>
 
-        {/* Promo mayorista por tiempo limitado. Se apaga sola al vencer. */}
+        {/* Promo mayorista por tiempo limitado: card destacada. Se apaga sola al vencer. */}
         {mayoristaPromo && (
           <Link
             to="/mayorista"
-            className="group mb-3 mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-brand-fuchsia/40 bg-brand-fuchsia/12 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white hover:bg-brand-fuchsia/20 transition-colors"
+            className="hero-promo-card group mb-6 mx-auto flex w-full max-w-2xl items-center gap-3 sm:gap-5 rounded-2xl p-3.5 sm:p-5 text-left"
           >
-            <span aria-hidden="true">🔥</span>
-            <span>
-              HASTA 75% OFF LLEVANDO 100 CALCOS ({formatPrice(PROMO_MAYORISTA_100.price)}
-              <span className="text-white/60">.-</span>)
+            <span className="text-3xl sm:text-5xl leading-none shrink-0" aria-hidden="true">🔥</span>
+
+            <span className="min-w-0 flex-1">
+              {/* text-lg en mobile: con text-xl "HASTA 75% OFF" parte en dos líneas a 375 px. */}
+              <span className="block font-display font-black leading-none text-lg sm:text-3xl tracking-tight gradient-text">
+                HASTA 75% OFF
+              </span>
+              <span className="block text-[11px] sm:text-sm text-white/85 mt-1.5">
+                Llevando <strong className="text-white">100 calcos</strong> · 4 y 6 cm · hasta el {PROMO_END_LABEL}
+              </span>
             </span>
-            <span className="text-white/60 group-hover:translate-x-0.5 transition-transform" aria-hidden="true">→</span>
+
+            <span className="shrink-0 text-right">
+              <span className="block font-display font-extrabold text-lg sm:text-3xl leading-none">
+                {formatPrice(PROMO_MAYORISTA_100.price)}
+              </span>
+              <span className="mt-2 hidden sm:inline-flex btn-primary !py-1.5 !px-3.5 !text-xs">
+                Armar mi pack →
+              </span>
+              <span className="mt-1 block sm:hidden text-[11px] font-bold text-white/70">
+                Armar mi pack →
+              </span>
+            </span>
           </Link>
         )}
 
@@ -91,16 +104,16 @@ export default function Hero() {
         </div>
 
         {/* H1 real, único y estable para SEO. */}
-        <h1 className="font-display font-bold text-base md:text-lg text-white/80 mt-2">
+        <h1 className="font-display font-bold text-base md:text-lg text-white/80 mt-4">
           Calcos y stickers personalizados en Rosario
         </h1>
 
-        <p className="mt-2 max-w-2xl mx-auto text-white/70 text-sm md:text-base hidden sm:block">
+        <p className="mt-3 max-w-2xl mx-auto text-white/70 text-sm md:text-base hidden sm:block">
           Miles de diseños en 99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
         </p>
 
         {/* Search card + autocomplete */}
-        <div className="relative max-w-md mx-auto mt-3">
+        <div className="relative max-w-md mx-auto mt-7 md:mt-8">
           <form onSubmit={onSearch} className="card-glass p-1 flex items-center gap-1">
             <span className="pl-2 text-white/50 text-sm" aria-hidden>🔎</span>
             <input
@@ -150,18 +163,6 @@ export default function Hero() {
               ))}
             </ul>
           )}
-        </div>
-
-        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
-          {quickTags.map((t) => (
-            <button
-              key={t.slug}
-              onClick={() => navigate(`/categoria/${t.slug}`)}
-              className="btn-ghost !text-white font-semibold !text-xs !py-1 !px-2.5 min-h-[44px] border border-white/25 hover:border-white/40"
-            >
-              #{t.label}
-            </button>
-          ))}
         </div>
       </div>
     </section>
