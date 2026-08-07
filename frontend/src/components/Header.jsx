@@ -43,7 +43,7 @@ export default function Header() {
         <nav className="hidden lg:flex items-center gap-1">
           {navLinks.map((l) =>
             l.hash ? (
-              <Link key={l.to} to={l.to} className="btn-ghost">
+              <Link key={l.to} to={l.to} className="btn-ghost !text-white font-semibold">
                 {l.label}
               </Link>
             ) : (
@@ -51,7 +51,7 @@ export default function Header() {
                 key={l.to}
                 to={l.to}
                 className={({ isActive }) =>
-                  `btn-ghost ${isActive ? 'text-white bg-white/10' : ''}`
+                  `btn-ghost !text-white font-semibold ${isActive ? 'bg-white/10' : ''}`
                 }
                 end={l.to === '/'}
               >
@@ -91,7 +91,7 @@ export default function Header() {
                   key={l.to}
                   to={l.to}
                   onClick={() => setOpen(false)}
-                  className="block px-3 py-2 rounded-lg text-white/80"
+                  className="block px-3 py-2 rounded-lg text-white font-semibold"
                 >
                   {l.label}
                 </Link>
@@ -102,7 +102,7 @@ export default function Header() {
                   onClick={() => setOpen(false)}
                   end={l.to === '/'}
                   className={({ isActive }) =>
-                    `block px-3 py-2 rounded-lg ${isActive ? 'bg-white/10 text-white' : 'text-white/80'}`
+                    `block px-3 py-2 rounded-lg text-white font-semibold ${isActive ? 'bg-white/10' : ''}`
                   }
                 >
                   {l.label}

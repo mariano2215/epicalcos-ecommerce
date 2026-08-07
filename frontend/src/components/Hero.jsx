@@ -157,7 +157,7 @@ export default function Hero() {
             <button
               key={t.slug}
               onClick={() => navigate(`/categoria/${t.slug}`)}
-              className="btn-ghost !text-white/60 !text-xs !py-1 !px-2.5 min-h-[44px] border border-white/10 hover:border-white/20"
+              className="btn-ghost !text-white font-semibold !text-xs !py-1 !px-2.5 min-h-[44px] border border-white/25 hover:border-white/40"
             >
               #{t.label}
             </button>

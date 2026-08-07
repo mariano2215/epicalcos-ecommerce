@@ -170,8 +170,9 @@ export const bankTransfer = {
 };
 
 export const announcements = [
-  '🚚 Envío gratis en Rosario desde $50.000',
+  // El envío gratis a todo el país va primero: es lo que más pesa en la decisión.
   '🇦🇷 Envío gratis a todo el país desde $75.000',
+  '🚚 Envío gratis en Rosario desde $50.000',
   '👥 +5.000 clientes',
   '🎉 +120.000 calcos vendidas',
   '⚡ Producción 2 a 3 días hábiles',
