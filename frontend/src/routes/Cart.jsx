@@ -98,7 +98,13 @@ export default function Cart() {
                         <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(it.id, it.quantity + 1)} aria-label="Sumar">+</button>
                       </div>
                     ) : (
-                      <span className="text-sm text-white/60">{it.quantity} unidad{it.quantity === 1 ? '' : 'es'}</span>
+                      // Packs/negocio de cantidad fija (meta.qty): la línea es 1 pack, pero
+                      // lo que le importa al cliente es cuántas calcos se lleva.
+                      <span className="text-sm text-white/60">
+                        {it.meta?.qty
+                          ? `${it.meta.qty * it.quantity} calcos`
+                          : `${it.quantity} unidad${it.quantity === 1 ? '' : 'es'}`}
+                      </span>
                     )}
                     <span className="font-display font-extrabold">{formatPrice(it.price * it.quantity)}</span>
                   </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PROMO_END_MS, isPromoActive } from '../config/pricing.js';
+import { PROMO_END_MS, PROMO_MAYORISTA_END_MS } from '../config/pricing.js';
 
 /**
  * Cuenta regresiva hasta `targetMs`. Devuelve días/horas/minutos/segundos ya
@@ -32,16 +32,16 @@ export function useCountdown(targetMs) {
 }
 
 /**
- * ¿Está vigente la promo 3x2 ahora mismo? Se vuelve `false` sola en el instante
- * en que vence, sin necesidad de recargar (deja de renderizar el banner y hace
- * que los precios vuelvan a la normalidad en el próximo render).
+ * ¿Estamos antes de `endMs`? Se vuelve `false` solo en el instante en que vence,
+ * sin necesidad de recargar (deja de renderizar el banner y hace que los precios
+ * vuelvan a la normalidad en el próximo render).
  */
-export function usePromoActive() {
-  const [active, setActive] = useState(() => isPromoActive());
+export function useActiveUntil(endMs) {
+  const [active, setActive] = useState(() => Number.isFinite(endMs) && Date.now() <= endMs);
 
   useEffect(() => {
     if (!active) return undefined;
-    const ms = PROMO_END_MS - Date.now();
+    const ms = endMs - Date.now();
     if (ms <= 0) {
       setActive(false);
       return undefined;
@@ -49,7 +49,17 @@ export function usePromoActive() {
     // +1s de colchón para caer del lado inactivo con seguridad.
     const t = setTimeout(() => setActive(false), ms + 1000);
     return () => clearTimeout(t);
-  }, [active]);
+  }, [active, endMs]);
 
   return active;
+}
+
+/** ¿Está vigente la promo 3x2 ahora mismo? */
+export function usePromoActive() {
+  return useActiveUntil(PROMO_END_MS);
+}
+
+/** ¿Está vigente la promo mayorista de 100 calcos a $39.999 ahora mismo? */
+export function useMayoristaPromoActive() {
+  return useActiveUntil(PROMO_MAYORISTA_END_MS);
 }

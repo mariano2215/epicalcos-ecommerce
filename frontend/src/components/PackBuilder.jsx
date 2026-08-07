@@ -14,12 +14,18 @@ const CUSTOM_IMG =
 
 /**
  * Armador de packs ("armá tu pack"). Un solo tamaño para todo el pack y descuento
- * fijo según el tipo. Sirve para Mayorista (target 100, 50%) y Personalizados (mín 10, 10%).
+ * fijo según el tipo. Sirve para Mayorista (mín 100, 50%) y Personalizados (mín 10, 10%).
+ *
+ * `promo` (opcional) = promo de PRECIO FIJO por tiempo limitado: `qty` calcos a
+ * `price`, solo en los tamaños de `sizes`. Mientras esté activa Y el tamaño
+ * elegido entre en la promo, el pack pasa a ser de cantidad EXACTA (`qty`) y
+ * precio fijo; en cualquier otro tamaño el armador vuelve solo al pack normal.
  *
  * @param {{ packType:'mayorista'|'personalizados', target?:number, min?:number,
- *           discount:number, title:string, subtitle:string, allowCustom?:boolean }} props
+ *           discount:number, title:string, subtitle:string, allowCustom?:boolean,
+ *           promo?:{ active:boolean, qty:number, price:number, sizes:string[] } }} props
  */
-export default function PackBuilder({ packType, target, min, discount, title, subtitle, allowCustom, defaultSize }) {
+export default function PackBuilder({ packType, target, min, discount, title, subtitle, allowCustom, defaultSize, promo }) {
   const { addPack } = useCart();
   const navigate = useNavigate();
 
@@ -33,7 +39,12 @@ export default function PackBuilder({ packType, target, min, discount, title, su
   const [customFiles, setCustomFiles] = useState([]); // [{ nombre, pesoMB, url }] subidos a Cloudinary
   const [showCustom, setShowCustom] = useState(false);
 
-  const cap = target || Infinity; // mayorista: tope 100
+  // ¿Este tamaño está bajo la promo de precio fijo? (4 y 6 cm sí, 9 cm no).
+  const promoOn = !!promo?.active && promo.sizes.includes(size);
+  // Con la promo, el pack es de cantidad EXACTA (100). Sin promo, manda `target`.
+  const effTarget = promoOn ? promo.qty : target;
+
+  const cap = effTarget || Infinity; // con promo: tope 100
 
   // Cargar lista de categorías
   useEffect(() => {
@@ -61,10 +72,16 @@ export default function PackBuilder({ packType, target, min, discount, title, su
     [selection, customCount]
   );
 
-  const remaining = target ? Math.max(0, target - totalSelected) : 0;
-  const unit = round(priceForSize(size) * (1 - discount));
-  const totalPrice = unit * totalSelected;
-  const valid = target ? totalSelected === target : totalSelected >= (min || 1);
+  const remaining = effTarget ? Math.max(0, effTarget - totalSelected) : 0;
+  // Sobrante: solo pasa si venía de un tamaño sin tope (9 cm) y cambia a uno con promo.
+  const excess = effTarget ? Math.max(0, totalSelected - effTarget) : 0;
+  const listUnit = priceForSize(size);
+  const unit = promoOn ? promo.price / promo.qty : round(listUnit * (1 - discount));
+  const totalPrice = promoOn ? promo.price : unit * totalSelected;
+  /** % off real de la promo contra el precio de lista de ESTE tamaño (67% en 4cm, 75% en 6cm). */
+  const promoOff = promoOn ? Math.round((1 - promo.price / (listUnit * promo.qty)) * 100) : 0;
+  const offLabel = promoOn ? promoOff : Math.round(discount * 100);
+  const valid = effTarget ? totalSelected === effTarget : totalSelected >= (min || 1);
 
   const addOne = (item) => {
     if (totalSelected >= cap) return;
@@ -96,7 +113,7 @@ export default function PackBuilder({ packType, target, min, discount, title, su
   };
   const fillRemaining = () => {
     // Completa hasta el target con el último diseño seleccionado (o el primero)
-    if (!target || remaining <= 0) return;
+    if (!effTarget || remaining <= 0) return;
     const last = Object.values(selection).slice(-1)[0];
     if (!last) return;
     setSelection((sel) => ({ ...sel, [last.id]: { ...last, qty: last.qty + remaining } }));
@@ -107,19 +124,30 @@ export default function PackBuilder({ packType, target, min, discount, title, su
     const items = Object.values(selection).map((s) => ({ id: s.id, name: s.name, qty: s.qty }));
     const sizeObj = SIZES.find((s) => s.id === size);
     const cover = Object.values(selection)[0]?.image || CUSTOM_IMG;
-    const label =
-      packType === 'mayorista'
-        ? `Pack Mayorista x${totalSelected} · ${sizeObj.label}`
-        : `Personalizados x${totalSelected} · ${sizeObj.label}`;
+    // Con la promo, la línea es UN pack de precio fijo (quantity 1, `qty` calcos
+    // adentro); sin promo, es la de siempre (precio por calco × cantidad).
+    const lineType = promoOn ? 'mayorista100' : packType;
+    const label = promoOn
+      ? `Pack Mayorista PROMO x${promo.qty} · ${sizeObj.label}`
+      : packType === 'mayorista'
+      ? `Pack Mayorista x${totalSelected} · ${sizeObj.label}`
+      : `Personalizados x${totalSelected} · ${sizeObj.label}`;
     addPack({
-      id: `pack:${packType}:${size}:${Date.now()}`,
+      id: `pack:${lineType}:${size}:${Date.now()}`,
       name: label,
       categoryLabel: packType === 'mayorista' ? 'Pack Mayorista' : 'Personalizados',
       image: cover,
       size,
-      basePrice: unit,
-      quantity: totalSelected,
-      meta: { packType, size, discount, items, customCount, archivos: customFiles.length ? customFiles : null }
+      basePrice: promoOn ? promo.price : unit,
+      quantity: promoOn ? 1 : totalSelected,
+      meta: {
+        packType: lineType,
+        size,
+        ...(promoOn ? { qty: promo.qty, promo: '100x39999' } : { discount }),
+        items,
+        customCount,
+        archivos: customFiles.length ? customFiles : null
+      }
     });
     navigate('/carrito');
   };
@@ -129,7 +157,7 @@ export default function PackBuilder({ packType, target, min, discount, title, su
       {/* Panel de armado */}
       <div className="lg:col-span-2 min-w-0 space-y-6">
         <header>
-          <span className="badge badge-hot mb-3">{Math.round(discount * 100)}% OFF</span>
+          <span className="badge badge-hot mb-3">{offLabel}% OFF</span>
           <h1 className="font-display font-extrabold text-3xl md:text-4xl">{title}</h1>
           <p className="text-white/60 mt-2 max-w-xl">{subtitle}</p>
         </header>
@@ -140,30 +168,45 @@ export default function PackBuilder({ packType, target, min, discount, title, su
           <div className="grid grid-cols-3 gap-2 max-w-md">
             {SIZES.map((s) => {
               const active = s.id === size;
+              const enPromo = !!promo?.active && promo.sizes.includes(s.id);
               const u = round(s.price * (1 - discount));
               return (
                 <button
                   key={s.id}
                   onClick={() => setSize(s.id)}
-                  className={`rounded-xl py-2 border transition-colors ${
+                  className={`relative rounded-xl py-2 border transition-colors ${
                     active
                       ? 'border-brand-fuchsia bg-brand-fuchsia/15'
                       : 'border-white/10 bg-white/[0.03] hover:border-white/25'
                   }`}
                 >
+                  {enPromo && (
+                    <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-extrabold tracking-wide px-1.5 py-0.5 rounded-full bg-brand-fuchsia text-white">
+                      PROMO
+                    </span>
+                  )}
                   <span className="block text-sm font-bold">{s.label}</span>
-                  <span className="block text-[11px] text-white/50">{formatPrice(u)} c/u</span>
+                  <span className="block text-[11px] text-white/50">
+                    {enPromo ? `${promo.qty} × ${formatPrice(promo.price)}` : `${formatPrice(u)} c/u`}
+                  </span>
                 </button>
               );
             })}
           </div>
+          {promo?.active && (
+            <p className="text-xs text-white/50 mt-3">
+              {promoOn
+                ? `La promo son ${promo.qty} calcos exactas a ${formatPrice(promo.price)}. En 9 cm no aplica: ahí el pack sigue siendo desde ${min || promo.qty} calcos con ${Math.round(discount * 100)}% off.`
+                : `El 9 cm queda fuera de la promo: pack desde ${min || promo.qty} calcos con ${Math.round(discount * 100)}% off. Elegí 4 o 6 cm para llevarte ${promo.qty} calcos a ${formatPrice(promo.price)}.`}
+            </p>
+          )}
         </div>
 
         {/* Paso 2: elegir diseños */}
         <div className="card-glass p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm font-semibold">
-              2 · Elegí los diseños {target ? `(hasta ${target})` : `(mínimo ${min})`}
+              2 · Elegí los diseños {effTarget ? `(${effTarget} en total)` : `(mínimo ${min})`}
             </div>
             {allowCustom && (
               <button
@@ -278,10 +321,10 @@ export default function PackBuilder({ packType, target, min, discount, title, su
           <div>
             <div className="text-3xl font-display font-extrabold">{totalSelected}</div>
             <div className="text-xs text-white/50">
-              {target ? `de ${target} calcos` : `calcos (mín. ${min})`}
+              {effTarget ? `de ${effTarget} calcos` : `calcos (mín. ${min})`}
             </div>
           </div>
-          {target && remaining > 0 && Object.keys(selection).length > 0 && (
+          {effTarget && remaining > 0 && Object.keys(selection).length > 0 && (
             <button onClick={fillRemaining} className="btn-secondary !py-1.5 !px-3 text-xs">
               Completar {remaining}
             </button>
@@ -333,18 +376,33 @@ export default function PackBuilder({ packType, target, min, discount, title, su
 
         <div className="border-t border-white/10 pt-3">
           <div className="flex justify-between text-white/70 text-sm mb-1">
-            <span>Precio por calco</span><span>{formatPrice(unit)}</span>
+            <span>Precio por calco</span>
+            <span>{promoOn ? `≈ ${formatPrice(unit)}` : formatPrice(unit)}</span>
           </div>
           <div className="flex justify-between font-display font-extrabold text-xl">
-            <span>Total</span><span>{formatPrice(totalPrice)}</span>
+            <span>Total</span>
+            <span className="flex items-baseline gap-2">
+              {promoOn && (
+                <span className="text-sm font-normal text-white/40 line-through decoration-white/40">
+                  {formatPrice(listUnit * promo.qty)}
+                </span>
+              )}
+              <span>{formatPrice(totalPrice)}</span>
+            </span>
           </div>
-          <p className="text-xs text-emerald-400 mt-1">{Math.round(discount * 100)}% de descuento aplicado</p>
+          <p className="text-xs text-emerald-400 mt-1">
+            {promoOn
+              ? `Precio fijo de la promo · ${promoOff}% de descuento`
+              : `${Math.round(discount * 100)}% de descuento aplicado`}
+          </p>
         </div>
 
         <button onClick={confirm} disabled={!valid} className="btn-primary w-full">
           {valid
             ? 'Agregar al carrito →'
-            : target
+            : excess > 0
+            ? `Quitá ${excess} calco${excess === 1 ? '' : 's'}`
+            : effTarget
             ? `Faltan ${remaining} calcos`
             : `Mínimo ${min} calcos`}
         </button>

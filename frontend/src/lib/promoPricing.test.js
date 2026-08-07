@@ -12,7 +12,12 @@ import {
   round,
   BULK_THRESHOLD,
   BULK_DISCOUNT,
-  MAX_STICKER_DISCOUNT
+  MAX_STICKER_DISCOUNT,
+  PROMO_MAYORISTA_100,
+  PROMO_MAYORISTA_END_MS,
+  isMayoristaPromoActive,
+  isMayoristaPromoSize,
+  mayoristaPromoOff
 } from '../config/pricing.js';
 // Backend: el que re-precia el checkout (rechaza si no coincide).
 import {
@@ -23,6 +28,11 @@ import {
   isCouponActive as beCouponActive,
   promo3x2 as bePromo3x2,
   isPromoActive as beActive,
+  MAYORISTA100_END_MS,
+  MAYORISTA100_PRICE,
+  MAYORISTA100_QTY,
+  MAYORISTA100_SIZES,
+  isMayorista100Active,
   validateAndPriceOrder
 } from '../../../netlify/functions/lib/pricing.js';
 
@@ -30,6 +40,8 @@ const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
 const DURING_PROMO = new Date('2026-07-24T12:00:00-03:00'); // vie 24/7, promo vigente
 const AFTER_PROMO = new Date('2026-07-27T12:00:00-03:00'); // lun 27/7, promo vencida
 const AFTER_EMOJI50 = new Date('2026-08-05T00:30:00-03:00'); // mié 5/8, EMOJI50 ya vencido
+const DURING_MAYORISTA = new Date('2026-08-10T12:00:00-03:00'); // lun 10/8, promo mayorista vigente
+const AFTER_MAYORISTA = new Date('2026-08-15T00:30:00-03:00'); // sáb 15/8, promo mayorista vencida
 
 afterEach(() => vi.useRealTimers());
 
@@ -263,6 +275,88 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(
       validateAndPriceOrder({ items: conEpica, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10' }).couponApplied
     ).toBe('EPICA10');
+  });
+
+  it('la promo mayorista (100 calcos a $39.999) está espejada frontend ↔ backend', () => {
+    expect(PROMO_MAYORISTA_END_MS).toBe(MAYORISTA100_END_MS);
+    expect(PROMO_MAYORISTA_100.price).toBe(MAYORISTA100_PRICE);
+    expect(PROMO_MAYORISTA_100.qty).toBe(MAYORISTA100_QTY);
+    expect(PROMO_MAYORISTA_100.sizes).toEqual(MAYORISTA100_SIZES);
+    expect(Number.isFinite(PROMO_MAYORISTA_END_MS)).toBe(true);
+
+    // Solo 4 y 6 cm: el 9 cm queda afuera a propósito.
+    expect(isMayoristaPromoSize('4cm')).toBe(true);
+    expect(isMayoristaPromoSize('6cm')).toBe(true);
+    expect(isMayoristaPromoSize('9cm')).toBe(false);
+
+    // El % que se muestra es el real contra el precio de lista de cada tamaño.
+    expect(mayoristaPromoOff('4cm')).toBe(Math.round((1 - 39999 / (1200 * 100)) * 100));
+    expect(mayoristaPromoOff('6cm')).toBe(Math.round((1 - 39999 / (1600 * 100)) * 100));
+
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_MAYORISTA);
+    expect(isMayoristaPromoActive()).toBe(true);
+    expect(isMayorista100Active()).toBe(true);
+    vi.setSystemTime(AFTER_MAYORISTA);
+    expect(isMayoristaPromoActive()).toBe(false);
+    expect(isMayorista100Active()).toBe(false);
+  });
+
+  it('promo mayorista: el server acepta el pack de 100 a $39.999 en 4 y 6 cm', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_MAYORISTA);
+    // 1 línea = 1 pack de 100 calcos. Convive con calcos sueltos, que siguen a precio de lista.
+    const items = [
+      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100 · 4 cm', quantity: 1, unit_price: 39999 },
+      { id: 'pack:mayorista100:6cm:2', title: 'Pack Mayorista PROMO x100 · 6 cm', quantity: 1, unit_price: 39999 },
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 1600 }
+    ];
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(39999 * 2 + 3200);
+  });
+
+  it('promo mayorista: el pack NO recibe cupón ni 10% por transferencia', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_MAYORISTA);
+    const items = [
+      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: 39999 }
+    ];
+    expect(
+      validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok
+    ).toBe(true);
+
+    // Si el cliente le descuenta el 10% al pack, el server lo rechaza.
+    const tramposo = [{ ...items[0], unit_price: round(39999 * 0.9) }];
+    const res = validateAndPriceOrder({ items: tramposo, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('price_mismatch');
+  });
+
+  it('promo mayorista: el server rechaza 9 cm y rechaza la promo vencida', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_MAYORISTA);
+    const nueveCm = [
+      { id: 'pack:mayorista100:9cm:1', title: 'Pack Mayorista PROMO x100 · 9 cm', quantity: 1, unit_price: 39999 }
+    ];
+    expect(validateAndPriceOrder({ items: nueveCm, shipping: retiro, paymentMethod: 'mercadopago' }).error).toBe(
+      'item_invalid'
+    );
+
+    // Vencida: aunque quede una línea vieja en el localStorage de alguien, no se cobra.
+    vi.setSystemTime(AFTER_MAYORISTA);
+    const vencida = [
+      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: 39999 }
+    ];
+    expect(validateAndPriceOrder({ items: vencida, shipping: retiro, paymentMethod: 'mercadopago' }).error).toBe(
+      'item_invalid'
+    );
+
+    // Y el pack mayorista de siempre (50% off, sin promo) sigue funcionando.
+    const normal = [
+      { id: 'pack:mayorista:4cm:1', title: 'Pack Mayorista x100 · 4 cm', quantity: 100, unit_price: 600 }
+    ];
+    expect(validateAndPriceOrder({ items: normal, shipping: retiro, paymentMethod: 'mercadopago' }).ok).toBe(true);
   });
 
   it('un precio adulterado se rechaza con price_mismatch', () => {

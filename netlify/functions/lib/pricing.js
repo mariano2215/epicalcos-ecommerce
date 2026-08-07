@@ -75,6 +75,21 @@ export function promo3x2(unitBasePrices, buy = PROMO_BUY, pay = PROMO_PAY) {
 }
 const WHOLESALE_QTY = 100; // pack mayorista: MÍNIMO 100 calcos (sin tope), 50 % off
 const WHOLESALE_DISCOUNT = 0.5;
+
+// --- Espejo de la PROMO MAYORISTA 100 × $39.999 de frontend/src/config/pricing.js ---
+// Pack de EXACTAMENTE 100 calcos (los diseños que quiera el cliente, catálogo y/o
+// propios) a precio fijo, SOLO en 4 y 6 cm y solo hasta el viernes 14/8 inclusive.
+// La línea es `pack:mayorista100:{size}:{ts}` con quantity = 1 (1 línea = 1 pack).
+// No confundir con la promo NEGOCIO (100u de un solo diseño en 6 cm).
+// ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend (lo verifica promoPricing.test.js).
+export const MAYORISTA100_END_MS = Date.parse('2026-08-14T23:59:59-03:00');
+export const MAYORISTA100_PRICE = 39999;
+export const MAYORISTA100_QTY = 100;
+export const MAYORISTA100_SIZES = ['4cm', '6cm'];
+
+export function isMayorista100Active(now = Date.now()) {
+  return Number.isFinite(MAYORISTA100_END_MS) && now <= MAYORISTA100_END_MS;
+}
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
 const PERSONALIZADOS_DISCOUNT = 0.1;
 const NEGOCIO_PRICE = 39999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
@@ -177,6 +192,14 @@ function lineBase(id, quantity) {
       if (quantity < WHOLESALE_QTY)
         return { error: `pack mayorista: mínimo ${WHOLESALE_QTY} calcos` };
       return { base: round(base * (1 - WHOLESALE_DISCOUNT)), kind, discountable: false };
+    }
+    if (packType === 'mayorista100') {
+      // Promo por tiempo limitado: 1 línea = 1 pack de 100 calcos a precio fijo.
+      if (!isMayorista100Active())
+        return { error: 'la promo de 100 calcos a $39.999 ya terminó — recargá la página' };
+      if (!MAYORISTA100_SIZES.includes(parts[2]))
+        return { error: 'la promo de 100 calcos es solo en 4 y 6 cm' };
+      return { base: MAYORISTA100_PRICE, kind, discountable: false };
     }
     if (packType === 'personalizados') {
       if (quantity < PERSONALIZADOS_MIN)

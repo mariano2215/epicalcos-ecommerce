@@ -57,7 +57,9 @@ export default function CartDrawer() {
                       <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity + 1)} aria-label="Sumar">+</button>
                     </>
                   ) : (
-                    <span className="text-xs text-white/50">x{item.quantity}</span>
+                    <span className="text-xs text-white/50">
+                      {item.meta?.qty ? `${item.meta.qty * item.quantity} calcos` : `x${item.quantity}`}
+                    </span>
                   )}
                   <span className="ml-auto font-semibold text-sm">
                     {formatPrice(item.price * item.quantity)}

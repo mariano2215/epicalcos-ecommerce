@@ -153,6 +153,60 @@ export const CUSTOM_SPEC_STORAGE_KEY = 'epicalcos.customSpec';
 export const WHOLESALE_QTY = 100;
 export const WHOLESALE_DISCOUNT = 0.5;
 
+/**
+ * ─── PROMO MAYORISTA: 100 CALCOS A $39.999 (por tiempo limitado) ──────────────
+ * En /mayorista, un pack de EXACTAMENTE 100 calcos a precio fijo $39.999. Los
+ * 100 pueden ser 100 diseños DISTINTOS (catálogo) y/o diseños propios subidos
+ * en el mismo armador.
+ *
+ * SOLO en 4 y 6 cm: si el cliente elige 9 cm, el armador vuelve solo al pack
+ * mayorista de siempre (desde 100 calcos, 50 % off, sin tope).
+ *
+ * ⚠️ NO confundir con la Promo Negocio (`NEGOCIO`, más abajo): esa es 100
+ * calcos de UN SOLO diseño (el logo del cliente) en 6 cm, y sigue viva aparte.
+ *
+ * La línea que viaja al carrito es `pack:mayorista100:{size}:{ts}` con
+ * quantity = 1 (1 línea = 1 pack de 100) y basePrice = `price`. No participa de
+ * cupones, del 10 % por transferencia ni de promos N x M (como todo pack).
+ *
+ * Se auto-desactiva por fecha (sin cron): pasado `endsAt` el armador vuelve al
+ * pack normal, el banner y el contador desaparecen y el servidor deja de
+ * aceptar la línea.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (MAYORISTA100_*).
+ * El test `src/lib/promoPricing.test.js` verifica que ambos lados coincidan.
+ */
+export const PROMO_MAYORISTA_100 = {
+  /** Fin de la promo, hora Argentina (UTC−03:00). Inclusive: termina al cerrar el viernes 14/8. */
+  endsAt: '2026-08-14T23:59:59-03:00',
+  qty: 100,
+  price: 39999,
+  /** Tamaños habilitados. El 9 cm queda afuera a propósito. */
+  sizes: ['4cm', '6cm']
+};
+
+export const PROMO_MAYORISTA_END_MS = Date.parse(PROMO_MAYORISTA_100.endsAt);
+
+/** ¿La promo de 100 calcos a $39.999 está vigente en este instante? */
+export function isMayoristaPromoActive(now = Date.now()) {
+  return Number.isFinite(PROMO_MAYORISTA_END_MS) && now <= PROMO_MAYORISTA_END_MS;
+}
+
+/** ¿Ese tamaño entra en la promo? (4 y 6 cm sí, 9 cm no). */
+export function isMayoristaPromoSize(sizeId) {
+  return PROMO_MAYORISTA_100.sizes.includes(sizeId);
+}
+
+/** Precio de lista de las 100 calcos en ese tamaño (para el tachado). */
+export function mayoristaPromoListPrice(sizeId) {
+  return priceForSize(sizeId) * PROMO_MAYORISTA_100.qty;
+}
+
+/** % de descuento real de la promo contra el precio de lista de ese tamaño. */
+export function mayoristaPromoOff(sizeId) {
+  return Math.round((1 - PROMO_MAYORISTA_100.price / mayoristaPromoListPrice(sizeId)) * 100);
+}
+
 /** Personalizados: mínimo 10 calcos, 10 % off ya incluido. */
 export const PERSONALIZADOS_MIN = 10;
 export const PERSONALIZADOS_DISCOUNT = 0.10;

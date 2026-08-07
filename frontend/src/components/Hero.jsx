@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { trackSearch } from '../lib/analytics.js';
 import { suggest } from '../lib/searchCatalog.js';
 import { CATEGORIES } from '../data/categories.js';
+import { formatPrice } from '../context/CartContext.jsx';
+import { PROMO_MAYORISTA_100 } from '../config/pricing.js';
+import { useMayoristaPromoActive } from '../lib/promo.js';
 import StickerField from './StickerField.jsx';
 import RotatingHeadline from './RotatingHeadline.jsx';
 
@@ -21,6 +24,7 @@ export default function Hero() {
   const [loaded, setLoaded] = useState(false);
   const [catalog, setCatalog] = useState({}); // slug -> { count, cover }
   const [aliases, setAliases] = useState({ categorias: {}, rutas: {} });
+  const mayoristaPromo = useMayoristaPromoActive();
 
   // Datos de autocomplete: se cargan recién en el primer focus (no toca el LCP del home).
   const loadData = () => {
@@ -62,6 +66,21 @@ export default function Hero() {
 
       <div className="container-app pt-8 pb-8 md:pt-10 md:pb-10 text-center relative z-10">
         <span className="badge badge-soft mb-3 hidden sm:inline-flex">🔥 Calcos premium · Resistentes al agua y al sol</span>
+
+        {/* Promo mayorista por tiempo limitado. Se apaga sola al vencer. */}
+        {mayoristaPromo && (
+          <Link
+            to="/mayorista"
+            className="group mb-3 mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-brand-fuchsia/40 bg-brand-fuchsia/12 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white hover:bg-brand-fuchsia/20 transition-colors"
+          >
+            <span aria-hidden="true">🔥</span>
+            <span>
+              50% OFF LLEVANDO 100 CALCOS ({formatPrice(PROMO_MAYORISTA_100.price)}
+              <span className="text-white/60">.-</span>)
+            </span>
+            <span className="text-white/60 group-hover:translate-x-0.5 transition-transform" aria-hidden="true">→</span>
+          </Link>
+        )}
 
         {/* Titular rotante: solo visual, fuera del árbol semántico (evita 5 frases dentro del H1). */}
         <div

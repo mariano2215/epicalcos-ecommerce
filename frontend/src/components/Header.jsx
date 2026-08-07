@@ -1,19 +1,39 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { useCart } from '../context/CartContext.jsx';
+import { useCart, formatPrice } from '../context/CartContext.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
-import PromoBanner from './PromoBanner.jsx';
-import { usePromoActive } from '../lib/promo.js';
+import PromoBanner, { endLabel } from './PromoBanner.jsx';
+import { usePromoActive, useMayoristaPromoActive } from '../lib/promo.js';
+import { PROMO_END_MS, PROMO_MAYORISTA_100, PROMO_MAYORISTA_END_MS } from '../config/pricing.js';
 import { navLinks, site } from '../config/site.js';
 
 export default function Header() {
   const { totalItems, openDrawer } = useCart();
   const [open, setOpen] = useState(false);
   const promoActive = usePromoActive();
+  const mayoristaPromoActive = useMayoristaPromoActive();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
-      {promoActive ? <PromoBanner /> : <AnnouncementBar />}
+      {promoActive ? (
+        <PromoBanner
+          title="3×2 EN TODAS LAS CALCOS"
+          subtitle={`Cada 3, la más barata gratis · hasta ${endLabel(PROMO_END_MS, 'el domingo')}`}
+          endMs={PROMO_END_MS}
+          to="/categorias"
+          ariaLabel="Promoción 3x2 en todas las calcos"
+        />
+      ) : mayoristaPromoActive ? (
+        <PromoBanner
+          title={`100 CALCOS A ${formatPrice(PROMO_MAYORISTA_100.price)}`}
+          subtitle={`Elegís los 100 diseños · 4 y 6 cm · hasta ${endLabel(PROMO_MAYORISTA_END_MS, 'el viernes 14/8')}`}
+          endMs={PROMO_MAYORISTA_END_MS}
+          to="/mayorista"
+          ariaLabel="Promoción mayorista: 100 calcos a $39.999"
+        />
+      ) : (
+        <AnnouncementBar />
+      )}
       <div className="container-app flex items-center justify-between py-4">
         <Link to="/" className="flex items-center" onClick={() => setOpen(false)} aria-label={site.name}>
           <img src="/favicon.png" alt={site.name} className="h-11 w-11 rounded-lg" />
