@@ -75,7 +75,7 @@ export default function Hero() {
           >
             <span aria-hidden="true">🔥</span>
             <span>
-              50% OFF LLEVANDO 100 CALCOS ({formatPrice(PROMO_MAYORISTA_100.price)}
+              HASTA 75% OFF LLEVANDO 100 CALCOS ({formatPrice(PROMO_MAYORISTA_100.price)}
               <span className="text-white/60">.-</span>)
             </span>
             <span className="text-white/60 group-hover:translate-x-0.5 transition-transform" aria-hidden="true">→</span>

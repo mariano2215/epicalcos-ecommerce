@@ -1,4 +1,5 @@
 import { isSectionHidden } from '../config/site.js';
+import { isMayoristaPromoActive } from '../config/pricing.js';
 
 /**
  * Catálogo de categorías de EPICALCOS.
@@ -132,7 +133,9 @@ const ALL_SPECIALS = [
     to: '/mayorista',
     name: 'Pack Mayorista x100',
     emoji: '📦',
-    blurb: 'Armá 100 calcos · 50% off',
+    // Mientras corre la promo (vence el 14/8/2026, ver PROMO_MAYORISTA_100 en
+    // config/pricing.js) el blurb anuncia el precio fijo; después vuelve el 50% off.
+    blurb: isMayoristaPromoActive() ? '100 calcos a $39.999 · 4 y 6 cm' : 'Armá 100 calcos · 50% off',
     accent: 'from-amber-400 to-orange-500'
   },
   {

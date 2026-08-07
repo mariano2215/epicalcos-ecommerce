@@ -26,6 +26,10 @@ export default function Envios() {
           <strong>Resto del país (Correo Argentino):</strong> $8.500 a domicilio.
         </li>
         <li>
+          <strong>Envío gratis a todo el país</strong> en compras desde $75.000 (fuera de Rosario, donde
+          ya es gratis desde $50.000).
+        </li>
+        <li>
           <strong>Retiro en mano:</strong> sin costo. Coordinamos lugar y horario por WhatsApp.
         </li>
       </ul>

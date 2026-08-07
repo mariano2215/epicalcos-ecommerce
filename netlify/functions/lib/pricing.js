@@ -110,6 +110,9 @@ const FIXED_PRICES = {
 
 // --- Espejo de frontend/src/config/site.js (envío) ---
 const FREE_SHIPPING_THRESHOLD_ROSARIO = 50000;
+// Envío gratis a TODO EL PAÍS (ciudades próximas + interior) desde este monto.
+// En Rosario manda el umbral de arriba, que es más bajo.
+const FREE_SHIPPING_THRESHOLD_NATIONAL = 75000;
 const SHIPPING_COST = { rosario: 4500, nearby: 6500, interior: 8500 }; // rosario=motomensajería, interior=Correo Argentino
 const NEARBY_CITIES = ['funes', 'granadero baigorria', 'villa gobernador galvez'];
 
@@ -149,6 +152,8 @@ export function calculateShipping({ method, subtotal = 0, city, province }) {
   if (zone === 'rosario') {
     return subtotal >= FREE_SHIPPING_THRESHOLD_ROSARIO ? 0 : SHIPPING_COST.rosario;
   }
+  // Resto del país (ciudades próximas + interior): gratis desde $75.000.
+  if (subtotal >= FREE_SHIPPING_THRESHOLD_NATIONAL) return 0;
   return SHIPPING_COST[zone];
 }
 

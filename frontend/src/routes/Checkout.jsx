@@ -5,7 +5,7 @@ import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
-import { calculateShipping } from '../config/site.js';
+import { calculateShipping, freeShippingThresholdFor } from '../config/site.js';
 import { findCoupon, couponBundle, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
 import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
@@ -123,6 +123,8 @@ export default function Checkout() {
     province: ship.province
   });
   const total = subtotal + shippingCost;
+  // Cuánto falta para el envío gratis de ESE destino ($50.000 Rosario, $75.000 el resto).
+  const freeShippingGap = freeShippingThresholdFor(ship.city, ship.province) - subtotal;
 
   useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago o por transferencia bancaria.' });
 
@@ -277,11 +279,18 @@ export default function Checkout() {
                 <span className="text-emerald-400 font-semibold">Gratis</span>
               </div>
             ) : (
-              <div className="flex justify-between text-white/70 text-sm mb-3">
-                <span>Envío</span>
-                <span className={shippingCost === 0 ? 'text-emerald-400 font-semibold' : ''}>
-                  {shippingCost === 0 ? 'Gratis' : formatPrice(shippingCost)}
-                </span>
+              <div className="mb-3">
+                <div className="flex justify-between text-white/70 text-sm">
+                  <span>Envío</span>
+                  <span className={shippingCost === 0 ? 'text-emerald-400 font-semibold' : ''}>
+                    {shippingCost === 0 ? 'Gratis' : formatPrice(shippingCost)}
+                  </span>
+                </div>
+                {shippingCost > 0 && freeShippingGap > 0 && (
+                  <div className="text-xs text-white/50 mt-1">
+                    Sumá {formatPrice(freeShippingGap)} y el envío te sale gratis.
+                  </div>
+                )}
               </div>
             )}
             <div className="flex justify-between font-display font-extrabold text-lg">

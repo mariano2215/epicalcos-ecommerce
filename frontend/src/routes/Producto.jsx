@@ -315,7 +315,8 @@ export default function Producto() {
                 <li className="flex gap-3">
                   <span aria-hidden>🚚</span>
                   <span className="text-white/70">
-                    <strong className="text-emerald-400">Envío gratis en Rosario</strong> desde {formatPrice(shipping.freeShippingThresholdRosario)}. Hacemos envíos a todo el país.
+                    <strong className="text-emerald-400">Envío gratis en Rosario</strong> desde {formatPrice(shipping.freeShippingThresholdRosario)} y{' '}
+                    <strong className="text-emerald-400">a todo el país</strong> desde {formatPrice(shipping.freeShippingThresholdNational)}.
                   </span>
                 </li>
                 <li className="flex gap-3">

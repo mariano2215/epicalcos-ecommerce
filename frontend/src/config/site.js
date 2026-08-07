@@ -27,6 +27,12 @@ export const contact = {
 export const shipping = {
   /** Envío gratis en Rosario a partir de este monto */
   freeShippingThresholdRosario: 50000,
+  /**
+   * Envío gratis al RESTO DEL PAÍS (ciudades próximas + interior) a partir de
+   * este monto. En Rosario sigue mandando el umbral de arriba, que es más bajo.
+   * ⚠️ Espejado en netlify/functions/lib/pricing.js (FREE_SHIPPING_THRESHOLD_NATIONAL).
+   */
+  freeShippingThresholdNational: 75000,
   /** Costo de envío dentro de Rosario bajo el mínimo (motomensajería) */
   costRosario: 4500,
   /** Costo de envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) */
@@ -107,6 +113,7 @@ export function shippingZone(city, province) {
  * - envío a Rosario (motomensajería) → $4.500 (gratis desde $50.000 de subtotal)
  * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → $6.500
  * - envío al resto del país (Correo Argentino) → $8.500
+ * - fuera de Rosario, cualquier destino viaja GRATIS desde $75.000 de subtotal
  * @param {{ method: string, subtotal?: number, city?: string, province?: string }} opts
  * @returns {number}
  */
@@ -116,8 +123,21 @@ export function calculateShipping({ method, subtotal = 0, city, province }) {
   if (zone === 'rosario') {
     return subtotal >= shipping.freeShippingThresholdRosario ? 0 : shipping.costRosario;
   }
+  // Resto del país (ciudades próximas + interior): gratis desde $75.000.
+  if (subtotal >= shipping.freeShippingThresholdNational) return 0;
   if (zone === 'nearby') return shipping.costNearby;
   return shipping.costInterior;
+}
+
+/**
+ * Monto de subtotal desde el cual el envío es gratis para ese destino:
+ * $50.000 en Rosario, $75.000 en el resto del país. Sirve para el "sumá $X y el
+ * envío te sale gratis" del checkout.
+ */
+export function freeShippingThresholdFor(city, province) {
+  return shippingZone(city, province) === 'rosario'
+    ? shipping.freeShippingThresholdRosario
+    : shipping.freeShippingThresholdNational;
 }
 
 /** Etiqueta legible del método/zona para el vendedor (mail + CRM Notion). */
@@ -151,8 +171,8 @@ export const bankTransfer = {
 
 export const announcements = [
   '🚚 Envío gratis en Rosario desde $50.000',
+  '🇦🇷 Envío gratis a todo el país desde $75.000',
   '👥 +5.000 clientes',
-  '🇦🇷 Envíos a todo el país',
   '🎉 +120.000 calcos vendidas',
   '⚡ Producción 2 a 3 días hábiles',
   '✏️ Diseños personalizados',
