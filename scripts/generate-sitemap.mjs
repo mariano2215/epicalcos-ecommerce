@@ -15,6 +15,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isSectionHidden } from '../frontend/src/config/site.js';
+import { LANDING_SLUGS } from '../frontend/src/config/landings.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '..', 'frontend', 'public');
@@ -56,6 +57,8 @@ const catalog = JSON.parse(readFileSync(CATALOG, 'utf8'));
 
 const routes = [
   ...STATIC_ROUTES.filter((r) => !isSectionHidden(r.path)),
+  // Landings por caso de uso: contenido propio, no duplican ninguna categoría.
+  ...LANDING_SLUGS.map((s) => ({ path: `/${s}`, priority: 0.7 })),
   ...catalog.map((c) => ({ path: `/categoria/${c.slug}`, priority: 0.8 }))
 ];
 

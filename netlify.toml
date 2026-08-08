@@ -59,7 +59,34 @@
   to     = "/.netlify/functions/mercadopago-webhook"
   status = 200
 
-# SPA fallback (debe ir DESPUÉS de los redirects de /api/*)
+# ── URLs "bonitas" para anuncios → 301 a la página real ──────────────────────
+# El plan CRO pedía landings /calcos-personalizadas, /calcos-para-negocios y
+# /pack-100-calcos. Esas páginas YA EXISTEN: crear gemelas sería contenido
+# duplicado y dos páginas que mantener por intención. Con un 301, el anuncio usa
+# la URL linda y el cliente cae en la página real, que además ya está indexada.
+# Las landings que SÍ son contenido nuevo (/calcos-termo, /calcos-notebook,
+# /calcos-auto) son rutas del SPA, no redirects. Ver frontend/src/config/landings.js.
+[[redirects]]
+  from   = "/calcos-personalizadas"
+  to     = "/personalizados"
+  status = 301
+
+[[redirects]]
+  from   = "/calcos-para-negocios"
+  to     = "/negocio"
+  status = 301
+
+[[redirects]]
+  from   = "/pack-100-calcos"
+  to     = "/mayorista"
+  status = 301
+
+[[redirects]]
+  from   = "/armá-tu-pack"
+  to     = "/armar-pack"
+  status = 301
+
+# SPA fallback (debe ir DESPUÉS de los redirects de /api/* y de los 301)
 [[redirects]]
   from   = "/*"
   to     = "/index.html"

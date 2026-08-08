@@ -28,6 +28,41 @@ const faqs = [
   },
   {
     tag: 'general',
+    q: '¿Cómo funciona exactamente el 10% OFF?',
+    a: 'Se activa solo cuando llegás a 10 calcos en el carrito —podés mezclar diseños, categorías y tamaños— Y elegís pagar por transferencia bancaria. Con Mercado Pago el precio es el de vidriera, sin descuento. Lo vas a ver aplicado en el resumen del checkout antes de confirmar nada.'
+  },
+  {
+    tag: 'general',
+    q: '¿Qué tamaños hay y cuál me conviene?',
+    a: 'Tres: 4, 6 y 9 cm. El de 4 cm va para celular, llavero y objetos chicos. El de 6 cm es el más elegido y el que mejor queda en termo, notebook, botella y mate. El de 9 cm es para auto, casco, vidriera y objetos grandes. En cada ficha de producto hay una comparación a escala para que los veas.'
+  },
+  {
+    tag: 'general',
+    q: '¿Puedo repetir el mismo diseño varias veces?',
+    a: 'Sí, todas las veces que quieras. En la ficha de cada calco elegís la cantidad, y en el armador de packs podés poner el número exacto de copias de cada diseño. Las repeticiones cuentan igual para el descuento desde 10 calcos.'
+  },
+  {
+    tag: 'general',
+    q: '¿Se pueden poner en el termo?',
+    a: 'Sí, es de los usos más comunes. El vinilo aguanta el agua y el sol, así que podés lavar el termo a mano sin problema. Lo único que no recomendamos es el lavavajillas. El tamaño que mejor le va es el de 6 cm.'
+  },
+  {
+    tag: 'personalizados',
+    q: '¿Cómo les envío mi diseño?',
+    a: 'En Personalizados elegís tamaño y corte y subís el archivo ahí mismo: arrastrás o tocás para elegirlo, y se sube junto con tu pedido. Aceptamos PNG, JPG, PDF, SVG y AI. Si preferís, también podés mandarlo por WhatsApp después de pagar.'
+  },
+  {
+    tag: 'personalizados',
+    q: '¿Qué pasa si mi archivo tiene mala calidad?',
+    a: 'No lo imprimimos. Miramos cada diseño antes de producir y, si la resolución no da o hay algo raro con el corte, te escribimos por WhatsApp para resolverlo antes de que se imprima nada. No hace falta que nos mandes el archivo perfecto.'
+  },
+  {
+    tag: 'personalizados',
+    q: '¿Qué formatos aceptan?',
+    a: 'PNG, JPG, PDF, SVG y AI. Si tenés el vectorial (SVG, AI o PDF), mejor: el corte sale más preciso. Si tu foto pesa mucho, no te preocupes — la optimizamos sola al subirla.'
+  },
+  {
+    tag: 'general',
     q: '¿Cuánto tarda la producción?',
     a: 'En Rosario, 2 a 3 días hábiles desde la confirmación del pago. Al resto del país, 5 a 7 días hábiles incluyendo el tiempo del correo.'
   },
@@ -71,6 +106,7 @@ const faqs = [
 const TABS = [
   { key: 'all', label: 'Todas' },
   { key: 'general', label: 'General' },
+  { key: 'personalizados', label: 'Personalizados' },
   { key: 'mayorista', label: 'Mayorista' }
 ];
 

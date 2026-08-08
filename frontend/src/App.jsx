@@ -7,6 +7,7 @@ import WelcomePopup from './components/WelcomePopup.jsx';
 import WhatsAppButton from './components/WhatsAppButton.jsx';
 import Home from './routes/Home.jsx'; // Home eager (LCP)
 import { isSectionHidden } from './config/site.js';
+import { LANDING_SLUGS } from './config/landings.js';
 
 // Resto lazy: bajan el initial bundle
 const Categorias = lazy(() => import('./routes/Categorias.jsx'));
@@ -14,6 +15,7 @@ const Category = lazy(() => import('./routes/Category.jsx'));
 const Producto = lazy(() => import('./routes/Producto.jsx'));
 const Personalizados = lazy(() => import('./routes/Personalizados.jsx'));
 const ArmaTuPack = lazy(() => import('./routes/ArmaTuPack.jsx'));
+const LandingUso = lazy(() => import('./routes/LandingUso.jsx'));
 const Mayorista = lazy(() => import('./routes/Mayorista.jsx'));
 const Negocio = lazy(() => import('./routes/Negocio.jsx'));
 const Tatuajes = lazy(() => import('./routes/Tatuajes.jsx'));
@@ -79,6 +81,13 @@ export default function App() {
               element={isSectionHidden('personalizados') ? <Navigate to="/categorias" replace /> : <Personalizados />}
             />
             <Route path="/armar-pack" element={<ArmaTuPack />} />
+            {/* Landings por caso de uso para el tráfico de anuncios. Las URLs
+                "bonitas" que apuntan a páginas que YA existen (/personalizados,
+                /negocio, /mayorista) son 301 en netlify.toml, no rutas de acá:
+                duplicar esas páginas sería contenido duplicado. */}
+            {LANDING_SLUGS.map((s) => (
+              <Route key={s} path={`/${s}`} element={<LandingUso slug={s} />} />
+            ))}
             <Route path="/mayorista" element={<Mayorista />} />
             <Route path="/negocio" element={<Negocio />} />
             <Route path="/tatuajes" element={<Tatuajes />} />

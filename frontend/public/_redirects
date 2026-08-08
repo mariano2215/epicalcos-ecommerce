@@ -7,5 +7,13 @@
 /api/capture-lead           /.netlify/functions/capture-lead           200
 /api/mercadopago-webhook    /.netlify/functions/mercadopago-webhook    200
 
+# URLs "bonitas" para anuncios → 301 a la página real (espejo de netlify.toml).
+# NO son landings nuevas: /personalizados, /negocio y /mayorista ya existen, así
+# que duplicarlas sería contenido duplicado. Las landings que sí son contenido
+# nuevo (/calcos-termo, /calcos-notebook, /calcos-auto) las resuelve el SPA.
+/calcos-personalizadas   /personalizados  301
+/calcos-para-negocios    /negocio         301
+/pack-100-calcos         /mayorista       301
+
 # SPA fallback (SIEMPRE al final)
 /*  /index.html  200
