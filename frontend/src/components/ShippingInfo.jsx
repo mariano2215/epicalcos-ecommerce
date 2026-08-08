@@ -82,7 +82,7 @@ export default function ShippingInfo({ subtotal = 0, defaultOpen = false, classN
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="btn-ghost !px-0 hover:!bg-transparent mt-3 text-sm underline decoration-white/30"
+          className="btn-ghost !px-0 hover:!bg-transparent mt-2 min-h-[44px] text-sm underline decoration-white/30"
         >
           Calculá tu envío →
         </button>

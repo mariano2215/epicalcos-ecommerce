@@ -20,8 +20,14 @@ export default function StickyMobileBar({ product, onAdd, onBuyNow }) {
             {formatPrice(product.price)}
           </div>
         </div>
-        <button onClick={onAdd} className="btn-secondary !py-2 !px-4 text-sm">+ Carrito</button>
-        <button onClick={onBuyNow} className="btn-primary !py-2 !px-4 text-sm">Comprar</button>
+        {/* min-h-[44px]: son los CTA principales de toda la compra en mobile —
+            venían en 36-38 px de alto. */}
+        <button onClick={onAdd} className="btn-secondary !py-2 !px-4 text-sm min-h-[44px]">
+          + Carrito
+        </button>
+        <button onClick={onBuyNow} className="btn-primary !py-2 !px-4 text-sm min-h-[44px]">
+          Comprar
+        </button>
       </div>
     </div>
   );

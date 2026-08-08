@@ -7,6 +7,7 @@ import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import Testimonials from '../components/Testimonials.jsx';
 import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
 import HowToBuy from '../components/HowToBuy.jsx';
+import IntentSelector from '../components/IntentSelector.jsx';
 import FAQ from '../components/FAQ.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
 import Reveal from '../components/Reveal.jsx';
@@ -16,7 +17,7 @@ import { useReducedMotion } from '../lib/motion.js';
 import { usePromoActive, useMayoristaPromoActive } from '../lib/promo.js';
 
 const FEATURED_SLUGS = ['anime', 'futbol', 'disney', 'pokemon', 'memes', 'gamer', 'superheroes', 'cute', 'autos-y-motos', 'musica'];
-const SERVICE_SLUGS = ['personalizados', 'mayorista', 'tatuajes', 'polaroid'];
+const SERVICE_SLUGS = ['mayorista', 'tatuajes', 'polaroid'];
 
 export default function Home() {
   const [catalog, setCatalog] = useState({});
@@ -87,9 +88,16 @@ export default function Home() {
         </div>
       )}
 
+      {/* Bifurcación por intención antes del catálogo: el que venía a mandar su
+          logo o a comprar para su negocio tenía que deducir solo que existía
+          una página para eso. */}
+      <IntentSelector />
+
       <FeaturedStickers />
 
-      {/* Servicios: mayorista, tatuajes, polaroid (+ personalizados cuando se republique) */}
+      {/* Servicios. `personalizados` y `negocio` ya tienen su entrada en el
+          IntentSelector de arriba, así que acá quedan solo los packs y los
+          productos especiales — nada duplicado en la misma página. */}
       <section className="py-10">
         <div className="container-app">
           <div className="mb-6">

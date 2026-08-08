@@ -62,7 +62,7 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <button onClick={openDrawer} className="btn-secondary !py-2 !px-3 relative" aria-label="Abrir carrito">
+          <button onClick={openDrawer} className="btn-secondary !py-2 !px-3 relative min-h-[44px] min-w-[44px]" aria-label="Abrir carrito">
             <span>🛒</span>
             <span className="hidden sm:inline">Carrito</span>
             {totalItems > 0 && (
@@ -73,7 +73,7 @@ export default function Header() {
             )}
           </button>
           <button
-            className="lg:hidden btn-secondary !py-2 !px-3"
+            className="lg:hidden btn-secondary !py-2 !px-3 min-h-[44px] min-w-[44px]"
             aria-label="Abrir menú"
             onClick={() => setOpen((o) => !o)}
           >

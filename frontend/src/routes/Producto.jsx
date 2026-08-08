@@ -178,15 +178,15 @@ export default function Producto() {
 
         {/* Volver + navegación entre diseños */}
         <div className="flex items-center justify-between mb-4">
-          <Link to={`/categoria/${slug}`} className="btn-ghost !px-0 hover:!bg-transparent text-sm">
+          <Link to={`/categoria/${slug}`} className="btn-ghost !px-0 hover:!bg-transparent text-sm min-h-[44px] inline-flex items-center">
             ← Volver a {category.name}
           </Link>
           <div className="flex items-center gap-2 text-sm">
             {prevNext.prev && (
-              <Link to={`/producto/${slug}/${prevNext.prev}`} className="btn-ghost">← Anterior</Link>
+              <Link to={`/producto/${slug}/${prevNext.prev}`} className="btn-ghost min-h-[44px] inline-flex items-center">← Anterior</Link>
             )}
             {prevNext.next && (
-              <Link to={`/producto/${slug}/${prevNext.next}`} className="btn-ghost">Siguiente →</Link>
+              <Link to={`/producto/${slug}/${prevNext.next}`} className="btn-ghost min-h-[44px] inline-flex items-center">Siguiente →</Link>
             )}
           </div>
         </div>

@@ -17,10 +17,10 @@ export default function Footer() {
 
         <div>
           <h4 className="font-semibold mb-3">Tienda</h4>
-          <ul className="space-y-2 text-white/60 text-sm">
+          <ul className="text-white/60 text-sm">
             {footerLinks.tienda.map((l) => (
               <li key={l.to}>
-                <Link to={l.to} className="hover:text-white">{l.label}</Link>
+                <Link to={l.to} className="hover:text-white inline-flex items-center min-h-[44px]">{l.label}</Link>
               </li>
             ))}
           </ul>
@@ -28,10 +28,10 @@ export default function Footer() {
 
         <div>
           <h4 className="font-semibold mb-3">Ayuda</h4>
-          <ul className="space-y-2 text-white/60 text-sm">
+          <ul className="text-white/60 text-sm">
             {footerLinks.ayuda.map((l) => (
               <li key={l.to}>
-                <Link to={l.to} className="hover:text-white">{l.label}</Link>
+                <Link to={l.to} className="hover:text-white inline-flex items-center min-h-[44px]">{l.label}</Link>
               </li>
             ))}
           </ul>
@@ -39,19 +39,19 @@ export default function Footer() {
 
         <div>
           <h4 className="font-semibold mb-3">Hablemos</h4>
-          <ul className="space-y-2 text-white/60 text-sm">
+          <ul className="text-white/60 text-sm">
             <li>
-              <a href={`mailto:${contact.email}`} className="hover:text-white">
+              <a href={`mailto:${contact.email}`} className="hover:text-white inline-flex items-center min-h-[44px]">
                 ✉️ {contact.email}
               </a>
             </li>
             <li>
-              <a href={contact.whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+              <a href={contact.whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white inline-flex items-center min-h-[44px]">
                 💬 WhatsApp {contact.whatsappDisplay}
               </a>
             </li>
             <li>
-              <a href={contact.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white flex items-center gap-2">
+              <a href={contact.instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white inline-flex items-center gap-2 min-h-[44px]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
                 {contact.instagram}
               </a>

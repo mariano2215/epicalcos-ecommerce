@@ -27,7 +27,7 @@ export default function SizeGuide({ selectedSize, onSelect }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="text-sm text-white/60 hover:text-white underline decoration-white/30 underline-offset-2"
+        className="inline-flex items-center min-h-[44px] -my-2 text-sm text-white/60 hover:text-white underline decoration-white/30 underline-offset-2"
       >
         📏 ¿Qué tamaño me conviene?
       </button>
@@ -44,7 +44,10 @@ export default function SizeGuide({ selectedSize, onSelect }) {
                   key={s.id}
                   type="button"
                   onClick={() => onSelect?.(s.id)}
-                  className="flex flex-col items-center gap-2 group"
+                  // min-w-[44px]: el cuadrado de 4 cm mide 32 px de lado, que como
+                  // target táctil queda chico. El área de toque crece; el cuadrado
+                  // sigue siendo proporcional, que es lo que hay que comparar.
+                  className="flex flex-col items-center gap-2 group min-w-[44px] px-1"
                   aria-label={`Elegir ${s.label}`}
                   aria-pressed={active}
                 >
