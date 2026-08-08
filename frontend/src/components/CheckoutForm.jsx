@@ -167,7 +167,11 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
             📦 Calculamos el envío automáticamente según tu ciudad y provincia — lo ves en el resumen del pedido.
           </p>
           <p className="text-xs text-white/50">
-            ⏱️ Plazos: <strong className="text-white/70">{zone === 'interior' ? shippingCfg.productionDaysInterior : shippingCfg.productionDaysRosario}</strong>
+            ⚡ Producción: <strong className="text-white/70">{shippingCfg.production}</strong> · 🚚 entrega estimada:{' '}
+            <strong className="text-white/70">
+              {zone === 'interior' ? shippingCfg.deliveryInterior : shippingCfg.deliveryRosario}
+            </strong>
+            {zone === 'interior' && ' (incluye el correo)'}
           </p>
         </>
       )}

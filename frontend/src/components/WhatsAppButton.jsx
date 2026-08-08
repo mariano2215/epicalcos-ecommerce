@@ -8,16 +8,23 @@ import { contact } from '../config/site.js';
  * z-40: por encima del contenido, pero por debajo del CartDrawer (z-50) y el
  * WelcomePopup (z-60) — esos overlays lo tapan solos cuando están abiertos.
  *
- * En /personalizados hay una barra inferior fija en mobile/tablet
- * (ResumenPedido, lg:hidden); ahí el botón se eleva para no tapar el CTA.
+ * Hay pantallas con una barra inferior fija que este botón taparía, y cada una
+ * desaparece en un breakpoint distinto: /personalizados (ResumenPedido,
+ * lg:hidden) y la ficha de producto (StickyMobileBar, sm:hidden). El botón se
+ * eleva exactamente mientras esa barra existe y vuelve a su lugar después.
  */
+const ELEVADO = 'bottom-[calc(6rem+env(safe-area-inset-bottom))]';
+const NORMAL = 'bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:bottom-6';
+
 export default function WhatsAppButton() {
   const { pathname } = useLocation();
 
   const bottom =
     pathname === '/personalizados'
-      ? 'bottom-[calc(6rem+env(safe-area-inset-bottom))] lg:bottom-6'
-      : 'bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:bottom-6';
+      ? `${ELEVADO} lg:bottom-6`
+      : /^\/producto\//.test(pathname)
+      ? `${ELEVADO} sm:bottom-6`
+      : NORMAL;
 
   return (
     <a

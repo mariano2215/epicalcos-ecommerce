@@ -20,7 +20,8 @@ export default function Contact() {
             Para consultas, diseños personalizados o pedidos especiales, escribinos por cualquiera de estos canales.
           </p>
           <p className="text-white/40 text-sm mt-2">
-            Respondemos de lunes a sábado. Producción: {shipping.productionDaysRosario} en Rosario, {shipping.productionDaysInterior} al resto del país.
+            Respondemos de lunes a sábado. Producción: {shipping.production}. Entrega: {shipping.deliveryRosario} en
+            Rosario, {shipping.deliveryInterior} al resto del país.
           </p>
         </div>
 

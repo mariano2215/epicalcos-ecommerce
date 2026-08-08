@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
+import DiscountNote from '../components/DiscountNote.jsx';
+import ShippingInfo from '../components/ShippingInfo.jsx';
+import SizeGuide from '../components/SizeGuide.jsx';
+import StickyMobileBar from '../components/StickyMobileBar.jsx';
+import TrustBadges from '../components/TrustBadges.jsx';
 import { getCategory } from '../data/categories.js';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import {
-  SIZES,
-  DEFAULT_SIZE,
-  priceForSize,
-  sizeLabel,
-  BULK_THRESHOLD
-} from '../config/pricing.js';
+import { SIZES, DEFAULT_SIZE, priceForSize, sizeLabel } from '../config/pricing.js';
 import { shipping } from '../config/site.js';
-import { useSeo, productJsonLd, breadcrumbJsonLd } from '../lib/seo.js';
+import { useSeo, productJsonLd } from '../lib/seo.js';
 import { trackViewItem } from '../lib/analytics.js';
 
 /**
@@ -268,6 +267,7 @@ export default function Producto() {
                     );
                   })}
                 </div>
+                <SizeGuide selectedSize={size} onSelect={setSize} />
               </div>
 
               {/* Cantidad */}
@@ -305,39 +305,22 @@ export default function Producto() {
                 </button>
               </div>
 
-              {/* Nudge de descuento por volumen */}
-              <div className="mt-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-2.5 text-sm text-emerald-400 flex items-center gap-2">
-                🏷️ <span>Desde <strong>{BULK_THRESHOLD} calcos</strong> en el carrito, <strong>10% off pagando por transferencia bancaria</strong> — mezclá categorías y tamaños como quieras.</span>
-              </div>
+              {/* Nudge de descuento por volumen (condición única, ver DiscountNote) */}
+              <DiscountNote className="mt-4" />
 
-              {/* Condiciones de compra (estilo Mercado Libre) */}
-              <ul className="mt-5 space-y-3 text-sm border-t border-white/10 pt-5">
-                <li className="flex gap-3">
-                  <span aria-hidden>🚚</span>
-                  <span className="text-white/70">
-                    <strong className="text-emerald-400">Envío gratis en Rosario</strong> desde {formatPrice(shipping.freeShippingThresholdRosario)} y{' '}
-                    <strong className="text-emerald-400">a todo el país</strong> desde {formatPrice(shipping.freeShippingThresholdNational)}.
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span aria-hidden>⚡</span>
-                  <span className="text-white/70">
-                    Producción en <strong className="text-white">{shipping.productionDaysRosario}</strong> (Rosario).
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span aria-hidden>🔄</span>
-                  <span className="text-white/70">
-                    <Link to="/politicas/cambios" className="underline decoration-white/30 hover:decoration-white">Cambios y devoluciones</Link> según nuestras políticas.
-                  </span>
-                </li>
-                <li className="flex gap-3">
-                  <span aria-hidden>🛡️</span>
-                  <span className="text-white/70">
-                    Vinilo premium resistente al <strong className="text-white">agua y al sol</strong>.
-                  </span>
-                </li>
-              </ul>
+              {/* Señales de producto, arriba del pliegue */}
+              <TrustBadges className="mt-4 !justify-start" compact />
+
+              {/* Envío y plazos ANTES del checkout, con calculadora */}
+              <ShippingInfo className="mt-4" />
+
+              <p className="mt-3 text-xs text-white/50">
+                🔄{' '}
+                <Link to="/politicas/cambios" className="underline decoration-white/30 hover:decoration-white">
+                  Cambios y devoluciones
+                </Link>{' '}
+                según nuestras políticas.
+              </p>
             </div>
           </div>
         </div>
@@ -355,7 +338,7 @@ export default function Producto() {
               { label: 'Material', value: 'Vinilo premium' },
               { label: 'Resistencia', value: 'Agua y sol' },
               { label: 'Tamaños', value: '4 · 6 · 9 cm' },
-              { label: 'Producción', value: '2-3 días hábiles' }
+              { label: 'Producción', value: shipping.production }
             ].map(({ label, value }) => (
               <div key={label} className="rounded-xl bg-white/[0.04] border border-white/10 px-3 py-2">
                 <dt className="text-[10px] uppercase tracking-widest text-white/40 mb-0.5">{label}</dt>
@@ -389,6 +372,17 @@ export default function Producto() {
           </section>
         )}
       </div>
+
+      {/* CTA sticky en mobile: el panel de compra queda arriba de todo y, apenas
+          scrollea a la descripción o a los diseños relacionados, se pierde el
+          botón. El componente ya existía sin usarse en ninguna pantalla. */}
+      <StickyMobileBar
+        product={{ categoryLabel: sticker.categoryLabel, price: unit * qty }}
+        onAdd={addToCart}
+        onBuyNow={buyNow}
+      />
+      {/* Colchón para que la barra fija no tape el final de la página. */}
+      <div className="h-24 sm:hidden" aria-hidden="true" />
     </div>
   );
 }

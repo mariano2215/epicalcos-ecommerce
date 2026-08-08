@@ -6,7 +6,7 @@ const PASOS = [
   { icon: '🖨️', txt: 'Lo hacemos con el tamaño, el corte y el archivo que elegiste.' },
   {
     icon: '🚚',
-    txt: `Entrega: ${shipping.productionDaysRosario} en Rosario, ${shipping.productionDaysInterior} al resto del país.`
+    txt: `Entrega: ${shipping.deliveryRosario} en Rosario, ${shipping.deliveryInterior} al resto del país.`
   }
 ];
 

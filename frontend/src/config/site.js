@@ -43,9 +43,20 @@ export const shipping = {
   pickupLabel: 'Coordinamos retiro por WhatsApp',
   /** Zona donde se retira (se avisa en el checkout para evitar pedidos de envío después) */
   pickupZone: 'Ov. Lagos y Bv. Seguí, Rosario',
-  /** Plazos de producción/entrega */
-  productionDaysRosario: '2 a 3 días hábiles',
-  productionDaysInterior: '5 a 7 días hábiles'
+
+  /**
+   * PRODUCCIÓN e ENTREGA son dos cosas distintas y hay que decirlas por separado.
+   * Antes las dos vivían como `productionDaysRosario` / `productionDaysInterior`,
+   * y el interior mostraba "producción: 5 a 7 días hábiles" cuando en realidad
+   * esos 5-7 días son producción MÁS el correo (así lo dice la FAQ y el mail de
+   * confirmación). El cliente leía un plazo de taller inflado.
+   *
+   * `production` = impresión y corte, igual para todo destino, desde que se
+   * confirma el pago. `delivery*` = plazo total estimado hasta que lo recibe.
+   */
+  production: '2 a 3 días hábiles',
+  deliveryRosario: '2 a 3 días hábiles',
+  deliveryInterior: '5 a 7 días hábiles'
 };
 
 /** Provincias y jurisdicciones de Argentina (orden alfabético) para el select del checkout. */

@@ -8,6 +8,7 @@ import { useSeo } from '../lib/seo.js';
 import { searchCatalog } from '../lib/searchCatalog.js';
 import { trackSearchNoResults } from '../lib/analytics.js';
 import { contact } from '../config/site.js';
+import { BULK_DISCOUNT_SHORT } from '../components/DiscountNote.jsx';
 
 export default function Categorias() {
   const [params, setParams] = useSearchParams();
@@ -83,7 +84,7 @@ export default function Categorias() {
               <span className="gradient-text">Categorías</span>
             </h1>
             <p className="text-white/60 mt-3 max-w-xl">
-              Elegí una categoría y armá tu pedido calco por calco. Desde 10 calcos, 10% off automático.
+              Elegí una categoría y armá tu pedido calco por calco. {BULK_DISCOUNT_SHORT}.
             </p>
           </div>
         </header>
@@ -142,7 +143,7 @@ export default function Categorias() {
               No tenemos “{q}” en el catálogo… todavía.
             </p>
             <p className="text-white/60 mt-2">
-              Mandanos tu diseño y te lo hacemos. Desde 10 calcos, 10% off.
+              Mandanos tu diseño y te lo hacemos. {BULK_DISCOUNT_SHORT}.
             </p>
 
             <div className="mt-5 flex flex-wrap justify-center gap-3">

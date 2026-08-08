@@ -9,6 +9,8 @@ import { useMayoristaPromoActive } from '../lib/promo.js';
 import { endLabel } from './PromoBanner.jsx';
 import StickerField from './StickerField.jsx';
 import RotatingHeadline from './RotatingHeadline.jsx';
+import TrustBadges from './TrustBadges.jsx';
+import { BULK_DISCOUNT_SHORT } from './DiscountNote.jsx';
 
 /** "viernes 14/8" — el cierre de la promo, para la card del hero. */
 const PROMO_END_LABEL = endLabel(PROMO_MAYORISTA_END_MS, 'el viernes 14/8');
@@ -109,8 +111,13 @@ export default function Hero() {
         </h1>
 
         <p className="mt-3 max-w-2xl mx-auto text-white/70 text-sm md:text-base hidden sm:block">
-          Miles de diseños en 99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. Desde 10 calcos, 10% off.
+          Miles de diseños en 99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. {BULK_DISCOUNT_SHORT}.
         </p>
+
+        {/* Confianza: visible TAMBIÉN en mobile (el badge de arriba y el párrafo
+            están ocultos por `hidden sm:*`, así que sin esto el hero del celular
+            no traía ninguna señal). */}
+        <TrustBadges className="mt-5" />
 
         {/* Search card + autocomplete */}
         <div className="relative max-w-md mx-auto mt-7 md:mt-8">
