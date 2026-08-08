@@ -29,6 +29,9 @@ const BASE = 'https://epicalcos.com';
 const STATIC_ROUTES = [
   { path: '/', priority: 1.0 },
   { path: '/categorias', priority: 0.9 },
+  // Solo la portada del armador: /armar-pack?n=10 es la misma página con un
+  // parámetro, y `useSeo` ya canonicaliza sin query.
+  { path: '/armar-pack', priority: 0.8 },
   { path: '/personalizados', priority: 0.8 },
   { path: '/negocio', priority: 0.8 },
   { path: '/mayorista', priority: 0.8 },

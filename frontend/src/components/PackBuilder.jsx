@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import { SIZES, DEFAULT_SIZE, priceForSize, round } from '../config/pricing.js';
+import { SIZES, DEFAULT_SIZE, priceForSize, round, BULK_THRESHOLD, BULK_DISCOUNT } from '../config/pricing.js';
 import { categoryName } from '../data/categories.js';
+import { trackPackBuilderStart, trackPackCompleted } from '../lib/analytics.js';
 import CategoryMenu from './CategoryMenu.jsx';
 import SubidaArchivo from './personalizados/SubidaArchivo.jsx';
 
@@ -21,12 +22,28 @@ const CUSTOM_IMG =
  * elegido entre en la promo, el pack pasa a ser de cantidad EXACTA (`qty`) y
  * precio fijo; en cualquier otro tamaño el armador vuelve solo al pack normal.
  *
- * @param {{ packType:'mayorista'|'personalizados', target?:number, min?:number,
+ * `emit` decide QUÉ va al carrito:
+ *   'pack'     (default) → UNA línea `pack:…` con su propio precio ya
+ *                          descontado. Es lo que necesitan Mayorista y
+ *                          Personalizados, que tienen regla propia en el
+ *                          servidor (netlify/functions/lib/pricing.js).
+ *   'stickers'            → una línea `sticker:…` POR DISEÑO, al precio normal
+ *                          del catálogo. Sirve para los packs x10/x20/x50, que
+ *                          NO son una regla de precio nueva sino una forma
+ *                          guiada de elegir: el 10 % por transferencia desde 10
+ *                          calcos les aplica solo, sin inventar descuentos ni
+ *                          tocar el espejo de precios del servidor.
+ *
+ * @param {{ packType:'mayorista'|'personalizados'|'catalogo', target?:number, min?:number,
  *           discount:number, title:string, subtitle:string, allowCustom?:boolean,
+ *           emit?:'pack'|'stickers', packSizeLabel?:string,
  *           promo?:{ active:boolean, qty:number, price:number, sizes:string[] } }} props
  */
-export default function PackBuilder({ packType, target, min, discount, title, subtitle, allowCustom, defaultSize, promo }) {
-  const { addPack } = useCart();
+export default function PackBuilder({
+  packType, target, min, discount, title, subtitle, allowCustom, defaultSize, promo,
+  emit = 'pack', packSizeLabel
+}) {
+  const { addPack, addSticker } = useCart();
   const navigate = useNavigate();
 
   const [size, setSize] = useState(defaultSize || DEFAULT_SIZE);
@@ -45,6 +62,19 @@ export default function PackBuilder({ packType, target, min, discount, title, su
   const effTarget = promoOn ? promo.qty : target;
 
   const cap = effTarget || Infinity; // con promo: tope 100
+
+  /**
+   * Arranque del armador — primer escalón del funnel de packs. El ref lo hace
+   * idempotente: el doble efecto de StrictMode lo mandaría dos veces y el
+   * denominador de `pack_completed / pack_builder_start` quedaría a la mitad.
+   */
+  const inicioEnviado = useRef(false);
+  useEffect(() => {
+    if (inicioEnviado.current) return;
+    inicioEnviado.current = true;
+    trackPackBuilderStart(packSizeLabel || (target ? `x${target}` : packType));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cargar lista de categorías
   useEffect(() => {
@@ -76,8 +106,30 @@ export default function PackBuilder({ packType, target, min, discount, title, su
   // Sobrante: solo pasa si venía de un tamaño sin tope (9 cm) y cambia a uno con promo.
   const excess = effTarget ? Math.max(0, totalSelected - effTarget) : 0;
   const listUnit = priceForSize(size);
-  const unit = promoOn ? promo.price / promo.qty : round(listUnit * (1 - discount));
+
+  /**
+   * Pack de catálogo (`emit="stickers"`): al carrito van calcos SUELTAS al
+   * precio de lista, y el 10 % recién se aplica en el checkout si el cliente
+   * elige transferencia. Así que acá se muestra el precio de lista como total
+   * —que es lo que va a ver en el carrito— y el de transferencia al lado, con
+   * su condición. Mostrar solo el precio con descuento haría que el armador
+   * prometa $14.400 y el carrito diga $16.000.
+   *
+   * Mayorista y personalizados no tienen este problema: su descuento va dentro
+   * del `basePrice` de la línea y no depende del medio de pago.
+   */
+  const esCatalogo = emit === 'stickers';
+  const unit = promoOn
+    ? promo.price / promo.qty
+    : esCatalogo
+    ? listUnit
+    : round(listUnit * (1 - discount));
   const totalPrice = promoOn ? promo.price : unit * totalSelected;
+
+  // Precio con el 10 % por transferencia, solo si ya llegó al umbral.
+  const aplicaTransferencia = esCatalogo && totalSelected >= BULK_THRESHOLD;
+  const unitTransferencia = round(listUnit * (1 - BULK_DISCOUNT));
+  const totalTransferencia = unitTransferencia * totalSelected;
   /** % off real de la promo contra el precio de lista de ESTE tamaño (67% en 4cm, 75% en 6cm). */
   const promoOff = promoOn ? Math.round((1 - promo.price / (listUnit * promo.qty)) * 100) : 0;
   const offLabel = promoOn ? promoOff : Math.round(discount * 100);
@@ -121,7 +173,33 @@ export default function PackBuilder({ packType, target, min, discount, title, su
 
   const confirm = () => {
     if (!valid) return;
-    const items = Object.values(selection).map((s) => ({ id: s.id, name: s.name, qty: s.qty }));
+    const seleccionados = Object.values(selection);
+
+    trackPackCompleted({
+      packSize: packSizeLabel || (effTarget ? `x${effTarget}` : packType),
+      units: totalSelected,
+      designs: seleccionados.length,
+      value: totalPrice
+    });
+
+    // Pack de catálogo: van calcos SUELTAS al carrito, al precio de lista. El
+    // descuento por volumen (10 % desde 10, por transferencia) lo aplica solo
+    // el CartContext, y el servidor las valida con la regla `sticker:` de
+    // siempre — sin tipo de línea nuevo que espejar.
+    if (emit === 'stickers') {
+      for (const s of seleccionados) {
+        addSticker(
+          { id: s.id, sku: s.sku, name: s.name, image: s.image, category: s.category, categoryLabel: categoryName(s.category) },
+          size,
+          s.qty,
+          { openDrawer: false, silent: true }
+        );
+      }
+      navigate('/carrito');
+      return;
+    }
+
+    const items = seleccionados.map((s) => ({ id: s.id, name: s.name, qty: s.qty }));
     const sizeObj = SIZES.find((s) => s.id === size);
     const cover = Object.values(selection)[0]?.image || CUSTOM_IMG;
     // Con la promo, la línea es UN pack de precio fijo (quantity 1, `qty` calcos
@@ -157,7 +235,12 @@ export default function PackBuilder({ packType, target, min, discount, title, su
       {/* Panel de armado */}
       <div className="lg:col-span-2 min-w-0 space-y-6">
         <header>
-          <span className="badge badge-hot mb-3">{offLabel}% OFF</span>
+          {/* El pack de catálogo no tiene un % propio: su descuento es el 10 %
+              por transferencia, con condición. Prometerlo suelto en un badge
+              sería la misma trampa que el viejo "10% off automático". */}
+          <span className="badge badge-hot mb-3">
+            {esCatalogo ? `${totalSelected || effTarget || min} calcos` : `${offLabel}% OFF`}
+          </span>
           <h1 className="font-display font-extrabold text-3xl md:text-4xl">{title}</h1>
           <p className="text-white/60 mt-2 max-w-xl">{subtitle}</p>
         </header>
@@ -169,7 +252,9 @@ export default function PackBuilder({ packType, target, min, discount, title, su
             {SIZES.map((s) => {
               const active = s.id === size;
               const enPromo = !!promo?.active && promo.sizes.includes(s.id);
-              const u = round(s.price * (1 - discount));
+              // En un pack de catálogo el precio del selector es el de LISTA:
+              // el 10 % depende del medio de pago y se aclara abajo, en el total.
+              const u = esCatalogo ? s.price : round(s.price * (1 - discount));
               return (
                 <button
                   key={s.id}
@@ -237,7 +322,7 @@ export default function PackBuilder({ packType, target, min, discount, title, su
               return (
                 <button
                   key={id}
-                  onClick={() => addOne({ id, image: it.file, name, category: activeCat })}
+                  onClick={() => addOne({ id, sku: it.sku, image: it.file, name, category: activeCat })}
                   disabled={totalSelected >= cap && !qty}
                   className={`relative rounded-xl border bg-white/[0.03] p-2 aspect-square grid place-items-center transition-colors ${
                     qty ? 'border-brand-fuchsia' : 'border-white/10 hover:border-white/25'
@@ -390,11 +475,29 @@ export default function PackBuilder({ packType, target, min, discount, title, su
               <span>{formatPrice(totalPrice)}</span>
             </span>
           </div>
-          <p className="text-xs text-emerald-400 mt-1">
-            {promoOn
-              ? `Precio fijo de la promo · ${promoOff}% de descuento`
-              : `${Math.round(discount * 100)}% de descuento aplicado`}
-          </p>
+          {esCatalogo ? (
+            aplicaTransferencia ? (
+              <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-2">
+                <div className="flex justify-between text-sm text-emerald-400 font-semibold">
+                  <span>Pagando por transferencia</span>
+                  <span>{formatPrice(totalTransferencia)}</span>
+                </div>
+                <p className="text-[11px] text-emerald-400/80 mt-0.5">
+                  {formatPrice(unitTransferencia)} por calco · 10% off. Elegís el medio de pago en el checkout.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-white/50 mt-1">
+                Desde {BULK_THRESHOLD} calcos, 10% off pagando por transferencia bancaria.
+              </p>
+            )
+          ) : (
+            <p className="text-xs text-emerald-400 mt-1">
+              {promoOn
+                ? `Precio fijo de la promo · ${promoOff}% de descuento`
+                : `${Math.round(discount * 100)}% de descuento aplicado`}
+            </p>
+          )}
         </div>
 
         <button onClick={confirm} disabled={!valid} className="btn-primary w-full">

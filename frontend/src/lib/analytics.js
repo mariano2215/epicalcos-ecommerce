@@ -158,6 +158,33 @@ export function trackAddPaymentInfo(items, paymentMethod, coupon) {
   debug('add_payment_info', paymentMethod);
 }
 
+// ─── Armador de packs ─────────────────────────────────────────────────────────
+
+/** Entró al armador con un tamaño de pack elegido. */
+export function trackPackBuilderStart(packSize) {
+  pushDataLayer({ event: 'pack_builder_start', pack_size: packSize });
+  pixelCustom('PackBuilderStart', { pack_size: packSize });
+  debug('pack_builder_start', packSize);
+}
+
+/**
+ * Pack completo y mandado al carrito. `units` son las calcos y `designs` los
+ * diseños distintos: juntos dicen si el armador se usa para variedad o para
+ * repetir el mismo diseño.
+ */
+export function trackPackCompleted({ packSize, units, designs, value }) {
+  pushDataLayer({
+    event: 'pack_completed',
+    pack_size: packSize,
+    pack_units: units,
+    pack_designs: designs,
+    value,
+    currency: 'ARS'
+  });
+  pixelCustom('PackCompleted', { pack_size: packSize, units, value });
+  debug('pack_completed', packSize, units, 'calcos /', designs, 'diseños');
+}
+
 /** Click al botón de WhatsApp, con el contexto de dónde salió. */
 export function trackWhatsappClick(context = 'floating') {
   pushDataLayer({ event: 'whatsapp_click', whatsapp_context: context });

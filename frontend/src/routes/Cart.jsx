@@ -4,6 +4,11 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { trackViewCart } from '../lib/analytics.js';
 import { useSeo } from '../lib/seo.js';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
+import FreeShippingProgress from '../components/FreeShippingProgress.jsx';
+import ShippingInfo from '../components/ShippingInfo.jsx';
+import SocialProof from '../components/SocialProof.jsx';
+import SuggestedStickers from '../components/SuggestedStickers.jsx';
+import { BULK_THRESHOLD } from '../config/pricing.js';
 
 // `custom` = una línea por diseño personalizado: la cantidad son las copias de
 // ESE diseño, así que se edita como cualquier calco del catálogo.
@@ -112,7 +117,13 @@ export default function Cart() {
               </div>
             ))}
 
-            <button onClick={clear} className="btn-ghost">Vaciar carrito</button>
+            <div className="flex items-center justify-between gap-3">
+              <button onClick={clear} className="btn-ghost">Vaciar carrito</button>
+              <Link to="/categorias" className="btn-ghost text-sm">← Seguir comprando</Link>
+            </div>
+
+            {/* Prueba social al lado de la decisión de seguir o pagar. */}
+            <SocialProof index={0} />
           </div>
 
           <aside className="card-glass p-6 h-fit lg:sticky lg:top-24">
@@ -120,15 +131,16 @@ export default function Cart() {
             <div className="flex justify-between text-white/70 mb-2">
               <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
             </div>
-            {promoActive && promoSavings > 0 ? (
+            {/* La promo 3x2 SÍ se descuenta del total: no depende del medio de
+                pago. El 10 % por transferencia, en cambio, es condicional —
+                mostrarlo como una resta arriba de un total que no lo restaba
+                daba un resumen que no cerraba. Ahora el Total es lo que se paga
+                con Mercado Pago y la alternativa va abajo, con su condición. */}
+            {promoActive && promoSavings > 0 && (
               <div className="flex justify-between text-emerald-400 text-sm mb-2">
                 <span>🎉 Promo 3x2</span><span>-{formatPrice(promoSavings)}</span>
               </div>
-            ) : bulkSavings > 0 ? (
-              <div className="flex justify-between text-emerald-400 text-sm mb-2">
-                <span>10% off por transferencia</span><span>-{formatPrice(bulkSavings)}</span>
-              </div>
-            ) : null}
+            )}
             <div className="flex justify-between text-white/70 mb-2">
               <span>Envío</span><span className="text-white/50">Se calcula en el checkout</span>
             </div>
@@ -136,19 +148,60 @@ export default function Cart() {
             <div className="flex justify-between font-display font-extrabold text-lg">
               <span>Total</span><span>{formatPrice(promoActive ? subtotal - promoSavings : subtotal)}</span>
             </div>
+            {bulkSavings > 0 && (
+              <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2">
+                <div className="flex justify-between text-sm text-emerald-400 font-semibold">
+                  <span>Con transferencia</span>
+                  <span>{formatPrice((promoActive ? subtotal - promoSavings : subtotal) - bulkSavings)}</span>
+                </div>
+                <p className="text-[11px] text-emerald-400/80 mt-0.5">
+                  Ahorrás {formatPrice(bulkSavings)} (10% off). Elegís el medio de pago en el checkout.
+                </p>
+              </div>
+            )}
             {promoActive && (
               <p className="text-xs text-white/50 mt-2">
                 El 10% por transferencia y tu cupón (si tenés uno) se suman en el checkout (tope 10%).
               </p>
             )}
-            <button onClick={() => navigate('/checkout')} className="btn-primary w-full mt-5">
+
+            {/* Cuánto falta para el envío gratis: hasta ahora esto solo existía
+                en el checkout, con los datos ya cargados y el pedido cerrado. */}
+            <FreeShippingProgress subtotal={subtotal} className="mt-4" />
+
+            <button onClick={() => navigate('/checkout')} className="btn-primary w-full mt-4">
               Ir al checkout →
             </button>
-            <p className="text-xs text-white/50 mt-3 text-center">
-              🔒 Pagás con Mercado Pago o transferencia bancaria — lo elegís en el checkout.
-            </p>
+
+            {/* Los medios de pago y el 10% por transferencia, ANTES de entrar al
+                checkout: el beneficio estaba escondido detrás de una tarjeta que
+                se ve recién al final del formulario. */}
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <div className="text-xs uppercase tracking-widest text-white/40 mb-2">Podés pagar con</div>
+              <ul className="space-y-1.5 text-sm text-white/70">
+                <li className="flex items-start gap-2">
+                  <span aria-hidden>💳</span>
+                  <span>Mercado Pago — tarjetas, dinero en cuenta, Rapipago o Pago Fácil.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span aria-hidden>🏦</span>
+                  <span>
+                    Transferencia bancaria —{' '}
+                    <strong className="text-emerald-400">10% off desde {BULK_THRESHOLD} calcos</strong>.
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Cuándo llega, sin tener que llegar al checkout para enterarse. */}
+            <ShippingInfo subtotal={subtotal} className="mt-4 !bg-transparent !border-white/10" />
           </aside>
         </div>
+
+        {/* Cross-sell: el mismo componente que ya estaba en /checkout. Sumar
+            acá no cuesta envío extra, y es el momento en que todavía está
+            eligiendo. */}
+        <SuggestedStickers />
       </div>
     </div>
   );

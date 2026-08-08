@@ -212,6 +212,10 @@ const visibles = (links) => links.filter((l) => !isSectionHidden(l.to));
 export const navLinks = visibles([
   { to: '/', label: 'Inicio' },
   { to: '/categorias', label: 'Categorías' },
+  // "Packs" y no "Armá tu pack": con 8 links, la etiqueta larga parte el nav en
+  // dos líneas a 1024 px (el breakpoint donde deja de mostrarse la hamburguesa).
+  // La página sí se titula "Armá tu pack".
+  { to: '/armar-pack', label: 'Packs' },
   { to: '/personalizados', label: 'Personalizados' },
   { to: '/mayorista', label: 'Mayorista' },
   { to: '/negocio', label: 'Negocio' },
@@ -223,6 +227,7 @@ export const navLinks = visibles([
 export const footerLinks = {
   tienda: visibles([
     { to: '/categorias', label: 'Todas las categorías' },
+    { to: '/armar-pack', label: 'Armá tu pack' },
     { to: '/personalizados', label: 'Personalizados' },
     { to: '/mayorista', label: 'Pack Mayorista x100' },
     { to: '/negocio', label: 'Negocio' },

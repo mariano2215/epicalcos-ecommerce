@@ -13,6 +13,7 @@ const Categorias = lazy(() => import('./routes/Categorias.jsx'));
 const Category = lazy(() => import('./routes/Category.jsx'));
 const Producto = lazy(() => import('./routes/Producto.jsx'));
 const Personalizados = lazy(() => import('./routes/Personalizados.jsx'));
+const ArmaTuPack = lazy(() => import('./routes/ArmaTuPack.jsx'));
 const Mayorista = lazy(() => import('./routes/Mayorista.jsx'));
 const Negocio = lazy(() => import('./routes/Negocio.jsx'));
 const Tatuajes = lazy(() => import('./routes/Tatuajes.jsx'));
@@ -77,6 +78,7 @@ export default function App() {
               path="/personalizados"
               element={isSectionHidden('personalizados') ? <Navigate to="/categorias" replace /> : <Personalizados />}
             />
+            <Route path="/armar-pack" element={<ArmaTuPack />} />
             <Route path="/mayorista" element={<Mayorista />} />
             <Route path="/negocio" element={<Negocio />} />
             <Route path="/tatuajes" element={<Tatuajes />} />

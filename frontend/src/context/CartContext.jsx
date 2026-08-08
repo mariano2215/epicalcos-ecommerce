@@ -123,6 +123,9 @@ export function CartProvider({ children }) {
   /**
    * Agregar un calco del catálogo con tamaño elegido.
    * `opts.openDrawer === false` agrega sin abrir el carrito (ver reducer ADD).
+   * `opts.silent` omite el toast: el armador de packs agrega una línea POR
+   * DISEÑO, y con 20 diseños serían 20 toasts encima del mismo click (mismo
+   * motivo por el que ya lo tiene `addCustom`).
    */
   const addSticker = useCallback((sticker, size, quantity = 1, opts = {}) => {
     const line = {
@@ -138,7 +141,7 @@ export function CartProvider({ children }) {
       quantity
     };
     dispatch({ type: 'ADD', line, openDrawer: opts.openDrawer });
-    notify(`${line.name} agregado`);
+    if (!opts.silent) notify(`${line.name} agregado`);
     trackAddToCart({ ...line, price: line.basePrice }, quantity);
   }, [notify]);
 

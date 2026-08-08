@@ -1,31 +1,11 @@
 import Reveal from './Reveal.jsx';
+import { TESTIMONIALS as testimonials } from '../data/testimonials.js';
 
 /**
- * Bloque de prueba social — 3 testimonios reales.
- * Reemplazá name, text e image con los datos reales cuando los tengas.
- * image: URL de foto del calco aplicado (subila a /public/testimonials/ o usá un link directo).
+ * Bloque grande de prueba social del Home — 3 testimonios reales.
+ * Los datos viven en data/testimonials.js para poder reusarlos en la versión
+ * compacta (components/SocialProof.jsx), que va cerca de los CTA.
  */
-const testimonials = [
-  {
-    name: 'Martin C.',
-    text: 'Me encantó la calidad, esta calco de Gokú es genial',
-    image: '/testimonials/anime-1.png',
-    label: 'Calcos anime'
-  },
-  {
-    name: 'Sofía M.',
-    text: 'Tenia que hacer un sticker para la puerta de mi local de mascotas y me quedó re lindo',
-    image: '/testimonials/logo-1.png',
-    label: 'Logo personalizado'
-  },
-  {
-    name: 'Giuliana S.',
-    text: 'Lo lindo que es tomar mates con un termo así de decorado',
-    image: '/testimonials/personalizados-1.png',
-    label: 'Termo personalizado'
-  }
-];
-
 export default function Testimonials() {
   return (
     <section className="py-12">
