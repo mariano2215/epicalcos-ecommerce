@@ -119,6 +119,45 @@ Trust box: ✅ se adapta al medio de pago (Mercado Pago / transferencia directa)
 
 ---
 
+## 5b. Fase P1 — armador de packs y carrito
+
+Verificado en navegador a 375 px (8/8/2026).
+
+| Prueba | Resultado |
+|---|---|
+| `/armar-pack` — precios de las 4 tarjetas | ✅ todos derivados de `config/pricing.js` |
+| x100 con promo: monto y % coherentes | ✅ $120.001 = **75%** (antes decía 10%) |
+| x50 muestra "envío gratis en Rosario" ($72.000 ≥ $50.000) | ✅ |
+| x100 promo **no** muestra envío gratis ($39.999 < $50.000) | ✅ correcto, no miente |
+| `?n=100` redirige a `/mayorista` | ✅ |
+| Armador x10: elegir 3 diseños + "Completar" | ✅ 10/10 |
+| Total del armador == total del carrito | ✅ $16.000 en los dos |
+| Precio de transferencia con su condición | ✅ "$14.400 · elegís el medio de pago en el checkout" |
+
+### Líneas que llegan al carrito desde un pack x10
+
+```
+sticker:anime-1:6cm  x1   basePrice 1600   sku 000001
+sticker:anime-2:6cm  x1   basePrice 1600   sku 000002
+sticker:anime-3:6cm  x8   basePrice 1600   sku 000003
+```
+
+✅ Gramática de id **sin cambios** → el servidor las valida con la regla
+`sticker:` de siempre. SKUs de Meta preservados. 10 unidades → el 10 % por
+transferencia se activa solo.
+
+| Prueba | Resultado |
+|---|---|
+| `pack_completed` | ✅ `{pack_size: x10, units: 10, designs: 3, value: 16000}` |
+| `pack_builder_start` duplicado por StrictMode | ✅ 1 solo |
+| **Mayorista sin romper** | ✅ sigue emitiendo `pack:mayorista100:4cm:{ts}` · basePrice 39999 · qty 1 |
+| Checkout tras el pack x10 + transferencia | ✅ $16.000 − $1.600 + $4.500 = **$18.900** |
+| Resumen del carrito coherente | ✅ Total $16.000 · "Con transferencia $14.400" aparte |
+| Nav a 1024 px con 8 links | ✅ una sola línea (40 px), 0 px de desborde |
+| Desborde horizontal a 375 px en 10 rutas | ✅ **0 px** (incluye `/armar-pack` y `?n=20`) |
+
+---
+
 ## 6. Pendiente de probar en producción
 
 Estas pruebas **no se pueden hacer en local** porque necesitan las Netlify

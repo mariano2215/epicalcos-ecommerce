@@ -13,6 +13,7 @@ import PasoSelector from './PasoSelector.jsx';
 import SubidaArchivo from './SubidaArchivo.jsx';
 import ResumenPedido, { BarraResumenMovil } from './ResumenPedido.jsx';
 import QueSigue from './QueSigue.jsx';
+import SocialProof from '../SocialProof.jsx';
 import { customImageDataUri } from './swatches.jsx';
 
 /** Extensiones que el carrito puede mostrar como miniatura desde Cloudinary. */
@@ -295,6 +296,10 @@ export default function Configurador() {
           </section>
 
           <QueSigue />
+
+          {/* Prueba social justo antes del resumen: el testimonio del logo es el
+              que habla de este producto. */}
+          <SocialProof index={1} />
         </div>
 
         <div className="min-w-0">

@@ -4,6 +4,7 @@ import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import DiscountNote from '../components/DiscountNote.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
 import SizeGuide from '../components/SizeGuide.jsx';
+import SocialProof from '../components/SocialProof.jsx';
 import StickyMobileBar from '../components/StickyMobileBar.jsx';
 import TrustBadges from '../components/TrustBadges.jsx';
 import { getCategory } from '../data/categories.js';
@@ -313,6 +314,10 @@ export default function Producto() {
 
               {/* Envío y plazos ANTES del checkout, con calculadora */}
               <ShippingInfo className="mt-4" />
+
+              {/* Prueba social dentro del panel de compra, no al final de la
+                  página: el testimonio tiene que estar donde se decide. */}
+              <SocialProof className="mt-4" conFoto={false} />
 
               <p className="mt-3 text-xs text-white/50">
                 🔄{' '}

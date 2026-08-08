@@ -119,22 +119,110 @@ oración** — hacerlos de 44 px rompería el renglón. Documentado en `QA-CHECK
 
 ---
 
+---
+
+## P1 — Packs, carrito y personalizados ✅
+
+### 10. `/armar-pack` — el escalón que faltaba
+
+**Problema.** Se podía comprar 1 calco o 100 (mayorista). Nada en el medio.
+
+**Decisión de diseño — la más importante de esta fase.** Los packs x10/x20/x50
+**no son una regla de precio nueva**: son una forma guiada de elegir varios
+diseños, y van al carrito como **calcos sueltas** (`emit="stickers"` en
+`PackBuilder`). El descuento que muestran es el 10 % por transferencia desde 10
+calcos que **ya existía**.
+
+La alternativa —crear un tipo de línea `pack:catalogo`— habría obligado a:
+1. tocar el espejo `config/pricing.js` ↔ `functions/lib/pricing.js`, que es el
+   riesgo R1 de la auditoría (un lado desincronizado = nadie puede comprar), y
+2. **inventar porcentajes de descuento que nadie definió**.
+
+El x100 sí tiene regla propia en el servidor, así que su tarjeta manda a
+`/mayorista`. **Cero cambios en `netlify/functions/`.**
+
+**Coherencia de precios.** El armador mostraba $14.400 para un x10 cuando al
+carrito iban a llegar $16.000 — el 10 % recién se aplica en el checkout si elige
+transferencia. Ahora el total es el de lista (lo que va a ver) y el de
+transferencia va al lado con su condición.
+
+**Bug encontrado y corregido.** La tarjeta x100 decía *"Ahorrás $120.001 · 10%
+off"*: el monto era correcto y el porcentaje salía de una constante. Ahora el %
+**se deriva del ahorro real** (75 %), así no pueden contradecirse nunca.
+
+### 14. Carrito — las 8 preguntas del plan §24
+
+| Pregunta | Antes | Ahora |
+|---|---|---|
+| ¿Cuánto falta para envío gratis? | solo en el checkout | `FreeShippingProgress` |
+| ¿Cuándo llega? | no estaba | `ShippingInfo` |
+| ¿Cómo puedo pagar? | una línea al pie | bloque con los dos medios y el 10 % |
+| ¿Qué descuento tengo? | *"−$1.600"* sobre un total que no lo restaba | Total (MP) + "Con transferencia" aparte |
+| Cross-sell | solo en `/checkout` | `SuggestedStickers` |
+| Confianza | no había | `SocialProof` |
+
+> `FreeShippingProgress` nombra **los dos umbrales** ($50.000 Rosario / $75.000
+> resto) porque en el carrito todavía no se conoce el destino. Una barra sin
+> condición que el checkout después desmiente es el mismo error que
+> *"10% off automático"*.
+
+### 13. `SocialProof` — prueba social donde se decide
+
+Los testimonios reales estaban embebidos en `Testimonials.jsx` (bloque del Home).
+Ahora viven en `data/testimonials.js` y hay una versión compacta montada en la
+**ficha de producto**, el **carrito** y **personalizados**.
+
+### 11. Personalizados
+
+El configurador ya respondía casi todo lo que pide el plan §17. Faltaban dos:
+
+- **El plazo de producción** no estaba en la página (solo la entrega).
+- **"¿Y si mi archivo no está perfecto?"** — la objeción más cara de este
+  producto. El sitio ya lo respondía… en `/pago-exitoso`, o sea **después de
+  pagar**. Ahora está en el bloque "Qué pasa después de comprar", con el mismo
+  contenido que la empresa ya cumple (se revisa antes de imprimir, y si no da se
+  escribe por WhatsApp). No se inventó ninguna promesa nueva.
+
+### 12. Upload — **no se tocó, a propósito**
+
+`SubidaArchivo.jsx` ya implementa **todo** lo que pide el plan §19: drag & drop,
+selector, preview, reemplazo, eliminación, progreso, validación de formato/peso,
+compresión automática de fotos pesadas, cola de subidas en paralelo y aviso de
+resolución insuficiente. Crear un `FileUpload` nuevo habría sido duplicarlo.
+
+**Lo que queda pendiente del §20 (trazabilidad del archivo):** hoy la relación
+**pedido → archivos** es completa y no ambigua (las URLs de Cloudinary viajan en
+el resumen al mail y al CRM). Lo que **no** existe es la relación inversa: abrir
+Cloudinary y saber de qué pedido es un archivo.
+
+No se resolvió en esta fase por dos razones concretas:
+1. El archivo se sube **antes de que el pedido exista** (el `orderId` se genera
+   recién en `create-preference`), así que no se puede nombrar con él.
+2. El ejemplo del plan (`orders/EP-12345/mariano-calandra/logo.png`) pondría el
+   **nombre del cliente en una URL pública**, que contradice el §56 del mismo plan.
+
+La solución correcta —taguear el asset con una referencia no-personal vía
+`context`/`tags` de Cloudinary— depende de qué permita el *upload preset*, que no
+se puede verificar desde local. Tocar el camino de subida de una tienda en
+producción sin poder probarlo no vale el beneficio, que además es de comodidad
+del vendedor, no de conversión. Queda anotado en P2.
+
+---
+
 ## Estado de las fases
 
 | Fase | Estado |
 |---|---|
 | **P0** — fricción crítica | ✅ **completa, verificada en navegador** |
-| **P1** — packs, carrito, personalizados | ⬜ pendiente |
+| **P1** — packs, carrito, personalizados | ✅ **completa, verificada en navegador** |
 | **P2** — landings, performance, SEO, dashboards | ⬜ pendiente |
 | **P3** — A/B testing y CRO continuo | ⬜ backlog escrito en `CRO-EXPERIMENTS.md` |
 
-### Próximo (P1), en orden de impacto esperado
+### Próximo (P2), en orden de impacto esperado
 
-1. **Barra de envío gratis en el carrito** — hoy el gap a $50.000/$75.000 solo
-   aparece en el checkout, cuando ya es incómodo modificar el pedido.
-2. **Packs x10 / x20 / x50** — el salto de 1 calco a 100 no tiene escalones.
-   Se arma con `PackBuilder`, que ya soporta `target` y `min`.
-3. **Cross-sell en el carrito** — `SuggestedStickers` ya existe y solo está en
-   `/checkout`.
-4. **`SocialProof` cerca de los CTA** — los testimonios reales solo viven en Home
-   y `/negocio`.
+1. **Landings por intención para Meta Ads** (§39-41) — hoy los anuncios caen en
+   Home y se rompe el *message match*. Es lo que más mueve el CPA.
+2. **Performance** (§44-45) — imágenes sin `width`/`height` (CLS), sin `srcset`,
+   Clarity inline y síncrono en el `<head>`.
+3. **Trazabilidad del archivo en Cloudinary** (§20) — ver arriba.
+4. **Enforcar la CSP** — hoy sigue en `Report-Only`.

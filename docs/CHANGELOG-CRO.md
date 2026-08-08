@@ -2,6 +2,89 @@
 
 ---
 
+## 2026-08-08 · Fase P1
+
+### Armá tu pack
+
+- **Nueva ruta** `/armar-pack` con tarjetas x10 / x20 / x50 / x100 (`PackCard`).
+- `PackBuilder` acepta `emit="stickers"`: emite una línea `sticker:` **por
+  diseño** en vez de una línea `pack:`. Los packs de catálogo no son una regla
+  de precio nueva — usan el 10 % por transferencia que ya existía. **Cero
+  cambios en `netlify/functions/`**, cero riesgo de `price_mismatch`.
+- El x100 redirige a `/mayorista`, que sí tiene regla propia en el servidor.
+- **Corregido**: el armador prometía $14.400 en un x10 y al carrito llegaban
+  $16.000. Ahora muestra el total de lista y el de transferencia con su condición.
+- **Corregido**: `PackCard` del x100 decía "Ahorrás $120.001 · **10%** off". El
+  porcentaje salía de una constante; ahora se deriva del ahorro real (75 %).
+- Nav: `Packs` en vez de `Armá tu pack` — con 8 links la etiqueta larga partía
+  el nav en dos líneas a 1024 px. `whitespace-nowrap` en los links del header.
+- `/armar-pack` agregado al sitemap (solo la portada; `?n=` canonicaliza igual).
+
+### Carrito
+
+- **Nuevo** `FreeShippingProgress`: cuánto falta para el envío gratis, nombrando
+  **los dos umbrales** porque acá todavía no se conoce el destino.
+- Medios de pago y el 10 % por transferencia **antes** de entrar al checkout.
+- `ShippingInfo` (producción + entrega) y `SuggestedStickers` (cross-sell, ya
+  existía y solo estaba en `/checkout`).
+- **Corregido**: el resumen mostraba "−$1.600" arriba de un Total que no lo
+  restaba. Ahora el Total es el de Mercado Pago y "Con transferencia" va aparte.
+- Link "Seguir comprando".
+
+### Prueba social
+
+- **Nuevo** `data/testimonials.js` — los testimonios reales salen de
+  `Testimonials.jsx` para poder reusarse.
+- **Nuevo** `SocialProof` (versión compacta) en ficha de producto, carrito y
+  personalizados.
+
+### Personalizados
+
+- `QueSigue` suma el **plazo de producción** (solo estaba la entrega) y responde
+  **"¿Y si mi archivo no está perfecto?"** — el sitio ya lo respondía, pero en
+  `/pago-exitoso`, después de pagar.
+- `SocialProof` en el configurador.
+- **`SubidaArchivo` no se tocó**: ya cumple todo el §19 del plan.
+
+### Analytics
+
+- **Nuevos** `pack_builder_start` y `pack_completed` (con unidades y diseños
+  distintos), ambos idempotentes contra el doble efecto de StrictMode.
+
+### Archivos
+
+**Nuevos**
+
+```
+frontend/src/components/FreeShippingProgress.jsx
+frontend/src/components/PackCard.jsx
+frontend/src/components/SocialProof.jsx
+frontend/src/data/testimonials.js
+frontend/src/routes/ArmaTuPack.jsx
+```
+
+**Modificados**
+
+```
+frontend/src/App.jsx
+frontend/src/components/Header.jsx
+frontend/src/components/PackBuilder.jsx
+frontend/src/components/Testimonials.jsx
+frontend/src/components/personalizados/Configurador.jsx
+frontend/src/components/personalizados/QueSigue.jsx
+frontend/src/config/site.js
+frontend/src/context/CartContext.jsx
+frontend/src/lib/analytics.js
+frontend/src/routes/Cart.jsx
+frontend/src/routes/Producto.jsx
+scripts/generate-sitemap.mjs
+```
+
+**Sin tocar**: `netlify/functions/*`. El espejo de precios sigue intacto y
+`promoPricing.test.js` en verde.
+
+---
+
 ## 2026-08-08 · Fase P0
 
 ### Home
