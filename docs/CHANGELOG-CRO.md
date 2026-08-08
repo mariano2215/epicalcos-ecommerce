@@ -2,6 +2,76 @@
 
 ---
 
+## 2026-08-08 · Fase P2
+
+### Landings
+
+- **Nuevas** `/calcos-termo`, `/calcos-notebook`, `/calcos-auto` — casos de uso
+  que no existían como página. Cada una con su tamaño recomendado, su FAQ
+  propia (`FAQPage` JSON-LD) y diseños reales intercalados del catálogo.
+- **Nuevo** `config/landings.js` — todo el copy en un solo lugar.
+- **301** para las URLs de anuncio que apuntan a páginas existentes:
+  `/calcos-personalizadas` → `/personalizados`, `/calcos-para-negocios` →
+  `/negocio`, `/pack-100-calcos` → `/mayorista`. **No** se crearon gemelas:
+  habría sido contenido duplicado.
+- Las 3 landings entran al sitemap (115 URLs).
+
+### Performance
+
+- **Nuevo** `scripts/optimize-images.mjs` (idempotente).
+- Imágenes descargadas en el Home: **820 KB → 103 KB**. El 79 % del peso era el
+  campo decorativo del hero: PNG de 500×500 mostrados a 66–132 px.
+- `stickers-cutout/` −89 % · `testimonials/` −95 % en disco.
+- Clarity: de inline síncrono en `<head>` a diferido a `load` (257 ms). La cola
+  se registra igual desde el primer momento, no se pierde sesión.
+- `width`/`height` + `decoding="async"` en cutouts, testimonios y `SocialProof`.
+  CLS medido: **0**.
+
+### FAQ
+
+- De 13 a **20 preguntas** + pestaña Personalizados. Las 8 nuevas son las que
+  pedía el §42 y faltaban.
+
+### Analytics
+
+- `view_item_list` en Home (`Los más vendidos`) y en las landings.
+- `item_list_name` consistente en las tres superficies.
+- **Nuevo** `docs/DASHBOARD.md` — métricas, dimensiones personalizadas a crear
+  en GA4 y cómo leer los ratios.
+- CSP: **no se enforzó**. Procedimiento seguro documentado en `ANALYTICS.md` §7.
+
+### Archivos
+
+**Nuevos**
+
+```
+docs/DASHBOARD.md
+frontend/src/config/landings.js
+frontend/src/routes/LandingUso.jsx
+scripts/optimize-images.mjs
+```
+
+**Modificados**
+
+```
+frontend/index.html
+frontend/public/_redirects
+frontend/src/App.jsx
+frontend/src/components/FAQ.jsx
+frontend/src/components/FeaturedStickers.jsx
+frontend/src/components/SocialProof.jsx
+frontend/src/components/StickerField.jsx
+frontend/src/components/Testimonials.jsx
+frontend/src/data/testimonials.js
+netlify.toml
+scripts/generate-sitemap.mjs
+```
+
+**Sin tocar**: `netlify/functions/*` y la implementación de Meta Pixel/CAPI
+(la auditoría la encontró correcta; duplicarla es el error que advierte el §38).
+
+---
+
 ## 2026-08-08 · Fase P1
 
 ### Armá tu pack

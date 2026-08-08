@@ -209,20 +209,120 @@ del vendedor, no de conversión. Queda anotado en P2.
 
 ---
 
+---
+
+## P2 — Landings, performance, SEO y dashboards ✅
+
+### 16. Landings — qué se creó y qué **no**
+
+El plan (§39) proponía seis: `/calcos-personalizadas`, `/calcos-para-negocios`,
+`/pack-100-calcos`, `/calcos-argentina`, `/calcos-termo`, `/calcos-notebook`.
+
+**Tres de esas páginas ya existen** (`/personalizados`, `/negocio`,
+`/mayorista`) y `/calcos-argentina` ya es una categoría (`/categoria/argentina`).
+Crear gemelas habría significado contenido duplicado, canibalización entre URLs
+y dos páginas que mantener por cada intención.
+
+**Solución**: para esas, la URL bonita del anuncio es un **301** (`netlify.toml`
++ `public/_redirects`). El anuncio usa `/calcos-para-negocios`, el cliente cae en
+`/negocio`, que además ya está indexada. Cero duplicados.
+
+**Landings nuevas de verdad** — `/calcos-termo`, `/calcos-notebook`,
+`/calcos-auto`. Estas sí son contenido que no existía: *"calcos para termo"* no
+es una categoría de diseño (cualquier diseño sirve), es un **caso de uso**, y el
+catálogo tiene 99 categorías temáticas y **ninguna de uso**.
+
+Cada una responde la objeción propia de ese uso:
+
+| Landing | Tamaño que recomienda | Objeción que responde |
+|---|---|---|
+| `/calcos-termo` | 6 cm | ¿se despega al lavar el termo? |
+| `/calcos-notebook` | 6 cm | ¿deja pegamento al sacarlo? ¿cuántos entran? |
+| `/calcos-auto` | 9 cm | ¿aguanta el lavadero? ¿vidrio o chapa? |
+
+Los diseños son **reales**: se bajan los manifests de las categorías
+configuradas y se intercalan. La landing reutiliza `TrustBadges`, `SizeGuide`,
+`ShippingInfo`, `DiscountNote`, `SocialProof` y `StickerCard` — lo único propio
+es el copy, en `config/landings.js`. Cada una emite su `FAQPage` JSON-LD y
+manda `view_item_list` con su propio `item_list_name`, así se puede comparar
+conversión por landing.
+
+### 20. Performance — se midió antes de tocar
+
+**Medición inicial en el navegador**: de los 820 KB de imágenes del Home,
+**649 KB eran `stickers-cutout/nuevas/*.png`** — el campo decorativo del hero.
+PNG de 500×500 (algunos 1080×1080) mostrados a 66–132 px, y en el camino del
+LCP. **El 79 % del peso de la página era decoración.** Los testimonios eran
+peor: tres PNG de hasta 1,1 MB para cards de ~350 px.
+
+| | antes | después |
+|---|---|---|
+| Imágenes del Home (descargadas) | 820 KB | **103 KB** |
+| `stickers-cutout/` en disco | 12,4 MB | 1,37 MB (−89 %) |
+| `testimonials/` en disco | 2,4 MB | 123 KB (−95 %) |
+| CLS | — | **0** |
+| Clarity | inline síncrono en `<head>` | difierido a `load` (257 ms) |
+
+`scripts/optimize-images.mjs` hace la conversión y reapunta los manifests. Es
+**idempotente**: se puede volver a correr cuando sumes imágenes.
+
+Los WebP del catálogo (17–27 KB cada uno) **no se tocaron**: ya estaban bien. El
+problema nunca fueron las fotos de producto.
+
+> **Pendiente que dejo a tu criterio**: los PNG originales siguen en el repo
+> (~15 MB). Ya no se sirven, pero se deployan igual. No los borré porque son
+> archivos tuyos y borrar 97 archivos no es una decisión que me corresponda.
+
+### 19. FAQ
+
+De 13 a **20 preguntas**, con una pestaña nueva de Personalizados. Las 8 que
+sumé son exactamente las que el plan §42 pedía y no estaban: cómo funciona
+*exactamente* el 10 % OFF, qué tamaño conviene, repetir diseños, termo, cómo
+mando el diseño, qué pasa si el archivo está mal, qué formatos. Todas entran al
+`FAQPage` JSON-LD.
+
+### 17-18. Analytics y Meta
+
+- `view_item_list` en Home (`Los más vendidos`) y en las landings — el funnel
+  arrancaba recién en la grilla de categoría.
+- `item_list_name` consistente en las tres superficies, para saber **desde qué
+  lista** se compra.
+- **Meta Pixel + CAPI no se tocaron**: la auditoría los encontró correctos, con
+  deduplicación por `event_id`. Duplicar la implementación habría sido el error
+  que el §38 advierte.
+
+### 22. Dashboards
+
+`docs/DASHBOARD.md`: qué mirar, las dimensiones personalizadas a crear en GA4, y
+—lo importante— **cómo leer los ratios sin engañarse**. Incluye la rutina de
+revisión semanal.
+
+### CSP — **no se enforzó, a propósito**
+
+Sigue en `Report-Only`. El riesgo concreto: `script-src` lista los dominios
+conocidos, pero **GTM puede cargar scripts de terceros según las etiquetas
+configuradas en tu panel**, y eso no se ve desde el código. Flipear el header a
+ciegas puede matar el tracking o el checkout sin aviso.
+
+`ANALYTICS.md` §7 tiene el procedimiento de 5 pasos para enforzarla con
+seguridad (recorrer el flujo completo con la consola abierta, incluido el
+navegador embebido de Instagram, antes de tocar el header).
+
+---
+
 ## Estado de las fases
 
 | Fase | Estado |
 |---|---|
 | **P0** — fricción crítica | ✅ **completa, verificada en navegador** |
 | **P1** — packs, carrito, personalizados | ✅ **completa, verificada en navegador** |
-| **P2** — landings, performance, SEO, dashboards | ⬜ pendiente |
+| **P2** — landings, performance, SEO, dashboards | ✅ **completa, verificada en navegador** |
 | **P3** — A/B testing y CRO continuo | ⬜ backlog escrito en `CRO-EXPERIMENTS.md` |
 
-### Próximo (P2), en orden de impacto esperado
+### Lo que bloquea a P3
 
-1. **Landings por intención para Meta Ads** (§39-41) — hoy los anuncios caen en
-   Home y se rompe el *message match*. Es lo que más mueve el CPA.
-2. **Performance** (§44-45) — imágenes sin `width`/`height` (CLS), sin `srcset`,
-   Clarity inline y síncrono en el `<head>`.
-3. **Trazabilidad del archivo en Cloudinary** (§20) — ver arriba.
-4. **Enforcar la CSP** — hoy sigue en `Report-Only`.
+**P3 no se puede empezar de verdad hasta validar el `purchase` en producción**
+(`QA-CHECKLIST.md` §6). Correr un A/B test sobre un KPI que no se verificó es
+peor que no testear: se toman decisiones con números equivocados.
+
+Una vez validado, el backlog de `CRO-EXPERIMENTS.md` está priorizado y listo.

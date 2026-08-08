@@ -158,6 +158,43 @@ transferencia se activa solo.
 
 ---
 
+## 5c. Fase P2 — landings, performance y FAQ
+
+| Prueba | Resultado |
+|---|---|
+| `/calcos-termo` · `/calcos-notebook` · `/calcos-auto` cargan | ✅ 24 diseños reales cada una |
+| Diseños intercalados por categoría (no en bloques) | ✅ `Argentina #1, Fútbol #1, Buenas Vibras #1…` |
+| Tamaño recomendado propio por landing | ✅ termo 6 cm · notebook 6 cm · auto 9 cm |
+| `FAQPage` JSON-LD por landing | ✅ |
+| `view_item_list` con `item_list_name` propio | ✅ 1 evento, `Landing calcos-termo` |
+| Desborde horizontal a 375 px | ✅ **0 px** en las 3 |
+| Sitemap | ✅ 115 URLs (antes 112) |
+
+### Performance — medido en el navegador
+
+| Métrica | Antes | Después |
+|---|---|---|
+| Imágenes descargadas en Home | **820 KB** | **103 KB** |
+| De eso, decoración del hero | 649 KB (79 %) | 103 KB |
+| Imagen más pesada | 342 KB (`cerro-siete-1.png`) | 21 KB (`charly-1.webp`) |
+| CLS | — | **0** |
+| Carga de Clarity | inline síncrono en `<head>` | 257 ms (tras `load`) |
+
+✅ Transparencia de los cutouts preservada (verificado visualmente: el hero se
+ve idéntico).
+
+### FAQ
+
+| Prueba | Resultado |
+|---|---|
+| Preguntas totales | ✅ 20 (antes 13) |
+| Pestañas | ✅ Todas · General · Personalizados · Mayorista |
+| `FAQPage` JSON-LD declara todas | ✅ 20 |
+
+| `view_item_list` en Home | ✅ 1 evento, `Los más vendidos` / `home_destacados`, 4 items |
+
+---
+
 ## 6. Pendiente de probar en producción
 
 Estas pruebas **no se pueden hacer en local** porque necesitan las Netlify
@@ -165,6 +202,9 @@ Functions y credenciales reales:
 
 - [ ] Compra completa con **Mercado Pago** → confirmar que `/pago-exitoso` recibe
       el `external_reference` y dispara **un solo** `purchase` con el monto real.
+- [ ] Los **301** de `/calcos-personalizadas`, `/calcos-para-negocios` y
+      `/pack-100-calcos` (en local el SPA no aplica reglas de Netlify: hay que
+      verificarlos con el sitio deployado).
 - [ ] Compra por **transferencia** → confirmar el `purchase` con
       `payment_method: transferencia` y que el mail + CRM siguen llegando.
 - [ ] **GA4 DebugView** y **GTM Preview** con tráfico real.

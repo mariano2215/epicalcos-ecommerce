@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import StickerCard from './StickerCard.jsx';
 import Reveal from './Reveal.jsx';
 import { categoryName } from '../data/categories.js';
+import { DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
+import { trackViewItemList } from '../lib/analytics.js';
 
 // Un sticker al azar de cada una de estas categorías en cada carga de la página.
 const FEATURED_CATEGORIES = ['dragon-ball', 'argentina', 'disney', 'calcos-especiales'];
@@ -34,8 +36,19 @@ export default function FeaturedStickers() {
       )
     ).then((picks) => {
       if (cancelled) return;
-      setStickers(picks.filter(Boolean));
+      const elegidos = picks.filter(Boolean);
+      setStickers(elegidos);
       setLoading(false);
+      // Primera lista de productos que ve cualquiera que entra al Home: sin este
+      // evento, el funnel arranca recién en la grilla de categoría y se pierde
+      // todo el tráfico que compra desde acá.
+      if (elegidos.length) {
+        trackViewItemList(
+          elegidos.map((s) => ({ ...s, price: priceForSize(DEFAULT_SIZE) })),
+          'Los más vendidos',
+          'home_destacados'
+        );
+      }
     });
     return () => { cancelled = true; };
   }, []);
@@ -65,7 +78,7 @@ export default function FeaturedStickers() {
           <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
             {stickers.map((s, i) => (
               <Reveal key={s.id} delay={i * 60} className="h-full">
-                <StickerCard sticker={s} />
+                <StickerCard sticker={s} listName="Los más vendidos" />
               </Reveal>
             ))}
           </div>

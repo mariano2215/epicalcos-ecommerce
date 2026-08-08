@@ -27,7 +27,7 @@ compra**: `pushDataLayer` y `pixel()` están envueltos en `try/catch` porque
 
 | Evento | Dónde se dispara | Estado |
 |---|---|---|
-| `view_item_list` | `routes/Category.jsx` al cargar la grilla | ✅ P0 |
+| `view_item_list` | grilla de categoría, Home (`FeaturedStickers`) y landings | ✅ P0/P2 |
 | `select_item` | `components/StickerCard.jsx` al clickear a la ficha | ✅ P0 |
 | `view_item` | `routes/Producto.jsx`, `components/FixedProductPage.jsx` | ✅ |
 | `add_to_cart` | `context/CartContext.jsx` (todos los `add*`) | ✅ |
@@ -41,8 +41,19 @@ compra**: `pushDataLayer` y `pixel()` están envueltos en `try/catch` porque
 ### Eventos propios
 
 `search` · `search_no_results` · `generate_lead` · `whatsapp_click` (con la ruta
-de origen) · `shipping_calculated` (zona + costo) · `personalizado_inicio` ·
+de origen) · `shipping_calculated` (zona + costo) · `pack_builder_start` ·
+`pack_completed` (unidades + diseños distintos) · `personalizado_inicio` ·
 `personalizado_paso` · `personalizado_archivo_cargado` · `personalizado_precio_calculado`
+
+### `item_list_name` en uso
+
+Sirve para saber **desde qué lista** se compra. Valores actuales:
+
+| Lista | Dónde |
+|---|---|
+| `Los más vendidos` (`home_destacados`) | Home |
+| nombre de la categoría (id = slug) | `/categoria/:slug` |
+| `Landing calcos-termo` / `-notebook` / `-auto` | landings de uso |
 
 ### Estructura de items
 
@@ -177,10 +188,41 @@ window.dataLayer.filter(e => e.event === 'purchase')
 
 ---
 
-## 7. Pendientes
+## 7. Cómo enforcar la CSP (sin romper el sitio)
 
-- [ ] Enforcar la CSP (hoy `Content-Security-Policy-Report-Only` en `netlify.toml`).
+Hoy `netlify.toml` tiene `Content-Security-Policy-Report-Only`: **no bloquea
+nada**, solo reporta. Y como no hay endpoint de reporte, las violaciones aparecen
+únicamente en la consola de cada visitante — o sea, son invisibles.
+
+**No se enforzó en P2 a propósito.** El riesgo concreto: `script-src` lista los
+dominios que se conocen (GTM, GA4, Meta, Clarity), pero **GTM puede cargar
+scripts de terceros según las etiquetas que tengas configuradas en el panel**, y
+eso no se puede ver desde el código. Flipear el header a ciegas puede matar el
+tracking —o el checkout— sin aviso.
+
+Procedimiento seguro, en este orden:
+
+1. Abrir el sitio en producción con la consola abierta y recorrer **el flujo
+   completo**: home → categoría → ficha → carrito → checkout → pago. Anotar cada
+   `[Report Only]` que aparezca.
+2. Repetir entrando **desde un anuncio de Instagram** (el navegador embebido
+   carga cosas distintas) y **desde Google**.
+3. Agregar a `script-src` / `connect-src` únicamente los dominios que hayan
+   aparecido. Si alguno no se reconoce, averiguar de qué etiqueta de GTM sale
+   **antes** de agregarlo.
+4. Recién ahí renombrar el header a `Content-Security-Policy`.
+5. Después de deployar, verificar que el `purchase` sigue llegando a GA4 y a
+   Meta. Si algo se rompe, volver a `-Report-Only` es un commit de una línea.
+
+---
+
+## 8. Pendientes
+
+- [ ] **Validar el `purchase` en producción** (ver `QA-CHECKLIST.md` §6). Es lo
+      único que bloquea confiar en todo el resto.
+- [ ] Enforcar la CSP siguiendo el procedimiento de arriba.
 - [ ] Crear el feed programado en Meta Commerce Manager (el CSV ya está deployado).
-- [ ] `view_item_list` en Home (`FeaturedStickers`) y en `SuggestedStickers`.
+- [ ] `view_item_list` en `SuggestedStickers` (rota cada 7 s; hay que decidir si
+      cada rotación es una impresión nueva o no antes de instrumentarlo).
 - [ ] Marcar `purchase` de transferencia como cobrado cuando llega el comprobante
       (hoy requiere cruce manual con el CRM).
