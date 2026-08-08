@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
+import { trackSelectItem } from '../lib/analytics.js';
 
 /**
  * Card individual de un calco (estilo TiendaNube): elegís tamaño (4/6/9 cm),
@@ -9,7 +10,7 @@ import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
  *
  * @param {{ id:string, image:string, name:string, category:string, categoryLabel:string }} sticker
  */
-export default function StickerCard({ sticker }) {
+export default function StickerCard({ sticker, listName = 'catalog' }) {
   const { addSticker } = useCart();
   const [size, setSize] = useState(DEFAULT_SIZE);
   const [qty, setQty] = useState(1);
@@ -17,10 +18,14 @@ export default function StickerCard({ sticker }) {
   const unit = priceForSize(size);
   const href = `/producto/${sticker.category}/${sticker.id.split('-').pop()}`;
 
+  // Click desde la grilla a la ficha: cierra el par view_item_list → select_item.
+  const onSelect = () => trackSelectItem({ ...sticker, price: unit }, listName);
+
   return (
     <article className="card-glass card-glass-hover overflow-hidden flex flex-col">
       <Link
         to={href}
+        onClick={onSelect}
         aria-label={`Ver ${sticker.name}`}
         className="relative aspect-square overflow-hidden bg-white/[0.03] grid place-items-center p-3"
       >
@@ -34,7 +39,7 @@ export default function StickerCard({ sticker }) {
 
       <div className="p-4 flex-1 flex flex-col">
         <h3 className="font-semibold text-white text-sm leading-snug truncate">
-          <Link to={href} className="hover:text-brand-fuchsia transition-colors">{sticker.name}</Link>
+          <Link to={href} onClick={onSelect} className="hover:text-brand-fuchsia transition-colors">{sticker.name}</Link>
         </h3>
 
         {/* Selector de tamaño */}

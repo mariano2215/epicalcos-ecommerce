@@ -98,20 +98,47 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
     <form onSubmit={submit} className="card-glass p-6 md:p-8 space-y-5">
       <h3 className="font-display font-extrabold text-xl">Datos del comprador</h3>
 
+      {/* `autoComplete` + `inputMode` + `type` en todos los campos: el formulario
+          no tenía ninguno, así que en mobile había que tipear nombre, mail,
+          teléfono y dirección a mano, con el teclado equivocado. Es la fricción
+          más barata de sacar de todo el checkout. */}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="text-sm text-white/70 mb-1.5 block">Nombre completo *</span>
-          <input type="text" value={form.name} onChange={change('name')} placeholder="Juan Pérez" className="input-dark" />
+          <input
+            type="text"
+            value={form.name}
+            onChange={change('name')}
+            placeholder="Juan Pérez"
+            autoComplete="name"
+            className="input-dark"
+          />
           {errors.name && <span className="text-xs text-brand-pink mt-1 block">{errors.name}</span>}
         </label>
         <label className="block">
           <span className="text-sm text-white/70 mb-1.5 block">Email *</span>
-          <input type="email" value={form.email} onChange={change('email')} placeholder="tu@email.com" className="input-dark" />
+          <input
+            type="email"
+            value={form.email}
+            onChange={change('email')}
+            placeholder="tu@email.com"
+            autoComplete="email"
+            inputMode="email"
+            className="input-dark"
+          />
           {errors.email && <span className="text-xs text-brand-pink mt-1 block">{errors.email}</span>}
         </label>
         <label className="block">
           <span className="text-sm text-white/70 mb-1.5 block">Teléfono *</span>
-          <input type="text" value={form.phone} onChange={change('phone')} placeholder="3410000000" className="input-dark" />
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={change('phone')}
+            placeholder="3410000000"
+            autoComplete="tel"
+            inputMode="tel"
+            className="input-dark"
+          />
           {errors.phone && <span className="text-xs text-brand-pink mt-1 block">{errors.phone}</span>}
         </label>
       </div>
@@ -140,17 +167,30 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm text-white/70 mb-1.5 block">Dirección *</span>
-              <input type="text" value={form.address} onChange={change('address')} placeholder="Calle 1234, depto 2B" className="input-dark" />
+              <input
+                type="text"
+                value={form.address}
+                onChange={change('address')}
+                placeholder="Calle 1234, depto 2B"
+                autoComplete="street-address"
+                className="input-dark"
+              />
               {errors.address && <span className="text-xs text-brand-pink mt-1 block">{errors.address}</span>}
             </label>
             <label className="block">
               <span className="text-sm text-white/70 mb-1.5 block">Ciudad *</span>
-              <input type="text" value={form.city} onChange={change('city')} className="input-dark" />
+              <input
+                type="text"
+                value={form.city}
+                onChange={change('city')}
+                autoComplete="address-level2"
+                className="input-dark"
+              />
               {errors.city && <span className="text-xs text-brand-pink mt-1 block">{errors.city}</span>}
             </label>
             <label className="block">
               <span className="text-sm text-white/70 mb-1.5 block">Provincia *</span>
-              <select value={form.province} onChange={change('province')} className="input-dark">
+              <select value={form.province} onChange={change('province')} autoComplete="address-level1" className="input-dark">
                 {provinces.map((p) => (
                   <option key={p} value={p} className="bg-bg-deep">{p}</option>
                 ))}
@@ -159,7 +199,15 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
             </label>
             <label className="block">
               <span className="text-sm text-white/70 mb-1.5 block">Código postal *</span>
-              <input type="text" value={form.zipCode} onChange={change('zipCode')} placeholder="2000" className="input-dark" />
+              <input
+                type="text"
+                value={form.zipCode}
+                onChange={change('zipCode')}
+                placeholder="2000"
+                autoComplete="postal-code"
+                inputMode="numeric"
+                className="input-dark"
+              />
               {errors.zipCode && <span className="text-xs text-brand-pink mt-1 block">{errors.zipCode}</span>}
             </label>
           </div>
@@ -243,6 +291,23 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
           {errorMsg}
         </div>
       )}
+
+      {/* Confianza justo antes de confirmar. Solo afirmaciones verificables:
+          MP procesa el pago (nunca vemos la tarjeta), los datos van por HTTPS,
+          y el envío a todo el país es real. Nada de garantías inventadas — la
+          política de cambios está en /politicas/cambios. */}
+      <ul className="grid grid-cols-2 gap-2 text-xs text-white/60">
+        {[
+          isTransfer ? '🏦 Transferencia directa' : '🔒 Pago procesado por Mercado Pago',
+          '🛡️ No guardamos datos de tarjeta',
+          '🇦🇷 Envíos a todo el país',
+          '💬 Te escribimos por WhatsApp'
+        ].map((t) => (
+          <li key={t} className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2.5 py-2">
+            {t}
+          </li>
+        ))}
+      </ul>
 
       <button type="submit" disabled={submitting} className="btn-primary w-full !py-4 text-base">
         {submitting

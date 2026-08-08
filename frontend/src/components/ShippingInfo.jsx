@@ -7,6 +7,7 @@ import {
   calculateShipping,
   freeShippingThresholdFor
 } from '../config/site.js';
+import { trackShippingCalculated } from '../lib/analytics.js';
 
 /**
  * Plazos y costos de envío, disponibles ANTES del checkout.
@@ -40,6 +41,7 @@ export default function ShippingInfo({ subtotal = 0, defaultOpen = false, classN
     const zone = shippingZone(city, province);
     const cost = calculateShipping({ method: 'envio', subtotal, city, province });
     const threshold = freeShippingThresholdFor(city, province);
+    trackShippingCalculated({ zone, cost });
     setResult({
       zone,
       cost,

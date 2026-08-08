@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { trackPurchase } from '../lib/analytics.js';
+import { consumePurchase } from '../lib/purchaseTracking.js';
 import { CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
 import { contact } from '../config/site.js';
 import { useSeo } from '../lib/seo.js';
@@ -54,7 +55,7 @@ function buildWhatsappMessage(spec, orderId) {
 }
 
 export default function PaymentSuccess() {
-  const { items, subtotal, clear } = useCart();
+  const { clear } = useCart();
   const [params] = useSearchParams();
   const orderId = params.get('external_reference') || params.get('preference_id') || 'unknown';
   const [customSpec, setCustomSpec] = useState(null);
@@ -62,9 +63,23 @@ export default function PaymentSuccess() {
   useSeo({ title: 'Pago recibido', description: 'Tu pago fue aprobado. Gracias por comprar en EPICALCOS.' });
 
   useEffect(() => {
-    if (items.length > 0) {
-      // Disparamos antes de limpiar el carrito para no perder los items del evento
-      trackPurchase({ orderId, items, total: subtotal, shipping: 0 });
+    // El pedido con los precios REALES lo dejó el checkout en sessionStorage
+    // (ver lib/purchaseTracking.js). Antes se usaba el `subtotal` del carrito,
+    // que es precio de LISTA: con cupón o 3x2 el value iba inflado y el envío
+    // nunca se reportaba. `consumePurchase` lee y borra, así un refresh de esta
+    // pantalla no dispara el evento dos veces.
+    const paid = consumePurchase();
+    if (paid) {
+      trackPurchase({
+        // El external_reference de la URL manda: es el id que usa la API de
+        // conversiones para deduplicar contra este mismo evento.
+        orderId: orderId !== 'unknown' ? orderId : paid.orderId,
+        items: paid.items,
+        total: paid.total,
+        shipping: paid.shippingCost,
+        coupon: paid.coupon,
+        paymentMethod: paid.paymentMethod
+      });
     }
     // Recuperamos la spec de los personalizados (sobrevive al redirect de MP) para el CTA de WhatsApp.
     try {

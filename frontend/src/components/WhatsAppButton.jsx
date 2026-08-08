@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { contact } from '../config/site.js';
+import { trackWhatsappClick } from '../lib/analytics.js';
 
 /**
  * Botón flotante de WhatsApp, presente en todas las páginas.
@@ -32,6 +33,9 @@ export default function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escribinos por WhatsApp"
+      // El contexto es la ruta: sirve para ver DESDE DÓNDE se fugan las
+      // consultas (si sale mucho desde /checkout, hay fricción ahí).
+      onClick={() => trackWhatsappClick(pathname)}
       className={`group fixed right-5 sm:right-6 ${bottom} z-40 block`}
     >
       {/* Etiqueta que aparece al pasar el mouse (desktop) */}

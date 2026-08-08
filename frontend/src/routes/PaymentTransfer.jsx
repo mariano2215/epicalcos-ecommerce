@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { bankTransfer, contact } from '../config/site.js';
+import { trackPurchase } from '../lib/analytics.js';
+import { consumePurchase } from '../lib/purchaseTracking.js';
 import { useSeo } from '../lib/seo.js';
 
 export default function PaymentTransfer() {
@@ -12,6 +14,26 @@ export default function PaymentTransfer() {
   useSeo({ title: 'Pedido registrado', description: 'Tu pedido quedó registrado, pendiente de transferencia.' });
 
   useEffect(() => {
+    // El canal transferencia era INVISIBLE en analytics: esta pantalla limpiaba
+    // el carrito y no disparaba nada, y la API de conversiones solo corre desde
+    // el webhook de Mercado Pago. Justo el medio de pago que tiene el 10 % off
+    // no se medía, así que Meta optimizaba solo contra los compradores de MP.
+    //
+    // El pedido queda REGISTRADO, no cobrado: se confirma cuando llega el
+    // comprobante por WhatsApp. Por eso el evento viaja con
+    // `payment_method: 'transferencia'` — permite separarlo en GA4 y en el
+    // Píxel. Ver docs/ANALYTICS.md.
+    const paid = consumePurchase();
+    if (paid) {
+      trackPurchase({
+        orderId: paid.orderId || orderId,
+        items: paid.items,
+        total: paid.total,
+        shipping: paid.shippingCost,
+        coupon: paid.coupon,
+        paymentMethod: paid.paymentMethod
+      });
+    }
     clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

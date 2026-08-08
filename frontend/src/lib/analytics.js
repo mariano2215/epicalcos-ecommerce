@@ -117,6 +117,60 @@ export function trackSelectItem(product, listName = 'catalog') {
   debug('select_item', product.id);
 }
 
+/**
+ * Impresión de una lista de productos (grilla de categoría, sugeridos, etc.).
+ * Sin esto no se puede calcular la tasa vista-de-lista → click → carrito, que
+ * es el primer escalón real del funnel.
+ *
+ * Se mandan hasta MAX_LIST_ITEMS: una categoría puede tener cientos de diseños
+ * y GA4 rechaza los payloads grandes.
+ */
+const MAX_LIST_ITEMS = 30;
+
+export function trackViewItemList(items, listName, listId) {
+  if (!items?.length) return;
+  const shown = items.slice(0, MAX_LIST_ITEMS);
+  pushDataLayer({ ecommerce: null });
+  pushDataLayer({
+    event: 'view_item_list',
+    ecommerce: {
+      item_list_name: listName,
+      item_list_id: listId || listName,
+      items: toItems(shown.map((i) => ({ ...i, quantity: 1 })))
+    }
+  });
+  debug('view_item_list', listName, shown.length, 'de', items.length);
+}
+
+/** Medio de pago elegido en el checkout (Mercado Pago o transferencia). */
+export function trackAddPaymentInfo(items, paymentMethod, coupon) {
+  pushDataLayer({ ecommerce: null });
+  pushDataLayer({
+    event: 'add_payment_info',
+    ecommerce: {
+      currency: 'ARS',
+      value: sum(items),
+      payment_type: paymentMethod,
+      ...(coupon ? { coupon } : {}),
+      items: toItems(items)
+    }
+  });
+  debug('add_payment_info', paymentMethod);
+}
+
+/** Click al botón de WhatsApp, con el contexto de dónde salió. */
+export function trackWhatsappClick(context = 'floating') {
+  pushDataLayer({ event: 'whatsapp_click', whatsapp_context: context });
+  pixelCustom('WhatsappClick', { context });
+  debug('whatsapp_click', context);
+}
+
+/** Envío calculado antes del checkout (ver components/ShippingInfo.jsx). */
+export function trackShippingCalculated({ zone, cost }) {
+  pushDataLayer({ event: 'shipping_calculated', shipping_zone: zone, shipping_cost: cost });
+  debug('shipping_calculated', zone, cost);
+}
+
 export function trackAddToCart(product, quantity = 1) {
   pushDataLayer({ ecommerce: null });
   pushDataLayer({
@@ -189,15 +243,25 @@ export function trackAddShippingInfo(items, shippingTier) {
   debug('add_shipping_info', shippingTier);
 }
 
-export function trackPurchase({ orderId, items, total, shipping }) {
+/**
+ * @param {{ orderId: string, items: Array, total: number, shipping?: number,
+ *           coupon?: string|null, paymentMethod?: string }} order
+ *        `total` es lo que REALMENTE paga el cliente (ítems con descuento +
+ *        envío), no el precio de lista. `paymentMethod` viaja como parámetro
+ *        propio para poder separar en GA4 las ventas por transferencia —que se
+ *        registran antes de recibir el comprobante— de las de Mercado Pago.
+ */
+export function trackPurchase({ orderId, items, total, shipping, coupon, paymentMethod }) {
   pushDataLayer({ ecommerce: null });
   pushDataLayer({
     event: 'purchase',
+    payment_method: paymentMethod,
     ecommerce: {
       transaction_id: orderId,
       currency: 'ARS',
       value: total,
       shipping,
+      ...(coupon ? { coupon } : {}),
       items: toItems(items)
     }
   });

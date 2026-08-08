@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import CheckoutForm from '../components/CheckoutForm.jsx';
@@ -7,7 +7,8 @@ import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
 import { calculateShipping, freeShippingThresholdFor } from '../config/site.js';
 import { findCoupon, couponBundle, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
-import { trackBeginCheckout, trackAddShippingInfo } from '../lib/analytics.js';
+import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo } from '../lib/analytics.js';
+import { stashPurchase } from '../lib/purchaseTracking.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
 import { buildDesignSummary, groupCustomItems } from '../lib/resumenPedido.js';
@@ -128,8 +129,14 @@ export default function Checkout() {
 
   useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago o por transferencia bancaria.' });
 
+  // Una sola vez por visita al checkout: sin el ref, el doble efecto de
+  // StrictMode duplica el begin_checkout y arruina la tasa carrito → checkout.
+  const beginCheckoutEnviado = useRef(false);
   useEffect(() => {
-    if (items.length > 0) trackBeginCheckout(items);
+    if (items.length > 0 && !beginCheckoutEnviado.current) {
+      beginCheckoutEnviado.current = true;
+      trackBeginCheckout(items);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -141,11 +148,30 @@ export default function Checkout() {
     setPaymentMethod(next);
   }, []);
 
-  // Disparamos el evento de envío solo cuando cambia el método (no en cada tecla de la ciudad).
+  // `add_shipping_info` y `add_payment_info` solo cuando el cliente ELIGE algo.
+  // El efecto también corre al montar, y disparándolo ahí los dos eventos
+  // existían siempre con el valor por defecto: no medían ninguna decisión.
+  //
+  // El guard compara contra el ÚLTIMO VALOR trackeado, no contra un "es el
+  // primer render". Un flag booleano no alcanza: StrictMode monta, desmonta y
+  // vuelve a montar sobre el mismo fiber, el ref sobrevive a ese ciclo y la
+  // segunda corrida se hace pasar por un cambio real. Comparando el valor, ni
+  // el doble efecto ni un re-render disparan de más.
+  const ultimoEnvio = useRef(ship.method);
   useEffect(() => {
+    if (ultimoEnvio.current === ship.method) return;
+    ultimoEnvio.current = ship.method;
     trackAddShippingInfo(items, ship.method);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ship.method]);
+
+  const ultimoPago = useRef(paymentMethod);
+  useEffect(() => {
+    if (ultimoPago.current === paymentMethod) return;
+    ultimoPago.current = paymentMethod;
+    trackAddPaymentInfo(items, paymentMethod, appliedCoupon || null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod]);
 
   if (items.length === 0) {
     return (
@@ -177,16 +203,32 @@ export default function Checkout() {
       // Guardá la spec (personalizados + fotos de fijos) para el CTA de WhatsApp en /pago-exitoso.
       stashDesignSpec(items, payer?.name);
 
+      // El pedido con los precios REALES (ya con 3x2/cupón/transferencia) viaja
+      // a la pantalla de gracias por sessionStorage: el CartContext solo conoce
+      // el precio de lista y no sobrevive al redirect a Mercado Pago.
+      const stash = (orderId) =>
+        stashPurchase({
+          orderId,
+          items,
+          itemsTotal: subtotal,
+          shippingCost,
+          total,
+          coupon: appliedCoupon || null,
+          paymentMethod: method
+        });
+
       if (method === 'transferencia') {
         const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
         if (!orderId) throw new Error('Respuesta inválida del backend');
+        stash(orderId);
         clear();
         navigate(`/pago-transferencia?ref=${encodeURIComponent(orderId)}`);
         return;
       }
 
-      const { init_point } = await createPreference({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
+      const { init_point, external_reference } = await createPreference({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
       if (!init_point) throw new Error('Respuesta inválida del backend');
+      stash(external_reference);
       window.location.href = init_point;
     } catch (err) {
       console.error(err);

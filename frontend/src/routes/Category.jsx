@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import StickerCard from '../components/StickerCard.jsx';
 import CategoryMenu from '../components/CategoryMenu.jsx';
 import DiscountNote from '../components/DiscountNote.jsx';
 import { CATEGORIES, getCategory } from '../data/categories.js';
+import { DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
 import { useSeo, breadcrumbJsonLd } from '../lib/seo.js';
+import { trackViewItemList } from '../lib/analytics.js';
 
 const PAGE = 48;
 
@@ -56,6 +58,33 @@ export default function Category() {
     const term = q.trim().toLowerCase();
     return mapped.filter((s) => s.name.toLowerCase().includes(term) || s.id.includes(term));
   }, [items, category, slug, q]);
+
+  // Impresión de la lista: sin este evento no se puede medir el escalón
+  // "vio la grilla → abrió un diseño → lo agregó". Se dispara una vez por
+  // categoría cargada, no en cada tecla del buscador interno.
+  //
+  // El ref lo hace idempotente por categoría: el doble efecto de StrictMode en
+  // dev —y cualquier re-render que vuelva a pasar por acá— mandaría el evento
+  // dos veces e inflaría el denominador de todo el funnel.
+  const listaTrackeada = useRef(null);
+  useEffect(() => {
+    if (items?.length && listaTrackeada.current !== slug) {
+      listaTrackeada.current = slug;
+      trackViewItemList(
+        items.map((it) => ({
+          id: it.id,
+          sku: it.sku,
+          name: `${category.name} #${it.id.split('-').pop()}`,
+          category: slug,
+          categoryLabel: category.name,
+          price: priceForSize(DEFAULT_SIZE)
+        })),
+        category.name,
+        slug
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, slug]);
 
   if (!category) return <Navigate to="/categorias" replace />;
 
@@ -128,7 +157,7 @@ export default function Category() {
           <>
             <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {stickers.slice(0, visible).map((s) => (
-                <StickerCard key={s.id} sticker={s} />
+                <StickerCard key={s.id} sticker={s} listName={category.name} />
               ))}
             </div>
             {visible < stickers.length && (
