@@ -78,21 +78,30 @@
 
     <!--
       Microsoft Clarity (mapas de calor + grabaciones de sesión).
-      Va inline en el <head> a propósito: el ID de proyecto es público y así
-      empieza a grabar antes de que monte React (no depende de env vars).
+      El ID de proyecto es público, así que va inline y no depende de env vars.
+
+      El snippet se registra en el <head> para no perder eventos del arranque,
+      pero la carga del tag se difiere a `window.load`: antes competía por ancho
+      de banda con el hero y el bundle justo durante el LCP. La cola `clarity.q`
+      se llena igual desde el primer momento y el tag la vacía cuando llega, así
+      que no se pierde nada de la sesión.
     -->
     <script type="text/javascript">
-      (function (c, l, a, r, i, t, y) {
+      (function (c, l, a, r, i) {
         c[a] =
           c[a] ||
           function () {
             (c[a].q = c[a].q || []).push(arguments);
           };
-        t = l.createElement(r);
-        t.async = 1;
-        t.src = 'https://www.clarity.ms/tag/' + i;
-        y = l.getElementsByTagName(r)[0];
-        y.parentNode.insertBefore(t, y);
+        var cargar = function () {
+          var t = l.createElement(r);
+          t.async = 1;
+          t.src = 'https://www.clarity.ms/tag/' + i;
+          var y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        };
+        if (l.readyState === 'complete') cargar();
+        else c.addEventListener('load', cargar);
       })(window, document, 'clarity', 'script', 'xt45d8xn75');
     </script>
   </head>

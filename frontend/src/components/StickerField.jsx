@@ -122,6 +122,10 @@ export default function StickerField({ count = 14, opacity = 0.34, className = '
             alt=""
             loading="lazy"
             decoding="async"
+            // Los cutouts son cuadrados: con width/height el navegador reserva
+            // el lugar antes de descargarlos y no hay salto de layout.
+            width={s.size}
+            height={s.size}
             className="sticker-float"
             style={{
               top: s.top,

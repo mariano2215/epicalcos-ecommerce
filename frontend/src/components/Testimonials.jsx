@@ -22,6 +22,10 @@ export default function Testimonials() {
                 <img
                   src={t.image}
                   alt={`Calco aplicado — testimonio de ${t.name}`}
+                  loading="lazy"
+                  decoding="async"
+                  width={400}
+                  height={500}
                   className="w-full aspect-[4/5] object-cover rounded-xl"
                 />
               ) : (

@@ -12,19 +12,19 @@ export const TESTIMONIALS = [
   {
     name: 'Martin C.',
     text: 'Me encantó la calidad, esta calco de Gokú es genial',
-    image: '/testimonials/anime-1.png',
+    image: '/testimonials/anime-1.webp',
     label: 'Calcos anime'
   },
   {
     name: 'Sofía M.',
     text: 'Tenia que hacer un sticker para la puerta de mi local de mascotas y me quedó re lindo',
-    image: '/testimonials/logo-1.png',
+    image: '/testimonials/logo-1.webp',
     label: 'Logo personalizado'
   },
   {
     name: 'Giuliana S.',
     text: 'Lo lindo que es tomar mates con un termo así de decorado',
-    image: '/testimonials/personalizados-1.png',
+    image: '/testimonials/personalizados-1.webp',
     label: 'Termo personalizado'
   }
 ];

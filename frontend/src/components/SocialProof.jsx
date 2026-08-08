@@ -26,6 +26,9 @@ export default function SocialProof({ index = 0, className = '', conFoto = true 
             src={t.image}
             alt={`Calco aplicado — testimonio de ${t.name}`}
             loading="lazy"
+            decoding="async"
+            width={64}
+            height={64}
             className="w-16 h-16 rounded-xl object-cover shrink-0"
           />
         )}
