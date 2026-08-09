@@ -185,6 +185,29 @@ export function trackPackCompleted({ packSize, units, designs, value }) {
   debug('pack_completed', packSize, units, 'calcos /', designs, 'diseños');
 }
 
+// ─── A/B testing ──────────────────────────────────────────────────────────────
+
+/**
+ * Exposición a una variante de experimento (ver lib/experiments.js).
+ *
+ * Va por partida doble a propósito:
+ *  - `experiment_view` como EVENTO, para contar exposiciones reales.
+ *  - `user_properties.exp_{id}`, para poder segmentar CUALQUIER informe de GA4
+ *    por variante (incluido `purchase`, que ocurre páginas después). Sin la
+ *    propiedad de usuario habría que armar embudos a mano para cada test.
+ *
+ * Nunca lleva PII: el id de visitante de experiments.js es un random propio.
+ */
+export function trackExperimentView({ id, variant }) {
+  pushDataLayer({
+    event: 'experiment_view',
+    experiment_id: id,
+    experiment_variant: variant,
+    user_properties: { [`exp_${id}`]: variant }
+  });
+  debug('experiment_view', id, '→', variant);
+}
+
 /** Click al botón de WhatsApp, con el contexto de dónde salió. */
 export function trackWhatsappClick(context = 'floating') {
   pushDataLayer({ event: 'whatsapp_click', whatsapp_context: context });

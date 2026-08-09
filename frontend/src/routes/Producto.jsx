@@ -268,7 +268,9 @@ export default function Producto() {
                     );
                   })}
                 </div>
-                <SizeGuide selectedSize={size} onSelect={setSize} />
+                {/* `experimento`: la ficha es la única superficie que entra al
+                    A/B `guia_tamano` (ver lib/experiments.js). */}
+                <SizeGuide selectedSize={size} onSelect={setSize} experimento />
               </div>
 
               {/* Cantidad */}

@@ -8,6 +8,7 @@ import {
   round
 } from '../config/pricing.js';
 import { shipping } from '../config/site.js';
+import { useExperiment } from '../lib/experiments.js';
 
 /**
  * Tarjeta de un tamaño de pack (x10 / x20 / x50 / x100).
@@ -26,6 +27,8 @@ import { shipping } from '../config/site.js';
 export default function PackCard({
   qty, size, label, tagline, to, destacado = false, precioFijo, nota
 }) {
+  const varianteAhorro = useExperiment('ahorro_pack');
+
   const unitLista = priceForSize(size);
   const lista = unitLista * qty;
 
@@ -72,9 +75,14 @@ export default function PackCard({
         </div>
         <div className="text-xs text-white/55 mt-1">{formatPrice(unitario)} por calco · {sizeLabel(size)}</div>
 
+        {/* CRO-007: ¿el ahorro pesa más en pesos o en porcentaje?
+            Cada variante muestra UNA de las dos formas, no las dos reordenadas
+            —si no, no hay nada que medir—. Ninguna esconde información: el card
+            ya muestra el precio de lista tachado y el final, así que el cliente
+            puede sacar la cuenta en cualquiera de las dos. */}
         {ahorro > 0 && (
           <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 text-[11px] text-emerald-400 font-semibold">
-            Ahorrás {formatPrice(ahorro)} · {off}% off
+            {varianteAhorro === 'monto' ? `Ahorrás ${formatPrice(ahorro)}` : `${off}% off`}
           </div>
         )}
 

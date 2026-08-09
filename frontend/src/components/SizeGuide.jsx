@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SIZES } from '../config/pricing.js';
+import { useExperiment } from '../lib/experiments.js';
 
 /**
  * Resuelve la objeción "no sé qué tamaño elegir".
@@ -18,8 +19,15 @@ const USOS = {
 /** Lado del cuadrado en px, proporcional a los cm reales (9 cm = 72 px). */
 const px = (sizeId) => (parseInt(sizeId, 10) / 9) * 72;
 
-export default function SizeGuide({ selectedSize, onSelect }) {
-  const [open, setOpen] = useState(false);
+/**
+ * `experimento` activa el A/B `guia_tamano` (abierta de entrada vs colapsada).
+ * Se pasa como prop y no se lee acá adentro para que las landings, que la
+ * muestran siempre abierta por diseño, no entren al test y le ensucien la
+ * muestra.
+ */
+export default function SizeGuide({ selectedSize, onSelect, experimento = false, abierta = false }) {
+  const varianteGuia = useExperiment(experimento ? 'guia_tamano' : null);
+  const [open, setOpen] = useState(abierta || varianteGuia === 'abierta');
 
   return (
     <div className="mt-3">

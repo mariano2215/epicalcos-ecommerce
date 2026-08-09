@@ -137,7 +137,9 @@ export default function LandingUso({ slug }) {
             Para esto recomendamos el de{' '}
             <strong className="text-white">{sizeLabel(landing.tamanoRecomendado)}</strong>. {landing.tamanoPorQue}
           </p>
-          <SizeGuide selectedSize={landing.tamanoRecomendado} />
+          {/* Abierta siempre: toda esta sección ES la respuesta al tamaño.
+              Fuera del A/B a propósito, para no ensuciar la muestra de la ficha. */}
+          <SizeGuide selectedSize={landing.tamanoRecomendado} abierta />
         </section>
 
         {/* 4. Beneficios */}
