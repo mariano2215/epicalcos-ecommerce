@@ -8,6 +8,7 @@ import Testimonials from '../components/Testimonials.jsx';
 import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
 import HowToBuy from '../components/HowToBuy.jsx';
 import IntentSelector from '../components/IntentSelector.jsx';
+import RecentCategories from '../components/RecentCategories.jsx';
 import FAQ from '../components/FAQ.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
 import Reveal from '../components/Reveal.jsx';
@@ -92,6 +93,10 @@ export default function Home() {
           logo o a comprar para su negocio tenía que deducir solo que existía
           una página para eso. */}
       <IntentSelector />
+
+      {/* Solo para quien ya estuvo mirando: con 99 categorías, volver a la que
+          estabas viendo cuesta. No se renderiza nada si no hay historial. */}
+      <RecentCategories />
 
       <FeaturedStickers />
 

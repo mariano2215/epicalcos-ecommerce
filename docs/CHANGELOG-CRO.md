@@ -2,6 +2,62 @@
 
 ---
 
+## 2026-08-08 · Fase P3
+
+### A/B testing
+
+- **Nuevo** `lib/experiments.js` — bucketing propio, sin dependencias y sin
+  parpadeo (asignación sincrónica, el componente ya renderiza con su variante).
+- Kill switch (`active: false`), override de QA por query param, exposición
+  única por carga de página, `experiment_view` como evento **y** como
+  `user_property` para poder segmentar `purchase`.
+- **Regla dura**: los experimentos son solo de presentación. Un A/B de precios
+  rompería la validación del servidor (`price_mismatch`).
+- Dos experimentos vivos: `ahorro_pack` (% vs $) y `guia_tamano` (colapsada vs
+  abierta).
+- **Corregido**: el `_vid` se perdía en cada asignación porque `guardarEstado`
+  pisaba con un snapshot viejo.
+- **Nuevo** `lib/experiments.test.js` — 9 tests (64 en total).
+
+### Personalización
+
+- **Nuevos** `lib/recientes.js` + `RecentCategories` — "Seguí donde estabas".
+  Solo slugs en `localStorage`, sin PII. Invisible para el visitante nuevo y
+  hasta tener 2 categorías distintas.
+
+### Docs
+
+- **Nuevo** `docs/AUTOMATIZACIONES.md` — las 11 automatizaciones que ya corren y
+  la especificación del carrito abandonado (**no implementado**: manda mails en
+  nombre del cliente y necesita su OK).
+- `CRO-EXPERIMENTS.md` — proceso completo de CRO continuo y criterios de cierre.
+
+### Archivos
+
+**Nuevos**
+
+```
+docs/AUTOMATIZACIONES.md
+frontend/src/components/RecentCategories.jsx
+frontend/src/lib/experiments.js
+frontend/src/lib/experiments.test.js
+frontend/src/lib/recientes.js
+```
+
+**Modificados**
+
+```
+frontend/src/components/PackCard.jsx
+frontend/src/components/SizeGuide.jsx
+frontend/src/lib/analytics.js
+frontend/src/routes/Category.jsx
+frontend/src/routes/Home.jsx
+frontend/src/routes/LandingUso.jsx
+frontend/src/routes/Producto.jsx
+```
+
+---
+
 ## 2026-08-08 · Fase P2
 
 ### Landings

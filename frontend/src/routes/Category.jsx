@@ -8,6 +8,7 @@ import { CATEGORIES, getCategory } from '../data/categories.js';
 import { DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
 import { useSeo, breadcrumbJsonLd } from '../lib/seo.js';
 import { trackViewItemList } from '../lib/analytics.js';
+import { registrarVista } from '../lib/recientes.js';
 
 const PAGE = 48;
 
@@ -66,6 +67,11 @@ export default function Category() {
   // El ref lo hace idempotente por categoría: el doble efecto de StrictMode en
   // dev —y cualquier re-render que vuelva a pasar por acá— mandaría el evento
   // dos veces e inflaría el denominador de todo el funnel.
+  // Historial local para "Seguí donde estabas" (ver lib/recientes.js).
+  useEffect(() => {
+    if (category) registrarVista(slug);
+  }, [category, slug]);
+
   const listaTrackeada = useRef(null);
   useEffect(() => {
     if (items?.length && listaTrackeada.current !== slug) {

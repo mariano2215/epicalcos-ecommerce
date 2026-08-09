@@ -195,13 +195,50 @@ ve idéntico).
 
 ---
 
+## 5d. Fase P3 — A/B testing y personalización
+
+**9 tests automáticos nuevos** en `lib/experiments.test.js` (total: **64**).
+
+| Prueba | Resultado |
+|---|---|
+| Variante estable en 20 lecturas seguidas | ✅ |
+| `_vid` persiste al asignar un segundo experimento | ✅ regresión cubierta |
+| Kill switch manda por encima de lo guardado | ✅ |
+| Reparto parejo entre 400 visitantes | ✅ ambas variantes >35 % |
+| Override `?exp_<id>=<variante>` | ✅ |
+| Override con variante inexistente se ignora | ✅ |
+| Experimento inexistente devuelve `null` | ✅ no rompe |
+| `localStorage` bloqueado (incógnito) | ✅ cae a control |
+
+### Verificado en navegador
+
+| Prueba | Resultado |
+|---|---|
+| `/armar-pack` con 4 `PackCard` | ✅ **1 sola** exposición (no 4) |
+| Dos experimentos asignados por separado | ✅ `ahorro_pack` + `guia_tamano`, `_vid` compartido |
+| Variante `monto` renderiza | ✅ "Ahorrás $1.600 / $3.200 / $8.000 / $120.001" |
+| Variante `porcentaje` renderiza | ✅ "10% off / 75% off" |
+| Parpadeo de variante | ✅ ninguno (asignación sincrónica) |
+| `experiment_view` con `user_properties` | ✅ |
+
+### Personalización
+
+| Prueba | Resultado |
+|---|---|
+| Visitante nuevo **no** ve el bloque | ✅ |
+| Tras visitar 3 categorías | ✅ `[pokemon, futbol, anime]`, más reciente primero |
+| Con 1 sola categoría vista | ✅ no se muestra |
+| Desborde a 375 px en 7 rutas | ✅ **0 px** |
+
+---
+
 ## 6. Pendiente de probar en producción
 
 Estas pruebas **no se pueden hacer en local** porque necesitan las Netlify
 Functions y credenciales reales:
 
-- [ ] Compra completa con **Mercado Pago** → confirmar que `/pago-exitoso` recibe
-      el `external_reference` y dispara **un solo** `purchase` con el monto real.
+- [x] ~~Compra completa con **Mercado Pago**~~ → **validado en producción el
+      8/8/2026**: el `purchase` llega bien y activo.
 - [ ] Los **301** de `/calcos-personalizadas`, `/calcos-para-negocios` y
       `/pack-100-calcos` (en local el SPA no aplica reglas de Netlify: hay que
       verificarlos con el sitio deployado).

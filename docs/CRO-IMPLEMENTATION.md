@@ -310,6 +310,81 @@ navegador embebido de Instagram, antes de tocar el header).
 
 ---
 
+---
+
+## P3 — A/B testing, CRO continuo, personalización y automatizaciones ✅
+
+### 23. A/B testing propio
+
+**Por qué no una herramienta.** Google Optimize está discontinuado desde 2023, y
+VWO/Optimizely inyectan un script bloqueante en el `<head>` precisamente para
+tapar el parpadeo de variante — lo contrario del trabajo de P2, donde el Home
+bajó de 820 KB a 103 KB y Clarity se difirió. Pagar eso para testear un badge no
+cierra.
+
+`lib/experiments.js` asigna la variante de forma **sincrónica** (localStorage +
+hash FNV-1a), así que el componente ya renderiza con su variante en el primer
+paint: **no hay parpadeo que tapar**.
+
+| Capacidad | Cómo |
+|---|---|
+| Asignación estable | hash de `visitorId:experimentId`, persistida |
+| Kill switch | `active: false` → todos a control, al instante |
+| Preview de variante | `?exp_<id>=<variante>` en la URL |
+| Medición | `experiment_view` + `user_properties.exp_<id>` |
+| Sin PII | el id de visitante es un random propio |
+
+**⚠️ Regla dura, documentada en el módulo: los experimentos son solo de
+presentación.** Un A/B de precios dejaría a media tienda sin poder comprar,
+porque el servidor revalida cada línea y rechaza con `price_mismatch`.
+
+**Bug encontrado y corregido con test**: `getVariant` leía el estado, después
+`visitorId()` escribía el `_vid`, y al guardar la variante se pisaba con el
+snapshot viejo — el id de visitante se perdía en cada asignación, y dos
+experimentos asignados en momentos distintos usaban semillas distintas.
+
+**Exposición ≠ montaje**: `/armar-pack` renderiza cuatro `PackCard`. Sin la
+guarda, el denominador del test quedaba multiplicado por cuatro.
+
+**9 tests nuevos** (64 en total): estabilidad, persistencia del `_vid`, kill
+switch por encima de lo guardado, reparto parejo, override de QA, modo incógnito.
+
+### 24. CRO continuo
+
+`CRO-EXPERIMENTS.md` ahora incluye el **proceso completo**: cómo declarar, usar,
+revisar, leer y apagar un experimento, y —lo más importante— **cuándo cerrarlo**
+(mínimo 2 semanas y ~200 conversiones por variante; no mirar todos los días, que
+es la forma más común de creerse un resultado falso).
+
+Dos experimentos corriendo: `ahorro_pack` (CRO-007) y `guia_tamano` (CRO-011).
+
+### 25. Personalización
+
+Una sola, y chica a propósito: **"Seguí donde estabas"**. Con 99 categorías, el
+que vuelve tiene que encontrar la suya entre 99 tarjetas o escribirla de nuevo.
+
+- Solo slugs de categoría en `localStorage`. Sin PII, sin backend, sin perfilado.
+- **No se renderiza nada si no hay historial**: el visitante nuevo ve la página de
+  siempre.
+- Pide **2 categorías distintas** como mínimo — una sola no es historial, es la
+  página de la que venís.
+
+No se agregó más: el North Star del plan es *menos fricción*, no más bloques.
+
+### 26. Automatizaciones
+
+`docs/AUTOMATIZACIONES.md` documenta las 11 que ya corren solas y prioriza lo
+que falta.
+
+**La recuperación de carrito abandonado quedó especificada, no implementada.**
+Mandar mails a tus clientes es una acción hacia afuera y en tu nombre: un bug de
+segmentación ahí no es un bug de UI, es spamear tu base. El doc tiene los 4 pasos
+y los riesgos concretos a cubrir (pedidos por transferencia que tardan en
+confirmarse, misma persona con varios carritos, consentimiento) para cuando
+quieras darle luz verde.
+
+---
+
 ## Estado de las fases
 
 | Fase | Estado |
@@ -317,12 +392,14 @@ navegador embebido de Instagram, antes de tocar el header).
 | **P0** — fricción crítica | ✅ **completa, verificada en navegador** |
 | **P1** — packs, carrito, personalizados | ✅ **completa, verificada en navegador** |
 | **P2** — landings, performance, SEO, dashboards | ✅ **completa, verificada en navegador** |
-| **P3** — A/B testing y CRO continuo | ⬜ backlog escrito en `CRO-EXPERIMENTS.md` |
+| **P3** — A/B testing, CRO continuo, personalización | ✅ **completa, verificada en navegador** |
 
-### Lo que bloquea a P3
+### Lo que queda abierto (decisiones tuyas, no trabajo pendiente)
 
-**P3 no se puede empezar de verdad hasta validar el `purchase` en producción**
-(`QA-CHECKLIST.md` §6). Correr un A/B test sobre un KPI que no se verificó es
-peor que no testear: se toman decisiones con números equivocados.
-
-Una vez validado, el backlog de `CRO-EXPERIMENTS.md` está priorizado y listo.
+1. **Leer los dos experimentos** en ~2 semanas (`CRO-EXPERIMENTS.md`).
+2. **Carrito abandonado**: especificado en `AUTOMATIZACIONES.md` §2.1, esperando
+   tu OK para implementarlo.
+3. **Enforcar la CSP**: procedimiento de 5 pasos en `ANALYTICS.md` §7.
+4. **Feed programado en Meta Commerce Manager**: configuración de panel, no código.
+5. **Trazabilidad del archivo en Cloudinary**: ver P1 §12.
+6. **Borrar los PNG originales** (~15 MB de deploy): son archivos tuyos, dame el OK.

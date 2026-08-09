@@ -4,10 +4,102 @@ Backlog de hipótesis. **Nada se da por ganado sin medirlo**: varios cambios de
 P0 fueron correcciones de errores objetivos (una promesa falsa, un `value` mal
 calculado) y esos no se testean — se arreglan. Lo que sigue sí es opinable.
 
-> ⚠️ **Antes de correr cualquier experimento**: hay que validar en producción que
-> el `purchase` llega bien (ver `QA-CHECKLIST.md` §6). Hasta ese momento el KPI
-> principal no es confiable, y un test leído sobre datos rotos es peor que no
-> testear.
+> ✅ El `purchase` fue **validado en producción** (8/8/2026). Los KPIs de esta
+> página ya son confiables.
+
+---
+
+## Cómo se corre un experimento acá
+
+La infraestructura es propia y vive en `frontend/src/lib/experiments.js`
+(sin dependencias, sin script bloqueante, sin parpadeo).
+
+### 1. Declararlo
+
+```js
+// frontend/src/lib/experiments.js
+export const EXPERIMENTS = {
+  mi_experimento: {
+    active: true,
+    variants: ['control', 'variante'],  // variants[0] es SIEMPRE el control
+    descripcion: 'Qué cambia, en una línea'
+  }
+};
+```
+
+### 2. Usarlo en el componente
+
+```jsx
+const variante = useExperiment('mi_experimento');
+return variante === 'variante' ? <Nuevo /> : <Actual />;
+```
+
+`useExperiment` devuelve la variante de forma **sincrónica** (ya en el primer
+render) y manda `experiment_view` una sola vez por carga de página.
+
+### 3. Revisarlo antes de publicarlo
+
+Forzá cada variante con un query param, sin tocar código:
+
+```
+/armar-pack?exp_ahorro_pack=monto
+/producto/anime/1?exp_guia_tamano=abierta
+```
+
+### 4. Leerlo en GA4
+
+Crear la dimensión personalizada (ámbito **usuario**) `exp_mi_experimento` →
+parámetro `exp_mi_experimento`. Después, cualquier informe se puede segmentar por
+variante, incluido `purchase`.
+
+Exposiciones: evento `experiment_view` con `experiment_id` y `experiment_variant`.
+
+### 5. Apagarlo
+
+`active: false` manda a **todos** a control al instante, aunque tengan otra
+variante guardada. Es el freno de mano: no hace falta tocar los componentes.
+
+---
+
+## ⚠️ Regla dura: nunca testear un PRECIO
+
+Los experimentos son **solo de presentación**.
+
+El servidor revalida cada línea del carrito contra
+`netlify/functions/lib/pricing.js` y rechaza el pedido con `price_mismatch` si el
+precio no coincide. Un A/B de precios dejaría a **media tienda sin poder
+comprar**, y el error aparecería recién al pagar.
+
+Se puede testear **cómo se muestra** un precio (monto vs porcentaje, dónde va el
+tachado, qué se destaca). Nunca **cuánto vale**.
+
+---
+
+## Cuándo cerrar un test
+
+| Regla | Por qué |
+|---|---|
+| **Mínimo 2 semanas completas** | menos que eso mezcla días de semana con fines de semana y sesgos de campaña |
+| **Mínimo ~200 conversiones por variante** | con menos, la diferencia que ves es ruido |
+| **No mirar todos los días** | mirar y parar cuando "va ganando" es la forma más común de creerse un resultado falso |
+| **Una variable por vez** | si cambiás la ficha y el checkout juntos, no sabés cuál movió la aguja |
+| **Segmentar mobile / desktop** | el grueso del tráfico es mobile; el promedio esconde el resultado |
+| **El KPI final es `purchase`** | un cambio que sube el add-to-cart y baja la compra es una pérdida |
+
+Con el volumen de EPICALCOS, un test de conversión honesto tarda **semanas**. Un
+resultado a los 3 días no probó nada.
+
+---
+
+## Experimentos EN CURSO
+
+| Id | Qué compara | KPI | Estado |
+|---|---|---|---|
+| `ahorro_pack` | `PackCard`: "10% off" (control) vs "Ahorrás $3.200" | `pack_builder_start` / vistas de `/armar-pack` · 2°: `purchase` | 🟢 corriendo desde 8/8/2026 |
+| `guia_tamano` | `SizeGuide` en la ficha: colapsada (control) vs abierta | `add_to_cart` / `view_item` · 2°: mix de tamaños | 🟢 corriendo desde 8/8/2026 |
+
+> La `SizeGuide` de las landings de uso queda **fuera** del test a propósito
+> (ahí va siempre abierta por diseño): mezclarla ensuciaría la muestra de la ficha.
 
 ---
 
@@ -80,8 +172,22 @@ AOV más de lo que canibaliza la compra suelta.
 ## CRO-007 · Ahorro en pesos vs. en porcentaje
 **Hipótesis.** "Ahorrás $12.000" pesa más que "50 % off" en tickets altos
 (mayorista, negocio); al revés en tickets chicos.
-**Cambio.** A/B del label de descuento en `PackBuilder` y `/mayorista`.
-**KPI.** Conversion rate de la página de pack.
+**Cambio.** A/B `ahorro_pack` en `PackCard` *(🟢 corriendo desde 8/8/2026)*.
+**KPI.** `pack_builder_start` / vistas de `/armar-pack`.
+**KPI 2°.** `purchase` y ticket promedio — si sube el interés pero baja la
+compra, el monto grande está asustando en vez de atraer.
+**Resultado.** Pendiente.
+
+## CRO-011 · Guía de tamaños abierta de entrada
+**Problema.** "No sé qué tamaño elegir" es la objeción #1 de la ficha, y hoy la
+respuesta está detrás de un click que hay que decidir dar.
+**Hipótesis.** Resolverla sin que la pidan sube el add-to-cart más de lo que
+molesta un bloque abierto de más.
+**Cambio.** A/B `guia_tamano` en la ficha *(🟢 corriendo desde 8/8/2026)*.
+**KPI.** `add_to_cart / view_item`.
+**KPI 2°.** Mix de tamaños y AOV — si además corre la elección hacia 6 y 9 cm,
+gana dos veces.
+**Riesgo.** Empuja el CTA hacia abajo en mobile. Si el add-to-cart baja, es eso.
 **Resultado.** Pendiente.
 
 ## CRO-008 · Prueba social pegada al CTA

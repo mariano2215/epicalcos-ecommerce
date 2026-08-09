@@ -13,6 +13,7 @@ import { SIZES, DEFAULT_SIZE, priceForSize, sizeLabel } from '../config/pricing.
 import { shipping } from '../config/site.js';
 import { useSeo, productJsonLd } from '../lib/seo.js';
 import { trackViewItem } from '../lib/analytics.js';
+import { registrarVista } from '../lib/recientes.js';
 
 /**
  * Subpágina de detalle de un calco (estilo Mercado Libre): imagen en grande,
@@ -44,6 +45,11 @@ export default function Producto() {
       .then(setItems)
       .catch(() => setItems([]));
   }, [slug, category]);
+
+  // Historial local para "Seguí donde estabas" (ver lib/recientes.js).
+  useEffect(() => {
+    if (category) registrarVista(slug);
+  }, [category, slug]);
 
   // Reset al cambiar de diseño (incluye scroll arriba al navegar entre productos)
   useEffect(() => {
