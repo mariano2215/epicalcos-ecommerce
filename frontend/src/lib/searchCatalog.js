@@ -126,6 +126,7 @@ export function suggest(query, categories, counts, aliases, limit = 6) {
       '/personalizados': '✏️ Armá tu calco personalizado',
       '/mayorista': '📦 Pack Mayorista x100 · 50% off',
       '/negocio': '🏪 Calcos para tu negocio',
+      '/archivos-imprimibles': '🖨️ Archivos imprimibles · te llegan por mail',
       '/tatuajes': '💉 Tatuajes temporales',
       '/polaroid': '📸 Fotos Polaroid',
       '/contacto': '💬 Hablanos por WhatsApp',

@@ -1,5 +1,5 @@
 import { isSectionHidden } from '../config/site.js';
-import { isMayoristaPromoActive } from '../config/pricing.js';
+import { isMayoristaPromoActive, IMPRIMIBLE_PRINCIPAL } from '../config/pricing.js';
 
 /**
  * Catálogo de categorías de EPICALCOS.
@@ -145,6 +145,16 @@ const ALL_SPECIALS = [
     emoji: '🏪',
     blurb: '100 calcos de tu logo en 6 cm · $39.999',
     accent: 'from-sky-400 to-blue-600'
+  },
+  {
+    slug: 'archivos-imprimibles',
+    to: '/archivos-imprimibles',
+    name: 'Archivos imprimibles',
+    emoji: '🖨️',
+    // Producto digital: el gancho es que no hay envío ni espera. El precio sale
+    // de pricing.js para que no quede desfasado si lo cambiás allá.
+    blurb: `Diseños digitales por mail · $${IMPRIMIBLE_PRINCIPAL.price.toLocaleString('es-AR')}`,
+    accent: 'from-emerald-400 to-teal-600'
   },
   {
     slug: 'tatuajes',

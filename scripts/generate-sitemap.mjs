@@ -35,6 +35,7 @@ const STATIC_ROUTES = [
   { path: '/armar-pack', priority: 0.8 },
   { path: '/personalizados', priority: 0.8 },
   { path: '/negocio', priority: 0.8 },
+  { path: '/archivos-imprimibles', priority: 0.8 },
   { path: '/mayorista', priority: 0.8 },
   { path: '/tatuajes', priority: 0.8 },
   { path: '/polaroid', priority: 0.8 },

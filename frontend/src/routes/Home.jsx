@@ -18,7 +18,7 @@ import { useReducedMotion } from '../lib/motion.js';
 import { usePromoActive, useMayoristaPromoActive } from '../lib/promo.js';
 
 const FEATURED_SLUGS = ['anime', 'futbol', 'disney', 'pokemon', 'memes', 'gamer', 'superheroes', 'cute', 'autos-y-motos', 'musica'];
-const SERVICE_SLUGS = ['mayorista', 'tatuajes', 'polaroid'];
+const SERVICE_SLUGS = ['mayorista', 'archivos-imprimibles', 'tatuajes', 'polaroid'];
 
 export default function Home() {
   const [catalog, setCatalog] = useState({});

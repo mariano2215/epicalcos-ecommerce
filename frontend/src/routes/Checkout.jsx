@@ -58,11 +58,17 @@ function stashDesignSpec(items, payerName) {
 }
 
 export default function Checkout() {
-  const { pricedItems, clear, promoActive } = useCart();
+  const { pricedItems, clear, promoActive, digitalOnly } = useCart();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [ship, setShip] = useState({ method: 'envio', city: 'Rosario', province: 'Santa Fe' });
+  // Un pedido de solo archivos imprimibles no se entrega: arranca (y se queda)
+  // en 'digital', y el formulario ni siquiera muestra la sección de entrega.
+  const [ship, setShip] = useState({
+    method: digitalOnly ? 'digital' : 'envio',
+    city: 'Rosario',
+    province: 'Santa Fe'
+  });
   const [paymentMethod, setPaymentMethod] = useState('mercadopago');
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState('');
@@ -118,15 +124,20 @@ export default function Checkout() {
     if (isTransfer && !appliedCoupon) parts.push('10% transf.');
     return parts.length ? parts.join(' + ') : 'Descuento';
   })();
+  // Los archivos digitales no viajan: se descuentan del subtotal que decide el
+  // envío (y su umbral gratis). Espejado en el servidor con `physicalTotal`
+  // (netlify/functions/lib/pricing.js), que es el que realmente cobra.
+  const digitalSubtotal = items.reduce((a, i) => (i.type === 'digital' ? a + i.price * i.quantity : a), 0);
+  const physicalSubtotal = subtotal - digitalSubtotal;
   const shippingCost = calculateShipping({
     method: ship.method,
-    subtotal,
+    subtotal: physicalSubtotal,
     city: ship.city,
     province: ship.province
   });
   const total = subtotal + shippingCost;
   // Cuánto falta para el envío gratis de ESE destino ($50.000 Rosario, $75.000 el resto).
-  const freeShippingGap = freeShippingThresholdFor(ship.city, ship.province) - subtotal;
+  const freeShippingGap = freeShippingThresholdFor(ship.city, ship.province) - physicalSubtotal;
 
   useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago o por transferencia bancaria.' });
 
@@ -274,6 +285,7 @@ export default function Checkout() {
               submitting={submitting}
               errorMsg={errorMsg}
               percentBlocked={Boolean(appliedBundle)}
+              digitalOnly={digitalOnly}
             />
           </div>
 
@@ -295,7 +307,10 @@ export default function Checkout() {
 
             <div className="border-t border-white/10 my-4" />
 
-            <div className="mb-3">
+            {/* Los archivos imprimibles son precio fijo: ningún cupón los toca
+                (lo rechaza el servidor). Mostrar el campo sería invitar a
+                probar códigos que no van a hacer nada. */}
+            <div className={`mb-3 ${digitalOnly ? 'hidden' : ''}`}>
               {appliedCoupon ? (
                 <div className="flex items-center justify-between gap-2 text-sm rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2">
                   <span className="text-emerald-400">🎟️ Cupón <strong>{appliedCoupon}</strong> aplicado</span>
@@ -328,7 +343,12 @@ export default function Checkout() {
                 <span>🎉 {discountLabel}</span><span>−{formatPrice(discount)}</span>
               </div>
             )}
-            {isPickup ? (
+            {digitalOnly ? (
+              <div className="flex justify-between text-white/70 text-sm mb-3">
+                <span>Entrega por mail</span>
+                <span className="text-emerald-400 font-semibold">Sin envío</span>
+              </div>
+            ) : isPickup ? (
               <div className="flex justify-between text-white/70 text-sm mb-3">
                 <span>Retiro en Rosario</span>
                 <span className="text-emerald-400 font-semibold">Gratis</span>
@@ -358,16 +378,27 @@ export default function Checkout() {
               ) : (
                 <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
               )}
-              {promoActive && !appliedBundle && (
-                <div className="text-emerald-400">🎉 Promo 3x2 en calcos y personalizados: cada 3, la más barata gratis.</div>
-              )}
-              {appliedBundle ? (
+              {/* Con un pedido 100 % digital no corre ninguna promo: la línea
+                  es de precio fijo. En vez de prometer descuentos que el
+                  servidor va a rechazar, se explica cómo llega el archivo. */}
+              {digitalOnly ? (
                 <div className="text-emerald-400">
-                  🎟️ Cupón {appliedBundle.buy}x{appliedBundle.pay} en calcos y personalizados: cada {appliedBundle.buy},
-                  la más barata gratis. No se combina con el 10% por transferencia ni con el 10% desde 10 calcos.
+                  📩 Te mandamos los archivos al mail que dejes acá arriba, apenas se acredita el pago.
                 </div>
               ) : (
-                <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>
+                <>
+                  {promoActive && !appliedBundle && (
+                    <div className="text-emerald-400">🎉 Promo 3x2 en calcos y personalizados: cada 3, la más barata gratis.</div>
+                  )}
+                  {appliedBundle ? (
+                    <div className="text-emerald-400">
+                      🎟️ Cupón {appliedBundle.buy}x{appliedBundle.pay} en calcos y personalizados: cada {appliedBundle.buy},
+                      la más barata gratis. No se combina con el 10% por transferencia ni con el 10% desde 10 calcos.
+                    </div>
+                  ) : (
+                    <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>
+                  )}
+                </>
               )}
             </div>
           </aside>

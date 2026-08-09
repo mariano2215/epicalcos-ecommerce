@@ -18,6 +18,7 @@ const ArmaTuPack = lazy(() => import('./routes/ArmaTuPack.jsx'));
 const LandingUso = lazy(() => import('./routes/LandingUso.jsx'));
 const Mayorista = lazy(() => import('./routes/Mayorista.jsx'));
 const Negocio = lazy(() => import('./routes/Negocio.jsx'));
+const Imprimibles = lazy(() => import('./routes/Imprimibles.jsx'));
 const Tatuajes = lazy(() => import('./routes/Tatuajes.jsx'));
 const Polaroid = lazy(() => import('./routes/Polaroid.jsx'));
 const Cart = lazy(() => import('./routes/Cart.jsx'));
@@ -90,6 +91,10 @@ export default function App() {
             ))}
             <Route path="/mayorista" element={<Mayorista />} />
             <Route path="/negocio" element={<Negocio />} />
+            <Route
+              path="/archivos-imprimibles"
+              element={isSectionHidden('archivos-imprimibles') ? <Navigate to="/categorias" replace /> : <Imprimibles />}
+            />
             <Route path="/tatuajes" element={<Tatuajes />} />
             <Route path="/polaroid" element={<Polaroid />} />
             <Route path="/carrito" element={<Cart />} />

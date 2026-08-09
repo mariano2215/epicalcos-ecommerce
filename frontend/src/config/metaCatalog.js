@@ -14,7 +14,10 @@ export const META_LINE_SKU = {
   mayorista: '006575',
   negocio: '006576',
   tatuajes: '006577',
-  polaroid: '006578'
+  polaroid: '006578',
+  // No sigue la serie de las de arriba: el registro de SKUs es append-only y le
+  // tocó el siguiente libre cuando se creó la sección (ver data/skus.json).
+  imprimibles: '006606'
 };
 
 /** SKU de catálogo por id de producto de precio fijo (ver pricing.js). */
@@ -25,4 +28,14 @@ export const FIXED_SKU = {
   'polaroid-x10-5x8': META_LINE_SKU.polaroid,
   'polaroid-x10-7x10': META_LINE_SKU.polaroid,
   'polaroid-x10-9x13': META_LINE_SKU.polaroid
+};
+
+/**
+ * SKU de catálogo por id de pack digital (ver IMPRIMIBLES en pricing.js).
+ * Hoy hay un solo pack; cuando agregues otro, sumale su propia entrada acá y en
+ * el feed (build-meta-feed.mjs) o sus eventos van a matchear con el producto
+ * equivocado en Meta.
+ */
+export const DIGITAL_SKU = {
+  'pack-stickers': META_LINE_SKU.imprimibles
 };

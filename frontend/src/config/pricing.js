@@ -232,6 +232,52 @@ export const POLAROID_SIZES = [
 ];
 export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 12000 };
 
+/**
+ * ─── ARCHIVOS IMPRIMIBLES (producto DIGITAL) ─────────────────────────────────
+ * Packs de archivos listos para imprimir. NO se produce, NO se envía y NO se
+ * entrega en mano: llega POR MAIL a la casilla que el cliente deja en el checkout.
+ *
+ * Precio FIJO SIEMPRE: la línea `digital:{id}` no participa de NINGÚN descuento
+ * —ni cupones, ni el 10 % por transferencia, ni el 10 % por volumen, ni las
+ * promos N x M (3x2 / 2x1)— ni suma para el envío gratis. Un archivo no tiene
+ * costo marginal ni logística, así que regalarlo dentro de un 3x2 o usarlo para
+ * cruzar el umbral de envío gratis sería plata perdida.
+ *
+ * Cantidad SIEMPRE 1: comprar el mismo archivo dos veces no tiene sentido, así
+ * que `addDigital` (CartContext) no acumula la línea si ya está en el carrito.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (DIGITAL_PRICES) y,
+ * para el link de descarga que va en el mail, en netlify/functions/lib/digital.js.
+ * El test `src/lib/promoPricing.test.js` verifica que los precios coincidan.
+ */
+export const IMPRIMIBLES = [
+  {
+    id: 'pack-stickers',
+    /** Nombre que ve el cliente (carrito, checkout, mail y CRM). */
+    name: 'Pack de stickers imprimibles',
+    price: 5999,
+    /**
+     * Cantidad de diseños del pack — es EL argumento de venta de la card.
+     * ⚠️ Poné acá el número real: se muestra en la página, en el Home y en el
+     * catálogo de Meta. Si lo dejás en null, la card no promete ninguna cantidad.
+     */
+    disenos: null,
+    emoji: '🖨️',
+    /** Formato de los archivos que recibe (se listan en la ficha del producto). */
+    formatos: 'PNG y PDF listos para imprimir',
+    /** Qué recibe, en una línea, para el carrito y el mail. */
+    resumen: 'Archivos digitales — te llegan por mail'
+  }
+];
+
+/** El pack principal: el que se muestra como card grande en /archivos-imprimibles. */
+export const IMPRIMIBLE_PRINCIPAL = IMPRIMIBLES[0];
+
+/** Un pack digital por id (null si no existe). */
+export function findImprimible(id) {
+  return IMPRIMIBLES.find((p) => p.id === id) || null;
+}
+
 export function priceForSize(sizeId) {
   return SIZES.find((s) => s.id === sizeId)?.price ?? SIZES[0].price;
 }

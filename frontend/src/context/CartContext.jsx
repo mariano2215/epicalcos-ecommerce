@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState, useCallback } from 'react';
 import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
-import { META_LINE_SKU, FIXED_SKU } from '../config/metaCatalog.js';
+import { META_LINE_SKU, FIXED_SKU, DIGITAL_SKU } from '../config/metaCatalog.js';
 import {
   priceForSize,
   sizeLabel,
@@ -199,6 +199,39 @@ export function CartProvider({ children }) {
     trackAddToCart({ ...line, price: line.basePrice }, quantity);
   }, [notify]);
 
+  /**
+   * Agregar un pack de archivos imprimibles (producto DIGITAL, entrega por mail).
+   *
+   * Cantidad SIEMPRE 1 y sin acumular: comprar dos veces el mismo archivo no le
+   * sirve a nadie, y el servidor además rechaza la línea con quantity ≠ 1 (ver
+   * `digital:` en netlify/functions/lib/pricing.js). Si ya está en el carrito,
+   * abre el drawer y lo avisa en vez de sumar una segunda copia.
+   */
+  const addDigital = useCallback(
+    (product) => {
+      const id = `digital:${product.id}`;
+      if (state.items.some((i) => i.id === id)) {
+        notify('Ese pack ya está en tu carrito');
+        dispatch({ type: 'OPEN_DRAWER' });
+        return;
+      }
+      const line = {
+        id,
+        type: 'digital',
+        name: product.name,
+        categoryLabel: 'Archivos imprimibles',
+        image: product.image,
+        catalogSku: DIGITAL_SKU[product.id],
+        basePrice: product.price,
+        quantity: 1
+      };
+      dispatch({ type: 'ADD', line });
+      notify(`${line.name} agregado`);
+      trackAddToCart({ ...line, price: line.basePrice }, 1);
+    },
+    [state.items, notify]
+  );
+
   const removeItem = useCallback(
     (id) => {
       const item = state.items.find((i) => i.id === id);
@@ -259,9 +292,23 @@ export function CartProvider({ children }) {
       ? (PROMO_3X2.buy - (promoUnits % PROMO_3X2.buy)) % PROMO_3X2.buy
       : 0;
 
+    // Archivos imprimibles: no se producen ni se despachan. `physicalSubtotal`
+    // es lo único que cuenta para el envío gratis y `digitalOnly` apaga toda la
+    // sección de entrega del checkout (espejado en el servidor: ver
+    // `isDigitalOnly` en netlify/functions/lib/pricing.js).
+    const digitalSubtotal = items.reduce(
+      (a, i) => (i.type === 'digital' ? a + i.price * i.quantity : a),
+      0
+    );
+    const hasDigital = items.some((i) => i.type === 'digital');
+    const digitalOnly = items.length > 0 && items.every((i) => i.type === 'digital');
+
     return {
       items,
       subtotal,
+      physicalSubtotal: subtotal - digitalSubtotal,
+      hasDigital,
+      digitalOnly,
       totalItems,
       bulkUnits,
       bulkEligible,
@@ -334,6 +381,7 @@ export function CartProvider({ children }) {
     addCustom,
     addNegocio,
     addFixed,
+    addDigital,
     removeItem,
     setQty,
     patchLine,

@@ -140,9 +140,14 @@ function buildObservaciones({ orderId, shipping, payer, items }) {
 
   const direccion = shipping?.address || payer?.address;
 
+  // Destino: vacío en los pedidos de archivos imprimibles (se entregan por
+  // mail). Sin esto la línea quedaba como "Envío: Entrega por email — ", con un
+  // guión colgado y ningún dato atrás.
+  const destino = `${shipping?.city || ''}${shipping?.province ? `, ${shipping.province}` : ''}`;
+
   return [
     `N° Pedido: ${orderId || '-'}`,
-    `Envío: ${shipping?.method || '-'} — ${shipping?.city || ''}${shipping?.province ? `, ${shipping.province}` : ''}`,
+    `Envío: ${shipping?.method || '-'}${destino ? ` — ${destino}` : ''}`,
     shipping?.zipCode ? `CP: ${shipping.zipCode}` : null,
     direccion ? `Dirección: ${direccion}` : null,
     shipping?.comments ? `Nota: ${shipping.comments}` : null,

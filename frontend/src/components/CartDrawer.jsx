@@ -7,7 +7,7 @@ const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 export default function CartDrawer() {
   const {
     drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear,
-    bulkEligible, unitsToBulk,
+    bulkEligible, unitsToBulk, digitalOnly,
     promoActive, promoFreeUnits, promoSavings, promoUnits, promoToNextFree
   } = useCart();
   const navigate = useNavigate();
@@ -58,7 +58,11 @@ export default function CartDrawer() {
                     </>
                   ) : (
                     <span className="text-xs text-white/50">
-                      {item.meta?.qty ? `${item.meta.qty * item.quantity} calcos` : `x${item.quantity}`}
+                      {item.type === 'digital'
+                        ? '📩 Por mail'
+                        : item.meta?.qty
+                          ? `${item.meta.qty * item.quantity} calcos`
+                          : `x${item.quantity}`}
                     </span>
                   )}
                   <span className="ml-auto font-semibold text-sm">
@@ -72,21 +76,29 @@ export default function CartDrawer() {
 
         {items.length > 0 && (
           <div className="p-5 border-t border-white/10 space-y-3">
-            {promoActive && promoFreeUnits > 0 && (
-              <div className="text-xs text-emerald-400">
-                🎉 Promo 3x2: {promoFreeUnits} calco{promoFreeUnits === 1 ? '' : 's'} gratis — ahorrás {formatPrice(promoSavings)}.
-              </div>
+            {/* Con un carrito 100 % digital no corre ningún descuento (precio
+                fijo): en vez de nudges de calcos, se dice cómo llega el pedido. */}
+            {digitalOnly ? (
+              <div className="text-xs text-emerald-400">📩 Te llega por mail — sin envío.</div>
+            ) : (
+              <>
+                {promoActive && promoFreeUnits > 0 && (
+                  <div className="text-xs text-emerald-400">
+                    🎉 Promo 3x2: {promoFreeUnits} calco{promoFreeUnits === 1 ? '' : 's'} gratis — ahorrás {formatPrice(promoSavings)}.
+                  </div>
+                )}
+                {promoActive && promoFreeUnits === 0 && promoUnits > 0 && promoToNextFree > 0 && (
+                  <div className="text-xs text-white/50">
+                    Sumá {promoToNextFree} calco{promoToNextFree === 1 ? '' : 's'} y llevás 1 gratis (promo 3x2).
+                  </div>
+                )}
+                {bulkEligible ? (
+                  <div className="text-xs text-emerald-400">🎉 10% off pagando por transferencia bancaria.</div>
+                ) : unitsToBulk > 0 ? (
+                  <div className="text-xs text-white/50">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off por transferencia.</div>
+                ) : null}
+              </>
             )}
-            {promoActive && promoFreeUnits === 0 && promoUnits > 0 && promoToNextFree > 0 && (
-              <div className="text-xs text-white/50">
-                Sumá {promoToNextFree} calco{promoToNextFree === 1 ? '' : 's'} y llevás 1 gratis (promo 3x2).
-              </div>
-            )}
-            {bulkEligible ? (
-              <div className="text-xs text-emerald-400">🎉 10% off pagando por transferencia bancaria.</div>
-            ) : unitsToBulk > 0 ? (
-              <div className="text-xs text-white/50">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off por transferencia.</div>
-            ) : null}
             <div className="flex justify-between text-white/70 text-sm">
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>

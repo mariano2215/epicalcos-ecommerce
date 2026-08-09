@@ -89,6 +89,10 @@ export function buildDesignSummary(items) {
         logo = `logo (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envía por WhatsApp`;
       }
       parts.push(`Negocio "${it.meta.business}": ${it.meta.qty}u ${it.meta.size} (${logo})`);
+    } else if (it.type === 'digital') {
+      // Sin adjuntos ni producción: lo único que el vendedor necesita ver en el
+      // CRM es que ESTE pedido se entrega por mail y no sale del taller.
+      parts.push(`${it.name} → ENTREGA POR MAIL (archivos digitales, no se envía nada físico)`);
     } else if (it.type === 'fixed' && it.meta?.archivos?.length) {
       // Producto de precio fijo con archivos adjuntos (fotos de Polaroid, diseños de tatuajes).
       const files = it.meta.archivos;

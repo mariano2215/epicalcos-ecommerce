@@ -129,7 +129,8 @@ export function shippingZone(city, province) {
  * @returns {number}
  */
 export function calculateShipping({ method, subtotal = 0, city, province }) {
-  if (method === 'retiro') return 0;
+  // 'digital' = el pedido son solo archivos imprimibles: no hay nada que despachar.
+  if (method === 'retiro' || method === 'digital') return 0;
   const zone = shippingZone(city, province);
   if (zone === 'rosario') {
     return subtotal >= shipping.freeShippingThresholdRosario ? 0 : shipping.costRosario;
@@ -153,6 +154,7 @@ export function freeShippingThresholdFor(city, province) {
 
 /** Etiqueta legible del método/zona para el vendedor (mail + CRM Notion). */
 export function shippingMethodLabel(method, city, province) {
+  if (method === 'digital') return 'Entrega por email';
   if (method === 'retiro') return 'Retiro en Rosario';
   const zone = shippingZone(city, province);
   if (zone === 'rosario') return 'Envío a Rosario';
@@ -219,6 +221,9 @@ export const navLinks = visibles([
   { to: '/personalizados', label: 'Personalizados' },
   { to: '/mayorista', label: 'Mayorista' },
   { to: '/negocio', label: 'Negocio' },
+  // "Imprimibles" y no "Archivos imprimibles": el nav ya venía justo de ancho
+  // (ver el comentario de "Packs" acá arriba) y la etiqueta larga lo parte en dos.
+  { to: '/archivos-imprimibles', label: 'Imprimibles' },
   { to: '/contacto', label: 'Contacto' },
   // FAQ es una sección del Home (id="faq"); el hash hace que el header scrollee hasta ahí.
   { to: '/#faq', label: 'FAQ', hash: true }
@@ -231,6 +236,7 @@ export const footerLinks = {
     { to: '/personalizados', label: 'Personalizados' },
     { to: '/mayorista', label: 'Pack Mayorista x100' },
     { to: '/negocio', label: 'Negocio' },
+    { to: '/archivos-imprimibles', label: 'Archivos imprimibles' },
     { to: '/tatuajes', label: 'Tatuajes temporales' },
     { to: '/polaroid', label: 'Fotos Polaroid' }
   ]),

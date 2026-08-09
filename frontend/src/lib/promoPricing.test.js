@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { DIGITAL_SKU } from '../config/metaCatalog.js';
 // Frontend (fuente de verdad del cliente)
 import {
   PROMO_END_MS as FE_END,
@@ -17,7 +21,10 @@ import {
   PROMO_MAYORISTA_END_MS,
   isMayoristaPromoActive,
   isMayoristaPromoSize,
-  mayoristaPromoOff
+  mayoristaPromoOff,
+  IMPRIMIBLES,
+  IMPRIMIBLE_PRINCIPAL,
+  findImprimible
 } from '../config/pricing.js';
 // Backend: el que re-precia el checkout (rechaza si no coincide).
 import {
@@ -33,6 +40,8 @@ import {
   MAYORISTA100_QTY,
   MAYORISTA100_SIZES,
   isMayorista100Active,
+  DIGITAL_PRICES,
+  isDigitalOnly,
   validateAndPriceOrder
 } from '../../../netlify/functions/lib/pricing.js';
 
@@ -367,5 +376,152 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(false);
     expect(res.error).toBe('price_mismatch');
+  });
+});
+
+/**
+ * ARCHIVOS IMPRIMIBLES — el producto digital.
+ *
+ * Las dos reglas que lo definen y que el servidor tiene que hacer cumplir sí o
+ * sí: precio FIJO (ningún descuento lo toca) y SIN ENVÍO (ni cobrado, ni usado
+ * para llegar al umbral de envío gratis).
+ */
+describe('archivos imprimibles (producto digital)', () => {
+  const pack = IMPRIMIBLE_PRINCIPAL;
+  const linea = (unitPrice = pack.price, quantity = 1) => ({
+    id: `digital:${pack.id}`,
+    title: pack.name,
+    quantity,
+    unit_price: unitPrice
+  });
+  const envioRosario = { methodValue: 'envio', city: 'Rosario', province: 'Santa Fe' };
+
+  it('los precios del frontend y del backend coinciden (si no, price_mismatch en cada compra)', () => {
+    for (const p of IMPRIMIBLES) {
+      expect(DIGITAL_PRICES[p.id]).toBe(p.price);
+    }
+    // Y al revés: un pack en el server que el frontend no conoce no se puede comprar.
+    for (const id of Object.keys(DIGITAL_PRICES)) {
+      expect(findImprimible(id)).not.toBeNull();
+    }
+  });
+
+  it('se cobra a precio de lista y sin envío', () => {
+    const res = validateAndPriceOrder({ items: [linea()], shipping: envioRosario, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(pack.price);
+    expect(res.shippingCost).toBe(0);
+    expect(res.shippingMethod).toBe('Entrega por email');
+    expect(res.methodValue).toBe('digital');
+  });
+
+  it('NO acepta cupones, ni el 10% por transferencia, ni la promo 3x2', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO); // 3x2 vigente: igual no lo toca
+
+    // A precio de lista pasa, aunque venga con cupón y transferencia.
+    expect(
+      validateAndPriceOrder({
+        items: [linea()],
+        shipping: retiro,
+        paymentMethod: 'transferencia',
+        couponCode: 'EPICA10'
+      }).ok
+    ).toBe(true);
+
+    // Con cualquier descuento aplicado, se rechaza.
+    const conDescuento = validateAndPriceOrder({
+      items: [linea(round(pack.price * 0.9))],
+      shipping: retiro,
+      paymentMethod: 'transferencia',
+      couponCode: 'EPICA10'
+    });
+    expect(conDescuento.ok).toBe(false);
+    expect(conDescuento.error).toBe('price_mismatch');
+  });
+
+  it('no entra en la bolsa del 3x2: no regala calcos ni se lleva un calco gratis', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    // 2 calcos + 1 archivo: si el archivo contara como tercera unidad elegible,
+    // el 3x2 regalaría uno. No cuenta, así que los dos calcos van a precio lleno.
+    const items = [
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 1600 },
+      linea()
+    ];
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(1600 * 2 + pack.price);
+  });
+
+  it('no acerca al envío gratis: el umbral mira solo lo que se despacha', () => {
+    // Rosario: envío gratis desde $50.000. Con $46.000 de calcos + el pack
+    // digital el total supera los $50.000, pero lo que viaja en la caja no.
+    const items = [
+      { id: 'sticker:goku:9cm', title: 'Goku 9cm', quantity: 23, unit_price: 2000 }, // $46.000
+      linea()
+    ];
+    const res = validateAndPriceOrder({ items, shipping: envioRosario, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(46000 + pack.price); // el total SÍ pasa los $50.000
+    expect(res.shippingCost).toBe(4500); // …pero el envío se sigue cobrando
+  });
+
+  it('con productos físicos en el carrito, el envío se cobra normal', () => {
+    const items = [
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 1, unit_price: 1600 },
+      linea()
+    ];
+    const res = validateAndPriceOrder({ items, shipping: envioRosario, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+    expect(res.methodValue).toBe('envio');
+    expect(res.shippingCost).toBe(4500);
+  });
+
+  it("un carrito con físicos que se declara 'digital' se rechaza (envío gratis trucho)", () => {
+    const items = [
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 1, unit_price: 1600 },
+      linea()
+    ];
+    const res = validateAndPriceOrder({
+      items,
+      shipping: { methodValue: 'digital', city: 'Rosario', province: 'Santa Fe' },
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('shipping_invalid');
+  });
+
+  it('rechaza cantidades distintas de 1 y packs inexistentes', () => {
+    expect(
+      validateAndPriceOrder({ items: [linea(pack.price, 2)], shipping: retiro, paymentMethod: 'mercadopago' }).error
+    ).toBe('item_invalid');
+
+    expect(
+      validateAndPriceOrder({
+        items: [{ id: 'digital:pack-inventado', title: 'Pack trucho', quantity: 1, unit_price: 1 }],
+        shipping: retiro,
+        paymentMethod: 'mercadopago'
+      }).error
+    ).toBe('item_invalid');
+  });
+
+  it('isDigitalOnly distingue el carrito 100% digital del mixto', () => {
+    expect(isDigitalOnly([linea()])).toBe(true);
+    expect(isDigitalOnly([linea(), { id: 'sticker:goku:6cm' }])).toBe(false);
+    expect(isDigitalOnly([])).toBe(false);
+  });
+
+  it('el SKU que manda el píxel es el mismo que el del feed de Meta', () => {
+    // El registro de SKUs es append-only: al pack NO le tocó el número que
+    // seguía a las otras líneas especiales, sino el siguiente libre del
+    // catálogo entero. Escribirlo "a ojo" en metaCatalog.js manda content_ids
+    // que no existen en el catálogo y la atribución de Meta se pierde en
+    // silencio — de ahí este test.
+    const dir = dirname(fileURLToPath(import.meta.url));
+    const registry = JSON.parse(
+      readFileSync(join(dir, '..', '..', 'public', 'data', 'skus.json'), 'utf8')
+    );
+    expect(DIGITAL_SKU[pack.id]).toBe(registry.byKey['linea:archivos-imprimibles']);
   });
 });

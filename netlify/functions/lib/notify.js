@@ -23,6 +23,8 @@
  *   NOTION_DATABASE_ID  → id de la base de datos donde se cargan los pedidos
  */
 
+import { digitalDeliveries, needsManualDelivery } from './digital.js';
+
 const DEFAULT_TO = 'epicalcos@gmail.com';
 const DEFAULT_FROM = 'EPICALCOS <onboarding@resend.dev>';
 
@@ -160,10 +162,31 @@ function buildEmailHtml(o) {
           statusLabel(o)
         )}</span>`;
 
+  // Archivos imprimibles sin DIGITAL_LINK_* configurado: el cliente pagó y el
+  // mail que recibió NO trae link, así que hay que mandárselo a mano. Va arriba
+  // de todo y en rojo: es lo único de este mail que exige una acción inmediata.
+  const manualDigital =
+    o.paymentStatus === 'approved' && needsManualDelivery(o)
+      ? `<div style="margin:0 0 16px;padding:14px;background:#fef2f2;border:2px solid #dc2626;border-radius:8px">
+           <strong style="color:#dc2626;font-size:15px">⚠️ HAY QUE MANDAR EL ARCHIVO A MANO</strong><br>
+           <span style="font-size:14px">
+             Este pedido tiene archivos imprimibles sin link configurado. Mandale la descarga a
+             <strong>${esc(o.email)}</strong>.<br>
+             Para que salga solo en el mail de confirmación, cargá en Netlify la variable
+             ${digitalDeliveries(o)
+               .filter((d) => !d.url)
+               .map((d) => `<code>${esc(d.envVar)}</code>`)
+               .join(' y ')}.
+           </span>
+         </div>`
+      : '';
+
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:620px;margin:0 auto;color:#111">
     <h2 style="margin:0 0 4px">🛒 Nuevo pedido EPICALCOS</h2>
     <p style="margin:0 0 16px">${statusBadge} &nbsp; <strong>Ref:</strong> ${esc(o.orderId)}</p>
+
+    ${manualDigital}
 
     <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Cliente</h3>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
@@ -228,9 +251,17 @@ function buildEmailHtml(o) {
 
 function buildEmailText(o) {
   const pendingTransfer = isPendingTransfer(o);
+  const manualDigital =
+    o.paymentStatus === 'approved' && needsManualDelivery(o)
+      ? `\n⚠️ HAY QUE MANDAR EL ARCHIVO A MANO — mandale la descarga a ${o.email}.\n` +
+        `   Para automatizarlo, cargá en Netlify: ${digitalDeliveries(o)
+          .filter((d) => !d.url)
+          .map((d) => d.envVar)
+          .join(', ')}\n`
+      : '';
   return `NUEVO PEDIDO EPICALCOS — Ref: ${o.orderId}
 Estado del pago: ${statusLabel(o)}
-
+${manualDigital}
 CLIENTE
   Nombre: ${o.name}
   Email: ${o.email}
@@ -275,9 +306,77 @@ function firstName(o) {
   return n && n !== '—' ? n.split(/\s+/)[0] : '';
 }
 
+/**
+ * Bloque de descarga de los ARCHIVOS IMPRIMIBLES para el mail al cliente.
+ *
+ * Es lo primero que tiene que ver quien compró un producto digital, así que va
+ * arriba de todo, antes del detalle del pedido. Con el link configurado
+ * (DIGITAL_LINK_*, ver lib/digital.js) lleva el botón de descarga; sin link, le
+ * avisa que se lo mandamos a esa misma casilla — nunca se queda mudo.
+ *
+ * Con el pago por transferencia todavía sin confirmar no se entrega nada: el
+ * link sale recién cuando el pago está aprobado.
+ */
+function digitalDeliveryHtml(o) {
+  const entregas = digitalDeliveries(o);
+  if (entregas.length === 0) return '';
+
+  if (isPendingTransfer(o)) {
+    return `
+      <div style="margin:0 0 18px;padding:14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:14px">
+        <strong>📩 Tus archivos imprimibles</strong><br>
+        Te los mandamos a este mismo mail apenas confirmemos tu transferencia.
+      </div>`;
+  }
+
+  const filas = entregas
+    .map((d) =>
+      d.url
+        ? `<p style="margin:10px 0 0">
+             <a href="${esc(d.url)}" style="display:inline-block;background:#111;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">
+               ⬇️ Descargar ${esc(d.title)}
+             </a>
+           </p>
+           <p style="margin:6px 0 0;font-size:12px;color:#666;word-break:break-all">
+             Si el botón no te funciona, copiá este link: ${esc(d.url)}
+           </p>`
+        : `<p style="margin:10px 0 0;font-size:14px">
+             <strong>${esc(d.title)}</strong> — te lo mandamos a este mismo mail en las próximas horas.
+           </p>`
+    )
+    .join('');
+
+  return `
+    <div style="margin:0 0 18px;padding:16px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px">
+      <strong style="font-size:15px">📩 Tus archivos imprimibles</strong>
+      ${filas}
+      <p style="margin:12px 0 0;font-size:12px;color:#666">
+        Guardá este mail: podés volver a descargarlos cuando quieras.
+      </p>
+    </div>`;
+}
+
+/** Versión en texto plano del bloque de descarga (mismo criterio que el HTML). */
+function digitalDeliveryText(o) {
+  const entregas = digitalDeliveries(o);
+  if (entregas.length === 0) return '';
+  if (isPendingTransfer(o)) {
+    return '\nTUS ARCHIVOS IMPRIMIBLES\nTe los mandamos a este mismo mail apenas confirmemos tu transferencia.\n';
+  }
+  const filas = entregas
+    .map((d) =>
+      d.url
+        ? `  ${d.title}: ${d.url}`
+        : `  ${d.title}: te lo mandamos a este mismo mail en las próximas horas.`
+    )
+    .join('\n');
+  return `\nTUS ARCHIVOS IMPRIMIBLES\n${filas}\n\nGuardá este mail: podés volver a descargarlos cuando quieras.\n`;
+}
+
 function buildCustomerEmailHtml(o) {
   const saludo = firstName(o) ? `¡Hola ${esc(firstName(o))}!` : '¡Hola!';
   const esRetiro = /retiro/i.test(String(o.shippingMethod || ''));
+  const esDigital = /entrega por email/i.test(String(o.shippingMethod || ''));
   const pendingTransfer = isPendingTransfer(o);
 
   return `
@@ -298,6 +397,8 @@ function buildCustomerEmailHtml(o) {
         Guardá este mail como comprobante.<br>
         <strong>Número de pedido:</strong> ${esc(o.orderId)}
       </p>
+
+      ${digitalDeliveryHtml(o)}
 
       <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Tu pedido</h3>
       <table style="width:100%;border-collapse:collapse;font-size:14px">
@@ -329,7 +430,13 @@ function buildCustomerEmailHtml(o) {
           : ''
       }
 
-      <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Entrega</h3>
+      ${
+        // Un pedido de solo archivos no tiene entrega que detallar: el bloque de
+        // descarga de arriba ya dijo todo, y repetir "Método / Dirección" con
+        // los campos vacíos solo ensucia el mail.
+        esDigital
+          ? ''
+          : `<h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Entrega</h3>
       <table style="width:100%;border-collapse:collapse;font-size:14px">
         <tr><td style="padding:3px 0;width:140px;color:#666">Método</td><td>${esc(o.shippingMethod)}</td></tr>
         ${
@@ -338,10 +445,11 @@ function buildCustomerEmailHtml(o) {
             : `<tr><td style="padding:3px 0;color:#666">Dirección</td><td>${esc(o.address)}</td></tr>
         <tr><td style="padding:3px 0;color:#666">Ciudad</td><td>${esc(o.city)} (${esc(o.province)}) — CP ${esc(o.zipCode)}</td></tr>`
         }
-      </table>
+      </table>`
+      }
 
       ${
-        pendingTransfer
+        pendingTransfer || esDigital
           ? ''
           : `<p style="margin:16px 0;padding:12px;background:#f0fdf4;border-left:3px solid #16a34a;font-size:14px">
                ${esc(customerTimeline(o))}
@@ -365,6 +473,7 @@ function buildCustomerEmailHtml(o) {
 function buildCustomerEmailText(o) {
   const saludo = firstName(o) ? `¡Hola ${firstName(o)}!` : '¡Hola!';
   const esRetiro = /retiro/i.test(String(o.shippingMethod || ''));
+  const esDigital = /entrega por email/i.test(String(o.shippingMethod || ''));
   const pendingTransfer = isPendingTransfer(o);
   return `${saludo} Recibimos tu pedido — EPICALCOS
 
@@ -374,7 +483,7 @@ ${
     : 'Tu pago fue aprobado y ya estamos preparando todo.'
 }
 Número de pedido: ${o.orderId}
-
+${digitalDeliveryText(o)}
 TU PEDIDO
 ${itemsText(o.items)}
 
@@ -384,10 +493,14 @@ ${
     ? `\nDATOS PARA TRANSFERIR\n${bankTransferText()}\n\nCuando hagas la transferencia, enviá el comprobante por WhatsApp al ${CONTACT.whatsappDisplay} para que empecemos a producir tu pedido.\n`
     : ''
 }
-ENTREGA
+${
+  esDigital
+    ? ''
+    : `ENTREGA
   Método: ${o.shippingMethod}
-${esRetiro ? '' : `  Dirección: ${o.address}\n  Ciudad: ${o.city} (${o.province}) — CP ${o.zipCode}\n`}
-${pendingTransfer ? '' : customerTimeline(o)}
+${esRetiro ? '' : `  Dirección: ${o.address}\n  Ciudad: ${o.city} (${o.province}) — CP ${o.zipCode}\n`}`
+}
+${pendingTransfer || esDigital ? '' : customerTimeline(o)}
 
 ¿Dudas o cambios? Escribinos:
   WhatsApp: ${CONTACT.whatsappDisplay} (${CONTACT.whatsappUrl})
@@ -415,7 +528,10 @@ export async function sendOrderEmail(o) {
     .filter(Boolean);
   const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
 
-  const subject = `🛒 Nuevo pedido ${o.orderId} — ${o.name} — ${money(
+  // El prefijo 📩 marca los pedidos que hay que entregar a mano (archivos
+  // imprimibles sin link configurado): en la bandeja se ven de un vistazo.
+  const prefijo = o.paymentStatus === 'approved' && needsManualDelivery(o) ? '📩 ENVIAR ARCHIVO · ' : '';
+  const subject = `${prefijo}🛒 Nuevo pedido ${o.orderId} — ${o.name} — ${money(
     o.amountPaid ?? o.total
   )}`;
 

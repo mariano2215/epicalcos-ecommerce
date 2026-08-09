@@ -101,6 +101,26 @@ const FIXED_PRICES = {
   'polaroid-x10-9x13': 15000
 };
 
+// --- Espejo de IMPRIMIBLES en frontend/src/config/pricing.js (producto DIGITAL) ---
+// Packs de archivos que se entregan POR MAIL. Precio FIJO siempre: la línea
+// `digital:{id}` nunca es `discountable` (ningún cupón, ni el 10 % por
+// transferencia, ni las promos N x M la tocan) y NO suma para el envío gratis
+// (ver `physicalTotal` en validateAndPriceOrder). Cantidad: exactamente 1.
+// ⚠️ Si cambiás un precio acá, cambialo TAMBIÉN en el frontend
+// (lo verifica frontend/src/lib/promoPricing.test.js).
+export const DIGITAL_PRICES = {
+  'pack-stickers': 5999
+};
+
+/** true si TODAS las líneas del pedido son archivos digitales (no hay nada que enviar). */
+export function isDigitalOnly(items) {
+  return (
+    Array.isArray(items) &&
+    items.length > 0 &&
+    items.every((i) => String(i?.id ?? '').startsWith('digital:'))
+  );
+}
+
 // --- Espejo de frontend/src/config/personalizados.js (calcos personalizados) ---
 // Un calco personalizado vale lo MISMO que uno del catálogo, según su tamaño:
 //   unitario = SIZE_PRICES[tamaño]
@@ -147,7 +167,8 @@ function shippingZone(city, province) {
 }
 
 export function calculateShipping({ method, subtotal = 0, city, province }) {
-  if (method === 'retiro') return 0;
+  // 'digital' = el pedido es solo archivos: no hay nada que despachar.
+  if (method === 'retiro' || method === 'digital') return 0;
   const zone = shippingZone(city, province);
   if (zone === 'rosario') {
     return subtotal >= FREE_SHIPPING_THRESHOLD_ROSARIO ? 0 : SHIPPING_COST.rosario;
@@ -158,6 +179,7 @@ export function calculateShipping({ method, subtotal = 0, city, province }) {
 }
 
 export function shippingMethodLabel(method, city, province) {
+  if (method === 'digital') return 'Entrega por email';
   if (method === 'retiro') return 'Retiro en Rosario';
   const zone = shippingZone(city, province);
   if (zone === 'rosario') return 'Envío a Rosario';
@@ -222,6 +244,15 @@ function lineBase(id, quantity) {
   if (kind === 'fixed') {
     const price = FIXED_PRICES[parts[1]];
     if (!price) return { error: `producto desconocido "${id}"` };
+    return { base: price, kind, discountable: false };
+  }
+
+  // digital:{packId} — pack de archivos imprimibles. Precio fijo, sin descuentos
+  // y SIEMPRE 1 unidad: el mismo archivo dos veces no es un pedido válido.
+  if (kind === 'digital') {
+    const price = DIGITAL_PRICES[parts[1]];
+    if (!price) return { error: `archivo digital desconocido "${id}"` };
+    if (quantity !== 1) return { error: 'archivos imprimibles: 1 unidad por línea' };
     return { base: price, kind, discountable: false };
   }
 
@@ -358,17 +389,40 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
 
   const itemsTotal = priced.reduce((a, i) => a + i.unit_price * i.quantity, 0);
 
+  // Los archivos digitales no se despachan: no cuentan para el umbral de envío
+  // gratis. Sin esto, sumar un pack de $5.999 al carrito acercaría el pedido a
+  // los $50.000/$75.000 sin agregar un solo gramo a la caja.
+  const physicalTotal = priced.reduce(
+    (a, i, idx) => (bases[idx].kind === 'digital' ? a : a + i.unit_price * i.quantity),
+    0
+  );
+
   // Envío: SIEMPRE recalculado en el servidor (se ignora shipping.cost del cliente).
-  // methodValue es 'retiro' | 'envio'; si un cliente viejo no lo manda, se deriva del label.
-  const methodValue =
+  // methodValue es 'retiro' | 'envio' | 'digital'; si un cliente viejo no lo
+  // manda, se deriva del label.
+  //
+  // 'digital' NO se acepta del cliente: lo decide el servidor mirando las líneas
+  // del pedido (un pedido de solo archivos no tiene entrega). Si el cliente lo
+  // manda con productos físicos adentro, es un carrito desactualizado —
+  // aceptarlo sería regalarle el envío.
+  const digitalOnly = isDigitalOnly(clean);
+  const claimed =
     shipping?.methodValue ||
     (/retiro/i.test(String(shipping?.method || '')) ? 'retiro' : 'envio');
-  if (methodValue !== 'retiro' && methodValue !== 'envio') {
+  if (!digitalOnly && claimed === 'digital') {
+    return {
+      ok: false,
+      error: 'shipping_invalid',
+      detail: 'tu pedido tiene productos que se envían — recargá la página'
+    };
+  }
+  const methodValue = digitalOnly ? 'digital' : claimed;
+  if (methodValue !== 'retiro' && methodValue !== 'envio' && methodValue !== 'digital') {
     return { ok: false, error: 'shipping_invalid', detail: 'método de envío desconocido' };
   }
   const shippingCost = calculateShipping({
     method: methodValue,
-    subtotal: itemsTotal,
+    subtotal: physicalTotal,
     city: shipping?.city,
     province: shipping?.province
   });

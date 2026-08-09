@@ -59,6 +59,10 @@ export default function PaymentSuccess() {
   const [params] = useSearchParams();
   const orderId = params.get('external_reference') || params.get('preference_id') || 'unknown';
   const [customSpec, setCustomSpec] = useState(null);
+  // ¿La compra incluyó archivos imprimibles? Se detecta por el prefijo del id
+  // (`digital:`), el mismo criterio que usa el servidor: el pedido guardado no
+  // lleva el `type` de la línea, pero sí el id.
+  const [tieneDigital, setTieneDigital] = useState(false);
 
   useSeo({ title: 'Pago recibido', description: 'Tu pago fue aprobado. Gracias por comprar en EPICALCOS.' });
 
@@ -70,6 +74,7 @@ export default function PaymentSuccess() {
     // pantalla no dispara el evento dos veces.
     const paid = consumePurchase();
     if (paid) {
+      setTieneDigital(paid.items.some((i) => String(i.id).startsWith('digital:')));
       trackPurchase({
         // El external_reference de la URL manda: es el id que usa la API de
         // conversiones para deduplicar contra este mismo evento.
@@ -106,6 +111,20 @@ export default function PaymentSuccess() {
         <div className="card-glass p-10 max-w-xl mx-auto text-center">
           <div className="text-6xl mb-4">🎉</div>
           <h1 className="font-display font-extrabold text-3xl md:text-4xl">Pago recibido</h1>
+
+          {/* Archivos imprimibles: lo único que tiene que hacer ahora es ir a
+              su casilla. Va arriba de todo, y convive con el CTA de WhatsApp de
+              los personalizados si el pedido tenía las dos cosas. */}
+          {tieneDigital && (
+            <div className="mt-5 rounded-xl p-4 border border-emerald-400/30 bg-emerald-400/10 text-left text-sm text-white/80">
+              📩 <strong className="text-white">Revisá tu mail:</strong> ahí te mandamos tus archivos
+              imprimibles. Si no lo ves, fijate en spam o promociones — y si no está, escribinos por{' '}
+              <a href={contact.whatsappUrl} target="_blank" rel="noreferrer" className="text-brand-fuchsia font-semibold">
+                WhatsApp
+              </a>{' '}
+              con tu número de pedido y te lo reenviamos.
+            </div>
+          )}
 
           {customSpec ? (
             <>

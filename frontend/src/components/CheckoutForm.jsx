@@ -28,12 +28,17 @@ const initial = {
   comments: ''
 };
 
-function validate(form) {
+/**
+ * `digitalOnly` = el pedido son solo archivos imprimibles: no hay entrega, así
+ * que no se pide (ni se valida) ninguna dirección. El mail deja de ser un dato
+ * de contacto y pasa a ser el lugar donde se entrega el producto.
+ */
+function validate(form, digitalOnly = false) {
   const errors = {};
   if (!form.name.trim()) errors.name = 'Ingresá tu nombre';
   if (!/^\S+@\S+\.\S+$/.test(form.email)) errors.email = 'Email inválido';
   if (!form.phone.trim() || form.phone.replace(/\D/g, '').length < 8) errors.phone = 'Teléfono incompleto';
-  const needsAddress = form.shippingMethod !== 'retiro';
+  const needsAddress = !digitalOnly && form.shippingMethod !== 'retiro';
   if (needsAddress) {
     if (!form.address.trim()) errors.address = 'Dirección requerida';
     if (!form.city.trim()) errors.city = 'Ciudad requerida';
@@ -46,16 +51,23 @@ function validate(form) {
  * `percentBlocked` = hay un cupón de bundle (2x1) aplicado, que NO se acumula
  * con el 10 % por transferencia ni con el 10 % por volumen: con eso en true no
  * se promete ningún % acá adentro.
+ *
+ * `digitalOnly` = el pedido son solo archivos imprimibles. Desaparece toda la
+ * sección de entrega (método, dirección, ciudad, CP y plazos): no hay nada que
+ * despachar y pedir una dirección para mandar un mail es fricción pura. El
+ * método que viaja al backend pasa a ser 'digital' (ver `isDigitalOnly` en
+ * netlify/functions/lib/pricing.js, que además lo re-decide del lado del server).
  */
-export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false }) {
+export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false, digitalOnly = false }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
   const { bulkEligible, unitsToBulk } = useCart();
+  const shippingMethod = digitalOnly ? 'digital' : form.shippingMethod;
 
   // Notificar al parent método + destino (ciudad/provincia) para recalcular el envío automático.
   useEffect(() => {
-    onShippingChange?.({ method: form.shippingMethod, city: form.city, province: form.province });
-  }, [form.shippingMethod, form.city, form.province, onShippingChange]);
+    onShippingChange?.({ method: shippingMethod, city: form.city, province: form.province });
+  }, [shippingMethod, form.city, form.province, onShippingChange]);
 
   // Notificar al parent el medio de pago elegido para recalcular el total (10% off por transferencia).
   useEffect(() => {
@@ -66,23 +78,25 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
 
   const submit = (e) => {
     e.preventDefault();
-    const errs = validate(form);
+    const errs = validate(form, digitalOnly);
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
-      const methodLabel = shippingMethodLabel(form.shippingMethod, form.city, form.province);
+      const methodLabel = shippingMethodLabel(shippingMethod, form.city, form.province);
       onSubmit({
         payer: {
           name: form.name.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
-          address: form.address.trim()
+          // Sin entrega no hay dirección: mandar la que quedó tipeada en el
+          // estado ensuciaría el mail y el CRM con un domicilio que no se usa.
+          address: digitalOnly ? '' : form.address.trim()
         },
         shipping: {
-          methodValue: form.shippingMethod,
+          methodValue: shippingMethod,
           method: methodLabel,
-          city: form.city.trim(),
-          province: form.province.trim(),
-          zipCode: form.zipCode.trim(),
+          city: digitalOnly ? '' : form.city.trim(),
+          province: digitalOnly ? '' : form.province.trim(),
+          zipCode: digitalOnly ? '' : form.zipCode.trim(),
           comments: form.comments.trim() || undefined
         },
         paymentMethod: form.paymentMethod
@@ -90,7 +104,7 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
     }
   };
 
-  const needsAddress = form.shippingMethod !== 'retiro';
+  const needsAddress = !digitalOnly && form.shippingMethod !== 'retiro';
   const zone = shippingZone(form.city, form.province);
   const isTransfer = form.paymentMethod === 'transferencia';
 
@@ -152,16 +166,26 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
 
       <h3 className="font-display font-extrabold text-xl pt-2">Entrega</h3>
 
-      <label className="block">
-        <span className="text-sm text-white/70 mb-1.5 block">Método de entrega</span>
-        <select value={form.shippingMethod} onChange={change('shippingMethod')} className="input-dark">
-          {shippingMethods.map((s) => (
-            <option key={s.value} value={s.value} className="bg-bg-deep">{s.label}</option>
-          ))}
-        </select>
-      </label>
+      {digitalOnly ? (
+        <div className="rounded-xl p-4 text-sm border border-emerald-400/30 bg-emerald-400/10 text-white/80">
+          📩 Tu pedido son <strong className="text-white">archivos digitales</strong>: te los mandamos
+          al mail que pusiste arriba. No hay envío ni costo de envío.
+          <span className="block mt-1 text-white/60">
+            Revisá que el mail esté bien escrito — es a donde te llega la descarga.
+          </span>
+        </div>
+      ) : (
+        <label className="block">
+          <span className="text-sm text-white/70 mb-1.5 block">Método de entrega</span>
+          <select value={form.shippingMethod} onChange={change('shippingMethod')} className="input-dark">
+            {shippingMethods.map((s) => (
+              <option key={s.value} value={s.value} className="bg-bg-deep">{s.label}</option>
+            ))}
+          </select>
+        </label>
+      )}
 
-      {form.shippingMethod === 'retiro' && (
+      {!digitalOnly && form.shippingMethod === 'retiro' && (
         <div className="rounded-xl p-3 text-sm border border-brand-pink/40 bg-brand-pink/10 text-white/80">
           📍 El retiro es en la zona de <strong className="text-white">{shippingCfg.pickupZone}</strong>.
           Si no podés acercarte hasta ahí, elegí una opción de envío.
@@ -251,7 +275,16 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
               <div className="flex items-center gap-2 font-semibold">
                 <span aria-hidden>{m.icon}</span> {m.label}
               </div>
-              <div className="text-xs text-white/50 mt-1">{m.blurb}</div>
+              {/* En un pedido de solo archivos, el blurb de transferencia
+                  prometería un 10 % que no aplica; lo útil ahí es CUÁNDO llega
+                  cada uno (MP es automático, la transferencia espera el comprobante). */}
+              <div className="text-xs text-white/50 mt-1">
+                {digitalOnly
+                  ? m.value === 'transferencia'
+                    ? 'Te mandamos los archivos cuando recibimos el comprobante.'
+                    : 'Los archivos te llegan apenas se acredita el pago.'
+                  : m.blurb}
+              </div>
             </button>
           );
         })}
@@ -259,7 +292,9 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
 
       {isTransfer && (
         <div className="rounded-xl p-4 border border-white/10 bg-white/5 space-y-2 text-sm">
-          {percentBlocked ? (
+          {/* Con un pedido 100 % digital el 10 % no existe: la línea es de
+              precio fijo, así que no se promete nada que no vaya a pasar. */}
+          {digitalOnly ? null : percentBlocked ? (
             <div className="text-white/60">Ya tenés un cupón aplicado: no se le suma el 10% por transferencia.</div>
           ) : bulkEligible ? (
             <div className="text-emerald-400 font-semibold">🎉 Tu pedido ya tiene 10% off por transferencia.</div>
@@ -277,7 +312,7 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
             <a href={contact.whatsappUrl} target="_blank" rel="noreferrer" className="text-brand-fuchsia font-semibold">
               {contact.whatsappDisplay}
             </a>{' '}
-            para que empecemos a producir.
+            {digitalOnly ? 'para que te mandemos los archivos.' : 'para que empecemos a producir.'}
           </p>
         </div>
       )}
@@ -307,7 +342,9 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
         {[
           isTransfer ? '🏦 Transferencia directa' : '🔒 Pago procesado por Mercado Pago',
           '🛡️ No guardamos datos de tarjeta',
-          '🇦🇷 Envíos a todo el país',
+          // Prometerle "envíos a todo el país" a quien compra un archivo no
+          // suma confianza: lo que le importa es que le llegue al mail.
+          digitalOnly ? '📩 Te llega por mail' : '🇦🇷 Envíos a todo el país',
           '💬 Te escribimos por WhatsApp'
         ].map((t) => (
           <li key={t} className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] px-2.5 py-2">
@@ -324,7 +361,9 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
       <p className="text-xs text-white/50 text-center">
         {isTransfer
           ? 'Confirmamos tu pedido y te esperamos el comprobante por WhatsApp.'
-          : 'Vas a ser redirigido a Mercado Pago para completar tu compra de forma segura.'}
+          : digitalOnly
+            ? 'Vas a Mercado Pago para pagar. Apenas se acredita, te mandamos los archivos por mail.'
+            : 'Vas a ser redirigido a Mercado Pago para completar tu compra de forma segura.'}
       </p>
     </form>
   );

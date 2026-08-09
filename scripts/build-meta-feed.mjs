@@ -31,7 +31,8 @@ import {
   WHOLESALE_DISCOUNT,
   NEGOCIO,
   TATUAJES,
-  POLAROID
+  POLAROID,
+  IMPRIMIBLE_PRINCIPAL
 } from '../frontend/src/config/pricing.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,7 +52,9 @@ const SPECIAL_IMAGES = {
   mayorista: '/meta/mayorista.jpg',
   negocio: '/meta/negocio.jpg',
   tatuajes: '/meta/tatuajes.jpg',
-  polaroid: '/meta/polaroid.webp'
+  polaroid: '/meta/polaroid.webp',
+  // Misma foto de muestra que usa la página del pack (ver routes/Imprimibles.jsx).
+  'archivos-imprimibles': '/images/imprimibles-muestra.webp'
 };
 
 /**
@@ -139,6 +142,8 @@ function specialPrice(slug) {
       return TATUAJES.price;
     case 'polaroid':
       return POLAROID.price;
+    case 'archivos-imprimibles':
+      return IMPRIMIBLE_PRINCIPAL.price;
     default:
       return priceForSize(DEFAULT_SIZE);
   }

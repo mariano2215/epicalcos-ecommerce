@@ -16,8 +16,8 @@ const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 
 export default function Cart() {
   const {
-    items, setQty, removeItem, subtotal, clear, bulkEligible, unitsToBulk, bulkSavings,
-    promoActive, promoSavings
+    items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkEligible, unitsToBulk, bulkSavings,
+    promoActive, promoSavings, digitalOnly
   } = useCart();
   const navigate = useNavigate();
 
@@ -47,8 +47,11 @@ export default function Cart() {
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Carrito' }]} />
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Tu carrito</h1>
 
-        {/* Banner de la promo 3x2 (o del descuento por volumen fuera de la promo) */}
-        {promoActive ? (
+        {/* Banner de la promo 3x2 (o del descuento por volumen fuera de la promo).
+            Con un carrito 100 % digital no va ninguno: la línea es de precio fijo
+            y "sumá 10 calcos y tenés 10% off" ahí se lee como que el descuento
+            le aplicaría al archivo, que es justo lo que no pasa. */}
+        {digitalOnly ? null : promoActive ? (
           <div className="mt-4 rounded-xl p-3 text-sm border border-brand-fuchsia/30 bg-brand-fuchsia/10 text-white/85">
             🎉 <strong>Promo 3x2 en todas las calcos</strong> — cada 3 (catálogo o personalizados), la más barata gratis.
           </div>
@@ -81,6 +84,9 @@ export default function Cart() {
                           {it.meta.customCount > 0 ? `${it.meta.customCount} propio(s)` : ''}
                         </div>
                       )}
+                      {it.type === 'digital' && (
+                        <div className="text-xs text-emerald-400 mt-1">📩 Te llega por mail — sin envío</div>
+                      )}
                       {/* El nombre de una línea `custom` ya trae el archivo: alcanza con el estado de la subida. */}
                       {it.type === 'custom' && it.meta?.archivos?.length === 1 ? (
                         <div className="text-xs text-white/50 mt-1">
@@ -104,11 +110,14 @@ export default function Cart() {
                       </div>
                     ) : (
                       // Packs/negocio de cantidad fija (meta.qty): la línea es 1 pack, pero
-                      // lo que le importa al cliente es cuántas calcos se lleva.
+                      // lo que le importa al cliente es cuántas calcos se lleva. Un archivo
+                      // digital no tiene cantidad: se compra una vez y se descarga.
                       <span className="text-sm text-white/60">
-                        {it.meta?.qty
-                          ? `${it.meta.qty * it.quantity} calcos`
-                          : `${it.quantity} unidad${it.quantity === 1 ? '' : 'es'}`}
+                        {it.type === 'digital'
+                          ? 'Archivos digitales'
+                          : it.meta?.qty
+                            ? `${it.meta.qty * it.quantity} calcos`
+                            : `${it.quantity} unidad${it.quantity === 1 ? '' : 'es'}`}
                       </span>
                     )}
                     <span className="font-display font-extrabold">{formatPrice(it.price * it.quantity)}</span>
@@ -142,7 +151,12 @@ export default function Cart() {
               </div>
             )}
             <div className="flex justify-between text-white/70 mb-2">
-              <span>Envío</span><span className="text-white/50">Se calcula en el checkout</span>
+              <span>Envío</span>
+              {digitalOnly ? (
+                <span className="text-emerald-400 font-semibold">Sin envío — llega por mail</span>
+              ) : (
+                <span className="text-white/50">Se calcula en el checkout</span>
+              )}
             </div>
             <div className="border-t border-white/10 my-3" />
             <div className="flex justify-between font-display font-extrabold text-lg">
@@ -166,8 +180,11 @@ export default function Cart() {
             )}
 
             {/* Cuánto falta para el envío gratis: hasta ahora esto solo existía
-                en el checkout, con los datos ya cargados y el pedido cerrado. */}
-            <FreeShippingProgress subtotal={subtotal} className="mt-4" />
+                en el checkout, con los datos ya cargados y el pedido cerrado.
+                Va sobre el subtotal FÍSICO — los archivos digitales no viajan en
+                la caja, así que no acercan a nadie al envío gratis. Con un
+                carrito 100 % digital no hay envío del que hablar. */}
+            {!digitalOnly && <FreeShippingProgress subtotal={physicalSubtotal} className="mt-4" />}
 
             <button onClick={() => navigate('/checkout')} className="btn-primary w-full mt-4">
               Ir al checkout →
@@ -193,8 +210,17 @@ export default function Cart() {
               </ul>
             </div>
 
-            {/* Cuándo llega, sin tener que llegar al checkout para enterarse. */}
-            <ShippingInfo subtotal={subtotal} className="mt-4 !bg-transparent !border-white/10" />
+            {/* Cuándo llega, sin tener que llegar al checkout para enterarse.
+                Un pedido de solo archivos no tiene producción ni correo: los
+                plazos de ShippingInfo no aplican y confundirían. */}
+            {digitalOnly ? (
+              <div className="mt-4 rounded-xl border border-white/10 px-3 py-2.5 text-sm text-white/70">
+                📩 Son archivos digitales: te llegan por mail a la casilla que dejes en el checkout,
+                apenas se acredita el pago.
+              </div>
+            ) : (
+              <ShippingInfo subtotal={physicalSubtotal} className="mt-4 !bg-transparent !border-white/10" />
+            )}
           </aside>
         </div>
 
