@@ -47,7 +47,7 @@ function validate(form) {
  * con el 10 % por transferencia ni con el 10 % por volumen: con eso en true no
  * se promete ningún % acá adentro.
  */
-export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, submitting, errorMsg, percentBlocked = false }) {
+export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
   const { bulkEligible, unitsToBulk } = useCart();
@@ -121,6 +121,13 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
             type="email"
             value={form.email}
             onChange={change('email')}
+            // Al salir del campo con un mail válido se registra el carrito para
+            // el recordatorio de abandono. En blur y no en cada tecla: mientras
+            // tipea, "juan@g" es un mail distinto en cada pulsación.
+            onBlur={(e) => {
+              const email = e.target.value.trim();
+              if (/^\S+@\S+\.\S+$/.test(email)) onEmailValid?.(email, form.name.trim());
+            }}
             placeholder="tu@email.com"
             autoComplete="email"
             inputMode="email"

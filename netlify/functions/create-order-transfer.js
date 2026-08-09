@@ -8,6 +8,7 @@
  * inmediato, con el pedido marcado como "pendiente de comprobante".
  */
 import { saveOrder } from './lib/orderStore.js';
+import { borrarCarrito } from './lib/abandonedStore.js';
 import { crearLeadEnCRM } from './_notion.js';
 import { validateAndPriceOrder } from './lib/pricing.js';
 import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
@@ -115,6 +116,10 @@ export const handler = async (event) => {
       total: order.itemsTotal + shippingCost
     };
     await saveOrder(orderId, storedOrder);
+
+    // Ya no es un carrito abandonado: llegó a crear el pedido. Espejo del
+    // borrado de create-preference.js — tiene que estar en los dos caminos.
+    await borrarCarrito(payer.email);
 
     // 'pending_transfer' le indica al CRM que el pago viene por transferencia
     // bancaria (lo trata como pendiente; el comprobante se registra a mano).

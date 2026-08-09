@@ -5,6 +5,7 @@ import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
+import { trackCart } from '../services/cartRecovery.js';
 import { calculateShipping, freeShippingThresholdFor } from '../config/site.js';
 import { findCoupon, couponBundle, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
 import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo } from '../lib/analytics.js';
@@ -148,6 +149,17 @@ export default function Checkout() {
     setPaymentMethod(next);
   }, []);
 
+  /**
+   * Mail válido escrito en el checkout → se registra el carrito por si no
+   * termina de comprar (ver services/cartRecovery.js). Se manda el carrito con
+   * los precios REALES del medio de pago elegido, que es lo que va a ver en el
+   * recordatorio. El backend es no-op salvo que la recuperación esté prendida.
+   */
+  const onEmailValid = useCallback(
+    (email, name) => trackCart({ email, name, items: pricedItems(paymentMethod, appliedCoupon) }),
+    [pricedItems, paymentMethod, appliedCoupon]
+  );
+
   // `add_shipping_info` y `add_payment_info` solo cuando el cliente ELIGE algo.
   // El efecto también corre al montar, y disparándolo ahí los dos eventos
   // existían siempre con el valor por defecto: no medían ninguna decisión.
@@ -258,6 +270,7 @@ export default function Checkout() {
               onSubmit={handleSubmit}
               onShippingChange={onShippingChange}
               onPaymentMethodChange={onPaymentMethodChange}
+              onEmailValid={onEmailValid}
               submitting={submitting}
               errorMsg={errorMsg}
               percentBlocked={Boolean(appliedBundle)}

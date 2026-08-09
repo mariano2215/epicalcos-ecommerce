@@ -59,6 +59,16 @@
   to     = "/.netlify/functions/mercadopago-webhook"
   status = 200
 
+[[redirects]]
+  from   = "/api/track-cart"
+  to     = "/.netlify/functions/track-cart"
+  status = 200
+
+[[redirects]]
+  from   = "/api/unsubscribe"
+  to     = "/.netlify/functions/unsubscribe"
+  status = 200
+
 # ── URLs "bonitas" para anuncios → 301 a la página real ──────────────────────
 # El plan CRO pedía landings /calcos-personalizadas, /calcos-para-negocios y
 # /pack-100-calcos. Esas páginas YA EXISTEN: crear gemelas sería contenido

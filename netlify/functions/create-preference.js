@@ -10,6 +10,7 @@
  */
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { saveOrder } from './lib/orderStore.js';
+import { borrarCarrito } from './lib/abandonedStore.js';
 import { crearLeadEnCRM } from './_notion.js';
 import { validateAndPriceOrder } from './lib/pricing.js';
 import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
@@ -208,6 +209,12 @@ export const handler = async (event) => {
       tracking
     };
     await saveOrder(orderId, storedOrder);
+
+    // Ya no es un carrito abandonado: llegó a crear el pedido. Escribirle un
+    // "te quedó el carrito" a alguien que acaba de comprar es el error más caro
+    // de todo el flujo, así que el borrado va en los DOS caminos de creación de
+    // pedido (acá y en create-order-transfer.js). Nunca lanza.
+    await borrarCarrito(payer.email);
 
     // CRM interno (app.epicalcos.com): no-op sin CRM_WEBHOOK_URL/SECRET,
     // nunca lanza y no bloquea el checkout si el CRM no responde.

@@ -6,6 +6,8 @@
 /api/create-order-transfer  /.netlify/functions/create-order-transfer  200
 /api/capture-lead           /.netlify/functions/capture-lead           200
 /api/mercadopago-webhook    /.netlify/functions/mercadopago-webhook    200
+/api/track-cart             /.netlify/functions/track-cart             200
+/api/unsubscribe            /.netlify/functions/unsubscribe            200
 
 # URLs "bonitas" para anuncios → 301 a la página real (espejo de netlify.toml).
 # NO son landings nuevas: /personalizados, /negocio y /mayorista ya existen, así

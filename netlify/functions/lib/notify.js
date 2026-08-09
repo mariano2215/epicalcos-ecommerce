@@ -697,3 +697,104 @@ export async function notifyOrder(o) {
   ]);
   return { email, customerEmail, notion };
 }
+
+// ─── Recordatorio de carrito abandonado ───────────────────────────────────────
+
+/**
+ * Mail de recuperación de carrito. Ver netlify/functions/abandoned-cart.js.
+ *
+ * Es UN solo mail por carrito, no una secuencia: el que abandona y no vuelve
+ * con un recordatorio tampoco vuelve con tres, y la diferencia entre recordar y
+ * hostigar es justamente esa.
+ *
+ * Lleva SIEMPRE link de baja en un click. Sin `unsubscribeUrl` no se manda:
+ * mandar un mail comercial sin salida es lo que convierte un recordatorio útil
+ * en spam.
+ *
+ * No-op si falta RESEND_API_KEY o si el remitente sigue siendo el default de
+ * Resend (onboarding@resend.dev no puede escribirle a terceros).
+ */
+export async function sendAbandonedCartEmail({ email, nombre, items, total, unsubscribeUrl, cartUrl }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { sent: false, reason: 'no_api_key' };
+  if (!email || !unsubscribeUrl) return { sent: false, reason: 'missing_email_or_unsubscribe' };
+
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+  if (/resend\.dev/i.test(from)) {
+    console.warn('[notify] NOTIFY_EMAIL_FROM es el default de Resend: no se puede escribir a clientes.');
+    return { sent: false, reason: 'from_not_verified' };
+  }
+
+  const saludo = nombre ? `Hola ${esc(String(nombre).split(/\s+/)[0])},` : 'Hola,';
+  const unidades = items.reduce((a, i) => a + i.quantity, 0);
+  const queda = unidades === 1 ? 'quedó una calco' : `quedaron ${unidades} calcos`;
+
+  const html = `<!doctype html>
+<html lang="es"><body style="margin:0;background:#111111;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#ffffff">
+  <div style="max-width:560px;margin:0 auto;padding:32px 20px">
+    <h1 style="font-size:22px;margin:0 0 4px">${saludo}</h1>
+    <p style="color:#c9c9c9;font-size:15px;line-height:1.55;margin:0 0 20px">
+      Te ${queda} en el carrito. Te lo dejamos guardado por si querés terminar la compra.
+    </p>
+
+    ${itemsHtml(items)}
+
+    <p style="font-size:17px;font-weight:700;margin:18px 0 22px">Total: ${money(total)}</p>
+
+    <p style="margin:0 0 26px">
+      <a href="${esc(cartUrl)}" style="display:inline-block;background:linear-gradient(135deg,#FF1B8D,#FF5A1F);color:#fff;text-decoration:none;font-weight:700;padding:14px 26px;border-radius:999px">
+        Terminar mi compra
+      </a>
+    </p>
+
+    <p style="color:#8f8f8f;font-size:13px;line-height:1.5;margin:0 0 6px">
+      Si ya lo compraste, ignorá este mail. Cualquier duda, respondé y te contestamos.
+    </p>
+    <p style="color:#6d6d6d;font-size:12px;margin:18px 0 0">
+      <a href="${esc(unsubscribeUrl)}" style="color:#6d6d6d">No quiero recibir más recordatorios</a>
+    </p>
+  </div>
+</body></html>`;
+
+  const text = `${nombre ? `Hola ${String(nombre).split(/\s+/)[0]},` : 'Hola,'}
+
+Te ${queda} en el carrito. Te lo dejamos guardado por si querés terminar la compra.
+
+${itemsText(items)}
+Total: ${money(total)}
+
+Terminar mi compra: ${cartUrl}
+
+Si ya lo compraste, ignorá este mail.
+No quiero recibir más recordatorios: ${unsubscribeUrl}
+`;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        subject: 'Te quedó el carrito a medio armar 🛒',
+        html,
+        text,
+        // Baja en un click desde el propio cliente de mail (RFC 8058): Gmail lo
+        // muestra al lado del remitente y evita que te marquen como spam.
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+        }
+      })
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      console.error('[notify] Resend (carrito) respondió', res.status, detail);
+      return { sent: false, reason: `resend_${res.status}`, detail };
+    }
+    return { sent: true };
+  } catch (err) {
+    console.error('[notify] error enviando recordatorio:', err?.message || err);
+    return { sent: false, reason: 'exception', detail: err?.message };
+  }
+}
