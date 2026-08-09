@@ -15,11 +15,18 @@
  *   ABANDONED_CART_HOURS           (opcional, default 4) horas para considerarlo abandonado
  *   ABANDONED_CART_MAX_HOURS       (opcional, default 72) pasado esto ya no se escribe
  *   ABANDONED_CART_MAX_PER_RUN     (opcional, default 25) tope de mails por corrida
+ *   ABANDONED_CART_TEST_EMAIL      (opcional) MODO PRUEBA: solo se le escribe a
+ *                                  esa dirección; al resto se lo saltea sin tocar
+ *                                  su registro. Sirve para probar el flujo en
+ *                                  producción sin escribirle a ningún cliente.
+ *                                  Quitar la variable = sale en vivo para todos.
  *
  * Formato v2 de Netlify (`export default` + `export const config`): es el que
  * admite `schedule` sin dependencias extra.
  */
-import { listarCarritos, marcarNotificado, purgar, estaDadoDeBaja, tokenBaja } from './lib/abandonedStore.js';
+import {
+  listarCarritos, marcarNotificado, purgar, estaDadoDeBaja, tokenBaja, normalizarEmail
+} from './lib/abandonedStore.js';
 import { sendAbandonedCartEmail } from './lib/notify.js';
 
 const HORA_MS = 60 * 60 * 1000;
@@ -40,6 +47,16 @@ export default async () => {
   const horas = num(process.env.ABANDONED_CART_HOURS, 4);
   const maxHoras = num(process.env.ABANDONED_CART_MAX_HOURS, 72);
   const maxPorCorrida = num(process.env.ABANDONED_CART_MAX_PER_RUN, 25);
+
+  /**
+   * MODO PRUEBA: con `ABANDONED_CART_TEST_EMAIL` seteada, solo se le escribe a
+   * esa dirección. Existe porque prender esto sin filtro NO es una prueba: es
+   * salir en vivo para todos los clientes al mismo tiempo. Los demás carritos
+   * se saltean SIN marcarlos como notificados, así al quitar la variable
+   * reciben su recordatorio normalmente.
+   */
+  const soloA = normalizarEmail(process.env.ABANDONED_CART_TEST_EMAIL || '') || null;
+  if (soloA) console.log('[abandoned] MODO PRUEBA: solo se escribe a', soloA);
 
   if (!habilitado || !secret) {
     console.log('[abandoned] apagado (falta ABANDONED_CART_ENABLED o ABANDONED_CART_SECRET)');
@@ -81,6 +98,10 @@ export default async () => {
       continue;
     }
 
+    // Modo prueba: al resto ni se lo toca (no se marca notificado), así al
+    // quitar la variable reciben su recordatorio como corresponde.
+    if (soloA && c.email !== soloA) { salteados++; continue; }
+
     if (await estaDadoDeBaja(c.email)) { salteados++; continue; }
     if (enviados >= maxPorCorrida) break;
 
@@ -108,7 +129,7 @@ export default async () => {
     }
   }
 
-  const resumen = { ok: true, enabled: true, total: carritos.length, enviados, purgados, salteados };
+  const resumen = { ok: true, enabled: true, modoPrueba: soloA, total: carritos.length, enviados, purgados, salteados };
   console.log('[abandoned]', JSON.stringify(resumen));
   return new Response(JSON.stringify(resumen), { headers: { 'Content-Type': 'application/json' } });
 };
