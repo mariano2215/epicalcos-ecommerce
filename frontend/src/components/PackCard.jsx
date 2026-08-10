@@ -20,12 +20,16 @@ import { useExperiment } from '../lib/experiments.js';
  * vez de inventar un "precio de pack".
  *
  * @param {{ qty:number, size:string, label:string, tagline:string,
- *           to:string, destacado?:boolean, precioFijo?:number, nota?:string }} props
+ *           to:string, destacado?:boolean, precioFijo?:number, nota?:string,
+ *           envioIncluido?:boolean }} props
  *        `precioFijo` es para el x100, que sí tiene regla propia en el servidor
  *        (mayorista 50 % off, o la promo de precio fijo por fecha).
+ *        `envioIncluido` = la línea de este pack trae el envío puesto por regla
+ *        (FREE_SHIPPING_PACK_TYPES), no por haber cruzado el umbral. Es el caso
+ *        del x100: a $39.999 no llega al umbral nacional y aun así viaja gratis.
  */
 export default function PackCard({
-  qty, size, label, tagline, to, destacado = false, precioFijo, nota
+  qty, size, label, tagline, to, destacado = false, precioFijo, nota, envioIncluido = false
 }) {
   const varianteAhorro = useExperiment('ahorro_pack');
 
@@ -45,8 +49,10 @@ export default function PackCard({
   const off = lista > 0 ? Math.round((ahorro / lista) * 100) : 0;
   const unitario = Math.round(conDescuento / qty);
 
-  // Señal comercial real: a partir de estos montos el envío no se cobra.
-  const envioGratisPais = conDescuento >= shipping.freeShippingThresholdNational;
+  // Señal comercial real: o el pack trae el envío puesto por regla, o su precio
+  // ya cruza el umbral. En los dos casos el cliente no paga correo a ningún
+  // lado, así que el badge dice lo mismo — "incluido" y no "$ 0".
+  const envioGratisPais = envioIncluido || conDescuento >= shipping.freeShippingThresholdNational;
   const envioGratisRosario = conDescuento >= shipping.freeShippingThresholdRosario;
 
   return (
@@ -94,7 +100,7 @@ export default function PackCard({
 
         {(envioGratisPais || envioGratisRosario) && (
           <p className="text-[11px] text-emerald-400 mt-1">
-            🚚 {envioGratisPais ? 'Envío gratis a todo el país' : 'Envío gratis en Rosario'}
+            🚚 {envioGratisPais ? 'Envío gratis incluido' : 'Envío gratis en Rosario'}
           </p>
         )}
       </div>

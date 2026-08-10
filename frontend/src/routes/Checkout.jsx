@@ -58,7 +58,7 @@ function stashDesignSpec(items, payerName) {
 }
 
 export default function Checkout() {
-  const { pricedItems, clear, promoActive, digitalOnly } = useCart();
+  const { pricedItems, clear, promoActive, digitalOnly, envioGratisIncluido } = useCart();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -133,10 +133,11 @@ export default function Checkout() {
     method: ship.method,
     subtotal: physicalSubtotal,
     city: ship.city,
-    province: ship.province
+    province: ship.province,
+    freeShipping: envioGratisIncluido
   });
   const total = subtotal + shippingCost;
-  // Cuánto falta para el envío gratis de ESE destino ($50.000 Rosario, $75.000 el resto).
+  // Cuánto falta para el envío gratis de ESE destino (ver los umbrales en config/site.js).
   const freeShippingGap = freeShippingThresholdFor(ship.city, ship.province) - physicalSubtotal;
 
   useSeo({ title: 'Checkout', description: 'Completá tus datos para pagar online con Mercado Pago o por transferencia bancaria.' });
@@ -357,8 +358,15 @@ export default function Checkout() {
               <div className="mb-3">
                 <div className="flex justify-between text-white/70 text-sm">
                   <span>Envío</span>
+                  {/* Con un pack que trae el envío puesto, "$ 0" se lee como un
+                      error de cálculo. Decir que viene incluido lo convierte en
+                      lo que es: parte de la oferta. */}
                   <span className={shippingCost === 0 ? 'text-emerald-400 font-semibold' : ''}>
-                    {shippingCost === 0 ? 'Gratis' : formatPrice(shippingCost)}
+                    {envioGratisIncluido
+                      ? 'Envío gratis incluido'
+                      : shippingCost === 0
+                        ? 'Gratis'
+                        : formatPrice(shippingCost)}
                   </span>
                 </div>
                 {shippingCost > 0 && freeShippingGap > 0 && (

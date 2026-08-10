@@ -10,6 +10,8 @@ import {
   BULK_DISCOUNT_PAYMENT_METHOD,
   findCoupon,
   couponBundle,
+  packIncludesShipping,
+  lineaConEnvioGratis,
   MAX_STICKER_DISCOUNT,
   PROMO_3X2,
   isPromoActive,
@@ -145,9 +147,20 @@ export function CartProvider({ children }) {
     trackAddToCart({ ...line, price: line.basePrice }, quantity);
   }, [notify]);
 
-  /** Agregar una línea de pack ya armada (mayorista). */
+  /**
+   * Agregar una línea de pack ya armada (mayorista).
+   *
+   * `envioGratis` marca los packs que se llevan el envío puesto (ver
+   * FREE_SHIPPING_PACK_TYPES en config/pricing.js). Se deriva del id para que la
+   * línea no pueda quedar desincronizada del tipo de pack que realmente es.
+   */
   const addPack = useCallback((line) => {
-    const enriched = { ...line, type: 'pack', catalogSku: line.catalogSku || META_LINE_SKU.mayorista };
+    const enriched = {
+      ...line,
+      type: 'pack',
+      envioGratis: packIncludesShipping(line.id),
+      catalogSku: line.catalogSku || META_LINE_SKU.mayorista
+    };
     dispatch({ type: 'ADD', line: enriched });
     notify(`${enriched.name} agregado`);
     trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
@@ -303,12 +316,17 @@ export function CartProvider({ children }) {
     const hasDigital = items.some((i) => i.type === 'digital');
     const digitalOnly = items.length > 0 && items.every((i) => i.type === 'digital');
 
+    // Packs con el envío incluido: alcanza con UNA línea para que todo el pedido
+    // viaje gratis (espejado en el servidor, que lo deriva de los ids).
+    const envioGratisIncluido = items.some(lineaConEnvioGratis);
+
     return {
       items,
       subtotal,
       physicalSubtotal: subtotal - digitalSubtotal,
       hasDigital,
       digitalOnly,
+      envioGratisIncluido,
       totalItems,
       bulkUnits,
       bulkEligible,

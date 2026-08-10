@@ -90,6 +90,20 @@ export const MAYORISTA100_SIZES = ['4cm', '6cm'];
 export function isMayorista100Active(now = Date.now()) {
   return Number.isFinite(MAYORISTA100_END_MS) && now <= MAYORISTA100_END_MS;
 }
+
+// --- Espejo de FREE_SHIPPING_PACK_TYPES de frontend/src/config/pricing.js ---
+// Packs que se llevan el envío puesto: con una de estas líneas en el pedido, el
+// envío es 0 sin importar zona ni subtotal. Se deriva SIEMPRE del id de la
+// línea — el cliente manda un flag `envioGratis` para pintar el resumen, pero
+// acá no se lee: confiar en él sería regalarle el envío a cualquiera que edite
+// el payload. ⚠️ Si agregás un tipo, agregalo también en el frontend
+// (lo verifica frontend/src/lib/envio.test.js).
+export const FREE_SHIPPING_PACK_TYPES = ['mayorista', 'mayorista100'];
+
+export function packIncludesShipping(lineId) {
+  const parts = String(lineId || '').split(':');
+  return parts[0] === 'pack' && FREE_SHIPPING_PACK_TYPES.includes(parts[1]);
+}
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
 const PERSONALIZADOS_DISCOUNT = 0.1;
 const NEGOCIO_PRICE = 39999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
@@ -166,9 +180,11 @@ function shippingZone(city, province) {
   return 'interior';
 }
 
-export function calculateShipping({ method, subtotal = 0, city, province }) {
+export function calculateShipping({ method, subtotal = 0, city, province, freeShipping = false }) {
   // 'digital' = el pedido es solo archivos: no hay nada que despachar.
-  if (method === 'retiro' || method === 'digital') return 0;
+  // `freeShipping` = el carrito trae un pack con el envío incluido (lo decide el
+  // servidor mirando los ids, nunca el flag que manda el cliente).
+  if (method === 'retiro' || method === 'digital' || freeShipping) return 0;
   const zone = shippingZone(city, province);
   if (zone === 'rosario') {
     return subtotal >= FREE_SHIPPING_THRESHOLD_ROSARIO ? 0 : SHIPPING_COST.rosario;
@@ -420,11 +436,15 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   if (methodValue !== 'retiro' && methodValue !== 'envio' && methodValue !== 'digital') {
     return { ok: false, error: 'shipping_invalid', detail: 'método de envío desconocido' };
   }
+  // Packs con el envío incluido: se deriva de los ids ya validados, no del
+  // payload. Si el cliente mintió con el flag, acá no cambia nada.
+  const freeShipping = clean.some((i) => packIncludesShipping(i.id));
   const shippingCost = calculateShipping({
     method: methodValue,
     subtotal: physicalTotal,
     city: shipping?.city,
-    province: shipping?.province
+    province: shipping?.province,
+    freeShipping
   });
 
   return {

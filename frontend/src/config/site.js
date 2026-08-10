@@ -121,16 +121,19 @@ export function shippingZone(city, province) {
 /**
  * Calcula el costo de envío en pesos según método, subtotal y destino.
  * - retiro → 0 (gratis)
- * - envío a Rosario (motomensajería) → $4.500 (gratis desde $50.000 de subtotal)
+ * - carrito con un pack que trae el envío incluido (`freeShipping`) → 0, sin
+ *   importar zona ni subtotal (ver FREE_SHIPPING_PACK_TYPES en config/pricing.js)
+ * - envío a Rosario (motomensajería) → $4.500 (gratis desde el umbral de Rosario)
  * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → $6.500
  * - envío al resto del país (Correo Argentino) → $8.500
- * - fuera de Rosario, cualquier destino viaja GRATIS desde $75.000 de subtotal
- * @param {{ method: string, subtotal?: number, city?: string, province?: string }} opts
+ * - fuera de Rosario, cualquier destino viaja GRATIS desde el umbral nacional
+ * @param {{ method: string, subtotal?: number, city?: string, province?: string,
+ *           freeShipping?: boolean }} opts
  * @returns {number}
  */
-export function calculateShipping({ method, subtotal = 0, city, province }) {
+export function calculateShipping({ method, subtotal = 0, city, province, freeShipping = false }) {
   // 'digital' = el pedido son solo archivos imprimibles: no hay nada que despachar.
-  if (method === 'retiro' || method === 'digital') return 0;
+  if (method === 'retiro' || method === 'digital' || freeShipping) return 0;
   const zone = shippingZone(city, province);
   if (zone === 'rosario') {
     return subtotal >= shipping.freeShippingThresholdRosario ? 0 : shipping.costRosario;
