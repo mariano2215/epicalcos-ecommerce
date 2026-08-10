@@ -100,7 +100,8 @@ export default function PackCard({
 
         {(envioGratisPais || envioGratisRosario) && (
           <p className="text-[11px] text-emerald-400 mt-1">
-            🚚 {envioGratisPais ? 'Envío gratis incluido' : 'Envío gratis en Rosario'}
+            🚚{' '}
+            {envioGratisPais ? 'Envío gratis incluido' : 'Envío gratis en Rosario'}
           </p>
         )}
       </div>
