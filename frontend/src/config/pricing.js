@@ -207,6 +207,51 @@ export function mayoristaPromoOff(sizeId) {
   return Math.round((1 - PROMO_MAYORISTA_100.price / mayoristaPromoListPrice(sizeId)) * 100);
 }
 
+/**
+ * ─── ESCALERA DE PACKS DE CATÁLOGO (/armar-pack) ──────────────────────────────
+ * Los escalones x10 / x20 / x50. El x100 NO está acá: tiene regla propia en el
+ * servidor (mayorista 50 % off, o la promo de precio fijo) y su card se arma
+ * aparte en la página, porque el copy y el precio dependen de la promo.
+ *
+ * `ocultarDurantePromo` = mientras la promo de 100 calcos a precio fijo esté
+ * viva, ese escalón NO se muestra. Con 100 calcos a $39.999, un pack de 20 o de
+ * 50 al precio de lista sale MÁS y trae MENOS producto (el x50 son $72.000 por
+ * la mitad de calcos): deja la escalera dada vuelta y destruye el ancla del
+ * calco suelto. Se OCULTAN, no se borran — cuando la promo vence vuelven solos.
+ */
+export const CATALOG_PACKS = [
+  {
+    qty: 10,
+    label: 'Para empezar',
+    tagline: 'El mínimo para que arranque el descuento por volumen.'
+  },
+  {
+    qty: 20,
+    label: 'Más variedad',
+    tagline: 'Alcanza para llenar la notebook y el termo, y regalar algunas.',
+    destacado: true,
+    ocultarDurantePromo: true
+  },
+  {
+    qty: 50,
+    label: 'Para fanáticos',
+    tagline: 'Cincuenta diseños distintos, o los que más te gustan repetidos.',
+    ocultarDurantePromo: true
+  }
+];
+
+/** Cantidades que tienen armador propio en /armar-pack?n=… (todas, aunque su card esté oculta). */
+export const CATALOG_PACK_QTYS = CATALOG_PACKS.map((p) => p.qty);
+
+/**
+ * Los escalones que se muestran ahora mismo. Con la promo activa queda solo el
+ * x10; al vencer vuelven los tres. El armador `?n=20` / `?n=50` sigue andando
+ * siempre: ocultar la card no es romperle el link a quien ya lo tenía guardado.
+ */
+export function visibleCatalogPacks(promoMayoristaActiva) {
+  return CATALOG_PACKS.filter((p) => !(promoMayoristaActiva && p.ocultarDurantePromo));
+}
+
 /** Personalizados: mínimo 10 calcos, 10 % off ya incluido. */
 export const PERSONALIZADOS_MIN = 10;
 export const PERSONALIZADOS_DISCOUNT = 0.10;

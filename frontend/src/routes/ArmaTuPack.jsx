@@ -12,6 +12,8 @@ import {
   WHOLESALE_QTY,
   WHOLESALE_DISCOUNT,
   PROMO_MAYORISTA_100,
+  CATALOG_PACK_QTYS,
+  visibleCatalogPacks,
   priceForSize,
   round
 } from '../config/pricing.js';
@@ -32,24 +34,37 @@ import { useSeo } from '../lib/seo.js';
  *
  * El x100 sí tiene regla propia (mayorista 50 % off, o la promo por fecha), así
  * que su tarjeta manda a /mayorista, que es donde vive ese armador.
+ *
+ * QUÉ ESCALONES SE MUESTRAN lo decide `visibleCatalogPacks` (config/pricing.js):
+ * mientras corre la promo de 100 calcos a precio fijo, el x20 y el x50 salen de
+ * la grilla porque salen más caros que el x100 por la mitad de producto.
  */
-const TAMANOS_PACK = [10, 20, 50];
 
 export default function ArmaTuPack() {
   const [params] = useSearchParams();
   const promoMayorista = useMayoristaPromoActive();
 
   const n = parseInt(params.get('n') || '', 10);
-  const packElegido = TAMANOS_PACK.includes(n) ? n : null;
+  const packElegido = CATALOG_PACK_QTYS.includes(n) ? n : null;
 
   const unit = priceForSize(DEFAULT_SIZE);
   const unitConDescuento = round(unit * (1 - BULK_DISCOUNT));
+
+  // Los escalones de catálogo visibles + el x100, que siempre está.
+  const packsVisibles = visibleCatalogPacks(promoMayorista);
+  const cantidadesVisibles = [...packsVisibles.map((p) => p.qty), WHOLESALE_QTY];
+  // Sin la promo son 4 cards (x10/x20/x50/x100); con la promo, 2 (x10/x100). El
+  // grid se achica con ellas para no dejar dos columnas vacías en desktop.
+  const gridCols =
+    cantidadesVisibles.length <= 2 ? 'lg:grid-cols-2 max-w-3xl' : 'lg:grid-cols-4';
+  // "10, 20, 50 o 100" / "10 o 100" — el copy nombra SOLO los packs que se ven.
+  const listaCantidades = cantidadesVisibles.join(', ').replace(/, (\d+)$/, ' o $1');
 
   useSeo({
     title: packElegido ? `Armá tu pack x${packElegido}` : 'Armá tu pack',
     description: packElegido
       ? `Elegí ${packElegido} calcos del catálogo en un solo tamaño y pagalas juntas. Desde ${BULK_THRESHOLD} calcos, 10% off pagando por transferencia. Envíos a todo el país.`
-      : `Elegí de a 10, 20, 50 o 100 calcos y armá tu pack con los diseños que quieras. Desde ${BULK_THRESHOLD} calcos, 10% off pagando por transferencia.`
+      : `Elegí de a ${listaCantidades} calcos y armá tu pack con los diseños que quieras. Desde ${BULK_THRESHOLD} calcos, 10% off pagando por transferencia.`
   });
 
   // ?n=100 no tiene armador propio: el pack de 100 vive en /mayorista, que ya
@@ -101,29 +116,18 @@ export default function ArmaTuPack() {
           </p>
         </header>
 
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <PackCard
-            qty={10}
-            size={DEFAULT_SIZE}
-            label="Para empezar"
-            tagline="El mínimo para que arranque el descuento por volumen."
-            to="/armar-pack?n=10"
-          />
-          <PackCard
-            qty={20}
-            size={DEFAULT_SIZE}
-            label="Más variedad"
-            tagline="Alcanza para llenar la notebook y el termo, y regalar algunas."
-            to="/armar-pack?n=20"
-            destacado
-          />
-          <PackCard
-            qty={50}
-            size={DEFAULT_SIZE}
-            label="Para fanáticos"
-            tagline="Cincuenta diseños distintos, o los que más te gustan repetidos."
-            to="/armar-pack?n=50"
-          />
+        <div className={`grid gap-3 grid-cols-2 ${gridCols}`}>
+          {packsVisibles.map((p) => (
+            <PackCard
+              key={p.qty}
+              qty={p.qty}
+              size={DEFAULT_SIZE}
+              label={p.label}
+              tagline={p.tagline}
+              to={`/armar-pack?n=${p.qty}`}
+              destacado={p.destacado}
+            />
+          ))}
           {/* El x100 tiene regla propia en el servidor: mayorista 50% off, o la
               promo de precio fijo mientras esté vigente. */}
           <PackCard
