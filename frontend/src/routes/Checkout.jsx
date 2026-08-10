@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import CheckoutForm from '../components/CheckoutForm.jsx';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
@@ -73,22 +73,57 @@ export default function Checkout() {
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState('');
   const [couponError, setCouponError] = useState('');
+  /**
+   * El campo de cupón arranca COLAPSADO detrás de un link.
+   *
+   * Un input "Código de descuento" vacío y siempre visible manda al cliente a
+   * abrir otra pestaña a buscar un código que hoy no existe (ninguno se publica,
+   * ver COUPONS en config/pricing.js) — y muchos no vuelven. El que sí tiene un
+   * código lo busca igual: un click no lo frena.
+   *
+   * Arranca ABIERTO cuando ya hay un cupón en juego: por URL (?cupon=…) o el del
+   * popup de bienvenida guardado en localStorage. Ahí esconderlo sería esconder
+   * un descuento que el cliente ya se ganó.
+   */
+  const [couponOpen, setCouponOpen] = useState(false);
+  const couponInputRef = useRef(null);
+  const enfocarCupon = useRef(false);
+  const [searchParams] = useSearchParams();
   const isPickup = ship.method === 'retiro';
   const isTransfer = paymentMethod === 'transferencia';
 
-  // Si vino del popup de bienvenida, lo aplicamos solo automáticamente.
+  // Cupón precargado: primero el de la URL (alguien mandó ese link a propósito),
+  // si no el del popup de bienvenida. Los dos se aplican solos.
   useEffect(() => {
+    const fromUrl = (searchParams.get('cupon') || searchParams.get('coupon') || '').trim();
+    let stored = '';
     try {
-      const stored = localStorage.getItem(WELCOME_COUPON_STORAGE_KEY);
-      if (stored && findCoupon(stored)) {
-        setCouponInput(stored);
-        setAppliedCoupon(stored.trim().toUpperCase());
-      }
+      stored = (localStorage.getItem(WELCOME_COUPON_STORAGE_KEY) || '').trim();
     } catch {
       /* ignore */
     }
+    const code = fromUrl || stored;
+    if (!code) return;
+
+    const coupon = findCoupon(code);
+    // El de localStorage solo se muestra si sigue vivo: un código vencido ahí
+    // guardado no es algo que el cliente haya pedido ver.
+    if (!coupon && !fromUrl) return;
+
+    setCouponInput(code);
+    setCouponOpen(true);
+    if (coupon) setAppliedCoupon(code.toUpperCase());
+    else setCouponError('Ese cupón no existe o venció.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Foco en el input solo cuando lo abrió el cliente: al abrirlo por un cupón
+  // de la URL, robarle el foco le mueve el scroll apenas entra al checkout.
+  useEffect(() => {
+    if (!couponOpen || !enfocarCupon.current) return;
+    enfocarCupon.current = false;
+    couponInputRef.current?.focus();
+  }, [couponOpen]);
 
   const applyCoupon = () => {
     const coupon = findCoupon(couponInput);
@@ -105,6 +140,9 @@ export default function Checkout() {
     setAppliedCoupon('');
     setCouponInput('');
     setCouponError('');
+    // Vuelve a colapsarse: quien saca su cupón no está por escribir otro, y un
+    // input vacío ahí es justo lo que este bloque evita.
+    setCouponOpen(false);
   };
 
   // Precios reales según el medio de pago y el cupón aplicado: a los calcos
@@ -317,14 +355,17 @@ export default function Checkout() {
                   <span className="text-emerald-400">🎟️ Cupón <strong>{appliedCoupon}</strong> aplicado</span>
                   <button type="button" onClick={removeCoupon} className="text-white/50 hover:text-white text-xs">Quitar</button>
                 </div>
-              ) : (
+              ) : couponOpen ? (
                 <div>
                   <div className="flex gap-2">
                     <input
+                      ref={couponInputRef}
                       type="text"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && applyCoupon()}
                       placeholder="Código de descuento"
+                      aria-label="Código de descuento"
                       className="input-dark !py-2 text-sm flex-1"
                     />
                     <button type="button" onClick={applyCoupon} className="btn-secondary !py-2 !px-3 text-sm shrink-0">
@@ -333,6 +374,18 @@ export default function Checkout() {
                   </div>
                   {couponError && <div className="text-xs text-brand-pink mt-1.5">{couponError}</div>}
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    enfocarCupon.current = true;
+                    setCouponOpen(true);
+                  }}
+                  aria-expanded={false}
+                  className="text-sm text-white/50 hover:text-white underline decoration-white/25 hover:decoration-white"
+                >
+                  ¿Tenés un código de descuento?
+                </button>
               )}
             </div>
 
