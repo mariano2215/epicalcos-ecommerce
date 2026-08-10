@@ -41,7 +41,15 @@ export default function CartDrawer() {
 
           {items.map((item) => (
             <div key={item.id} className="card-glass p-3 flex gap-3">
-              <img src={item.image} alt={item.name} className="w-20 h-20 rounded-xl object-contain bg-white/5 p-1" />
+              <img
+                src={item.image}
+                alt={item.name}
+                loading="lazy"
+                decoding="async"
+                width={80}
+                height={80}
+                className="w-20 h-20 rounded-xl object-contain bg-white/5 p-1"
+              />
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="font-semibold text-sm leading-snug">{item.name}</h4>

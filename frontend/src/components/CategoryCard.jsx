@@ -57,6 +57,11 @@ export default function CategoryCard({ slug, name, emoji, cover, count, rotation
               src={src || cover}
               alt={name}
               loading="lazy"
+              decoding="async"
+              /* Portadas cuadradas de 320 px — el alto queda reservado antes de
+                 la descarga y la grilla de categorías no salta (CLS). */
+              width={320}
+              height={320}
               onError={() => { if (src !== cover) setSrc(cover); }}
               className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-110"
             />

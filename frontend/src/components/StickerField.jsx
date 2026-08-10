@@ -54,7 +54,16 @@ async function loadSources() {
   return [];
 }
 
-export default function StickerField({ count = 14, opacity = 0.34, className = '' }) {
+/**
+ * @param {{ count?:number, opacity?:number, className?:string, eagerFirst?:boolean }} props
+ *        `eagerFirst` = la PRIMERA calco se pide con prioridad alta en vez de
+ *        `lazy`. Lo usa solo el hero del Home: es la única imagen que está
+ *        arriba del fold, y hasta ahora ninguna imagen del hero se priorizaba
+ *        mientras que `marcas-clientes.webp` —muy por debajo del fold— se
+ *        pedía eager y competía por ancho de banda justo durante el LCP.
+ *        El resto del campo queda en `lazy`: son decorativas.
+ */
+export default function StickerField({ count = 14, opacity = 0.34, className = '', eagerFirst = false }) {
   const reduced = useReducedMotion();
   const location = useLocation();
   const ref = useRef(null);
@@ -115,12 +124,14 @@ export default function StickerField({ count = 14, opacity = 0.34, className = '
     >
       {imgs.map((src, i) => {
         const s = SLOTS[i % SLOTS.length];
+        const prioritaria = eagerFirst && i === 0;
         return (
           <img
             key={`${src}-${i}`}
             src={src}
             alt=""
-            loading="lazy"
+            loading={prioritaria ? 'eager' : 'lazy'}
+            fetchpriority={prioritaria ? 'high' : undefined}
             decoding="async"
             // Los cutouts son cuadrados: con width/height el navegador reserva
             // el lugar antes de descargarlos y no hay salto de layout.

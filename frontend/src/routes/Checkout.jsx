@@ -334,7 +334,15 @@ export default function Checkout() {
             <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
               {items.map((it) => (
                 <div key={it.id} className="flex gap-3">
-                  <img src={it.image} alt={it.name} className="w-14 h-14 rounded-xl object-contain bg-white/5 p-0.5" />
+                  <img
+                    src={it.image}
+                    alt={it.name}
+                    loading="lazy"
+                    decoding="async"
+                    width={56}
+                    height={56}
+                    className="w-14 h-14 rounded-xl object-contain bg-white/5 p-0.5"
+                  />
                   <div className="flex-1 text-sm">
                     <div className="font-semibold leading-snug">{it.name}</div>
                     <div className="text-white/50">x{it.quantity} · {formatPrice(it.basePrice)}</div>

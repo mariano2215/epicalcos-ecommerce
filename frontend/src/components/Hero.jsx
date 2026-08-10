@@ -60,7 +60,9 @@ export default function Hero() {
   return (
     <section className="hero-gradient relative">
       <div className="hero-aurora" aria-hidden="true" />
-      <StickerField count={14} opacity={0.34} />
+      {/* eagerFirst: la primera calco del hero es la única imagen arriba del
+          fold en toda la home. Ver el comentario en StickerField. */}
+      <StickerField count={14} opacity={0.34} eagerFirst />
 
       <div className="container-app pt-14 pb-12 md:pt-20 md:pb-16 text-center relative z-10">
         <span className="badge badge-soft mb-4 hidden sm:inline-flex">🔥 Calcos premium · Resistentes al agua y al sol</span>

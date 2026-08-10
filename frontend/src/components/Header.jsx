@@ -36,7 +36,16 @@ export default function Header() {
       )}
       <div className="container-app flex items-center justify-between py-4">
         <Link to="/" className="flex items-center" onClick={() => setOpen(false)} aria-label={site.name}>
-          <img src="/favicon.png" alt={site.name} className="h-11 w-11 rounded-lg" />
+          {/* El logo está arriba del fold en todas las páginas: eager + tamaño
+              declarado para que el header no salte al cargar. */}
+          <img
+            src="/favicon.png"
+            alt={site.name}
+            width={44}
+            height={44}
+            decoding="async"
+            className="h-11 w-11 rounded-lg"
+          />
         </Link>
 
         {/* lg y no md: con 7 links el nav no entra en 768 px y desbordaba la página */}

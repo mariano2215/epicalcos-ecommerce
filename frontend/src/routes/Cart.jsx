@@ -69,7 +69,15 @@ export default function Cart() {
           <div className="lg:col-span-2 space-y-4">
             {items.map((it) => (
               <div key={it.id} className="card-glass p-4 flex gap-4">
-                <img src={it.image} alt={it.name} className="w-24 h-24 object-contain bg-white/5 rounded-2xl p-1" />
+                <img
+                  src={it.image}
+                  alt={it.name}
+                  loading="lazy"
+                  decoding="async"
+                  width={96}
+                  height={96}
+                  className="w-24 h-24 object-contain bg-white/5 rounded-2xl p-1"
+                />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
