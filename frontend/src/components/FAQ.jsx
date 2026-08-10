@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { shipping } from '../config/site.js';
+import { formatPrice } from '../lib/formato.js';
 
 const faqs = [
   {
@@ -69,7 +71,15 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Hacen envíos?',
-    a: 'Sí. En Rosario por motomensajería: $4.500, gratis desde $50.000. Ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez): $6.500. Al resto del país por Correo Argentino: $8.500 — y gratis a todo el país desde $75.000. También podés retirar en mano sin costo, coordinamos por WhatsApp.'
+    // Costos y umbrales SIEMPRE del config: esta respuesta ya se había quedado
+    // vieja una vez y contradecía al checkout.
+    a:
+      `Sí. En Rosario por motomensajería: ${formatPrice(shipping.costRosario)}, gratis desde ` +
+      `${formatPrice(shipping.freeShippingThresholdRosario)}. Ciudades próximas (Funes, Granadero ` +
+      `Baigorria, Villa Gobernador Gálvez): ${formatPrice(shipping.costNearby)}. Al resto del país por ` +
+      `Correo Argentino: ${formatPrice(shipping.costInterior)} — y gratis a todo el país desde ` +
+      `${formatPrice(shipping.freeShippingThresholdNational)}. También podés retirar en mano sin costo, ` +
+      'coordinamos por WhatsApp.'
   },
   {
     tag: 'general',

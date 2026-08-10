@@ -422,5 +422,6 @@ export const useCart = () => {
   return ctx;
 };
 
-export const formatPrice = (v) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
+// El formateador vive en lib/formato.js para que `config/` también pueda usarlo
+// sin importar React. Se re-exporta acá: todo el sitio ya lo importa de este módulo.
+export { formatPrice } from '../lib/formato.js';

@@ -143,10 +143,14 @@ export function isDigitalOnly(items) {
 // de arriba. El test frontend/src/lib/precioPersonalizados.test.js lo verifica.
 
 // --- Espejo de frontend/src/config/site.js (envío) ---
-const FREE_SHIPPING_THRESHOLD_ROSARIO = 50000;
+// ⚠️ Los dos umbrales bajaron (Rosario $50.000 → $25.000, país $75.000 →
+// $35.000): a $1.600 el calco de 6 cm, los viejos eran 31 y 47 calcos — un
+// incentivo inalcanzable. El test frontend/src/lib/envio.test.js verifica que
+// estos números sean los mismos que los de frontend/src/config/site.js.
+export const FREE_SHIPPING_THRESHOLD_ROSARIO = 25000;
 // Envío gratis a TODO EL PAÍS (ciudades próximas + interior) desde este monto.
 // En Rosario manda el umbral de arriba, que es más bajo.
-const FREE_SHIPPING_THRESHOLD_NATIONAL = 75000;
+export const FREE_SHIPPING_THRESHOLD_NATIONAL = 35000;
 const SHIPPING_COST = { rosario: 4500, nearby: 6500, interior: 8500 }; // rosario=motomensajería, interior=Correo Argentino
 const NEARBY_CITIES = ['funes', 'granadero baigorria', 'villa gobernador galvez'];
 
@@ -189,7 +193,7 @@ export function calculateShipping({ method, subtotal = 0, city, province, freeSh
   if (zone === 'rosario') {
     return subtotal >= FREE_SHIPPING_THRESHOLD_ROSARIO ? 0 : SHIPPING_COST.rosario;
   }
-  // Resto del país (ciudades próximas + interior): gratis desde $75.000.
+  // Resto del país (ciudades próximas + interior): gratis desde el umbral nacional.
   if (subtotal >= FREE_SHIPPING_THRESHOLD_NATIONAL) return 0;
   return SHIPPING_COST[zone];
 }
@@ -407,7 +411,7 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
 
   // Los archivos digitales no se despachan: no cuentan para el umbral de envío
   // gratis. Sin esto, sumar un pack de $5.999 al carrito acercaría el pedido a
-  // los $50.000/$75.000 sin agregar un solo gramo a la caja.
+  // los umbrales sin agregar un solo gramo a la caja.
   const physicalTotal = priced.reduce(
     (a, i, idx) => (bases[idx].kind === 'digital' ? a : a + i.unit_price * i.quantity),
     0

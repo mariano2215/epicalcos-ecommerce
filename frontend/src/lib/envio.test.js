@@ -10,9 +10,14 @@ import {
 import {
   calculateShipping as beShipping,
   FREE_SHIPPING_PACK_TYPES as BE_FREE_SHIPPING_PACKS,
+  FREE_SHIPPING_THRESHOLD_ROSARIO as BE_UMBRAL_ROSARIO,
+  FREE_SHIPPING_THRESHOLD_NATIONAL as BE_UMBRAL_NACIONAL,
   packIncludesShipping as bePackIncludesShipping,
   validateAndPriceOrder
 } from '../../../netlify/functions/lib/pricing.js';
+
+const UMBRAL_ROSARIO = shipping.freeShippingThresholdRosario;
+const UMBRAL_NACIONAL = shipping.freeShippingThresholdNational;
 
 const rosario = { city: 'Rosario', province: 'Santa Fe' };
 const funes = { city: 'Funes', province: 'Santa Fe' };
@@ -31,29 +36,43 @@ describe('costo de envío — paridad frontend ↔ backend', () => {
     expect(both({ method: 'retiro', subtotal: 0, ...interior })).toBe(0);
   });
 
-  it('Rosario: $4.500 y gratis desde $50.000', () => {
-    expect(both({ method: 'envio', subtotal: 49999, ...rosario })).toBe(4500);
-    expect(both({ method: 'envio', subtotal: 50000, ...rosario })).toBe(0);
+  it('Rosario: se cobra bajo el umbral y es gratis desde el umbral', () => {
+    expect(both({ method: 'envio', subtotal: UMBRAL_ROSARIO - 1, ...rosario })).toBe(shipping.costRosario);
+    expect(both({ method: 'envio', subtotal: UMBRAL_ROSARIO, ...rosario })).toBe(0);
   });
 
-  it('resto del país: gratis desde $75.000 (ciudades próximas e interior)', () => {
+  it('resto del país: gratis desde el umbral nacional (ciudades próximas e interior)', () => {
     // Debajo del umbral, cada zona paga su costo.
-    expect(both({ method: 'envio', subtotal: 74999, ...funes })).toBe(6500);
-    expect(both({ method: 'envio', subtotal: 74999, ...interior })).toBe(8500);
-    // Desde $75.000, gratis a todo el país.
-    expect(both({ method: 'envio', subtotal: 75000, ...funes })).toBe(0);
-    expect(both({ method: 'envio', subtotal: 75000, ...interior })).toBe(0);
-    expect(both({ method: 'envio', subtotal: 120000, ...interior })).toBe(0);
+    expect(both({ method: 'envio', subtotal: UMBRAL_NACIONAL - 1, ...funes })).toBe(shipping.costNearby);
+    expect(both({ method: 'envio', subtotal: UMBRAL_NACIONAL - 1, ...interior })).toBe(shipping.costInterior);
+    // Desde el umbral nacional, gratis a todo el país.
+    expect(both({ method: 'envio', subtotal: UMBRAL_NACIONAL, ...funes })).toBe(0);
+    expect(both({ method: 'envio', subtotal: UMBRAL_NACIONAL, ...interior })).toBe(0);
+    expect(both({ method: 'envio', subtotal: UMBRAL_NACIONAL * 2, ...interior })).toBe(0);
   });
 
   it('el umbral nacional NO le sube el piso a Rosario', () => {
-    // Entre $50.000 y $75.000 Rosario ya viaja gratis.
-    expect(both({ method: 'envio', subtotal: 60000, ...rosario })).toBe(0);
+    // Entre los dos umbrales, Rosario ya viaja gratis.
+    const entreLosDos = Math.floor((UMBRAL_ROSARIO + UMBRAL_NACIONAL) / 2);
+    expect(entreLosDos).toBeGreaterThanOrEqual(UMBRAL_ROSARIO);
+    expect(entreLosDos).toBeLessThan(UMBRAL_NACIONAL);
+    expect(both({ method: 'envio', subtotal: entreLosDos, ...rosario })).toBe(0);
   });
 
-  it('los umbrales del config son los que se aplican', () => {
-    expect(shipping.freeShippingThresholdRosario).toBe(50000);
-    expect(shipping.freeShippingThresholdNational).toBe(75000);
+  it('los umbrales del config están espejados frontend ↔ backend', () => {
+    expect(UMBRAL_ROSARIO).toBe(BE_UMBRAL_ROSARIO);
+    expect(UMBRAL_NACIONAL).toBe(BE_UMBRAL_NACIONAL);
+    // El de Rosario tiene que ser el más bajo: si se invierten, `calculateShipping`
+    // le cobra el envío a Rosario en el tramo en que el interior ya viaja gratis.
+    expect(UMBRAL_ROSARIO).toBeLessThan(UMBRAL_NACIONAL);
+  });
+
+  it('los umbrales nuevos son alcanzables: menos de 25 calcos de 6 cm', () => {
+    // El motivo del cambio: $50.000/$75.000 eran 31 y 47 calcos. Un umbral que
+    // nadie alcanza no incentiva, desmotiva.
+    const calco6cm = 1600;
+    expect(Math.ceil(UMBRAL_ROSARIO / calco6cm)).toBeLessThanOrEqual(16);
+    expect(Math.ceil(UMBRAL_NACIONAL / calco6cm)).toBeLessThanOrEqual(25);
   });
 });
 

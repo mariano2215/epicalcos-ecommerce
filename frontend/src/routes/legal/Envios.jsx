@@ -1,5 +1,7 @@
 import LegalLayout from '../../components/LegalLayout.jsx';
 import { useSeo } from '../../lib/seo.js';
+import { shipping } from '../../config/site.js';
+import { formatPrice } from '../../lib/formato.js';
 
 export default function Envios() {
   useSeo({
@@ -14,20 +16,30 @@ export default function Envios() {
       lastUpdated="2026"
       breadcrumbName="Envíos"
     >
+      {/* Costos, umbrales y plazos SIEMPRE del config (config/site.js): es la
+          página que el cliente cita cuando algo no coincide con el checkout. */}
       <h2>Zonas y costos</h2>
       <ul>
         <li>
-          <strong>Envío en Rosario (motomensajería):</strong> $4.500. <strong>Gratis</strong> en compras desde $50.000.
+          <strong>Envío en Rosario (motomensajería):</strong> {formatPrice(shipping.costRosario)}.{' '}
+          <strong>Gratis</strong> en compras desde {formatPrice(shipping.freeShippingThresholdRosario)}.
         </li>
         <li>
-          <strong>Ciudades próximas:</strong> $6.500 (Funes, Granadero Baigorria y Villa Gobernador Gálvez).
+          <strong>Ciudades próximas:</strong> {formatPrice(shipping.costNearby)} (Funes, Granadero
+          Baigorria y Villa Gobernador Gálvez).
         </li>
         <li>
-          <strong>Resto del país (Correo Argentino):</strong> $8.500 a domicilio.
+          <strong>Resto del país (Correo Argentino):</strong> {formatPrice(shipping.costInterior)} a
+          domicilio.
         </li>
         <li>
-          <strong>Envío gratis a todo el país</strong> en compras desde $75.000 (fuera de Rosario, donde
-          ya es gratis desde $50.000).
+          <strong>Envío gratis a todo el país</strong> en compras desde{' '}
+          {formatPrice(shipping.freeShippingThresholdNational)} (fuera de Rosario, donde ya es gratis
+          desde {formatPrice(shipping.freeShippingThresholdRosario)}).
+        </li>
+        <li>
+          <strong>Packs de 100 calcos:</strong> traen el <strong>envío incluido</strong> a cualquier
+          punto del país, sin importar el monto.
         </li>
         <li>
           <strong>Retiro en mano:</strong> sin costo. Coordinamos lugar y horario por WhatsApp.
@@ -36,8 +48,8 @@ export default function Envios() {
 
       <h2>Plazos de producción y entrega</h2>
       <ul>
-        <li><strong>Rosario:</strong> 2 a 3 días hábiles desde la confirmación del pago.</li>
-        <li><strong>Resto del país:</strong> 5 a 7 días hábiles desde la confirmación del pago.</li>
+        <li><strong>Rosario:</strong> {shipping.deliveryRosario} desde la confirmación del pago.</li>
+        <li><strong>Resto del país:</strong> {shipping.deliveryInterior} desde la confirmación del pago.</li>
         <li>Los productos personalizados pueden requerir 1 a 2 días adicionales para diseño.</li>
       </ul>
 

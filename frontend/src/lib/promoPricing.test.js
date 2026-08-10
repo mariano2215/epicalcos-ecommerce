@@ -41,6 +41,7 @@ import {
   MAYORISTA100_SIZES,
   isMayorista100Active,
   DIGITAL_PRICES,
+  FREE_SHIPPING_THRESHOLD_ROSARIO,
   isDigitalOnly,
   validateAndPriceOrder
 } from '../../../netlify/functions/lib/pricing.js';
@@ -455,15 +456,23 @@ describe('archivos imprimibles (producto digital)', () => {
   });
 
   it('no acerca al envío gratis: el umbral mira solo lo que se despacha', () => {
-    // Rosario: envío gratis desde $50.000. Con $46.000 de calcos + el pack
-    // digital el total supera los $50.000, pero lo que viaja en la caja no.
+    // Se arma un carrito que queda JUSTO debajo del umbral de Rosario en calcos
+    // y JUSTO arriba sumándole el pack digital. Los montos salen del umbral y no
+    // escritos a mano: cuando el umbral bajó de $50.000 a $25.000, un carrito
+    // fijo de $46.000 dejó de estar debajo y el test medía otra cosa.
+    const unidad = 2000; // calco de 9 cm
+    const cantidad = Math.ceil((FREE_SHIPPING_THRESHOLD_ROSARIO - pack.price) / unidad);
+    const fisico = unidad * cantidad;
+    expect(fisico).toBeLessThan(FREE_SHIPPING_THRESHOLD_ROSARIO);
+    expect(fisico + pack.price).toBeGreaterThanOrEqual(FREE_SHIPPING_THRESHOLD_ROSARIO);
+
     const items = [
-      { id: 'sticker:goku:9cm', title: 'Goku 9cm', quantity: 23, unit_price: 2000 }, // $46.000
+      { id: 'sticker:goku:9cm', title: 'Goku 9cm', quantity: cantidad, unit_price: unidad },
       linea()
     ];
     const res = validateAndPriceOrder({ items, shipping: envioRosario, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(46000 + pack.price); // el total SÍ pasa los $50.000
+    expect(res.itemsTotal).toBe(fisico + pack.price); // el total SÍ pasa el umbral
     expect(res.shippingCost).toBe(4500); // …pero el envío se sigue cobrando
   });
 
