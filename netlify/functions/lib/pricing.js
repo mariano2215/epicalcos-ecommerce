@@ -23,19 +23,22 @@ const COUPONS = { EPICA10: 0.1 };
 const MAX_STICKER_DISCOUNT = 0.9;
 
 // Cupones de BUNDLE (N x M sobre calcos de catálogo + personalizados: cada
-// `buy` unidades, las `buy - pay` más baratas gratis). EMOJI50 = 2x1, cupón
-// OCULTO que no se anuncia en el sitio (se pasa por mensaje privado) y que NO
-// es acumulable con ningún %: con el bundle aplicado no corren el 10 % por
-// transferencia, el 10 % por volumen (+10 calcos) ni otro cupón. También pisa
-// a la promo 3x2 por fecha si estuviera vigente.
-// ⚠️ Espejo de COUPONS/EMOJI50 en frontend/src/config/pricing.js.
-export const COUPON_BUNDLES = { EMOJI50: { buy: 2, pay: 1 } };
+// `buy` unidades, las `buy - pay` más baratas gratis). Un bundle NO es
+// acumulable con ningún %: con uno aplicado no corren el 10 % por
+// transferencia, el 10 % por volumen (+10 calcos) ni otro cupón, y pisa a la
+// promo 3x2 por fecha si estuviera vigente.
+//
+// HOY NO HAY NINGUNO VIVO: EMOJI50 (2x1 por mensaje privado) venció el
+// 4/8/2026 y se sacó. El motor queda: agregar `{ CODIGO: { buy, pay } }` acá y
+// en COUPONS del frontend alcanza para prender otro.
+// ⚠️ Espejo de los cupones con `bundle` en frontend/src/config/pricing.js.
+export const COUPON_BUNDLES = {};
 
 // Vencimiento de cada cupón (hora Argentina, inclusive). Pasado ese instante el
 // cupón se trata como inexistente: no descuenta nada acá y el frontend tampoco
-// lo aplica. EMOJI50 se apaga solo el martes 4/8/2026 a las 23:59.
+// lo aplica. Sin entrada, el cupón no vence nunca (es el caso de EPICA10).
 // ⚠️ Espejo de `endsAt` en COUPONS del frontend (lo verifica promoPricing.test.js).
-export const COUPON_ENDS_MS = { EMOJI50: Date.parse('2026-08-04T23:59:59-03:00') };
+export const COUPON_ENDS_MS = {};
 
 export function isCouponActive(code, now = Date.now()) {
   const end = COUPON_ENDS_MS[String(code || '').trim().toUpperCase()];
@@ -78,7 +81,7 @@ const WHOLESALE_DISCOUNT = 0.5;
 
 // --- Espejo de la PROMO MAYORISTA 100 × $39.999 de frontend/src/config/pricing.js ---
 // Pack de EXACTAMENTE 100 calcos (los diseños que quiera el cliente, catálogo y/o
-// propios) a precio fijo, SOLO en 4 y 6 cm y solo hasta el viernes 14/8 inclusive.
+// propios) a precio fijo, SOLO en 4 y 6 cm y solo hasta MAYORISTA100_END_MS.
 // La línea es `pack:mayorista100:{size}:{ts}` con quantity = 1 (1 línea = 1 pack).
 // No confundir con la promo NEGOCIO (100u de un solo diseño en 6 cm).
 // ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend (lo verifica promoPricing.test.js).
@@ -86,9 +89,12 @@ export const MAYORISTA100_END_MS = Date.parse('2026-08-14T23:59:59-03:00');
 export const MAYORISTA100_PRICE = 39999;
 export const MAYORISTA100_QTY = 100;
 export const MAYORISTA100_SIZES = ['4cm', '6cm'];
+// Interruptor manual, espejo de PROMO_MAYORISTA_100.activa del frontend. Apagar
+// la promo SOLO en el frontend deja al servidor aceptando la línea del pack.
+export const MAYORISTA100_ACTIVA = true;
 
 export function isMayorista100Active(now = Date.now()) {
-  return Number.isFinite(MAYORISTA100_END_MS) && now <= MAYORISTA100_END_MS;
+  return MAYORISTA100_ACTIVA && Number.isFinite(MAYORISTA100_END_MS) && now <= MAYORISTA100_END_MS;
 }
 
 // --- Espejo de FREE_SHIPPING_PACK_TYPES de frontend/src/config/pricing.js ---

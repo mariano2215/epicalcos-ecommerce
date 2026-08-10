@@ -20,7 +20,7 @@ import {
 
 /**
  * Tipos de línea que entran en las promos N x M — la 3x2 por fecha y el cupón
- * de bundle (EMOJI50 = 2x1): calcos de catálogo + personalizados.
+ * de bundle, si hay alguno vivo: calcos de catálogo + personalizados.
  */
 const PROMO_ELIGIBLE_TYPES = new Set(['sticker', 'custom']);
 
@@ -354,8 +354,8 @@ export function CartProvider({ children }) {
    * + transferencia) topeado en PROMO_3X2.percentCap (10 %). Espejado en
    * netlify/functions/lib/pricing.js.
    *
-   * Con un CUPÓN DE BUNDLE (EMOJI50 = 2x1): manda el bundle del cupón — 2x1
-   * sobre los elegibles y NINGÚN % (ni transferencia, ni volumen, ni otro
+   * Con un CUPÓN DE BUNDLE (N x M): manda el bundle del cupón — cada N,
+   * la más barata gratis y NINGÚN % (ni transferencia, ni volumen, ni otro
    * cupón), y reemplaza a la promo 3x2 si estuviera vigente.
    */
   const pricedItems = useCallback(

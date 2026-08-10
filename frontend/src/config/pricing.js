@@ -1,6 +1,7 @@
 /**
  * Reglas comerciales de EPICALCOS — un solo lugar para editar precios y descuentos.
  */
+import { formatPrice } from '../lib/formato.js';
 
 /** Tamaños disponibles por calco y su precio unitario (ARS). Precio de vidriera = Mercado Pago (sin descuento). */
 export const SIZES = [
@@ -42,22 +43,18 @@ export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
  * `endsAt` = fecha de vencimiento (hora Argentina, inclusive). Pasado ese
  * instante el cupón deja de existir para todo el sitio: no se aplica en el
  * carrito ni en el checkout (que responde "no existe o venció") y el servidor
- * tampoco lo acepta. EMOJI50 (2x1 por mensaje privado) se apaga solo el martes
- * 4/8/2026 a las 23:59; no hace falta tocar nada ese día.
+ * tampoco lo acepta. Sin `endsAt`, no vence nunca.
+ *
+ * EMOJI50 (2x1 por mensaje privado) venció el 4/8/2026 y se sacó de acá: era
+ * una entrada muerta. El MOTOR de bundles sigue intacto — para prender otro
+ * alcanza con agregar `bundle: { buy, pay }` acá y en COUPON_BUNDLES del server.
  *
  * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (COUPONS,
  * COUPON_BUNDLES y COUPON_ENDS_MS). Si agregás, vencés o cambiás un cupón acá,
  * cambialo TAMBIÉN allá o el checkout se rechaza con `price_mismatch`.
  */
 export const COUPONS = {
-  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF', hidden: true },
-  EMOJI50: {
-    discount: 0,
-    bundle: { buy: 2, pay: 1 },
-    label: '2x1 en calcos',
-    hidden: true,
-    endsAt: '2026-08-04T23:59:59-03:00'
-  }
+  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF', hidden: true }
 };
 export const MAX_STICKER_DISCOUNT = 0.9;
 
@@ -80,7 +77,19 @@ export function couponBundle(code, now = Date.now()) {
 }
 
 /**
- * ─── PROMO 3x2 (por tiempo limitado) ──────────────────────────────────────────
+ * ─── PROMO 3x2 — VENCIDA el 26/7/2026 ─────────────────────────────────────────
+ *
+ * ⚠️ NO ESTÁ VIVA. `endsAt` quedó en el pasado, así que `isPromoActive()` da
+ * false en las dos puntas y no hay banner, ni precio, ni tope de % que corra.
+ *
+ * POR QUÉ SIGUE ACÁ y no se borró como EMOJI50: esta entrada es el único
+ * consumidor del motor N x M (`promo3x2`), que sí hay que conservar, y sus
+ * `buy`/`pay`/`percentCap` son los parámetros con los que promoPricing.test.js
+ * verifica la paridad de precios frontend ↔ servidor. Sacarla obliga a tocar
+ * CartContext, Cart, CartDrawer, Checkout, Home, Header, el espejo del servidor
+ * y ~10 tests del checkout: es un refactor del camino de precios, no una
+ * limpieza de config, y va en su propia rama.
+ *
  * "3x2 en TODAS las calcos": cada 3 calcos elegibles, la MÁS BARATA gratis.
  * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom').
  * NO incluye packs mayoristas ni la promo Negocio.
@@ -119,7 +128,7 @@ export function isPromoActive(now = Date.now()) {
 /**
  * N x M sobre una "bolsa" de unidades elegibles (cada `buy`, se regalan las
  * `buy - pay` más baratas). Genérica: la usa la promo 3x2 por fecha y también
- * el cupón de bundle (EMOJI50 = 2x1).
+ * un cupón de bundle, si hay alguno vivo.
  * Devuelve el ahorro y `keepFraction` = fracción del
  * subtotal elegible que efectivamente SE PAGA. Se aplica uniforme a cada línea
  * (así el precio por unidad queda POSITIVO y verificable idéntico en el server;
@@ -176,20 +185,47 @@ export const WHOLESALE_DISCOUNT = 0.5;
  * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (MAYORISTA100_*).
  * El test `src/lib/promoPricing.test.js` verifica que ambos lados coincidan.
  */
+const MAYORISTA100_QTY = 100;
+const MAYORISTA100_PRICE = 39999;
+
+/**
+ * EL objeto de la promo: economía (qty/price/sizes/endsAt), interruptor
+ * (`activa`) y copy (`titulo`/`subtitulo`) en un solo lugar. La barra del
+ * header, la card del hero, el cartel de /mayorista, el blurb de /categorias y
+ * el filtro de packs de /armar-pack leen TODOS de acá. Antes cada uno tenía su
+ * propio texto y su propia fecha escrita a mano.
+ *
+ * La FECHA de cierre nunca se escribe: se deriva de `endsAt` con `endLabel()`.
+ */
 export const PROMO_MAYORISTA_100 = {
-  /** Fin de la promo, hora Argentina (UTC−03:00). Inclusive: termina al cerrar el viernes 14/8. */
+  id: 'mayorista100',
+  /**
+   * Interruptor manual, aparte del vencimiento. Sirve para bajar la promo antes
+   * de tiempo sin tocar la fecha (y para volver a subirla sin recordar cuál era).
+   * ⚠️ ESPEJADO en netlify/functions/lib/pricing.js (MAYORISTA100_ACTIVA): si acá
+   * queda en false y allá no, el servidor sigue aceptando la línea del pack.
+   */
+  activa: true,
+  /** Fin de la promo, hora Argentina (UTC−03:00). Inclusive: termina al cerrar ese día. */
   endsAt: '2026-08-14T23:59:59-03:00',
-  qty: 100,
-  price: 39999,
+  qty: MAYORISTA100_QTY,
+  price: MAYORISTA100_PRICE,
   /** Tamaños habilitados. El 9 cm queda afuera a propósito. */
-  sizes: ['4cm', '6cm']
+  sizes: ['4cm', '6cm'],
+  /** Copy. El precio sale del config, no escrito a mano. */
+  titulo: `${MAYORISTA100_QTY} CALCOS A ${formatPrice(MAYORISTA100_PRICE)}`,
+  subtitulo: `Elegís los ${MAYORISTA100_QTY} diseños · 4 y 6 cm`
 };
 
 export const PROMO_MAYORISTA_END_MS = Date.parse(PROMO_MAYORISTA_100.endsAt);
 
-/** ¿La promo de 100 calcos a $39.999 está vigente en este instante? */
+/** ¿La promo de 100 calcos a precio fijo está vigente en este instante? */
 export function isMayoristaPromoActive(now = Date.now()) {
-  return Number.isFinite(PROMO_MAYORISTA_END_MS) && now <= PROMO_MAYORISTA_END_MS;
+  return (
+    PROMO_MAYORISTA_100.activa &&
+    Number.isFinite(PROMO_MAYORISTA_END_MS) &&
+    now <= PROMO_MAYORISTA_END_MS
+  );
 }
 
 /** ¿Ese tamaño entra en la promo? (4 y 6 cm sí, 9 cm no). */
@@ -205,6 +241,15 @@ export function mayoristaPromoListPrice(sizeId) {
 /** % de descuento real de la promo contra el precio de lista de ese tamaño. */
 export function mayoristaPromoOff(sizeId) {
   return Math.round((1 - PROMO_MAYORISTA_100.price / mayoristaPromoListPrice(sizeId)) * 100);
+}
+
+/**
+ * El % más alto que alcanza la promo entre sus tamaños — el "HASTA 75% OFF" de
+ * la card del hero. Derivado: escrito a mano, un cambio de precio dejaba el
+ * cartel prometiendo un descuento que ya no existía.
+ */
+export function mayoristaPromoOffMax() {
+  return Math.max(...PROMO_MAYORISTA_100.sizes.map(mayoristaPromoOff));
 }
 
 /**

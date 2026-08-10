@@ -1,5 +1,12 @@
 import { isSectionHidden } from '../config/site.js';
-import { isMayoristaPromoActive, IMPRIMIBLE_PRINCIPAL } from '../config/pricing.js';
+import {
+  isMayoristaPromoActive,
+  PROMO_MAYORISTA_100,
+  WHOLESALE_QTY,
+  WHOLESALE_DISCOUNT,
+  IMPRIMIBLE_PRINCIPAL
+} from '../config/pricing.js';
+import { formatPrice } from '../lib/formato.js';
 
 /**
  * Catálogo de categorías de EPICALCOS.
@@ -131,11 +138,13 @@ const ALL_SPECIALS = [
   {
     slug: 'mayorista',
     to: '/mayorista',
-    name: 'Pack Mayorista x100',
+    name: `Pack Mayorista x${WHOLESALE_QTY}`,
     emoji: '📦',
-    // Mientras corre la promo (vence el 14/8/2026, ver PROMO_MAYORISTA_100 en
-    // config/pricing.js) el blurb anuncia el precio fijo; después vuelve el 50% off.
-    blurb: isMayoristaPromoActive() ? '100 calcos a $39.999 · 4 y 6 cm' : 'Armá 100 calcos · 50% off',
+    // Mientras corre la promo el blurb anuncia el precio fijo; después vuelve el
+    // 50% off. Cantidad, precio y % salen de config/pricing.js.
+    blurb: isMayoristaPromoActive()
+      ? `${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)} · 4 y 6 cm`
+      : `Armá ${WHOLESALE_QTY} calcos · ${Math.round(WHOLESALE_DISCOUNT * 100)}% off`,
     accent: 'from-amber-400 to-orange-500'
   },
   {

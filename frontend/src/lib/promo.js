@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PROMO_END_MS, PROMO_MAYORISTA_END_MS } from '../config/pricing.js';
+import { PROMO_END_MS, PROMO_MAYORISTA_END_MS, PROMO_MAYORISTA_100 } from '../config/pricing.js';
 
 /**
  * Cuenta regresiva hasta `targetMs`. Devuelve días/horas/minutos/segundos ya
@@ -59,7 +59,14 @@ export function usePromoActive() {
   return useActiveUntil(PROMO_END_MS);
 }
 
-/** ¿Está vigente la promo mayorista de 100 calcos a $39.999 ahora mismo? */
+/**
+ * ¿Está vigente la promo mayorista ahora mismo? Mismo criterio que
+ * `isMayoristaPromoActive()`: la fecha Y el interruptor manual `activa`. El
+ * hook tiene que mirar los dos — si solo mirara la fecha, apagar la promo con
+ * `activa: false` la sacaría del precio pero dejaría el banner y la card del
+ * hero anunciándola.
+ */
 export function useMayoristaPromoActive() {
-  return useActiveUntil(PROMO_MAYORISTA_END_MS);
+  const enFecha = useActiveUntil(PROMO_MAYORISTA_END_MS);
+  return PROMO_MAYORISTA_100.activa && enFecha;
 }

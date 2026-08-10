@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { useCart, formatPrice } from '../context/CartContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
 import PromoBanner, { endLabel } from './PromoBanner.jsx';
 import { usePromoActive, useMayoristaPromoActive } from '../lib/promo.js';
@@ -24,12 +24,14 @@ export default function Header() {
           ariaLabel="Promoción 3x2 en todas las calcos"
         />
       ) : mayoristaPromoActive ? (
+        // Título, subtítulo y precio salen de PROMO_MAYORISTA_100; la fecha, de
+        // su `endsAt`. Acá no se escribe ni un dato de la promo a mano.
         <PromoBanner
-          title={`100 CALCOS A ${formatPrice(PROMO_MAYORISTA_100.price)}`}
-          subtitle={`Elegís los 100 diseños · 4 y 6 cm · hasta ${endLabel(PROMO_MAYORISTA_END_MS, 'el viernes 14/8')}`}
+          title={PROMO_MAYORISTA_100.titulo}
+          subtitle={`${PROMO_MAYORISTA_100.subtitulo} · hasta ${endLabel(PROMO_MAYORISTA_END_MS, 'que se agote')}`}
           endMs={PROMO_MAYORISTA_END_MS}
           to="/mayorista"
-          ariaLabel="Promoción mayorista: 100 calcos a $39.999"
+          ariaLabel={`Promoción mayorista: ${PROMO_MAYORISTA_100.titulo}`}
         />
       ) : (
         <AnnouncementBar />

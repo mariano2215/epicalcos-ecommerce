@@ -22,6 +22,7 @@ import {
   isMayoristaPromoActive,
   isMayoristaPromoSize,
   mayoristaPromoOff,
+  mayoristaPromoOffMax,
   IMPRIMIBLES,
   IMPRIMIBLE_PRINCIPAL,
   findImprimible
@@ -39,6 +40,7 @@ import {
   MAYORISTA100_PRICE,
   MAYORISTA100_QTY,
   MAYORISTA100_SIZES,
+  MAYORISTA100_ACTIVA,
   isMayorista100Active,
   DIGITAL_PRICES,
   FREE_SHIPPING_THRESHOLD_ROSARIO,
@@ -49,7 +51,6 @@ import {
 const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
 const DURING_PROMO = new Date('2026-07-24T12:00:00-03:00'); // vie 24/7, promo vigente
 const AFTER_PROMO = new Date('2026-07-27T12:00:00-03:00'); // lun 27/7, promo vencida
-const AFTER_EMOJI50 = new Date('2026-08-05T00:30:00-03:00'); // mié 5/8, EMOJI50 ya vencido
 const DURING_MAYORISTA = new Date('2026-08-10T12:00:00-03:00'); // lun 10/8, promo mayorista vigente
 const AFTER_MAYORISTA = new Date('2026-08-15T00:30:00-03:00'); // sáb 15/8, promo mayorista vencida
 
@@ -186,56 +187,6 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
-  it('EMOJI50 (2x1 oculto) fuera de promo: catálogo + personalizados, pack intacto', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(AFTER_PROMO);
-    // 13 elegibles → 6 gratis (los 6 más baratos = 6×1200). eligibleBase=17200, keep=10000/17200.
-    const keep = 10000 / 17200;
-    const items = clientItems(cart, { coupon: 'EMOJI50' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * keep));
-    expect(price(items, 'sticker:naruto:9cm')).toBe(round(2000 * keep));
-    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
-    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(1600 * 0.5)); // pack intacto
-
-    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EMOJI50' });
-    expect(res.ok).toBe(true);
-    expect(res.couponApplied).toBe('EMOJI50');
-  });
-
-  it('EMOJI50 NO es acumulable: ni 10% por transferencia ni 10% desde 10 calcos', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(AFTER_PROMO);
-    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: 1600, quantity: 10 }];
-
-    // Sin cupón y con transferencia, ese carrito sí tiene el 10% por volumen.
-    expect(price(clientItems(bulkCart, { paymentMethod: 'transferencia' }), 'sticker:goku:6cm')).toBe(round(1600 * 0.9));
-
-    // Con EMOJI50: solo el 2x1 (10 unidades → 5 gratis, keep = 0.5), sin ningún %.
-    const mp = clientItems(bulkCart, { coupon: 'EMOJI50' });
-    const transfer = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EMOJI50' });
-    expect(price(mp, 'sticker:goku:6cm')).toBe(800);
-    expect(price(transfer, 'sticker:goku:6cm')).toBe(800); // el medio de pago no cambia nada
-    expect(
-      validateAndPriceOrder({ items: transfer, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EMOJI50' }).ok
-    ).toBe(true);
-
-    // Si el cliente intenta sumarle el 10% al 2x1, el server lo rechaza.
-    const tramposo = transfer.map((i) => ({ ...i, unit_price: round(i.unit_price * 0.9) }));
-    const res = validateAndPriceOrder({ items: tramposo, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EMOJI50' });
-    expect(res.ok).toBe(false);
-    expect(res.error).toBe('price_mismatch');
-  });
-
-  it('EMOJI50 durante la promo 3x2: manda el 2x1 del cupón, sin %', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(DURING_PROMO);
-    const keep = 10000 / 17200; // 2x1, no el 3x2
-    const items = clientItems(cart, { paymentMethod: 'transferencia', coupon: 'EMOJI50' });
-    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
-    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EMOJI50' });
-    expect(res.ok).toBe(true);
-  });
-
   it('los cupones de bundle están espejados frontend ↔ backend', () => {
     vi.useFakeTimers();
     vi.setSystemTime(AFTER_PROMO);
@@ -243,7 +194,9 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
       Object.entries(COUPONS).filter(([, c]) => c.bundle).map(([code, c]) => [code, c.bundle])
     );
     expect(feBundles).toEqual(COUPON_BUNDLES);
-    expect(couponBundle('emoji50')).toEqual({ buy: 2, pay: 1 }); // case-insensitive
+    // Hoy no hay ninguno vivo (EMOJI50 venció el 4/8 y se sacó). El motor N x M
+    // queda: si mañana se prende otro, esta igualdad lo obliga a estar en ambos lados.
+    expect(COUPON_BUNDLES).toEqual({});
   });
 
   it('los vencimientos de cupón están espejados frontend ↔ backend', () => {
@@ -251,17 +204,15 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
       Object.entries(COUPONS).filter(([, c]) => c.endsAt).map(([code, c]) => [code, Date.parse(c.endsAt)])
     );
     expect(feEnds).toEqual(COUPON_ENDS_MS);
-    expect(Number.isFinite(COUPON_ENDS_MS.EMOJI50)).toBe(true);
   });
 
-  it('EMOJI50 vencido: no aplica en el cliente ni en el server (EPICA10 sigue vivo)', () => {
+  it('un cupón que no existe no descuenta nada (EPICA10 sigue vivo)', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(AFTER_EMOJI50);
+    vi.setSystemTime(AFTER_PROMO);
 
-    // El cliente deja de reconocerlo: sin bundle, sin descuento.
+    // EMOJI50 se sacó del config: el cliente y el server lo tratan como inexistente.
     expect(couponBundle('EMOJI50')).toBeNull();
     expect(findCoupon('EMOJI50')).toBeNull();
-    expect(beCouponActive('EMOJI50')).toBe(false);
 
     // El carrito se cotiza a precio de lista aunque el cliente mande el código.
     const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: 1600, quantity: 10 }];
@@ -271,7 +222,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(res.ok).toBe(true);
     expect(res.couponApplied).toBeNull();
 
-    // Y si intenta cobrar el 2x1 con el cupón vencido, el server lo rechaza.
+    // Y si intenta cobrarse un 2x1 con un cupón que no existe, el server lo rechaza.
     const conBundle = bulkCart.map((l) => ({ id: l.id, title: l.title, quantity: l.quantity, unit_price: 800 }));
     const rechazado = validateAndPriceOrder({ items: conBundle, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EMOJI50' });
     expect(rechazado.ok).toBe(false);
@@ -293,6 +244,9 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(PROMO_MAYORISTA_100.qty).toBe(MAYORISTA100_QTY);
     expect(PROMO_MAYORISTA_100.sizes).toEqual(MAYORISTA100_SIZES);
     expect(Number.isFinite(PROMO_MAYORISTA_END_MS)).toBe(true);
+    // El interruptor manual también está espejado: apagarlo solo en el frontend
+    // dejaría al servidor aceptando la línea del pack.
+    expect(PROMO_MAYORISTA_100.activa).toBe(MAYORISTA100_ACTIVA);
 
     // Solo 4 y 6 cm: el 9 cm queda afuera a propósito.
     expect(isMayoristaPromoSize('4cm')).toBe(true);
@@ -302,6 +256,13 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     // El % que se muestra es el real contra el precio de lista de cada tamaño.
     expect(mayoristaPromoOff('4cm')).toBe(Math.round((1 - 39999 / (1200 * 100)) * 100));
     expect(mayoristaPromoOff('6cm')).toBe(Math.round((1 - 39999 / (1600 * 100)) * 100));
+    // El "HASTA X% OFF" de la card del hero es el mayor de los dos, calculado.
+    expect(mayoristaPromoOffMax()).toBe(Math.max(mayoristaPromoOff('4cm'), mayoristaPromoOff('6cm')));
+
+    // El copy sale del config y trae el precio ya formateado.
+    expect(PROMO_MAYORISTA_100.id).toBe('mayorista100');
+    expect(PROMO_MAYORISTA_100.titulo).toContain(String(PROMO_MAYORISTA_100.qty));
+    expect(PROMO_MAYORISTA_100.titulo).toContain('39.999');
 
     vi.useFakeTimers();
     vi.setSystemTime(DURING_MAYORISTA);
