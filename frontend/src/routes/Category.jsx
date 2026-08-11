@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import StickerCard from '../components/StickerCard.jsx';
+import SizePicker from '../components/SizePicker.jsx';
 import CategoryMenu from '../components/CategoryMenu.jsx';
 import DiscountNote from '../components/DiscountNote.jsx';
 import { CATEGORIES, getCategory } from '../data/categories.js';
@@ -113,7 +114,7 @@ export default function Category() {
           <p className="text-white/60 mt-3 max-w-xl">
             {items === null
               ? 'Cargando diseños…'
-              : `${stickers.length} ${stickers.length === 1 ? 'diseño' : 'diseños'}. Elegí tamaño y cantidad en cada calco.`}
+              : `${stickers.length} ${stickers.length === 1 ? 'diseño' : 'diseños'}. Elegí el tamaño una vez y tocá + en los que quieras.`}
           </p>
         </header>
 
@@ -161,7 +162,10 @@ export default function Category() {
           <p className="text-white/50 py-10 text-center">No hay diseños para mostrar.</p>
         ) : (
           <>
-            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <SizePicker className="mb-3" />
+            {/* 3 columnas ya en mobile: con la card compacta entran ~12 diseños
+                por pantalla en vez de ~3 (ver StickerCard). */}
+            <div className="grid-rise grid gap-2 sm:gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
               {stickers.slice(0, visible).map((s) => (
                 <StickerCard key={s.id} sticker={s} listName={category.name} />
               ))}

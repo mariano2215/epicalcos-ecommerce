@@ -1,22 +1,33 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
+import { priceForSize, sizeLabel } from '../config/pricing.js';
+import { useTamanoElegido } from '../lib/tamanoElegido.js';
 import { trackSelectItem } from '../lib/analytics.js';
 
 /**
- * Card individual de un calco (estilo TiendaNube): elegís tamaño (4/6/9 cm),
- * cantidad y lo agregás al carrito. El 10% por volumen se aplica solo en el carrito.
+ * Card de un calco en la grilla. Compacta a propósito.
+ *
+ * Antes traía selector de tamaño (3 botones), contador de cantidad y botón de
+ * agregar: 379 px de alto, con la imagen ocupando menos de la mitad de su
+ * propia card. En mobile entraban ~3 diseños por pantalla sobre 254.
+ *
+ * Ahora la card es la IMAGEN, que es lo que vende un calco. El tamaño se elige
+ * una vez para toda la grilla (ver SizePicker + lib/tamanoElegido.js) y la
+ * cantidad se resuelve tocando "+" las veces que haga falta —o desde el
+ * carrito—, que es más rápido que un stepper de 44 px por card.
  *
  * @param {{ id:string, image:string, name:string, category:string, categoryLabel:string }} sticker
  */
 export default function StickerCard({ sticker, listName = 'catalog' }) {
-  const { addSticker } = useCart();
-  const [size, setSize] = useState(DEFAULT_SIZE);
-  const [qty, setQty] = useState(1);
+  const { addSticker, items } = useCart();
+  const [size] = useTamanoElegido();
 
   const unit = priceForSize(size);
   const href = `/producto/${sticker.category}/${sticker.id.split('-').pop()}`;
+
+  // Cuántas ya lleva de ESTE diseño en ESTE tamaño. Sin el contador, tocar "+"
+  // tres veces no tiene ninguna devolución visible en la grilla.
+  const enCarrito = items.find((i) => i.id === `sticker:${sticker.id}:${size}`)?.quantity || 0;
 
   // Click desde la grilla a la ficha: cierra el par view_item_list → select_item.
   const onSelect = () => trackSelectItem({ ...sticker, price: unit }, listName);
@@ -27,7 +38,7 @@ export default function StickerCard({ sticker, listName = 'catalog' }) {
         to={href}
         onClick={onSelect}
         aria-label={`Ver ${sticker.name}`}
-        className="relative aspect-square overflow-hidden bg-white/[0.03] grid place-items-center p-3"
+        className="relative aspect-square overflow-hidden bg-white/[0.03] grid place-items-center p-2"
       >
         <img
           src={sticker.image}
@@ -42,59 +53,55 @@ export default function StickerCard({ sticker, listName = 'catalog' }) {
           height={320}
           className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
         />
+        {enCarrito > 0 && (
+          <span
+            className="absolute top-1.5 left-1.5 min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full bg-brand-fuchsia text-white text-[11px] font-bold tabular-nums shadow-lg"
+            aria-hidden
+          >
+            {enCarrito}
+          </span>
+        )}
       </Link>
 
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="font-semibold text-white text-sm leading-snug truncate">
-          <Link to={href} onClick={onSelect} className="hover:text-brand-fuchsia transition-colors">{sticker.name}</Link>
-        </h3>
-
-        {/* Selector de tamaño */}
-        <div className="mt-3 grid grid-cols-3 gap-1.5" role="group" aria-label="Elegir tamaño">
-          {SIZES.map((s) => {
-            const active = s.id === size;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setSize(s.id)}
-                aria-pressed={active}
-                className={`rounded-xl min-h-[44px] flex flex-col items-center justify-center border transition-colors ${
-                  active
-                    ? 'border-brand-fuchsia bg-brand-fuchsia/15 text-white'
-                    : 'border-white/10 bg-white/[0.03] text-white/60 hover:border-white/25'
-                }`}
-              >
-                <span className="block text-xs font-bold leading-none">{s.label}</span>
-                <span className="block text-[10px] text-white/50 mt-0.5">{formatPrice(s.price)}</span>
-              </button>
-            );
-          })}
+      {/* El nombre va en su propia línea: compartiendo fila con el botón le
+          quedaban ~50 px y se truncaba en "Anime…", comiéndose el número, que
+          es lo único que distingue un diseño de otro. */}
+      <div className="px-2 pb-2 pt-1.5">
+        {/* El tamaño se muestra SIEMPRE, no solo donde hay SizePicker: en el
+            Home y en las landings el precio cambia según lo que la persona
+            eligió antes, y sin este dato sería un número sin explicación. */}
+        <div className="flex items-baseline gap-1">
+          <h3 className="text-[11px] sm:text-xs text-white/60 leading-tight truncate flex-1 min-w-0">
+            <Link to={href} onClick={onSelect} className="hover:text-brand-fuchsia transition-colors">
+              {sticker.name}
+            </Link>
+          </h3>
+          <span className="shrink-0 text-[10px] text-white/35 tabular-nums">{sizeLabel(size)}</span>
         </div>
+        <div className="mt-0.5 flex items-center justify-between gap-1">
+          <p className="text-xs sm:text-sm font-bold text-white leading-none tabular-nums">
+            {formatPrice(unit)}
+          </p>
 
-        {/* Cantidad + agregar */}
-        <div className="mt-auto pt-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03]">
-            <button
-              type="button"
-              className="w-11 h-11 grid place-items-center rounded-l-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              aria-label="Restar"
-            >–</button>
-            <span className="text-sm font-semibold tabular-nums">{qty}</span>
-            <button
-              type="button"
-              className="w-11 h-11 grid place-items-center rounded-r-xl text-lg leading-none text-white/70 hover:text-white hover:bg-white/5"
-              onClick={() => setQty((q) => q + 1)}
-              aria-label="Sumar"
-            >+</button>
-          </div>
+          {/* `openDrawer: false` — tocando "+" varias veces seguidas, abrir el
+              carrito en cada toque tapa la grilla y corta la elección. El toast
+              y el contador sobre la imagen alcanzan como devolución. */}
           <button
             type="button"
-            onClick={() => addSticker(sticker, size, qty)}
-            className="btn-primary w-full !py-2.5 !px-3 text-xs min-h-[44px]"
+            onClick={() => addSticker(sticker, size, 1, { openDrawer: false })}
+            aria-label={
+              enCarrito > 0
+                ? `Agregar otro ${sticker.name} de ${sizeLabel(size)} (llevás ${enCarrito})`
+                : `Agregar ${sticker.name} de ${sizeLabel(size)} al carrito`
+            }
+            className="shrink-0 -my-1.5 -mr-1 w-11 h-11 grid place-items-center text-white/80 hover:text-white active:scale-95 transition"
           >
-            Agregar · {formatPrice(unit * qty)}
+            <span
+              className="w-8 h-8 grid place-items-center rounded-lg bg-brand-fuchsia/15 border border-brand-fuchsia/40 text-base leading-none font-bold"
+              aria-hidden
+            >
+              +
+            </span>
           </button>
         </div>
       </div>

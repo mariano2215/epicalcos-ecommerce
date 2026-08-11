@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import StickerCard from '../components/StickerCard.jsx';
+import SizePicker from '../components/SizePicker.jsx';
 import DiscountNote from '../components/DiscountNote.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
 import SizeGuide from '../components/SizeGuide.jsx';
@@ -171,14 +172,16 @@ export default function LandingUso({ slug }) {
 
           <DiscountNote className="mb-4" />
 
+          <SizePicker className="mb-3" />
+
           {porCategoria === null ? (
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="grid gap-2 sm:gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
               {Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="card-glass aspect-square animate-pulse rounded-2xl" />
               ))}
             </div>
           ) : (
-            <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="grid-rise grid gap-2 sm:gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
               {disenos.map((s) => (
                 <StickerCard key={s.id} sticker={s} listName={`Landing ${slug}`} />
               ))}
