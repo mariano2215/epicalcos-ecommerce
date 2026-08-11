@@ -162,7 +162,7 @@ export default function Category() {
           <p className="text-white/50 py-10 text-center">No hay diseños para mostrar.</p>
         ) : (
           <>
-            <SizePicker className="mb-3" />
+            <SizePicker className="mb-3" categoria={slug} />
             {/* 3 columnas ya en mobile: con la card compacta entran ~12 diseños
                 por pantalla en vez de ~3 (ver StickerCard). */}
             <div className="grid-rise grid gap-2 sm:gap-3 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">

@@ -25,7 +25,13 @@ import {
   mayoristaPromoOffMax,
   IMPRIMIBLES,
   IMPRIMIBLE_PRINCIPAL,
-  findImprimible
+  findImprimible,
+  PROMO_ARGENTINA,
+  PROMO_ARGENTINA_START_MS,
+  PROMO_ARGENTINA_END_MS,
+  isArgentinaPromoActive,
+  categoriaDeStickerId,
+  esPromoArgentina as feEsPromoArgentina
 } from '../config/pricing.js';
 // Backend: el que re-precia el checkout (rechaza si no coincide).
 import {
@@ -45,7 +51,14 @@ import {
   DIGITAL_PRICES,
   FREE_SHIPPING_THRESHOLD_ROSARIO,
   isDigitalOnly,
-  validateAndPriceOrder
+  validateAndPriceOrder,
+  ARGENTINA_CATEGORIA,
+  ARGENTINA_DISCOUNT,
+  ARGENTINA_START_MS,
+  ARGENTINA_END_MS,
+  ARGENTINA_ACTIVA,
+  isArgentinaActive,
+  esPromoArgentina as beEsPromoArgentina
 } from '../../../netlify/functions/lib/pricing.js';
 
 const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
@@ -74,10 +87,16 @@ function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) 
     keep = fePromo3x2({ unitBasePrices: prices, buy: grouping.buy, pay: grouping.pay }).keepFraction;
   }
 
+  // El 50 % de Argentina se suma por línea y se vuelve a topear (ver CartContext).
+  const rateDe = (l) =>
+    !bundle && feEsPromoArgentina(l.id)
+      ? Math.min(percentRate + PROMO_ARGENTINA.discount, MAX_STICKER_DISCOUNT)
+      : percentRate;
+
   return cart.map((l) => {
     let price;
-    if (grouping && PROMO_ELIGIBLE.has(l.type)) price = round(l.basePrice * keep * (1 - percentRate));
-    else if (!grouping && l.type === 'sticker') price = round(l.basePrice * (1 - percentRate));
+    if (grouping && PROMO_ELIGIBLE.has(l.type)) price = round(l.basePrice * keep * (1 - rateDe(l)));
+    else if (!grouping && l.type === 'sticker') price = round(l.basePrice * (1 - rateDe(l)));
     else price = l.basePrice;
     return { id: l.id, title: l.title, quantity: l.quantity, unit_price: price };
   });
@@ -493,5 +512,160 @@ describe('archivos imprimibles (producto digital)', () => {
       readFileSync(join(dir, '..', '..', 'public', 'data', 'skus.json'), 'utf8')
     );
     expect(DIGITAL_SKU[pack.id]).toBe(registry.byKey['linea:archivos-imprimibles']);
+  });
+});
+
+describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', () => {
+  const ANTES = new Date('2026-08-16T23:30:00-03:00'); // dom 16, todavía no arrancó
+  const DURANTE = new Date('2026-08-18T12:00:00-03:00'); // mar 18, en plena promo
+  const DESPUES = new Date('2026-08-20T00:30:00-03:00'); // jue 20, ya terminó
+
+  // Carrito con una línea de Argentina y una de otra categoría, para que se vea
+  // que el 50% NO se derrama al resto del catálogo.
+  const carritoAr = [
+    { id: 'sticker:argentina-72:6cm', title: 'Argentina #72', type: 'sticker', basePrice: priceForSize('6cm'), quantity: 6 },
+    { id: 'sticker:anime-3:6cm', title: 'Anime #3', type: 'sticker', basePrice: priceForSize('6cm'), quantity: 6 },
+    { id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista', type: 'pack', basePrice: round(priceForSize('6cm') * 0.5), quantity: 100 }
+  ];
+
+  it('constantes espejadas idénticas front ↔ back', () => {
+    expect(PROMO_ARGENTINA.categoria).toBe(ARGENTINA_CATEGORIA);
+    expect(PROMO_ARGENTINA.discount).toBe(ARGENTINA_DISCOUNT);
+    expect(PROMO_ARGENTINA_START_MS).toBe(ARGENTINA_START_MS);
+    expect(PROMO_ARGENTINA_END_MS).toBe(ARGENTINA_END_MS);
+    expect(PROMO_ARGENTINA.activa).toBe(ARGENTINA_ACTIVA);
+    expect(Number.isFinite(PROMO_ARGENTINA_START_MS)).toBe(true);
+    expect(PROMO_ARGENTINA_START_MS).toBeLessThan(PROMO_ARGENTINA_END_MS);
+  });
+
+  it('la ventana abre el lunes 17 a las 00:00 y cierra el miércoles 19 a las 23:59', () => {
+    vi.useFakeTimers();
+    for (const [t, esperado] of [[ANTES, false], [DURANTE, true], [DESPUES, false]]) {
+      vi.setSystemTime(t);
+      expect(isArgentinaPromoActive()).toBe(esperado);
+      expect(isArgentinaActive()).toBe(esperado); // el server dice lo mismo
+    }
+    // Los bordes exactos, que es donde se cae una promo mal fechada.
+    vi.setSystemTime(new Date(PROMO_ARGENTINA_START_MS - 1));
+    expect(isArgentinaPromoActive()).toBe(false);
+    vi.setSystemTime(new Date(PROMO_ARGENTINA_START_MS));
+    expect(isArgentinaPromoActive()).toBe(true);
+    vi.setSystemTime(new Date(PROMO_ARGENTINA_END_MS));
+    expect(isArgentinaPromoActive()).toBe(true);
+    vi.setSystemTime(new Date(PROMO_ARGENTINA_END_MS + 1));
+    expect(isArgentinaPromoActive()).toBe(false);
+  });
+
+  it('la categoría sale del id sin romper los slugs con guiones', () => {
+    expect(categoriaDeStickerId('argentina-72')).toBe('argentina');
+    expect(categoriaDeStickerId('autos-y-motos-127')).toBe('autos-y-motos');
+    expect(categoriaDeStickerId('futbol-boca-5')).toBe('futbol-boca');
+    expect(categoriaDeStickerId('anime-1')).toBe('anime');
+  });
+
+  it('solo entra el catálogo de argentina: ni otras categorías, ni packs, ni custom', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    for (const [id, esperado] of [
+      ['sticker:argentina-1:4cm', true],
+      ['sticker:argentina-129:9cm', true],
+      ['sticker:anime-3:6cm', false],
+      // Una categoría que TERMINA en algo parecido no entra: se compara exacto.
+      ['sticker:futbol-argentina-5:6cm', false],
+      ['custom:6cm:silueta:1', false],
+      ['pack:mayorista100:6cm:1', false],
+      ['negocio:1', false]
+    ]) {
+      expect(feEsPromoArgentina(id)).toBe(esperado);
+      expect(beEsPromoArgentina(id)).toBe(esperado); // espejo
+    }
+  });
+
+  it('fuera de la ventana no descuenta nada, ni antes ni después', () => {
+    vi.useFakeTimers();
+    for (const t of [ANTES, DESPUES]) {
+      vi.setSystemTime(t);
+      const items = clientItems(carritoAr);
+      expect(price(items, 'sticker:argentina-72:6cm')).toBe(1600);
+      const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+      expect(res.ok).toBe(true);
+    }
+  });
+
+  it('durante la promo: Argentina a mitad de precio y el resto intacto', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const items = clientItems(carritoAr);
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(800);
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(1600);
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(800); // el pack ya valía 800, no se toca
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+  });
+
+  it('ACUMULA: 50% + 10% por transferencia = 60% (y el resto solo 10%)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const items = clientItems(carritoAr, { paymentMethod: 'transferencia' });
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(1600 * 0.4)); // 640
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(1600 * 0.9)); // 1440
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia' });
+    expect(res.ok).toBe(true);
+  });
+
+  it('ACUMULA: 50% + transferencia + EPICA10 = 70%', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const items = clientItems(carritoAr, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(1600 * 0.3)); // 480
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(1600 * 0.8)); // 1280
+    const res = validateAndPriceOrder({
+      items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10'
+    });
+    expect(res.ok).toBe(true);
+    expect(res.couponApplied).toBe('EPICA10');
+  });
+
+  it('nunca pasa del tope de seguridad', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const items = clientItems(carritoAr, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
+    const unit = price(items, 'sticker:argentina-72:6cm');
+    expect(unit).toBeGreaterThanOrEqual(round(1600 * (1 - MAX_STICKER_DISCOUNT)));
+  });
+
+  it('un precio de Argentina sin el descuento se rechaza (y con él, se acepta)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const base = [{ id: 'sticker:argentina-72:6cm', title: 'Argentina #72', quantity: 2, unit_price: 1600 }];
+    const malo = validateAndPriceOrder({ items: base, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(malo.ok).toBe(false);
+    expect(malo.error).toBe('price_mismatch');
+
+    const bueno = validateAndPriceOrder({
+      items: [{ ...base[0], unit_price: 800 }], shipping: retiro, paymentMethod: 'mercadopago'
+    });
+    expect(bueno.ok).toBe(true);
+  });
+
+  it('el precio con descuento QUEDA RECHAZADO una vez que la promo termina', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DESPUES);
+    const res = validateAndPriceOrder({
+      items: [{ id: 'sticker:argentina-72:6cm', title: 'Argentina #72', quantity: 2, unit_price: 800 }],
+      shipping: retiro,
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('price_mismatch');
+  });
+
+  it('no se pisa con la mayorista: cuando arranca Argentina, la de 100 ya venció', () => {
+    expect(PROMO_ARGENTINA_START_MS).toBeGreaterThan(MAYORISTA100_END_MS);
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    expect(isMayorista100Active()).toBe(false);
+    expect(isMayoristaPromoActive()).toBe(false);
+    expect(feActive()).toBe(false); // la 3x2 también está vencida
   });
 });

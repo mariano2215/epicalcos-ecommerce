@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import { priceForSize, sizeLabel } from '../config/pricing.js';
+import { precioVidriera, sizeLabel } from '../config/pricing.js';
 import { useTamanoElegido } from '../lib/tamanoElegido.js';
 import { trackSelectItem } from '../lib/analytics.js';
 
@@ -18,11 +18,13 @@ import { trackSelectItem } from '../lib/analytics.js';
  *
  * @param {{ id:string, image:string, name:string, category:string, categoryLabel:string }} sticker
  */
-export default function StickerCard({ sticker, listName = 'catalog' }) {
+export default function StickerCard({ sticker, listName = 'catalog', mostrarTamano = false }) {
   const { addSticker, items } = useCart();
   const [size] = useTamanoElegido();
 
-  const unit = priceForSize(size);
+  // Precio de vidriera: durante la promo de Argentina, la mitad. Sin esto la
+  // grilla anunciaría $1.600 mientras el carrito cobra $800.
+  const { price: unit, listPrice, enPromo } = precioVidriera(sticker.id, size);
   const href = `/producto/${sticker.category}/${sticker.id.split('-').pop()}`;
 
   // Cuántas ya lleva de ESTE diseño en ESTE tamaño. Sin el contador, tocar "+"
@@ -67,20 +69,30 @@ export default function StickerCard({ sticker, listName = 'catalog' }) {
           quedaban ~50 px y se truncaba en "Anime…", comiéndose el número, que
           es lo único que distingue un diseño de otro. */}
       <div className="px-2 pb-2 pt-1.5">
-        {/* El tamaño se muestra SIEMPRE, no solo donde hay SizePicker: en el
-            Home y en las landings el precio cambia según lo que la persona
-            eligió antes, y sin este dato sería un número sin explicación. */}
+        {/* `mostrarTamano` solo donde NO hay SizePicker arriba (el Home): ahí el
+            precio depende de lo que la persona eligió antes y sin el dato sería
+            un número sin explicación. En la grilla de categoría el selector ya
+            lo dice, y meterlo acá le robaba ancho al nombre — "Argentina #129"
+            truncaba a "Argentin…" y se perdía el número, que es lo único que
+            distingue un diseño de otro. */}
         <div className="flex items-baseline gap-1">
           <h3 className="text-[11px] sm:text-xs text-white/60 leading-tight truncate flex-1 min-w-0">
             <Link to={href} onClick={onSelect} className="hover:text-brand-fuchsia transition-colors">
               {sticker.name}
             </Link>
           </h3>
-          <span className="shrink-0 text-[10px] text-white/35 tabular-nums">{sizeLabel(size)}</span>
+          {mostrarTamano && (
+            <span className="shrink-0 text-[10px] text-white/35 tabular-nums">{sizeLabel(size)}</span>
+          )}
         </div>
         <div className="mt-0.5 flex items-center justify-between gap-1">
-          <p className="text-xs sm:text-sm font-bold text-white leading-none tabular-nums">
+          <p className="text-xs sm:text-sm font-bold text-white leading-none tabular-nums min-w-0">
             {formatPrice(unit)}
+            {enPromo && (
+              <span className="block text-[10px] font-normal text-white/40 line-through leading-none mt-0.5">
+                {formatPrice(listPrice)}
+              </span>
+            )}
           </p>
 
           {/* `openDrawer: false` — tocando "+" varias veces seguidas, abrir el

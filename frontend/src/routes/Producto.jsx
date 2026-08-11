@@ -9,7 +9,7 @@ import StickyMobileBar from '../components/StickyMobileBar.jsx';
 import TrustBadges from '../components/TrustBadges.jsx';
 import { getCategory } from '../data/categories.js';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import { SIZES, DEFAULT_SIZE, priceForSize, sizeLabel } from '../config/pricing.js';
+import { SIZES, DEFAULT_SIZE, priceForSize, sizeLabel, precioVidriera, PROMO_ARGENTINA } from '../config/pricing.js';
 import { shipping } from '../config/site.js';
 import { useSeo, productJsonLd } from '../lib/seo.js';
 import { trackViewItem } from '../lib/analytics.js';
@@ -105,7 +105,9 @@ export default function Producto() {
     return { prev: at(index - 1), next: at(index + 1) };
   }, [items, index]);
 
-  const unit = priceForSize(size);
+  // Precio de vidriera: la mitad durante la promo de Argentina. El carrito
+  // recalcula igual; esto es para que la ficha no anuncie otro número.
+  const { price: unit, listPrice, enPromo } = precioVidriera(sticker?.id, size);
 
   // Meta Pixel / GA4: ViewContent al abrir la ficha, con el SKU del catálogo.
   useEffect(() => {
@@ -240,12 +242,20 @@ export default function Producto() {
               </h1>
 
               {/* Precio (según tamaño elegido) */}
-              <div className="mt-4 flex items-end gap-2">
+              <div className="mt-4 flex items-end gap-2 flex-wrap">
                 <span className="gradient-text font-display font-extrabold text-4xl">
                   {formatPrice(unit)}
                 </span>
+                {enPromo && (
+                  <span className="text-white/40 text-xl line-through mb-1">{formatPrice(listPrice)}</span>
+                )}
                 <span className="text-white/50 text-sm mb-1">/ unidad · {sizeLabel(size)}</span>
               </div>
+              {enPromo && (
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-fuchsia/15 border border-brand-fuchsia/40 px-2.5 py-1 text-xs font-bold text-white">
+                  🇦🇷 {PROMO_ARGENTINA.titulo}
+                </p>
+              )}
               <p className="text-emerald-400 text-sm mt-1 font-medium">
                 Pagás seguro con Mercado Pago
               </p>
@@ -269,7 +279,9 @@ export default function Producto() {
                         }`}
                       >
                         <span className="block text-sm font-bold leading-none">{s.label}</span>
-                        <span className="block text-[11px] text-white/50 mt-1">{formatPrice(s.price)}</span>
+                        <span className="block text-[11px] text-white/50 mt-1">
+                          {formatPrice(precioVidriera(sticker?.id, s.id).price)}
+                        </span>
                       </button>
                     );
                   })}

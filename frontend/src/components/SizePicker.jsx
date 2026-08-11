@@ -1,4 +1,4 @@
-import { SIZES } from '../config/pricing.js';
+import { SIZES, PROMO_ARGENTINA, esCategoriaEnPromoArgentina, round } from '../config/pricing.js';
 import { formatPrice } from '../context/CartContext.jsx';
 import { useTamanoElegido } from '../lib/tamanoElegido.js';
 
@@ -11,8 +11,12 @@ import { useTamanoElegido } from '../lib/tamanoElegido.js';
  * importa acá, que es ver diseños. La elección se hace una vez al entrar y se
  * recuerda hasta en la próxima visita.
  */
-export default function SizePicker({ className = '' }) {
+export default function SizePicker({ className = '', categoria }) {
   const [size, setSize] = useTamanoElegido();
+  // En la categoría en promo, los precios del selector son los de la promo: si
+  // mostrara los de lista contradiría a las cards que tiene justo abajo.
+  const enPromo = esCategoriaEnPromoArgentina(categoria);
+  const precioDe = (s) => (enPromo ? round(s.price * (1 - PROMO_ARGENTINA.discount)) : s.price);
 
   return (
     <div className={`card-glass p-3 flex flex-wrap items-center gap-x-3 gap-y-2 ${className}`}>
@@ -33,13 +37,20 @@ export default function SizePicker({ className = '' }) {
               }`}
             >
               <span className="text-xs font-bold">{s.label}</span>
-              <span className="text-[10px] text-white/50 mt-0.5">{formatPrice(s.price)}</span>
+              <span className="text-[10px] text-white/50 mt-0.5">
+                {formatPrice(precioDe(s))}
+                {enPromo && (
+                  <span className="ml-1 line-through text-white/30">{formatPrice(s.price)}</span>
+                )}
+              </span>
             </button>
           );
         })}
       </div>
       <p className="basis-full text-[11px] text-white/40 leading-snug">
-        Se aplica a todos los calcos que agregues. Podés mezclar tamaños volviendo a cambiarlo.
+        {enPromo
+          ? `${PROMO_ARGENTINA.titulo} — ya aplicado. Se agrega a todos los calcos que sumes; podés mezclar tamaños volviendo a cambiarlo.`
+          : 'Se aplica a todos los calcos que agregues. Podés mezclar tamaños volviendo a cambiarlo.'}
       </p>
     </div>
   );

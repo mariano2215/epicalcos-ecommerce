@@ -3,8 +3,14 @@ import { Link, NavLink } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import AnnouncementBar from './AnnouncementBar.jsx';
 import PromoBanner, { endLabel } from './PromoBanner.jsx';
-import { usePromoActive, useMayoristaPromoActive } from '../lib/promo.js';
-import { PROMO_END_MS, PROMO_MAYORISTA_100, PROMO_MAYORISTA_END_MS } from '../config/pricing.js';
+import { usePromoActive, useMayoristaPromoActive, useArgentinaPromoActive } from '../lib/promo.js';
+import {
+  PROMO_END_MS,
+  PROMO_MAYORISTA_100,
+  PROMO_MAYORISTA_END_MS,
+  PROMO_ARGENTINA,
+  PROMO_ARGENTINA_END_MS
+} from '../config/pricing.js';
 import { navLinks, site } from '../config/site.js';
 
 export default function Header() {
@@ -12,6 +18,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const promoActive = usePromoActive();
   const mayoristaPromoActive = useMayoristaPromoActive();
+  const argentinaPromoActive = useArgentinaPromoActive();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
@@ -32,6 +39,16 @@ export default function Header() {
           endMs={PROMO_MAYORISTA_END_MS}
           to="/mayorista"
           ariaLabel={`Promoción mayorista: ${PROMO_MAYORISTA_100.titulo}`}
+        />
+      ) : argentinaPromoActive ? (
+        // Lunes 17 a miércoles 19 de agosto. Se prende sola a las 00:00 del
+        // lunes (ver useActiveBetween) — no hay que deployar nada ese día.
+        <PromoBanner
+          title={PROMO_ARGENTINA.titulo}
+          subtitle={`${PROMO_ARGENTINA.subtitulo} · hasta ${endLabel(PROMO_ARGENTINA_END_MS, 'el miércoles')}`}
+          endMs={PROMO_ARGENTINA_END_MS}
+          to={`/categoria/${PROMO_ARGENTINA.categoria}`}
+          ariaLabel={`Promoción: ${PROMO_ARGENTINA.titulo}`}
         />
       ) : (
         <AnnouncementBar />

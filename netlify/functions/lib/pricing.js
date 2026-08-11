@@ -97,6 +97,51 @@ export function isMayorista100Active(now = Date.now()) {
   return MAYORISTA100_ACTIVA && Number.isFinite(MAYORISTA100_END_MS) && now <= MAYORISTA100_END_MS;
 }
 
+// --- Espejo de la PROMO ARGENTINA 50 % de frontend/src/config/pricing.js ---
+// Lunes 17, martes 18 y miércoles 19 de agosto de 2026: los calcos de catálogo
+// de la categoría `argentina` a mitad de precio.
+//
+// Es la única promo con FECHA DE INICIO: antes del lunes el precio válido sigue
+// siendo el de lista, así que se miran las DOS puntas.
+//
+// ACUMULA con el 10 % por transferencia y con el cupón (los % se suman), con el
+// tope MAX_STICKER_DISCOUNT.
+// ⚠️ Si cambiás el %, la categoría o las fechas, cambialo TAMBIÉN en el
+// frontend (lo verifica promoPricing.test.js).
+export const ARGENTINA_CATEGORIA = 'argentina';
+export const ARGENTINA_DISCOUNT = 0.5;
+export const ARGENTINA_START_MS = Date.parse('2026-08-17T00:00:00-03:00');
+export const ARGENTINA_END_MS = Date.parse('2026-08-19T23:59:59-03:00');
+// Interruptor manual, espejo de PROMO_ARGENTINA.activa del frontend.
+export const ARGENTINA_ACTIVA = true;
+
+export function isArgentinaActive(now = Date.now()) {
+  return (
+    ARGENTINA_ACTIVA &&
+    Number.isFinite(ARGENTINA_START_MS) &&
+    Number.isFinite(ARGENTINA_END_MS) &&
+    now >= ARGENTINA_START_MS &&
+    now <= ARGENTINA_END_MS
+  );
+}
+
+/**
+ * La categoría de un id de calco: `argentina-72` → `argentina`.
+ * Se saca el ÚLTIMO tramo `-{número}`: varias categorías tienen guiones propios
+ * (`autos-y-motos-127`), así que partir por el primero daría `autos`.
+ */
+export function categoriaDeStickerId(stickerId) {
+  return String(stickerId || '').replace(/-\d+$/, '');
+}
+
+/** ¿Esta línea entra en la promo de Argentina ahora mismo? Se decide por el id. */
+export function esPromoArgentina(lineId, now = Date.now()) {
+  if (!isArgentinaActive(now)) return false;
+  const parts = String(lineId || '').split(':');
+  if (parts[0] !== 'sticker') return false;
+  return categoriaDeStickerId(parts[1]) === ARGENTINA_CATEGORIA;
+}
+
 // --- Espejo de FREE_SHIPPING_PACK_TYPES de frontend/src/config/pricing.js ---
 // Packs que se llevan el envío puesto: con una de estas líneas en el pedido, el
 // envío es 0 sin importar zona ni subtotal. Se deriva SIEMPRE del id de la
@@ -375,6 +420,18 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     keepFraction = promo3x2(unitBasePrices, grouping.buy, grouping.pay).keepFraction;
   }
 
+  // El 50 % de Argentina es POR LÍNEA (solo esa categoría), así que no entra en
+  // `percentRate`, que es uno solo para todo el carrito: se suma encima y se
+  // vuelve a topear. Espejo de `rateDe` en el CartContext del frontend.
+  //
+  // Con un cupón de BUNDLE (N x M) no corre: ese cupón anula TODOS los % por
+  // definición, y el 50 % de Argentina es uno más. Si no, un 2x1 sobre calcos
+  // ya regalados al 50 % los dejaría casi en cero.
+  const rateDe = (id) =>
+    !bundle && esPromoArgentina(id)
+      ? Math.min(percentRate + ARGENTINA_DISCOUNT, MAX_STICKER_DISCOUNT)
+      : percentRate;
+
   const priced = [];
   for (let idx = 0; idx < clean.length; idx++) {
     const item = clean[idx];
@@ -384,10 +441,10 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
       expected = lb.base; // packs / negocio / fijos: ya traen su precio final.
     } else if (grouping) {
       // Elegibles (catálogo + personalizados): N x M y luego el % (0 con bundle).
-      expected = round(lb.base * keepFraction * (1 - percentRate));
+      expected = round(lb.base * keepFraction * (1 - rateDe(item.id)));
     } else if (lb.kind === 'sticker') {
       // Fuera de promo, el cupón/transferencia solo tocan calcos de catálogo.
-      expected = round(lb.base * (1 - percentRate));
+      expected = round(lb.base * (1 - rateDe(item.id)));
     } else {
       expected = lb.base; // custom fuera de promo: precio por volumen, sin cupón.
     }

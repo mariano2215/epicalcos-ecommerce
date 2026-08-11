@@ -78,7 +78,8 @@ export default function FeaturedStickers() {
           <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
             {stickers.map((s, i) => (
               <Reveal key={s.id} delay={i * 60} className="h-full">
-                <StickerCard sticker={s} listName="Los más vendidos" />
+                {/* El Home no tiene SizePicker: la card tiene que decir de qué tamaño es ese precio. */}
+                <StickerCard sticker={s} listName="Los más vendidos" mostrarTamano />
               </Reveal>
             ))}
           </div>

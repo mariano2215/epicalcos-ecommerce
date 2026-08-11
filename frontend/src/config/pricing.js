@@ -253,6 +253,114 @@ export function mayoristaPromoOffMax() {
 }
 
 /**
+ * ─── PROMO POR CATEGORÍA — ARGENTINA 50 % OFF ─────────────────────────────────
+ *
+ * Lunes 17, martes 18 y miércoles 19 de agosto de 2026: todos los calcos de
+ * catálogo de la categoría `argentina` a mitad de precio.
+ *
+ * Es la primera promo con FECHA DE INICIO además de vencimiento — las otras
+ * arrancan al deployarse. Por eso `isArgentinaPromoActive()` mira las dos
+ * puntas: antes del lunes el precio tiene que seguir siendo el de lista.
+ *
+ * ACUMULA con el resto de los %: se SUMA al 10 % por transferencia y al cupón,
+ * con el tope de seguridad MAX_STICKER_DISCOUNT (decisión de Mariano, 11/8/2026
+ * — un calco de Argentina puede terminar 60 % off pagando por transferencia con
+ * EPICA10). Los packs, negocio y fijos quedan afuera: ya traen su precio final.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js
+ * (PROMO_ARGENTINA / esPromoArgentina). Si cambiás el %, la categoría o las
+ * fechas acá y no allá, TODO checkout con un calco de Argentina se rechaza con
+ * `price_mismatch`. El test `src/lib/promoPricing.test.js` verifica la paridad.
+ */
+export const PROMO_ARGENTINA = {
+  id: 'argentina50',
+  /** Interruptor manual, aparte de las fechas (mismo criterio que la mayorista). */
+  activa: true,
+  /** Slug de la categoría en oferta, tal como viene en catalog.json. */
+  categoria: 'argentina',
+  discount: 0.5,
+  /** Arranca el lunes 17 a las 00:00, hora Argentina (UTC−03:00). */
+  startsAt: '2026-08-17T00:00:00-03:00',
+  /** Termina al cerrar el miércoles 19, inclusive. */
+  endsAt: '2026-08-19T23:59:59-03:00',
+  /** Copy del cartel. El % sale del config, no escrito a mano. */
+  titulo: 'ARGENTINA 50% OFF',
+  subtitulo: 'Toda la categoría Argentina a mitad de precio'
+};
+
+export const PROMO_ARGENTINA_START_MS = Date.parse(PROMO_ARGENTINA.startsAt);
+export const PROMO_ARGENTINA_END_MS = Date.parse(PROMO_ARGENTINA.endsAt);
+
+/** ¿La promo de Argentina está vigente en este instante? */
+export function isArgentinaPromoActive(now = Date.now()) {
+  return (
+    PROMO_ARGENTINA.activa &&
+    Number.isFinite(PROMO_ARGENTINA_START_MS) &&
+    Number.isFinite(PROMO_ARGENTINA_END_MS) &&
+    now >= PROMO_ARGENTINA_START_MS &&
+    now <= PROMO_ARGENTINA_END_MS
+  );
+}
+
+/**
+ * La categoría de un id de calco del catálogo: `argentina-72` → `argentina`.
+ *
+ * Se saca el ÚLTIMO tramo `-{número}` y no el primero: hay 99 categorías y
+ * varias tienen guiones propios (`autos-y-motos-127`, `futbol-boca-5`), así que
+ * partir por el primer guión daría `autos` y rompería la comparación.
+ */
+export function categoriaDeStickerId(stickerId) {
+  return String(stickerId || '').replace(/-\d+$/, '');
+}
+
+/** ¿Esta CATEGORÍA está en promo ahora mismo? (`argentina` → sí durante la ventana). */
+export function esCategoriaEnPromoArgentina(slug, now = Date.now()) {
+  return isArgentinaPromoActive(now) && slug === PROMO_ARGENTINA.categoria;
+}
+
+/** ¿Este DISEÑO del catálogo está en promo ahora mismo? (`argentina-72` → sí). */
+export function esStickerEnPromoArgentina(stickerId, now = Date.now()) {
+  return esCategoriaEnPromoArgentina(categoriaDeStickerId(stickerId), now);
+}
+
+/**
+ * ¿Esta LÍNEA del carrito entra en la promo de Argentina ahora mismo?
+ *
+ * Se decide por el ID de la línea y no por el campo `category` que guarda el
+ * carrito: el servidor solo recibe el id, así que mirando lo mismo de los dos
+ * lados el espejo no se puede desincronizar.
+ */
+export function esPromoArgentina(lineId, now = Date.now()) {
+  const parts = String(lineId || '').split(':');
+  if (parts[0] !== 'sticker') return false;
+  return esStickerEnPromoArgentina(parts[1], now);
+}
+
+/**
+ * Precio de VIDRIERA de un calco del catálogo: el de lista, o la mitad si está
+ * en la promo de Argentina.
+ *
+ * "Vidriera" = lo que se muestra en la grilla y en la ficha. NO incluye el 10 %
+ * por transferencia ni el cupón: esos dependen del carrito entero (medio de
+ * pago, cantidad total) y se resuelven en `pricedItems`. Mostrarlos acá daría
+ * un precio que después no se puede sostener con un solo calco en el carrito.
+ *
+ * Devuelve también el precio tachado, para poder mostrar el antes/después sin
+ * que cada pantalla lo calcule por su cuenta.
+ *
+ * @returns {{ price: number, listPrice: number, enPromo: boolean }}
+ */
+export function precioVidriera(stickerId, sizeId, now = Date.now()) {
+  const listPrice = priceForSize(sizeId);
+  const enPromo = esStickerEnPromoArgentina(stickerId, now);
+  return {
+    price: enPromo ? round(listPrice * (1 - PROMO_ARGENTINA.discount)) : listPrice,
+    listPrice,
+    enPromo
+  };
+}
+
+/**
  * ─── PACKS CON EL ENVÍO INCLUIDO ──────────────────────────────────────────────
  * Tipos de línea `pack:{tipo}:…` que se llevan el envío puesto: mientras haya
  * una de estas líneas en el carrito, el envío vale 0 sin importar la zona ni el

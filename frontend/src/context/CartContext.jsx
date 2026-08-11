@@ -14,6 +14,8 @@ import {
   lineaConEnvioGratis,
   MAX_STICKER_DISCOUNT,
   PROMO_3X2,
+  PROMO_ARGENTINA,
+  esPromoArgentina,
   isPromoActive,
   promo3x2
 } from '../config/pricing.js';
@@ -373,17 +375,29 @@ export function CartProvider({ children }) {
         ? promo3x2({ unitBasePrices: derived.eligibleUnitBasePrices, buy: bundle.buy, pay: bundle.pay }).keepFraction
         : derived.promoKeepFraction;
 
+      // El 50 % de Argentina es POR LÍNEA (solo esa categoría), así que no puede
+      // ir en `percentRate`, que es uno solo para todo el carrito. Se suma
+      // encima y se vuelve a topear. Espejado en el servidor.
+      //
+      // Con un cupón de BUNDLE (N x M) no corre: ese cupón anula TODOS los % por
+      // definición, y el 50 % de Argentina es uno más.
+      const rateDe = (i) =>
+        !bundle && esPromoArgentina(i.id)
+          ? Math.min(percentRate + PROMO_ARGENTINA.discount, MAX_STICKER_DISCOUNT)
+          : percentRate;
+
       if (!grouping) {
-        if (percentRate === 0) return derived.items;
-        return derived.items.map((i) =>
-          i.type === 'sticker' ? { ...i, price: round(i.basePrice * (1 - percentRate)) } : i
-        );
+        return derived.items.map((i) => {
+          if (i.type !== 'sticker') return i;
+          const rate = rateDe(i);
+          return rate === 0 ? i : { ...i, price: round(i.basePrice * (1 - rate)) };
+        });
       }
 
       // N x M + % (con tope) a los elegibles; el resto intacto.
       return derived.items.map((i) =>
         PROMO_ELIGIBLE_TYPES.has(i.type)
-          ? { ...i, price: round(i.basePrice * keep * (1 - percentRate)) }
+          ? { ...i, price: round(i.basePrice * keep * (1 - rateDe(i))) }
           : i
       );
     },
