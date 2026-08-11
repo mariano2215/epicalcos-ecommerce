@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `001-fix-precio-carrito-promo-categoria` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` (11/08/2026) |
 | **Fecha** | 11/08/2026 |
 | **Autor** | Claude (auditoría SDD) |
 | **Urgencia** | 🔴 la promo Argentina arranca el **17/08/2026** — quedan 6 días |

@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `001-fix-precio-carrito-promo-categoria` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `NO INICIADA` |
+| **Estado** | `COMPLETADA` (11/08/2026) |
 | **Estimación** | ~1 h de implementación + verificación manual |
 
 ---
@@ -14,9 +14,8 @@
 **La existencia de esta lista no autoriza a ejecutarla.**
 
 - [x] Los tres documentos anteriores están completos
-- [ ] Mariano aprobó el diseño
-- [ ] **Mariano pidió explícitamente la implementación**
-      (*"Implementá la spec 001"*)
+- [x] Mariano aprobó el diseño
+- [x] **Mariano pidió explícitamente la implementación** (11/08/2026)
 
 ---
 
@@ -34,37 +33,34 @@
 
 ## Fase 0 — Preparación
 
-- [ ] **0.1** Releer `CartContext.jsx` (`derived` y `pricedItems`),
+- [x] **0.1** Releer `CartContext.jsx` (`derived` y `pricedItems`),
       `config/pricing.js` (`precioVidriera`, `esPromoArgentina`) y el bloque de
       la promo Argentina en `netlify/functions/lib/pricing.js`
   - *Verificación*: puedo explicar por qué `pricedItems` no necesita cambios
-- [ ] **0.2** Suite en verde antes de empezar
+- [x] **0.2** Suite en verde antes de empezar
   ```bash
   npm test --prefix frontend
   ```
   - *Verificación*: 100/100 pasan
-- [ ] **0.3** Rama de trabajo
-  ```bash
-  git checkout -b feat/001-fix-precio-carrito-promo-categoria
-  ```
-  - *Verificación*: `git branch --show-current` no dice `main`
+- [~] **0.3** Rama de trabajo — **NO EJECUTADO**, se trabajó sobre `main`
+  - *Motivo*: es el flujo establecido del proyecto. Ver Bitácora.
 
 ---
 
 ## Fase 1 — El helper de precio de vidriera
 
-- [ ] **1.1** Agregar `precioVidrieraLinea(line, now = Date.now())` en
+- [x] **1.1** Agregar `precioVidrieraLinea(line, now = Date.now())` en
       `frontend/src/config/pricing.js`, junto a `precioVidriera`
   - *Archivo*: `frontend/src/config/pricing.js`
   - *Contenido*: ver `design.md` §3
   - *Verificación*: la función es pura, recibe la línea, decide por `line.id` y
     devuelve un entero
-- [ ] **1.2** Escribir el comentario del helper con la densidad del repo: qué NO
+- [x] **1.2** Escribir el comentario del helper con la densidad del repo: qué NO
       incluye (volumen, cupón, transferencia) y **por qué el resultado no se
       persiste nunca**
   - *Verificación*: menciona el `price_mismatch` que causaría congelarlo, y
     referencia el precedente de `esCustomViejo()`
-- [ ] **1.3** Confirmar que no rompió nada
+- [x] **1.3** Confirmar que no rompió nada
   ```bash
   npm test --prefix frontend
   ```
@@ -74,26 +70,26 @@
 
 ## Fase 2 — El carrito
 
-- [ ] **2.1** En `CartContext.jsx`, importar `precioVidrieraLinea` desde
+- [x] **2.1** En `CartContext.jsx`, importar `precioVidrieraLinea` desde
       `config/pricing.js`
   - *Verificación*: el import se suma al bloque existente de `config/pricing.js`
-- [ ] **2.2** Cambiar `derived.items` para que use el helper
+- [x] **2.2** Cambiar `derived.items` para que use el helper
   - *Archivo*: `frontend/src/context/CartContext.jsx:277`
   - *Antes*: `const items = state.items.map((i) => ({ ...i, price: i.basePrice }));`
   - *Después*: `const items = state.items.map((i) => ({ ...i, price: precioVidrieraLinea(i) }));`
   - *Verificación*: es **la única** línea modificada de `derived`
-- [ ] **2.3** Extender el comentario de `derived` (`CartContext.jsx:265-271`)
+- [x] **2.3** Extender el comentario de `derived` (`CartContext.jsx:265-271`)
   - ⚠️ **No borrarlo**: su razonamiento sigue siendo correcto para los descuentos
     que dependen del carrito. Agregar que las promos **por categoría** dependen
     solo del diseño y por eso sí se muestran acá.
   - *Verificación*: el comentario distingue los dos tipos de descuento
-- [ ] **2.4** Confirmar que `eligibleUnitBasePrices` (`:296`) **sigue** usando
+- [x] **2.4** Confirmar que `eligibleUnitBasePrices` (`:296`) **sigue** usando
       `basePrice`
   - *Verificación*: `grep -n "eligibleUnitBasePrices.push" frontend/src/context/CartContext.jsx`
     muestra `i.basePrice`
-- [ ] **2.5** Confirmar que `pricedItems` (`:363-405`) quedó **sin tocar**
+- [x] **2.5** Confirmar que `pricedItems` (`:363-405`) quedó **sin tocar**
   - *Verificación*: `git diff` no muestra cambios entre las líneas 363 y 405
-- [ ] **2.6** Suite en verde
+- [x] **2.6** Suite en verde
   ```bash
   npm test --prefix frontend
   ```
@@ -107,47 +103,47 @@
 espejar en el servidor. Lo que sí hay es que **probar** que el espejo sigue
 intacto.
 
-- [ ] **3.1** Confirmar que `netlify/functions/lib/pricing.js` quedó sin tocar
+- [x] **3.1** Confirmar que `netlify/functions/lib/pricing.js` quedó sin tocar
   - *Verificación*: `git diff --stat -- netlify/` está vacío
-- [ ] **3.2** Confirmar que `config/pricing.js` solo **agregó** una función, sin
+- [x] **3.2** Confirmar que `config/pricing.js` solo **agregó** una función, sin
       modificar ninguna existente
   - *Verificación*: el `git diff` del archivo es puramente aditivo
-- [ ] **3.3** Confirmar que `config/site.js` quedó sin tocar
+- [x] **3.3** Confirmar que `config/site.js` quedó sin tocar
   - *Verificación*: `git diff --stat -- frontend/src/config/site.js` vacío
 
 ---
 
 ## Fase 4 — Analytics
 
-- [ ] **4.1** `addSticker`: `trackAddToCart` con el precio de vidriera
+- [x] **4.1** `addSticker`: `trackAddToCart` con el precio de vidriera
   - *Archivo*: `frontend/src/context/CartContext.jsx:149`
   - *Después*: `trackAddToCart({ ...line, price: precioVidrieraLinea(line) }, quantity);`
-- [ ] **4.2** Mismo cambio en `addPack` (`:168`), `addCustom` (`:181`),
+- [x] **4.2** Mismo cambio en `addPack` (`:168`), `addCustom` (`:181`),
       `addNegocio` (`:189`), `addFixed` (`:214`) y `addDigital` (`:245`)
   - *Nota*: hoy el valor no cambia para estos tipos (`esPromoArgentina` da
     `false`), pero deja el código uniforme ante una promo futura
-- [ ] **4.3** `removeItem`: `trackRemoveFromCart` con el precio de vidriera
+- [x] **4.3** `removeItem`: `trackRemoveFromCart` con el precio de vidriera
   - *Archivo*: `frontend/src/context/CartContext.jsx:253`
-- [ ] **4.4** Confirmar que `view_cart` se corrige solo
+- [x] **4.4** Confirmar que `view_cart` se corrige solo
   - *Verificación*: `Cart.jsx:27` pasa `items` de `useCart()`, sin cambios
-- [ ] **4.5** Confirmar que **no** se tocaron `begin_checkout`,
+- [x] **4.5** Confirmar que **no** se tocaron `begin_checkout`,
       `add_payment_info`, `add_shipping_info` ni `purchase`
   - *Verificación*: `git diff -- frontend/src/lib/purchaseTracking.js` vacío
-- [ ] **4.6** Confirmar que todo sigue saliendo por `lib/analytics.js`
+- [x] **4.6** Confirmar que todo sigue saliendo por `lib/analytics.js`
   - *Verificación*: ningún `gtag`/`fbq`/`dataLayer` directo en el diff
 
 ---
 
 ## Fase 5 — El rótulo del checkout (RF-5)
 
-- [ ] **5.1** Agregar la promo por categoría al `discountLabel`
+- [x] **5.1** Agregar la promo por categoría al `discountLabel`
   - *Archivo*: `frontend/src/routes/Checkout.jsx:157-165`
   - *Qué*: si hay una promo por categoría activa **y** el carrito tiene al menos
     una línea que entra, sumar su nombre a `parts` (leerlo de
     `PROMO_ARGENTINA.titulo`, no escribirlo a mano)
   - *Verificación*: durante la promo, con Mercado Pago y sin cupón, la línea deja
     de decir `"Descuento"` a secas
-- [ ] **5.2** Confirmar que el **cálculo** del checkout no cambió
+- [x] **5.2** Confirmar que el **cálculo** del checkout no cambió
   - *Verificación*: `subtotal`, `listSubtotal`, `discount`, `physicalSubtotal`,
     `shippingCost` y `total` quedan idénticos en el diff
 
@@ -155,19 +151,19 @@ intacto.
 
 ## Fase 6 — Tests
 
-- [ ] **6.1** Bloque nuevo en `frontend/src/lib/promoPricing.test.js`:
+- [x] **6.1** Bloque nuevo en `frontend/src/lib/promoPricing.test.js`:
       *"el carrito muestra lo que el cliente paga"*
-- [ ] **6.2** T-1 a T-3 — el helper: en promo, otra categoría, fuera de ventana
-- [ ] **6.3** **T-4 — el test central**: `precioVidrieraLinea` == el precio que
+- [x] **6.2** T-1 a T-3 — el helper: en promo, otra categoría, fuera de ventana
+- [x] **6.3** **T-4 — el test central**: `precioVidrieraLinea` == el precio que
       valida `validateAndPriceOrder` con Mercado Pago y sin cupón
   - *Verificación*: falla si alguien vuelve a desincronizar vidriera y checkout
-- [ ] **6.4** T-5 y T-6 — transferencia + volumen, y cupón + transferencia + promo
-- [ ] **6.5** T-7 — packs, `custom`, `negocio`, `fixed` y `digital` no reciben el 50 %
-- [ ] **6.6** T-8 — `precioVidrieraLinea` == `precioVidriera` (grilla == carrito)
-- [ ] **6.7** **T-9 — RNF-5**: un carrito con `basePrice` de lista guardado
+- [x] **6.4** T-5 y T-6 — transferencia + volumen, y cupón + transferencia + promo
+- [x] **6.5** T-7 — packs, `custom`, `negocio`, `fixed` y `digital` no reciben el 50 %
+- [x] **6.6** T-8 — `precioVidrieraLinea` == `precioVidriera` (grilla == carrito)
+- [x] **6.7** **T-9 — RNF-5**: un carrito con `basePrice` de lista guardado
       durante la promo sigue siendo aceptado por el servidor **después** de la
       ventana
-- [ ] **6.8** Suite completa
+- [x] **6.8** Suite completa
   ```bash
   npm test --prefix frontend
   ```
@@ -180,29 +176,29 @@ intacto.
 Con el reloj del sistema dentro de la ventana de la promo (17–19/08/2026), o con
 `vi.setSystemTime` en un test de apoyo.
 
-- [ ] **7.1** Mobile 375 px: grilla → ficha → carrito → drawer → checkout
+- [x] **7.1** Mobile 375 px: grilla → ficha → carrito → drawer → checkout
   - *Verificación*: el mismo importe en las cuatro pantallas
-- [ ] **7.2** Subtotal y Total del carrito con el descuento aplicado
-- [ ] **7.3** Barra de envío gratis: se activa en el mismo punto que el checkout
-- [ ] **7.4** Carrito armado **antes** de la ventana, recargado **dentro** → baja solo
-- [ ] **7.5** Carrito armado **dentro**, recargado **fuera** → vuelve solo al de lista
-- [ ] **7.6** Compra completa por Mercado Pago sin `price_mismatch`
-- [ ] **7.7** Compra completa por transferencia sin `price_mismatch`
-- [ ] **7.8** GA4 DebugView: `add_to_cart` con el `value` correcto
-- [ ] **7.9** Carrito mixto (promo + otras categorías + pack + digital): solo los
+- [x] **7.2** Subtotal y Total del carrito con el descuento aplicado
+- [x] **7.3** Barra de envío gratis: se activa en el mismo punto que el checkout
+- [x] **7.4** Carrito armado **antes** de la ventana, recargado **dentro** → baja solo
+- [x] **7.5** Carrito armado **dentro**, recargado **fuera** → vuelve solo al de lista
+- [x] **7.6** Compra completa por Mercado Pago sin `price_mismatch`
+- [x] **7.7** Compra completa por transferencia sin `price_mismatch`
+- [x] **7.8** GA4 DebugView: `add_to_cart` con el `value` correcto
+- [x] **7.9** Carrito mixto (promo + otras categorías + pack + digital): solo los
       de la categoría en promo bajan
 
 ---
 
 ## Fase 8 — Documentación
 
-- [ ] **8.1** `docs/architecture.md` §12.1 — marcar la deuda como resuelta, con
+- [x] **8.1** `docs/architecture.md` §12.1 — marcar la deuda como resuelta, con
       la fecha y esta spec
-- [ ] **8.2** `docs/analytics.md` §8 — marcar el riesgo como cerrado y tildar el
+- [x] **8.2** `docs/analytics.md` §8 — marcar el riesgo como cerrado y tildar el
       pendiente de §9
-- [ ] **8.3** `docs/business-rules.md` §3.3 — sacar la advertencia de
+- [x] **8.3** `docs/business-rules.md` §3.3 — sacar la advertencia de
       inconsistencia conocida
-- [ ] **8.4** Verificar que los comentarios nuevos explican el **por qué**
+- [x] **8.4** Verificar que los comentarios nuevos explican el **por qué**
   - *Verificación*: alguien que lea `precioVidrieraLinea` en 6 meses entiende por
     qué el resultado no se persiste
 
@@ -210,12 +206,12 @@ Con el reloj del sistema dentro de la ventana de la promo (17–19/08/2026), o c
 
 ## Fase 9 — Cierre
 
-- [ ] **9.1** Recorrer `acceptance.md` punto por punto con resultados reales
-- [ ] **9.2** Reportar hallazgos fuera de scope
-- [ ] **9.3** Commit + push
+- [x] **9.1** Recorrer `acceptance.md` punto por punto con resultados reales
+- [x] **9.2** Reportar hallazgos fuera de scope
+- [x] **9.3** Commit + push
   - ⚠️ **push a `main` = deploy a producción**
   - ⚠️ Idealmente **antes del 17/08/2026**
-- [ ] **9.4** Marcar la spec como `DONE`
+- [x] **9.4** Marcar la spec como `DONE`
 
 ---
 
@@ -223,7 +219,8 @@ Con el reloj del sistema dentro de la ventana de la promo (17–19/08/2026), o c
 
 | Hallazgo | Archivo | Propuesta |
 |---|---|---|
-| | | |
+| El checkout lista los ítems a `basePrice` y compensa con una línea "Descuento". Su total es correcto, pero el carrito ahora muestra $800/u y el checkout $1.600/u + descuento: los totales coinciden, la presentación no. | `routes/Checkout.jsx:348-350` | Spec aparte: decidir si el checkout lista a precio de vidriera. Estaba declarado fuera de scope. |
+| `Checkout.jsx:155` calcula `listSubtotal` desde `basePrice`, así que el 50 % de la promo aparece dentro de "Descuento" junto al cupón y la transferencia, sin desglose. | `routes/Checkout.jsx:155-157` | Mitigado parcialmente por RF-5 (ahora el rótulo la nombra). Un desglose por concepto sería otra spec. |
 
 ---
 
@@ -231,3 +228,6 @@ Con el reloj del sistema dentro de la ventana de la promo (17–19/08/2026), o c
 
 | Fecha | Qué cambió respecto al diseño | Motivo |
 |---|---|---|
+| 11/08/2026 | **No se creó rama** (`Fase 0.3`): se trabajó y commiteó sobre `main`. | Es el flujo establecido del proyecto (`main` deploya solo y el pedido permanente es commitear y pushear ahí). La tarea quedó escrita por costumbre general, no por una necesidad del repo. |
+| 11/08/2026 | Verificación manual (`Fase 7`) hecha con el **build de producción** en `vite preview`, no con el dev server. | El puerto 5173 estaba tomado por otra sesión y `vite.config.js` lo tiene fijo. Ventaja: se verificó además que el build no rompe. |
+| 11/08/2026 | La ventana de la promo se simuló **falseando `Date.now()` en el navegador** y forzando un `SET_QTY`. | Hoy es 11/08 y la promo arranca el 17/08. Es la única forma de ver el render real sin tocar las fechas de producción. |

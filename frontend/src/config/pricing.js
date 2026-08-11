@@ -361,6 +361,43 @@ export function precioVidriera(stickerId, sizeId, now = Date.now()) {
 }
 
 /**
+ * Precio de VIDRIERA de una LÍNEA del carrito: el de lista, o el de la promo por
+ * categoría si esa línea entra.
+ *
+ * Es el hermano de `precioVidriera()` —que recibe stickerId + tamaño, para la
+ * grilla y la ficha— pero para lo que tiene el carrito: la línea ya armada.
+ * Decide por el ID de la línea, igual que `esPromoArgentina` y que el servidor,
+ * así que los dos lados miran el mismo dato y el espejo no se desincroniza.
+ *
+ * POR QUÉ EXISTE: sin esto, el carrito mostraba `basePrice` (el precio de
+ * LISTA) mientras la grilla, la ficha y el total del checkout ya mostraban el
+ * descuento. Con la promo de Argentina, el mismo calco valía $800 en la grilla,
+ * $1.600 en el carrito y $800 en el checkout — el precio "subía al doble" justo
+ * en la pantalla donde se decide seguir o abandonar. De regalo, la barra de
+ * envío gratis prometía un umbral que el checkout no reconocía y `add_to_cart`
+ * le reportaba el doble a GA4 y a Meta.
+ *
+ * ⚠️ NO incluye el 10 % por volumen, el cupón ni el 10 % por transferencia: esos
+ * dependen del carrito ENTERO (cantidad, medio de pago) y se resuelven en
+ * `pricedItems`. Mismo criterio que `precioVidriera` — ver su comentario. La
+ * promo por categoría es distinta: depende SOLO del diseño, así que se puede
+ * mostrar desde que el calco entra al carrito.
+ *
+ * ⚠️ EL RESULTADO NO SE PERSISTE NUNCA. Se deriva en cada render desde
+ * `Date.now()`. Guardarlo en `basePrice` al agregar parece lo obvio y es una
+ * trampa: un carrito guardado durante la promo y retomado después mandaría $800
+ * cuando el servidor ya espera $1.600, y el `price_mismatch` no le trabaría esa
+ * línea sino TODO el checkout. Hay precedente de ese daño en `esCustomViejo()`
+ * del CartContext.
+ */
+export function precioVidrieraLinea(line, now = Date.now()) {
+  const base = Number(line?.basePrice) || 0;
+  return esPromoArgentina(line?.id, now)
+    ? round(base * (1 - PROMO_ARGENTINA.discount))
+    : base;
+}
+
+/**
  * ─── PACKS CON EL ENVÍO INCLUIDO ──────────────────────────────────────────────
  * Tipos de línea `pack:{tipo}:…` que se llevan el envío puesto: mientras haya
  * una de estas líneas en el carrito, el envío vale 0 sin importar la zona ni el

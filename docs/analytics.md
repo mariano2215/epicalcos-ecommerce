@@ -238,10 +238,16 @@ Procedimiento seguro, en este orden:
 
 ---
 
-## 8. Riesgo abierto: `add_to_cart` reporta precio de lista
+## 8. ✅ RESUELTO — `add_to_cart` reportaba precio de lista
 
-Detectado en la auditoría SDD del 11/8/2026. **Es el mismo problema de §3.1, pero
-en el otro extremo del funnel** — y ahí todavía no está resuelto.
+Detectado en la auditoría SDD del 11/8/2026 y **corregido el mismo día** por la
+spec [`001`](../specs/001-fix-precio-carrito-promo-categoria/). Era el mismo
+problema de §3.1 en el otro extremo del funnel.
+
+**El arreglo**: los `track*` del `CartContext` usan `precioVidrieraLinea()`, y
+`view_cart` se corrigió solo al arreglarse el carrito. `basePrice` sigue siendo
+el precio de lista y no se persiste nada con descuento. Queda debajo el
+diagnóstico original, que explica por qué el defecto existía.
 
 `CartContext.addSticker()` guarda `basePrice = priceForSize(size)`, el precio de
 **lista**, y `trackAddToCart` recibe `price: line.basePrice`. Los descuentos que
@@ -262,14 +268,16 @@ Durante la ventana del **17 al 19/8/2026**, para un calco de la categoría
 | `view_cart` → `value` | 1.600 | **800** |
 | `purchase` → `value` | ✅ correcto (`purchaseTracking.js`) | |
 
+**Después del arreglo**: los tres reportan $800.
+
 Consecuencia: durante la promo, GA4 y Meta **sobreestiman** el valor del carrito
 en la mitad para esa categoría, mientras el `purchase` reporta bien. Los ratios
 `add_to_cart → purchase` por valor quedan distorsionados, y Meta optimiza contra
 una señal de valor inflada en la parte alta del funnel.
 
-Esto es **la mitad analítica** de una inconsistencia más grande: el carrito
-también *muestra* el precio de lista al cliente. Ver `docs/architecture.md`
-§12.1 — se arregla junto, en una sola spec.
+Esto era **la mitad analítica** de una inconsistencia más grande: el carrito
+también *mostraba* el precio de lista al cliente. Se arregló junto, en una sola
+spec, como correspondía.
 
 ---
 
@@ -277,8 +285,8 @@ también *muestra* el precio de lista al cliente. Ver `docs/architecture.md`
 
 - [ ] **Validar el `purchase` en producción** (ver `QA-CHECKLIST.md` §6). Es lo
       único que bloquea confiar en todo el resto.
-- [ ] **Corregir el `value` de `add_to_cart` / `view_cart` durante promos por
-      categoría** (§8). Ideal: antes del 17/8/2026.
+- [x] ~~Corregir el `value` de `add_to_cart` / `view_cart` durante promos por
+      categoría~~ (§8) — hecho el 11/8/2026, spec `001`.
 - [ ] Enforcar la CSP siguiendo el procedimiento de arriba.
 - [ ] Crear el feed programado en Meta Commerce Manager (el CSV ya está deployado).
 - [ ] `view_item_list` en `SuggestedStickers` (rota cada 7 s; hay que decidir si

@@ -343,18 +343,24 @@ deploy previews habilitados para PRs.
 
 Ordenada por impacto, con lo verificado en el código.
 
-### Alta
+### Resuelta
 
-1. **Promo Argentina: el carrito muestra precio de lista.**
-   `precioVidriera()` aplica el 50 % en la grilla y en la ficha, pero
-   `addSticker()` guarda `basePrice = priceForSize(size)` (precio de lista) y
-   `derived.items` muestra `price = basePrice`. El descuento recién entra en
-   `pricedItems()`, que solo corre en el checkout.
-   → Del 17 al 19/8/2026: el cliente ve **$800** en la grilla, **$1.600** en el
-   carrito y **$800** en el checkout.
-   Además `physicalSubtotal` queda inflado, así que la barra de envío gratis
-   promete un umbral que el checkout no va a reconocer.
-   Archivos: `context/CartContext.jsx:277`, `:314-328`, `config/pricing.js:353`.
+1. ~~**Promo Argentina: el carrito muestra precio de lista.**~~
+   ✅ **RESUELTO el 11/8/2026** — spec
+   [`001-fix-precio-carrito-promo-categoria`](../specs/001-fix-precio-carrito-promo-categoria/).
+
+   El carrito mostraba `basePrice` (precio de lista) mientras la grilla, la ficha
+   y el total del checkout ya mostraban la promo por categoría. Se agregó
+   `precioVidrieraLinea()` en `config/pricing.js` y `derived.items`
+   (`CartContext.jsx`) lo usa: el precio se deriva en cada render desde
+   `Date.now()` y **nunca** se persiste, así que un carrito guardado durante la
+   promo sigue siendo válido después.
+
+   Cubierto por 9 tests nuevos en `promoPricing.test.js` (bloque *"el carrito
+   muestra lo que el cliente paga"*), incluido el que faltaba: **lo que el
+   cliente ve == lo que el servidor cobra**.
+
+### Alta
 
 2. **Duplicación obligatoria de reglas de precio.**
    Dos archivos que hay que editar juntos, sostenidos solo por convención y
@@ -369,10 +375,9 @@ Ordenada por impacto, con lo verificado en el código.
    tests de paridad. Sacarla es un refactor del camino de precios, no una
    limpieza.
 
-5. **`analytics.js` reporta `add_to_cart` con precio de lista.** Consecuencia de
-   (1): `trackAddToCart` recibe `price: line.basePrice`. Durante una promo por
-   categoría, GA4 y Meta sobreestiman el valor del carrito. El `purchase` sí es
-   correcto (`purchaseTracking.js` lo resuelve).
+5. ~~**`analytics.js` reporta `add_to_cart` con precio de lista.**~~
+   ✅ **RESUELTO el 11/8/2026** junto con el punto 1 (misma spec): los `track*`
+   del `CartContext` usan `precioVidrieraLinea()`.
 
 6. **CSP en Report-Only** desde hace tiempo, sin fecha de enforce.
 

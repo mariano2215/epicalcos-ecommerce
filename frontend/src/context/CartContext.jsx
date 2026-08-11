@@ -16,6 +16,7 @@ import {
   PROMO_3X2,
   PROMO_ARGENTINA,
   esPromoArgentina,
+  precioVidrieraLinea,
   isPromoActive,
   promo3x2
 } from '../config/pricing.js';
@@ -146,7 +147,7 @@ export function CartProvider({ children }) {
     };
     dispatch({ type: 'ADD', line, openDrawer: opts.openDrawer });
     if (!opts.silent) notify(`${line.name} agregado`);
-    trackAddToCart({ ...line, price: line.basePrice }, quantity);
+    trackAddToCart({ ...line, price: precioVidrieraLinea(line) }, quantity);
   }, [notify]);
 
   /**
@@ -165,7 +166,7 @@ export function CartProvider({ children }) {
     };
     dispatch({ type: 'ADD', line: enriched });
     notify(`${enriched.name} agregado`);
-    trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
+    trackAddToCart({ ...enriched, price: precioVidrieraLinea(enriched) }, enriched.quantity || 1);
   }, [notify]);
 
   /**
@@ -178,7 +179,7 @@ export function CartProvider({ children }) {
     const enriched = { ...line, type: 'custom', catalogSku: line.catalogSku || META_LINE_SKU.personalizados };
     dispatch({ type: 'ADD', line: enriched, openDrawer: opts.openDrawer });
     if (!opts.silent) notify(`${enriched.name} agregado`);
-    trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
+    trackAddToCart({ ...enriched, price: precioVidrieraLinea(enriched) }, enriched.quantity || 1);
   }, [notify]);
 
   /** Agregar la promo Negocio. */
@@ -186,7 +187,7 @@ export function CartProvider({ children }) {
     const enriched = { ...line, type: 'negocio', catalogSku: line.catalogSku || META_LINE_SKU.negocio };
     dispatch({ type: 'ADD', line: enriched });
     notify(`${enriched.name} agregado`);
-    trackAddToCart({ ...enriched, price: enriched.basePrice }, 1);
+    trackAddToCart({ ...enriched, price: precioVidrieraLinea(enriched) }, 1);
   }, [notify]);
 
   /**
@@ -211,7 +212,7 @@ export function CartProvider({ children }) {
     };
     dispatch({ type: 'ADD', line });
     notify(`${line.name} agregado`);
-    trackAddToCart({ ...line, price: line.basePrice }, quantity);
+    trackAddToCart({ ...line, price: precioVidrieraLinea(line) }, quantity);
   }, [notify]);
 
   /**
@@ -242,7 +243,7 @@ export function CartProvider({ children }) {
       };
       dispatch({ type: 'ADD', line });
       notify(`${line.name} agregado`);
-      trackAddToCart({ ...line, price: line.basePrice }, 1);
+      trackAddToCart({ ...line, price: precioVidrieraLinea(line) }, 1);
     },
     [state.items, notify]
   );
@@ -250,7 +251,7 @@ export function CartProvider({ children }) {
   const removeItem = useCallback(
     (id) => {
       const item = state.items.find((i) => i.id === id);
-      if (item) trackRemoveFromCart({ ...item, price: item.basePrice });
+      if (item) trackRemoveFromCart({ ...item, price: precioVidrieraLinea(item) });
       dispatch({ type: 'REMOVE', id });
     },
     [state.items]
@@ -263,18 +264,28 @@ export function CartProvider({ children }) {
   const closeDrawer = useCallback(() => dispatch({ type: 'CLOSE_DRAWER' }), []);
 
   /**
-   * Precios derivados: el precio de vidriera SIEMPRE es el de Mercado Pago
-   * (basePrice, sin descuento) — el 10 % por volumen en calcos sueltos
-   * (type === 'sticker') recién se aplica en el checkout, y solo si el
-   * cliente elige pagar por transferencia (ver pricedItems). Packs y negocio
-   * ya traen su propio descuento en basePrice y no cuentan para el umbral.
+   * Precios derivados. Hay que distinguir DOS tipos de descuento, porque se
+   * muestran en momentos distintos:
+   *
+   *  1. Los que dependen del CARRITO ENTERO — el 10 % por volumen en calcos
+   *     sueltos, el cupón y el 10 % por transferencia. Estos NO se pueden
+   *     mostrar acá: dependen de la cantidad total y del medio de pago, que se
+   *     eligen en el checkout. Se aplican en `pricedItems`.
+   *
+   *  2. Los que dependen SOLO DEL DISEÑO — las promos por categoría (ver
+   *     `precioVidrieraLinea`). Estos sí se muestran desde acá: la grilla y la
+   *     ficha ya los muestran, y que el carrito no lo hiciera era mostrar el
+   *     precio al DOBLE justo antes de pagar.
+   *
+   * Packs y negocio ya traen su propio descuento en basePrice y no cuentan para
+   * el umbral de envío gratis.
    */
   const derived = useMemo(() => {
     const stickerLines = state.items.filter((i) => i.type === 'sticker');
     const bulkUnits = stickerLines.reduce((a, i) => a + i.quantity, 0);
     const bulkEligible = bulkUnits >= BULK_THRESHOLD;
 
-    const items = state.items.map((i) => ({ ...i, price: i.basePrice }));
+    const items = state.items.map((i) => ({ ...i, price: precioVidrieraLinea(i) }));
 
     const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
     const totalItems = items.reduce((a, i) => a + i.quantity, 0);
@@ -290,6 +301,11 @@ export function CartProvider({ children }) {
     // promos N x M. La usan la promo 3x2 por fecha (acá abajo, para mostrarla
     // en el carrito) y el cupón de bundle (recién en el checkout, en
     // pricedItems, porque el cupón se escribe ahí).
+    //
+    // ⚠️ Va con `basePrice` (precio de LISTA) y NO con el de vidriera: el
+    // servidor arma esta misma bolsa con SIZE_PRICES (ver `unitBasePrices` en
+    // netlify/functions/lib/pricing.js). Usar acá el precio con la promo por
+    // categoría desincronizaría el N x M y el checkout se rechazaría.
     const eligibleUnitBasePrices = [];
     for (const i of state.items) {
       if (PROMO_ELIGIBLE_TYPES.has(i.type)) {

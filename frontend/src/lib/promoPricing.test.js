@@ -31,7 +31,9 @@ import {
   PROMO_ARGENTINA_END_MS,
   isArgentinaPromoActive,
   categoriaDeStickerId,
-  esPromoArgentina as feEsPromoArgentina
+  esPromoArgentina as feEsPromoArgentina,
+  precioVidriera,
+  precioVidrieraLinea
 } from '../config/pricing.js';
 // Backend: el que re-precia el checkout (rechaza si no coincide).
 import {
@@ -667,5 +669,159 @@ describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', 
     expect(isMayorista100Active()).toBe(false);
     expect(isMayoristaPromoActive()).toBe(false);
     expect(feActive()).toBe(false); // la 3x2 también está vencida
+  });
+});
+
+/**
+ * ─── EL CARRITO MUESTRA LO QUE EL CLIENTE PAGA ────────────────────────────────
+ *
+ * Los tests de arriba cubren un eje: "lo que el cliente MANDA == lo que el
+ * servidor VALIDA". Este bloque cubre el otro, que no tenía ninguno y por eso
+ * dejó pasar el defecto de la spec 001: "lo que el cliente VE == lo que PAGA".
+ *
+ * El carrito mostraba `basePrice` (precio de lista) mientras la grilla, la ficha
+ * y el total del checkout ya mostraban la promo por categoría: el mismo calco de
+ * Argentina valía $800 en la grilla, $1.600 en el carrito y $800 en el checkout.
+ */
+describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
+  const ANTES = new Date('2026-08-16T23:30:00-03:00');
+  const DURANTE = new Date('2026-08-18T12:00:00-03:00');
+  const DESPUES = new Date('2026-08-20T00:30:00-03:00');
+
+  const linea = (id, size = '6cm', extra = {}) => ({
+    id,
+    type: id.split(':')[0],
+    basePrice: priceForSize(size),
+    quantity: 1,
+    ...extra
+  });
+
+  const enPromo = linea('sticker:argentina-72:6cm');
+  const otraCategoria = linea('sticker:anime-3:6cm');
+
+  it('T-1 · un calco de la categoría en promo se muestra a mitad de precio', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    expect(precioVidrieraLinea(enPromo)).toBe(800);
+    expect(enPromo.basePrice).toBe(1600); // la línea NO se modificó
+  });
+
+  it('T-2 · un calco de otra categoría se muestra al precio de lista', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    expect(precioVidrieraLinea(otraCategoria)).toBe(1600);
+  });
+
+  it('T-3 · fuera de la ventana (antes y después) vale el precio de lista', () => {
+    vi.useFakeTimers();
+    for (const t of [ANTES, DESPUES]) {
+      vi.setSystemTime(t);
+      expect(precioVidrieraLinea(enPromo)).toBe(1600);
+    }
+  });
+
+  /**
+   * EL TEST CENTRAL. Con Mercado Pago y sin cupón no hay ningún descuento que
+   * dependa del carrito, así que lo que el carrito MUESTRA tiene que ser
+   * exactamente lo que el servidor COBRA. Si alguien vuelve a desincronizar
+   * vidriera y checkout, este test se pone rojo.
+   */
+  it('T-4 · lo que muestra el carrito == lo que valida el servidor (MP, sin cupón)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    for (const l of [enPromo, otraCategoria]) {
+      const visto = precioVidrieraLinea(l);
+      const res = validateAndPriceOrder({
+        items: [{ id: l.id, title: 'x', quantity: 1, unit_price: visto }],
+        shipping: retiro,
+        paymentMethod: 'mercadopago'
+      });
+      expect(res.ok).toBe(true);
+      expect(res.items[0].unit_price).toBe(visto);
+    }
+  });
+
+  it('T-5 · con transferencia y ≥10 unidades, vidriera − bulkSavings == lo que cobra el server', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const l = { ...enPromo, quantity: 10 };
+    const visto = precioVidrieraLinea(l); // 800
+    // bulkSavings del CartContext: basePrice − round(basePrice × 0,9)
+    const bulkSavings = l.basePrice - round(l.basePrice * (1 - BULK_DISCOUNT)); // 160
+    const esperado = visto - bulkSavings; // 640
+
+    const res = validateAndPriceOrder({
+      items: [{ id: l.id, title: 'x', quantity: 10, unit_price: esperado }],
+      shipping: retiro,
+      paymentMethod: 'transferencia'
+    });
+    expect(res.ok).toBe(true);
+    expect(esperado).toBe(round(l.basePrice * (1 - (ARGENTINA_DISCOUNT + BULK_DISCOUNT))));
+  });
+
+  it('T-6 · cupón + transferencia + promo acumulan 70% y quedan bajo el tope', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const rate = ARGENTINA_DISCOUNT + BULK_DISCOUNT + COUPONS.EPICA10.discount;
+    expect(rate).toBeLessThan(MAX_STICKER_DISCOUNT);
+
+    const res = validateAndPriceOrder({
+      items: [{ id: enPromo.id, title: 'x', quantity: 10, unit_price: round(1600 * (1 - rate)) }],
+      shipping: retiro,
+      paymentMethod: 'transferencia',
+      couponCode: 'EPICA10'
+    });
+    expect(res.ok).toBe(true);
+    expect(res.items[0].unit_price).toBe(480); // 1600 × 0,30
+  });
+
+  it('T-7 · packs, custom, negocio, fixed y digital NO reciben el 50%', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    const ajenas = [
+      { id: 'pack:mayorista:6cm:1', basePrice: 800 },
+      { id: 'custom:6cm:silueta:1', basePrice: 1600 },
+      { id: 'negocio:1', basePrice: 39999 },
+      { id: 'fixed:tatuajes-hoja', basePrice: 12000 },
+      { id: 'digital:pack-stickers', basePrice: 5999 }
+    ];
+    for (const l of ajenas) expect(precioVidrieraLinea(l)).toBe(l.basePrice);
+  });
+
+  it('T-8 · el carrito y la grilla muestran el MISMO precio', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE);
+    for (const size of ['4cm', '6cm', '9cm']) {
+      const l = linea('sticker:argentina-72:' + size, size);
+      expect(precioVidrieraLinea(l)).toBe(precioVidriera('argentina-72', size).price);
+    }
+  });
+
+  /**
+   * RNF-5 — el requisito más delicado de la spec. Si el precio de vidriera se
+   * hubiera guardado en `basePrice` al agregar, un carrito armado durante la
+   * promo y retomado después mandaría 800 cuando el server ya espera 1600, y el
+   * `price_mismatch` le trabaría TODO el checkout (no solo esa línea).
+   */
+  it('T-9 · un carrito guardado durante la promo sigue siendo válido después', () => {
+    vi.useFakeTimers();
+
+    // Se agrega DURANTE la promo: la línea guarda el precio de LISTA.
+    vi.setSystemTime(DURANTE);
+    const guardada = { ...enPromo };
+    expect(guardada.basePrice).toBe(1600);
+    expect(precioVidrieraLinea(guardada)).toBe(800);
+
+    // Vuelve DESPUÉS: el precio mostrado sube solo y el server lo acepta.
+    vi.setSystemTime(DESPUES);
+    const visto = precioVidrieraLinea(guardada);
+    expect(visto).toBe(1600);
+
+    const res = validateAndPriceOrder({
+      items: [{ id: guardada.id, title: 'x', quantity: 1, unit_price: visto }],
+      shipping: retiro,
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(true);
   });
 });

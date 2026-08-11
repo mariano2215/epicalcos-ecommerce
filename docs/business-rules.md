@@ -160,9 +160,10 @@ siguen funcionando.
   quitando el **último** tramo `-{número}` — hay categorías con guiones propios
   (`autos-y-motos-127`), así que partir por el primero daría `autos`.
 
-> ⚠️ **Inconsistencia conocida** — ver `docs/architecture.md` §12.1: el carrito
-> muestra el precio de lista mientras la grilla y el checkout muestran el
-> descuento.
+> El precio con descuento se muestra en **toda** la tienda —grilla, ficha,
+> carrito y total del checkout— desde la spec `001` (11/8/2026). El carrito lo
+> deriva con `precioVidrieraLinea()` sin persistirlo nunca: ver
+> `docs/architecture.md` §12.
 
 ---
 

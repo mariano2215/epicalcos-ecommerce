@@ -7,7 +7,14 @@ import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { createPreference, createTransferOrder } from '../services/paymentService.js';
 import { trackCart } from '../services/cartRecovery.js';
 import { calculateShipping, freeShippingThresholdFor } from '../config/site.js';
-import { findCoupon, couponBundle, WELCOME_COUPON_STORAGE_KEY, CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
+import {
+  findCoupon,
+  couponBundle,
+  esPromoArgentina,
+  PROMO_ARGENTINA,
+  WELCOME_COUPON_STORAGE_KEY,
+  CUSTOM_SPEC_STORAGE_KEY
+} from '../config/pricing.js';
 import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo } from '../lib/analytics.js';
 import { stashPurchase } from '../lib/purchaseTracking.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
@@ -154,10 +161,17 @@ export default function Checkout() {
   const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
   const listSubtotal = items.reduce((a, i) => a + i.basePrice * i.quantity, 0);
   const discount = listSubtotal - subtotal;
+  // ¿El carrito tiene alguna línea que entre en la promo por categoría? Se
+  // pregunta por el id, igual que el servidor.
+  const tienePromoCategoria = items.some((i) => esPromoArgentina(i.id));
   const discountLabel = (() => {
     if (appliedBundle) return `${appliedCoupon} · ${appliedBundle.buy}x${appliedBundle.pay}`;
     const parts = [];
     if (promoActive) parts.push('3x2');
+    // La promo por categoría se nombra: es la que más descuenta y sin esto la
+    // línea decía "Descuento" a secas, sin explicar de dónde salía el 50 %.
+    // El texto sale del config, no escrito a mano.
+    if (tienePromoCategoria) parts.push(PROMO_ARGENTINA.titulo);
     if (appliedCoupon) parts.push(appliedCoupon);
     if (isTransfer && !appliedCoupon) parts.push('10% transf.');
     return parts.length ? parts.join(' + ') : 'Descuento';
