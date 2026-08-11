@@ -303,11 +303,22 @@ acepta a propósito: ninguna integración puede bloquear una venta.
 
 ## 6. Preguntas abiertas
 
+### Resueltas (Mariano, 11/8/2026)
+
+1. ✅ **Retención de `orders`** — **se conservan siempre.** La ausencia de purga
+   es intencional, no un olvido: el historial de pedidos se guarda
+   indefinidamente. No hay que agregar ninguna política de expiración.
+
+   > ⚠️ Consecuencia a tener presente: `orders` acumula PII (nombre, email,
+   > teléfono, dirección) sin vencimiento. Si algún día hace falta responder a
+   > un pedido de supresión de datos, hoy no hay mecanismo (ver punto 5).
+
+### Abiertas
+
 `UNKNOWN / REQUIRES CONFIRMATION`
 
-1. **Retención de `orders`**: no hay purga. ¿Cuánto tiempo hay que conservar los
-   pedidos? (Los datos incluyen PII: nombre, email, teléfono, dirección.)
-2. **Backup de Blobs**: no hay ninguno en el repo. ¿Existe fuera?
+2. **Backup de Blobs**: no hay ninguno en el repo. ¿Existe fuera? Con retención
+   indefinida, la ausencia de backup pesa más.
 3. **Volumen actual**: cuántos pedidos hay guardados hoy — no se puede saber
    desde el repo.
 4. **`.netlify/db/`**: confirmar que es solo un artefacto de la CLI y que no hay

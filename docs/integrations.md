@@ -418,15 +418,25 @@ PORT · FRONTEND_URL · BACKEND_URL · NOTION_DATABASE_ID
 
 ## 15. Preguntas abiertas
 
+### Resueltas (Mariano, 11/8/2026)
+
+1. ✅ **Google Ads** — **no hay campañas todavía.** Confirma que la ausencia de
+   etiqueta en el código es correcta, no un olvido. Cuando se lancen, hay que
+   decidir entre importar conversiones desde GA4 o instalar el tag de Ads.
+2. ✅ **`NOTIFY_EMAIL_FROM`** — **está con dominio verificado en Resend.** Los
+   mails al cliente (confirmación, cupón, carrito abandonado) salen del dominio
+   propio, no del sandbox `onboarding@resend.dev`.
+3. ✅ **Feed de Meta programado** — **creado en Commerce Manager.**
+4. ✅ **CRM interno** — **activo en producción**: `CRM_WEBHOOK_URL` y
+   `CRM_WEBHOOK_SECRET` están cargadas, así que los eventos `order.created`,
+   `order.paid`, `order.rejected` y `lead.created` se están enviando.
+
+### Abiertas
+
 `UNKNOWN / REQUIRES CONFIRMATION`
 
-1. **Google Ads**: ¿hay campañas? ¿Las conversiones se importan desde GA4?
-2. **`NOTIFY_EMAIL_FROM`**: ¿está seteado con dominio verificado en Resend, o los
-   mails al cliente siguen saliendo del sandbox?
-3. **Feed de Meta programado**: ¿está creado en Commerce Manager?
-4. **`MP_WEBHOOK_STRICT`**: ¿los logs ya muestran "firma ok" consistente como
+5. **`MP_WEBHOOK_STRICT`**: ¿los logs ya muestran "firma ok" consistente como
    para activarlo?
-5. **Schema de la base de Notion**: nombres y tipos exactos de las propiedades.
-6. **`.mcp.json`**: ¿ese access token de MP se usó en algún lado compartido?
+6. **Schema de la base de Notion**: nombres y tipos exactos de las propiedades.
+7. **`.mcp.json`**: ¿ese access token de MP se usó en algún lado compartido?
    Conviene rotarlo por las dudas.
-7. **CRM interno**: ¿está activo en producción hoy (variables cargadas)?

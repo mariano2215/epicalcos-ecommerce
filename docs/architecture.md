@@ -269,8 +269,14 @@ producción**: Netlify sirve `frontend/dist` y las Functions.
 revalida precios.** Como código muerto es inofensivo; si alguien lo levantara,
 sería un agujero de manipulación de precios. Está anotado como deuda técnica.
 
-`UNKNOWN / REQUIRES CONFIRMATION`: si se puede borrar o si se conserva a
-propósito como referencia.
+**Decisión (Mariano, 11/8/2026): NO se borra.** El criterio del proyecto es no
+eliminar nada salvo que sea necesario o entorpezca el funcionamiento de la
+tienda. `backend/` no se despliega ni participa del build, así que no estorba.
+
+Queda entonces como **código archivado, no como código vivo**: nadie debe
+levantarlo ni tomarlo como referencia de cómo se procesan pagos hoy — el camino
+real es `netlify/functions/`. Si alguna vez se lo quisiera reactivar, primero
+hay que portarle `validateAndPriceOrder()`.
 
 ---
 

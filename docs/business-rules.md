@@ -186,8 +186,11 @@ Línea `pack:mayorista:{size}:{ts}`. Trae el envío incluido.
 `PERSONALIZADOS_MIN = 10` · `PERSONALIZADOS_DISCOUNT = 0.10`
 Línea `pack:personalizados:{size}:{ts}`, mínimo 10 unidades, 10 % ya incluido.
 
-> Nota: convive con el configurador nuevo, que emite líneas `custom:` **sin
-> mínimo**. La rama `pack:personalizados` sigue viva en el servidor.
+> **Convivencia intencional** (confirmado por Mariano, 11/8/2026): el
+> configurador nuevo emite líneas `custom:` **sin mínimo y sin descuento**, y
+> esta rama `pack:personalizados` sigue viva porque **las 10 unidades son el
+> umbral para acceder al 10 % off** — el mismo criterio que en calcos sueltos.
+> No es código residual: son dos ofertas distintas para el mismo producto.
 
 ### Promo Negocio
 `NEGOCIO = { qty: 100, size: '6cm', price: 39999, listPrice: 96999 }`
@@ -387,14 +390,22 @@ unidad queda positivo y verificable idéntico en el servidor.
 
 ## 10. Preguntas abiertas
 
+### Resueltas (Mariano, 11/8/2026)
+
+1. ✅ **Promo mayorista (vence 14/8/2026)** — **se deja vencer.** No se extiende.
+   Al pasar la fecha, los escalones x20 y x50 de `/armar-pack` vuelven solos y el
+   pack mayorista retoma la regla de siempre (desde 100, 50 % off).
+2. ✅ **`pack:personalizados` (mínimo 10, 10 % off)** — **sigue vivo y es
+   intencional.** Las 10 unidades son el umbral para acceder al 10 % off, igual
+   que en calcos sueltos. No es residual: convive a propósito con el
+   configurador nuevo, que permite comprar desde 1 unidad **sin** descuento.
+
+### Abiertas
+
 `UNKNOWN / REQUIRES CONFIRMATION`
 
-1. **Promo mayorista vence el 14/8/2026** (en 3 días). ¿Se extiende, se baja o
-   se deja vencer?
-2. **`disenos` del pack imprimible** sigue en `null` y falta
+3. **`disenos` del pack imprimible** sigue en `null` y falta
    `DIGITAL_LINK_PACK_STICKERS`: hoy la entrega del producto digital es manual.
-3. **`pack:personalizados`** (mínimo 10, 10 % off) sigue viva en el servidor
-   junto al configurador nuevo sin mínimo. ¿Se usa todavía o es residual?
 4. **Costos reales** de producción y envío: no están en el repo, así que no se
    puede validar margen de ninguna promo desde acá.
 5. **`stock: 50`** en los JSON del catálogo es un valor fijo para el feed de
