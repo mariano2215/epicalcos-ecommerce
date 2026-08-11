@@ -33,6 +33,13 @@ export default function StickerCard({ sticker, listName = 'catalog' }) {
           src={sticker.image}
           alt={sticker.name}
           loading="lazy"
+          decoding="async"
+          /* Los recortes del catálogo son cuadrados de 320 px: con el tamaño
+             declarado el navegador reserva el lugar antes de bajarlos y la
+             grilla no salta (CLS). El contenedor ya fija el aspect-square, así
+             que las clases mandan sobre estos números. */
+          width={320}
+          height={320}
           className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
         />
       </Link>

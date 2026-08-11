@@ -10,6 +10,8 @@ import {
   BULK_DISCOUNT_PAYMENT_METHOD,
   findCoupon,
   couponBundle,
+  packIncludesShipping,
+  lineaConEnvioGratis,
   MAX_STICKER_DISCOUNT,
   PROMO_3X2,
   isPromoActive,
@@ -18,7 +20,7 @@ import {
 
 /**
  * Tipos de línea que entran en las promos N x M — la 3x2 por fecha y el cupón
- * de bundle (EMOJI50 = 2x1): calcos de catálogo + personalizados.
+ * de bundle, si hay alguno vivo: calcos de catálogo + personalizados.
  */
 const PROMO_ELIGIBLE_TYPES = new Set(['sticker', 'custom']);
 
@@ -145,9 +147,20 @@ export function CartProvider({ children }) {
     trackAddToCart({ ...line, price: line.basePrice }, quantity);
   }, [notify]);
 
-  /** Agregar una línea de pack ya armada (mayorista). */
+  /**
+   * Agregar una línea de pack ya armada (mayorista).
+   *
+   * `envioGratis` marca los packs que se llevan el envío puesto (ver
+   * FREE_SHIPPING_PACK_TYPES en config/pricing.js). Se deriva del id para que la
+   * línea no pueda quedar desincronizada del tipo de pack que realmente es.
+   */
   const addPack = useCallback((line) => {
-    const enriched = { ...line, type: 'pack', catalogSku: line.catalogSku || META_LINE_SKU.mayorista };
+    const enriched = {
+      ...line,
+      type: 'pack',
+      envioGratis: packIncludesShipping(line.id),
+      catalogSku: line.catalogSku || META_LINE_SKU.mayorista
+    };
     dispatch({ type: 'ADD', line: enriched });
     notify(`${enriched.name} agregado`);
     trackAddToCart({ ...enriched, price: enriched.basePrice }, enriched.quantity || 1);
@@ -303,12 +316,17 @@ export function CartProvider({ children }) {
     const hasDigital = items.some((i) => i.type === 'digital');
     const digitalOnly = items.length > 0 && items.every((i) => i.type === 'digital');
 
+    // Packs con el envío incluido: alcanza con UNA línea para que todo el pedido
+    // viaje gratis (espejado en el servidor, que lo deriva de los ids).
+    const envioGratisIncluido = items.some(lineaConEnvioGratis);
+
     return {
       items,
       subtotal,
       physicalSubtotal: subtotal - digitalSubtotal,
       hasDigital,
       digitalOnly,
+      envioGratisIncluido,
       totalItems,
       bulkUnits,
       bulkEligible,
@@ -336,8 +354,8 @@ export function CartProvider({ children }) {
    * + transferencia) topeado en PROMO_3X2.percentCap (10 %). Espejado en
    * netlify/functions/lib/pricing.js.
    *
-   * Con un CUPÓN DE BUNDLE (EMOJI50 = 2x1): manda el bundle del cupón — 2x1
-   * sobre los elegibles y NINGÚN % (ni transferencia, ni volumen, ni otro
+   * Con un CUPÓN DE BUNDLE (N x M): manda el bundle del cupón — cada N,
+   * la más barata gratis y NINGÚN % (ni transferencia, ni volumen, ni otro
    * cupón), y reemplaza a la promo 3x2 si estuviera vigente.
    */
   const pricedItems = useCallback(
@@ -404,5 +422,6 @@ export const useCart = () => {
   return ctx;
 };
 
-export const formatPrice = (v) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v);
+// El formateador vive en lib/formato.js para que `config/` también pueda usarlo
+// sin importar React. Se re-exporta acá: todo el sitio ya lo importa de este módulo.
+export { formatPrice } from '../lib/formato.js';

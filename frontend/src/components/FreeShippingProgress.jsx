@@ -8,8 +8,8 @@ import { shipping } from '../config/site.js';
  * ya cargó sus datos y agregar un calco más es incómodo. Acá todavía está
  * eligiendo.
  *
- * EL DETALLE QUE IMPORTA: el umbral depende del destino ($50.000 en Rosario,
- * $75.000 en el resto del país) y en el carrito TODAVÍA NO SABEMOS a dónde va.
+ * EL DETALLE QUE IMPORTA: el umbral depende del destino (el de Rosario es más
+ * bajo que el nacional, ver config/site.js) y en el carrito TODAVÍA NO SABEMOS a dónde va.
  * Por eso se nombran los dos y se dice cuál es cuál, en vez de mostrar una
  * barra sin condición que después el checkout desmiente. Es el mismo error que
  * tenía "10% off automático" en /categorias.

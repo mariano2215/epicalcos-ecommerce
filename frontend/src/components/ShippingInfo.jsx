@@ -22,11 +22,19 @@ import { trackShippingCalculated } from '../lib/analytics.js';
  * cambiaría el resultado, y prometer una precisión que no existe es peor que no
  * tener la calculadora.
  *
- * @param {{ subtotal?: number, defaultOpen?: boolean, className?: string }} props
+ * @param {{ subtotal?: number, freeShipping?: boolean, defaultOpen?: boolean, className?: string }} props
  *        `subtotal` (opcional) hace que la calculadora conozca el carrito y
  *        pueda decir "te faltan $X para el envío gratis".
+ *        `freeShipping` = el carrito ya trae un pack con el envío incluido; sin
+ *        esto la calculadora cotizaría $8.500 al interior justo al lado de un
+ *        resumen que dice "envío gratis incluido".
  */
-export default function ShippingInfo({ subtotal = 0, defaultOpen = false, className = '' }) {
+export default function ShippingInfo({
+  subtotal = 0,
+  freeShipping = false,
+  defaultOpen = false,
+  className = ''
+}) {
   const [open, setOpen] = useState(defaultOpen);
   const [city, setCity] = useState('');
   const [province, setProvince] = useState('Santa Fe');
@@ -39,13 +47,14 @@ export default function ShippingInfo({ subtotal = 0, defaultOpen = false, classN
       return;
     }
     const zone = shippingZone(city, province);
-    const cost = calculateShipping({ method: 'envio', subtotal, city, province });
+    const cost = calculateShipping({ method: 'envio', subtotal, city, province, freeShipping });
     const threshold = freeShippingThresholdFor(city, province);
     trackShippingCalculated({ zone, cost });
     setResult({
       zone,
       cost,
       threshold,
+      incluido: freeShipping,
       gap: Math.max(0, threshold - subtotal),
       delivery: zone === 'interior' ? shipping.deliveryInterior : shipping.deliveryRosario
     });
@@ -124,7 +133,7 @@ export default function ShippingInfo({ subtotal = 0, defaultOpen = false, classN
               <div className="flex justify-between gap-3">
                 <span className="text-white/60">Costo del envío</span>
                 <span className={result.cost === 0 ? 'text-emerald-400 font-semibold' : 'font-semibold'}>
-                  {result.cost === 0 ? 'Gratis' : formatPrice(result.cost)}
+                  {result.incluido ? 'Incluido' : result.cost === 0 ? 'Gratis' : formatPrice(result.cost)}
                 </span>
               </div>
               <div className="flex justify-between gap-3 mt-1">
@@ -137,7 +146,11 @@ export default function ShippingInfo({ subtotal = 0, defaultOpen = false, classN
                 </p>
               )}
               {result.cost === 0 && (
-                <p className="text-xs text-emerald-400 mt-2">✓ Tu pedido ya tiene envío gratis a ese destino.</p>
+                <p className="text-xs text-emerald-400 mt-2">
+                  {result.incluido
+                    ? '✓ Tu pack trae el envío incluido, a cualquier punto del país.'
+                    : '✓ Tu pedido ya tiene envío gratis a ese destino.'}
+                </p>
               )}
             </div>
           )}

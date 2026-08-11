@@ -4,7 +4,8 @@ import { trackSearch } from '../lib/analytics.js';
 import { suggest } from '../lib/searchCatalog.js';
 import { CATEGORIES } from '../data/categories.js';
 import { formatPrice } from '../context/CartContext.jsx';
-import { PROMO_MAYORISTA_100, PROMO_MAYORISTA_END_MS } from '../config/pricing.js';
+import { PROMO_MAYORISTA_100, PROMO_MAYORISTA_END_MS, mayoristaPromoOffMax } from '../config/pricing.js';
+import { shipping } from '../config/site.js';
 import { useMayoristaPromoActive } from '../lib/promo.js';
 import { endLabel } from './PromoBanner.jsx';
 import StickerField from './StickerField.jsx';
@@ -12,8 +13,10 @@ import RotatingHeadline from './RotatingHeadline.jsx';
 import TrustBadges from './TrustBadges.jsx';
 import { BULK_DISCOUNT_SHORT } from './DiscountNote.jsx';
 
-/** "viernes 14/8" — el cierre de la promo, para la card del hero. */
-const PROMO_END_LABEL = endLabel(PROMO_MAYORISTA_END_MS, 'el viernes 14/8');
+/** El cierre de la promo, derivado de `endsAt` (ej. "viernes 14/8"). */
+const PROMO_END_LABEL = endLabel(PROMO_MAYORISTA_END_MS, 'que se agote');
+/** "HASTA 75% OFF" — el % más alto de la promo, calculado, no escrito a mano. */
+const PROMO_OFF_MAX = mayoristaPromoOffMax();
 
 export default function Hero() {
   const navigate = useNavigate();
@@ -60,13 +63,17 @@ export default function Hero() {
   return (
     <section className="hero-gradient relative">
       <div className="hero-aurora" aria-hidden="true" />
-      <StickerField count={14} opacity={0.34} />
+      {/* eagerFirst: la primera calco del hero es la única imagen arriba del
+          fold en toda la home. Ver el comentario en StickerField. */}
+      <StickerField count={14} opacity={0.34} eagerFirst />
 
       <div className="container-app pt-14 pb-12 md:pt-20 md:pb-16 text-center relative z-10">
         <span className="badge badge-soft mb-4 hidden sm:inline-flex">🔥 Calcos premium · Resistentes al agua y al sol</span>
 
-        {/* Promo mayorista por tiempo limitado: card destacada. Se apaga sola al vencer. */}
-        {mayoristaPromo && (
+        {/* Card destacada del hero. Con la promo viva muestra la promo; cuando
+            vence NO desaparece dejando un hueco: cae al mensaje de envío gratis,
+            que es la oferta permanente. Los dos casos usan el mismo layout. */}
+        {mayoristaPromo ? (
           <Link
             to="/mayorista"
             className="hero-promo-card group mb-6 mx-auto flex w-full max-w-2xl items-center gap-3 sm:gap-5 rounded-2xl p-3.5 sm:p-5 text-left"
@@ -76,10 +83,11 @@ export default function Hero() {
             <span className="min-w-0 flex-1">
               {/* text-lg en mobile: con text-xl "HASTA 75% OFF" parte en dos líneas a 375 px. */}
               <span className="block font-display font-black leading-none text-lg sm:text-3xl tracking-tight gradient-text">
-                HASTA 75% OFF
+                HASTA {PROMO_OFF_MAX}% OFF
               </span>
               <span className="block text-[11px] sm:text-sm text-white/85 mt-1.5">
-                Llevando <strong className="text-white">100 calcos</strong> · 4 y 6 cm · hasta el {PROMO_END_LABEL}
+                Llevando <strong className="text-white">{PROMO_MAYORISTA_100.qty} calcos</strong> · 4 y 6 cm ·
+                hasta el {PROMO_END_LABEL}
               </span>
             </span>
 
@@ -92,6 +100,39 @@ export default function Hero() {
               </span>
               <span className="mt-1 block sm:hidden text-[11px] font-bold text-white/70">
                 Armar mi pack →
+              </span>
+            </span>
+          </Link>
+        ) : (
+          <Link
+            to="/categorias"
+            className="hero-promo-card group mb-6 mx-auto flex w-full max-w-2xl items-center gap-3 sm:gap-5 rounded-2xl p-3.5 sm:p-5 text-left"
+          >
+            <span className="text-3xl sm:text-5xl leading-none shrink-0" aria-hidden="true">🚚</span>
+
+            <span className="min-w-0 flex-1">
+              <span className="block font-display font-black leading-none text-lg sm:text-3xl tracking-tight gradient-text">
+                ENVÍO GRATIS
+              </span>
+              <span className="block text-[11px] sm:text-sm text-white/85 mt-1.5">
+                Desde{' '}
+                <strong className="text-white">
+                  {formatPrice(shipping.freeShippingThresholdNational)}
+                </strong>{' '}
+                a todo el país · desde{' '}
+                <strong className="text-white">
+                  {formatPrice(shipping.freeShippingThresholdRosario)}
+                </strong>{' '}
+                en Rosario
+              </span>
+            </span>
+
+            <span className="shrink-0 text-right">
+              <span className="mt-2 hidden sm:inline-flex btn-primary !py-1.5 !px-3.5 !text-xs">
+                Ver categorías →
+              </span>
+              <span className="block sm:hidden text-[11px] font-bold text-white/70">
+                Ver categorías →
               </span>
             </span>
           </Link>

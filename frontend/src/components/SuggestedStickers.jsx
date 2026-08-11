@@ -96,6 +96,9 @@ function SugerenciaCard({ sticker, onAdd }) {
           src={sticker.image}
           alt={sticker.name}
           loading="lazy"
+          decoding="async"
+          width={320}
+          height={320}
           className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)]"
         />
       </div>

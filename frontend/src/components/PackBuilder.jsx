@@ -329,7 +329,15 @@ export default function PackBuilder({
                   } disabled:opacity-40`}
                   title={name}
                 >
-                  <img src={it.file} alt={name} loading="lazy" className="max-w-full max-h-full object-contain" />
+                  <img
+                    src={it.file}
+                    alt={name}
+                    loading="lazy"
+                    decoding="async"
+                    width={320}
+                    height={320}
+                    className="max-w-full max-h-full object-contain"
+                  />
                   {qty > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 grid place-items-center min-w-[20px] h-5 px-1 text-[11px] font-bold rounded-full bg-brand-fuchsia">
                       {qty}
@@ -419,7 +427,15 @@ export default function PackBuilder({
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
           {Object.values(selection).map((s) => (
             <div key={s.id} className="flex items-center gap-2 text-sm">
-              <img src={s.image} alt={s.name} className="w-9 h-9 rounded-lg object-contain bg-white/5" />
+              <img
+                src={s.image}
+                alt={s.name}
+                loading="lazy"
+                decoding="async"
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-lg object-contain bg-white/5"
+              />
               <span className="flex-1 truncate text-white/80">{s.name}</span>
               <div className="flex items-center gap-1">
                 <button onClick={() => bump(s.id, -1)} className="w-6 h-6 rounded bg-white/5 border border-white/10">–</button>

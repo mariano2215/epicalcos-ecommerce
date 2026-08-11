@@ -17,7 +17,7 @@ const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 export default function Cart() {
   const {
     items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkEligible, unitsToBulk, bulkSavings,
-    promoActive, promoSavings, digitalOnly
+    promoActive, promoSavings, digitalOnly, envioGratisIncluido
   } = useCart();
   const navigate = useNavigate();
 
@@ -69,7 +69,15 @@ export default function Cart() {
           <div className="lg:col-span-2 space-y-4">
             {items.map((it) => (
               <div key={it.id} className="card-glass p-4 flex gap-4">
-                <img src={it.image} alt={it.name} className="w-24 h-24 object-contain bg-white/5 rounded-2xl p-1" />
+                <img
+                  src={it.image}
+                  alt={it.name}
+                  loading="lazy"
+                  decoding="async"
+                  width={96}
+                  height={96}
+                  className="w-24 h-24 object-contain bg-white/5 rounded-2xl p-1"
+                />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -154,6 +162,8 @@ export default function Cart() {
               <span>Envío</span>
               {digitalOnly ? (
                 <span className="text-emerald-400 font-semibold">Sin envío — llega por mail</span>
+              ) : envioGratisIncluido ? (
+                <span className="text-emerald-400 font-semibold">Envío gratis incluido</span>
               ) : (
                 <span className="text-white/50">Se calcula en el checkout</span>
               )}
@@ -183,8 +193,16 @@ export default function Cart() {
                 en el checkout, con los datos ya cargados y el pedido cerrado.
                 Va sobre el subtotal FÍSICO — los archivos digitales no viajan en
                 la caja, así que no acercan a nadie al envío gratis. Con un
-                carrito 100 % digital no hay envío del que hablar. */}
-            {!digitalOnly && <FreeShippingProgress subtotal={physicalSubtotal} className="mt-4" />}
+                carrito 100 % digital no hay envío del que hablar, y con un pack
+                que ya trae el envío puesto una barra de progreso mentiría. */}
+            {!digitalOnly &&
+              (envioGratisIncluido ? (
+                <div className="mt-4 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2.5 text-sm text-emerald-400 font-semibold">
+                  🚚 Envío gratis incluido en tu pack — a cualquier punto del país.
+                </div>
+              ) : (
+                <FreeShippingProgress subtotal={physicalSubtotal} className="mt-4" />
+              ))}
 
             <button onClick={() => navigate('/checkout')} className="btn-primary w-full mt-4">
               Ir al checkout →
@@ -219,7 +237,11 @@ export default function Cart() {
                 apenas se acredita el pago.
               </div>
             ) : (
-              <ShippingInfo subtotal={physicalSubtotal} className="mt-4 !bg-transparent !border-white/10" />
+              <ShippingInfo
+                subtotal={physicalSubtotal}
+                freeShipping={envioGratisIncluido}
+                className="mt-4 !bg-transparent !border-white/10"
+              />
             )}
           </aside>
         </div>

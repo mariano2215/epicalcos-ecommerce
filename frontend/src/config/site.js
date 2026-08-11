@@ -2,6 +2,7 @@
  * Configuración centralizada de EPICALCOS.
  * Todos los datos comerciales viven acá — un solo lugar para editar.
  */
+import { formatPrice } from '../lib/formato.js';
 
 export const site = {
   name: 'EPICALCOS',
@@ -24,8 +25,16 @@ export const contact = {
   instagramUrl: 'https://instagram.com/epicalcos'
 };
 
+/**
+ * ⚠️ NINGÚN texto del sitio escribe estos montos a mano: el ticker de anuncios,
+ * el FAQ, /politicas/envios, el carrito y el checkout los leen de acá. Si
+ * cambiás un umbral, cambia todo junto y el sitio no se contradice solo.
+ */
 export const shipping = {
-  /** Envío gratis en Rosario a partir de este monto */
+  /**
+   * Envío gratis en Rosario a partir de este monto.
+   * ⚠️ Espejado en netlify/functions/lib/pricing.js (FREE_SHIPPING_THRESHOLD_ROSARIO).
+   */
   freeShippingThresholdRosario: 50000,
   /**
    * Envío gratis al RESTO DEL PAÍS (ciudades próximas + interior) a partir de
@@ -121,29 +130,32 @@ export function shippingZone(city, province) {
 /**
  * Calcula el costo de envío en pesos según método, subtotal y destino.
  * - retiro → 0 (gratis)
- * - envío a Rosario (motomensajería) → $4.500 (gratis desde $50.000 de subtotal)
- * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → $6.500
- * - envío al resto del país (Correo Argentino) → $8.500
- * - fuera de Rosario, cualquier destino viaja GRATIS desde $75.000 de subtotal
- * @param {{ method: string, subtotal?: number, city?: string, province?: string }} opts
+ * - carrito con un pack que trae el envío incluido (`freeShipping`) → 0, sin
+ *   importar zona ni subtotal (ver FREE_SHIPPING_PACK_TYPES en config/pricing.js)
+ * - envío a Rosario (motomensajería) → `costRosario` (gratis desde `freeShippingThresholdRosario`)
+ * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → `costNearby`
+ * - envío al resto del país (Correo Argentino) → `costInterior`
+ * - fuera de Rosario, cualquier destino viaja GRATIS desde `freeShippingThresholdNational`
+ * @param {{ method: string, subtotal?: number, city?: string, province?: string,
+ *           freeShipping?: boolean }} opts
  * @returns {number}
  */
-export function calculateShipping({ method, subtotal = 0, city, province }) {
+export function calculateShipping({ method, subtotal = 0, city, province, freeShipping = false }) {
   // 'digital' = el pedido son solo archivos imprimibles: no hay nada que despachar.
-  if (method === 'retiro' || method === 'digital') return 0;
+  if (method === 'retiro' || method === 'digital' || freeShipping) return 0;
   const zone = shippingZone(city, province);
   if (zone === 'rosario') {
     return subtotal >= shipping.freeShippingThresholdRosario ? 0 : shipping.costRosario;
   }
-  // Resto del país (ciudades próximas + interior): gratis desde $75.000.
+  // Resto del país (ciudades próximas + interior): gratis desde el umbral nacional.
   if (subtotal >= shipping.freeShippingThresholdNational) return 0;
   if (zone === 'nearby') return shipping.costNearby;
   return shipping.costInterior;
 }
 
 /**
- * Monto de subtotal desde el cual el envío es gratis para ese destino:
- * $50.000 en Rosario, $75.000 en el resto del país. Sirve para el "sumá $X y el
+ * Monto de subtotal desde el cual el envío es gratis para ese destino (el
+ * umbral de Rosario o el nacional, según la zona). Sirve para el "sumá $X y el
  * envío te sale gratis" del checkout.
  */
 export function freeShippingThresholdFor(city, province) {
@@ -184,8 +196,10 @@ export const bankTransfer = {
 
 export const announcements = [
   // El envío gratis a todo el país va primero: es lo que más pesa en la decisión.
-  '🇦🇷 Envío gratis a todo el país desde $75.000',
-  '🚚 Envío gratis en Rosario desde $50.000',
+  // Los montos SALEN DEL CONFIG: escritos a mano, un cambio de umbral dejaba el
+  // ticker prometiendo un número y el checkout cobrando otro.
+  `🇦🇷 Envío gratis a todo el país desde ${formatPrice(shipping.freeShippingThresholdNational)}`,
+  `🚚 Envío gratis en Rosario desde ${formatPrice(shipping.freeShippingThresholdRosario)}`,
   '👥 +5.000 clientes',
   '🎉 +120.000 calcos vendidas',
   '⚡ Producción 2 a 3 días hábiles',

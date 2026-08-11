@@ -48,9 +48,18 @@ export default function MarcasConfiaron() {
             <img
               src={SRC}
               alt="Logos de marcas que ya compraron calcos en EPICALCOS"
-              /* sin loading="lazy" a propósito: si no se pide la imagen nunca salta
-                 onError y la sección quedaría con el título y un hueco vacío */
+              /* `lazy`: esta sección vive muy por debajo del fold y era la ÚNICA
+                 imagen del sitio que se pedía con prioridad — competía por ancho
+                 de banda con el hero justo durante el LCP.
+                 El `onError` sigue funcionando: `lazy` no cancela la descarga,
+                 la difiere hasta que la sección se acerca al viewport, que es
+                 exactamente cuando importa saber si la imagen falló. */
+              loading="lazy"
               decoding="async"
+              /* Tamaño intrínseco del archivo: reserva el alto antes de bajarla
+                 y el bloque no salta cuando entra (CLS). */
+              width={2000}
+              height={710}
               onError={() => setFailed(true)}
               className="w-full h-auto max-w-4xl mx-auto"
               style={{ WebkitMaskImage: FADE_X, maskImage: FADE_X, filter: PUNCH }}
