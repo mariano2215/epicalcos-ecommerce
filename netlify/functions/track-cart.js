@@ -13,7 +13,7 @@
  *   ABANDONED_CART_ENABLED=true   (obligatoria) prende la función
  *   ABANDONED_CART_SECRET         (obligatoria) secreto para firmar el link de baja
  */
-import { guardarCarrito, estaDadoDeBaja } from './lib/abandonedStore.js';
+import { guardarCarrito, consultarBaja } from './lib/abandonedStore.js';
 
 const ALLOWED_ORIGINS = [
   process.env.URL,
@@ -64,7 +64,13 @@ export const handler = async (event) => {
 
   // Respeta el opt-out desde el primer momento: si pidió no recibir más, ni
   // siquiera se guarda el carrito.
-  if (await estaDadoDeBaja(email)) return json(200, { tracked: false, reason: 'opted_out' });
+  //
+  // Un fallo del store NO se reporta como baja: se sigue adelante e intenta
+  // guardar igual. El envío está protegido aparte —abandoned-cart.js vuelve a
+  // consultar el opt-out antes de cada mail y ahí sí falla cerrado—, así que
+  // guardar de más no le escribe a nadie que no corresponda.
+  const { baja, error: errorStore } = await consultarBaja(email);
+  if (baja) return json(200, { tracked: false, reason: 'opted_out' });
 
   const items = Array.isArray(payload.items) ? payload.items.slice(0, MAX_ITEMS) : [];
   if (items.length === 0) return json(400, { error: 'empty_cart' });
@@ -80,12 +86,16 @@ export const handler = async (event) => {
 
   const total = limpios.reduce((a, i) => a + i.price * i.quantity, 0);
 
-  await guardarCarrito(email, {
+  const guardado = await guardarCarrito(email, {
     nombre: clip(payload.name, 120) || null,
     items: limpios,
     total,
     units: limpios.reduce((a, i) => a + i.quantity, 0)
   });
+
+  // `store_error` es el diagnóstico: si Blobs no anda, se ve acá en vez de
+  // disfrazarse de baja voluntaria como pasaba antes.
+  if (!guardado || errorStore) return json(200, { tracked: false, reason: 'store_error' });
 
   return json(200, { tracked: true });
 };

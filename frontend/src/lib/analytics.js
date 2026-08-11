@@ -2,22 +2,63 @@
  * Analytics scaffold para EPICALCOS.
  *
  * Soporta GA4 (vía gtag o GTM dataLayer) y Meta Pixel.
- * Mientras los IDs estén vacíos en .env, las funciones loguean en consola en dev y no envían nada en prod.
  *
- * Para activar:
- *   1. Crear .env en /frontend con:
- *        VITE_GTM_ID=GTM-XXXXXXX
- *        VITE_GA4_ID=G-XXXXXXXXXX
- *        VITE_META_PIXEL_ID=1234567890
- *   2. Hacer `npm run build` y redeployar.
- *   3. El snippet GTM en index.html se activa automáticamente si VITE_GTM_ID está definido.
+ * GA4 se carga con el snippet de gtag.js inline en index.html (ID hardcodeado,
+ * es público). El Píxel sale de VITE_META_PIXEL_ID y GTM de VITE_GTM_ID; si esa
+ * env var está vacía no hay contenedor, que es el caso hoy.
+ *
+ * ⚠️ gtag.js NO entiende los objetos `{ event, ecommerce }` del dataLayer: ese
+ * formato lo lee un contenedor de GTM, no el tag suelto. Sin el reenvío de
+ * `ga4()` de acá abajo, todos los eventos se escriben en un array que nadie
+ * consume — que es exactamente lo que pasaba antes de instalar el tag.
  */
 
 const GTM_ID = import.meta.env.VITE_GTM_ID || '';
-const GA4_ID = import.meta.env.VITE_GA4_ID || '';
+const GA4_ID = 'G-04CJ1WQRSJ'; // espejado en el snippet de index.html
 const PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID || '';
 const DEV = import.meta.env.DEV;
 
+/**
+ * ¿Hay que hablarle a gtag directo?
+ *
+ * Solo si el tag está cargado Y no hay contenedor de GTM. Con GTM presente el
+ * contenedor ya lee el dataLayer y dispara sus propias etiquetas de GA4:
+ * reenviar además por gtag contaría cada compra dos veces.
+ */
+function usaGtagDirecto() {
+  return !GTM_ID && typeof window !== 'undefined' && typeof window.gtag === 'function';
+}
+
+/**
+ * Traduce un evento con forma de dataLayer al formato de gtag.
+ *
+ * En GA4 los parámetros de ecommerce (currency, value, items, transaction_id…)
+ * van al mismo nivel que el resto, así que `ecommerce` se aplana. Las
+ * `user_properties` no son parámetros de evento: se setean aparte.
+ */
+function ga4({ event, ecommerce, user_properties: userProps, ...rest }) {
+  if (!event || !usaGtagDirecto()) return;
+  try {
+    if (userProps) window.gtag('set', 'user_properties', userProps);
+    // gtag.js procesa el push del dataLayer en el acto y le estampa sus propias
+    // claves `gtm.*` al MISMO objeto que estamos por reenviar. Sin este filtro
+    // viajan como parámetros del evento y ensucian el informe.
+    const propios = Object.fromEntries(
+      Object.entries(rest).filter(([k]) => !k.startsWith('gtm.'))
+    );
+    window.gtag('event', event, { ...propios, ...(ecommerce || {}) });
+  } catch (err) {
+    // El tracking NUNCA puede romper el flujo de compra (ver pixel()).
+    debug('gtag falló', err);
+  }
+}
+
+/**
+ * Único punto de salida hacia Google: escribe en el dataLayer (para GTM, si
+ * algún día se prende) y reenvía a gtag. Todos los `track*` de este archivo
+ * pasan por acá, así que el reenvío cubre el funnel completo sin tocar
+ * ninguno de los llamadores.
+ */
 function pushDataLayer(event) {
   if (typeof window === 'undefined') return;
   try {
@@ -27,6 +68,9 @@ function pushDataLayer(event) {
     // El tracking NUNCA puede romper el flujo de compra (ver pixel()).
     debug('dataLayer falló', err);
   }
+  // El `{ ecommerce: null }` que precede a cada evento de ecommerce es un reset
+  // de GTM: no lleva `event` y para gtag no significa nada.
+  ga4(event);
 }
 
 /**

@@ -13,6 +13,18 @@
       "port": 5173
     },
     {
+      "name": "epicalcos-build",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--prefix",
+        "frontend"
+      ],
+      "port": 4173,
+      "autoPort": true
+    },
+    {
       "name": "epicalcos-app-crm",
       "runtimeExecutable": "npx",
       "runtimeArgs": [

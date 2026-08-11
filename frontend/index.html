@@ -74,7 +74,33 @@
     <!--
       Google Tag Manager — se activa solo si VITE_GTM_ID está definido.
       El snippet completo se inyecta desde main.jsx para poder leer la env var.
+
+      Si algún día se prende GTM, hay que SACAR el gtag.js de acá abajo: el
+      contenedor lee el mismo dataLayer y los eventos se contarían dos veces
+      (ver el guard `usaGtagDirecto()` en src/lib/analytics.js).
     -->
+
+    <!--
+      Google Analytics 4 — snippet oficial de gtag.js.
+
+      Va inline y hardcodeado, igual que Clarity: el measurement ID es público
+      (viaja en cada request del tag) y así no depende de una env var. La versión
+      anterior lo leía de VITE_GA4_ID, que nunca se cargó en Netlify, y GA4 estuvo
+      sin instalar mientras el resto del código empujaba eventos al dataLayer.
+
+      `async` no bloquea el render. La cola del shim `gtag()` se llena desde el
+      primer momento y el tag la vacía cuando llega, así que no se pierde ningún
+      evento del arranque.
+    -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-04CJ1WQRSJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-04CJ1WQRSJ');
+    </script>
 
     <!--
       Microsoft Clarity (mapas de calor + grabaciones de sesión).

@@ -8,18 +8,33 @@ Estado del tracking después de la fase P0. Moneda siempre **ARS**.
 
 | Herramienta | Cómo entra | Variable |
 |---|---|---|
+| GA4 (`G-04CJ1WQRSJ`) | `gtag.js` inline en `index.html` (ID público) | — |
 | Google Tag Manager | inyectado desde `main.jsx` si hay ID | `VITE_GTM_ID` |
-| GA4 | vía GTM, leyendo `dataLayer` | `VITE_GA4_ID` |
 | Meta Pixel | inyectado desde `main.jsx` si hay ID | `VITE_META_PIXEL_ID` |
 | Meta CAPI (server) | webhook de MP → `lib/metaCapi.js` | `META_CAPI_TOKEN`, `META_PIXEL_ID` |
 | Microsoft Clarity | inline en `index.html` (ID público) | — |
 
 > ⚠️ Las `VITE_*` tienen que estar cargadas **en Netlify**, no solo en `.env.local`:
-> se hornean en el bundle durante el build.
+> se hornean en el bundle durante el build. GA4 y Clarity no dependen de env vars
+> justamente por eso — GA4 estuvo sin instalar hasta el 11/8/2026 porque
+> `VITE_GA4_ID` nunca llegó a Netlify, mientras el código empujaba eventos igual.
 
 Todo el tracking pasa por `frontend/src/lib/analytics.js`, y **nunca puede romper la
 compra**: `pushDataLayer` y `pixel()` están envueltos en `try/catch` porque
 `fbevents.js` tira excepciones sincrónicas dentro del navegador embebido de Instagram.
+
+### Los dos formatos de evento
+
+`gtag.js` **no** entiende los objetos `{ event, ecommerce }` del dataLayer: ese
+formato lo lee un contenedor de GTM. Por eso `pushDataLayer()` hace las dos cosas:
+
+1. escribe en `window.dataLayer` (para GTM, si alguna vez se prende), y
+2. reenvía a `gtag('event', …)` aplanando `ecommerce`, que es lo que hoy
+   realmente llega a GA4.
+
+El reenvío se apaga solo si `VITE_GTM_ID` tiene valor (`usaGtagDirecto()`): con
+contenedor presente, mandar por los dos caminos contaría cada compra dos veces.
+**Si algún día se prende GTM, hay que sacar el snippet de gtag.js de `index.html`.**
 
 ---
 

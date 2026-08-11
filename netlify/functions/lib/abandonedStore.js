@@ -23,8 +23,22 @@ const STORE_OPTOUT = 'abandoned-optout';
 /** Normalización única del mail: es la clave del registro y del opt-out. */
 export const normalizarEmail = (email) => String(email || '').trim().toLowerCase();
 
-const carts = () => getStore(STORE_CARTS);
-const optout = () => getStore(STORE_OPTOUT);
+/**
+ * Abre un store de Blobs.
+ *
+ * Normalmente Netlify inyecta solas las credenciales y alcanza con el nombre.
+ * Cuando NO las inyecta, `getStore()` tira `MissingBlobsEnvironmentError` y
+ * todo el flujo se cae en silencio, así que se puede configurar a mano con
+ * NETLIFY_BLOBS_SITE_ID + NETLIFY_BLOBS_TOKEN (un PAT con acceso al sitio).
+ */
+const store = (name) => {
+  const siteID = process.env.NETLIFY_BLOBS_SITE_ID || process.env.SITE_ID;
+  const token = process.env.NETLIFY_BLOBS_TOKEN;
+  return siteID && token ? getStore({ name, siteID, token }) : getStore(name);
+};
+
+const carts = () => store(STORE_CARTS);
+const optout = () => store(STORE_OPTOUT);
 
 /**
  * Guarda (o pisa) el carrito de ese mail. Nunca lanza: si Blobs falla, el
@@ -115,15 +129,37 @@ export async function darDeBaja(email) {
   }
 }
 
-/** ¿Este mail pidió no recibir más? */
-export async function estaDadoDeBaja(email) {
+/**
+ * Consulta el opt-out distinguiendo los DOS motivos por los que puede decir
+ * que no: la persona se dio de baja, o el store no se pudo leer.
+ *
+ * Confundirlos costó caro. Antes esto devolvía un booleano y el catch respondía
+ * `true`, así que un fallo de Blobs se presentaba como una baja voluntaria:
+ * `track-cart` contestaba `opted_out` a TODO el mundo, no se guardaba ningún
+ * carrito y no salía ningún recordatorio, sin un solo error a la vista.
+ *
+ * @returns {Promise<{ baja: boolean, error: boolean }>}
+ */
+export async function consultarBaja(email) {
   try {
-    return Boolean(await optout().get(normalizarEmail(email), { type: 'json' }));
-  } catch {
-    // Ante la duda, NO mandar: es preferible perder un recordatorio a escribirle
-    // a alguien que pidió que no lo hagan.
-    return true;
+    const registro = await optout().get(normalizarEmail(email), { type: 'json' });
+    return { baja: Boolean(registro), error: false };
+  } catch (err) {
+    console.error('[abandoned] no se pudo leer el opt-out:', err?.message || err);
+    return { baja: false, error: true };
   }
+}
+
+/**
+ * ¿Hay que ABSTENERSE de escribirle a este mail?
+ *
+ * Falla cerrado a propósito: si el store no se puede leer, no se manda. Es
+ * preferible perder un recordatorio a escribirle a alguien que pidió que no lo
+ * hagan. Para el camino donde el motivo importa, usar `consultarBaja`.
+ */
+export async function estaDadoDeBaja(email) {
+  const { baja, error } = await consultarBaja(email);
+  return baja || error;
 }
 
 /** Borra un carrito viejo que ya no tiene sentido conservar. */

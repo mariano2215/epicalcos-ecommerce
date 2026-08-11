@@ -6,10 +6,21 @@ import { WELCOME_COUPON_STORAGE_KEY } from '../config/pricing.js';
 
 const SEEN_KEY = 'epicalcos.welcomePopup.seen';
 // El popup se dispara cuando, scrolleando, se llega a la sección de categorías
-// destacadas del Home (esta id la pone Home.jsx). En páginas que no la tienen,
-// cae al fallback de scroll (aparece tras bajar un poco).
+// destacadas del Home (esta id la pone Home.jsx).
 const TRIGGER_ID = 'categorias-destacadas';
-const SCROLL_FALLBACK_PX = 600;
+
+/**
+ * Fallback para las páginas SIN esa sección — sobre todo categoría y ficha de
+ * producto, que es donde la persona está mirando diseños.
+ *
+ * Antes era un scroll de 600 px: en una categoría eso cae apenas empieza a
+ * bajar por la grilla, y el modal le tapa la pantalla completa justo en el
+ * momento de más intención de compra. Ahora hay que cumplir las DOS
+ * condiciones (tiempo real en la página + scroll profundo), o que se vaya:
+ * la intención de salida es el único caso donde interrumpir no cuesta nada.
+ */
+const SCROLL_FALLBACK_PX = 2600;
+const MIN_MS_EN_PAGINA = 20_000;
 const HIDDEN_ON = ['/checkout', '/carrito'];
 
 export default function WelcomePopup() {
@@ -30,7 +41,13 @@ export default function WelcomePopup() {
     if (HIDDEN_ON.includes(location.pathname)) return;
 
     let done = false;
-    const cleanup = () => window.removeEventListener('scroll', maybeShow);
+    let huboMovimiento = false;
+    const montadoEn = Date.now();
+    const cleanup = () => {
+      window.removeEventListener('scroll', maybeShow);
+      document.removeEventListener('mousemove', onMovimiento);
+      document.removeEventListener('mouseout', onSalida);
+    };
     function trigger() {
       if (done) return;
       done = true;
@@ -38,18 +55,53 @@ export default function WelcomePopup() {
       setVisible(true);
     }
 
-    // En el Home aparece apenas la sección de categorías entra en el viewport;
-    // en páginas sin esa sección, cae al fallback de bajar un poco.
+    // En el Home aparece apenas la sección de categorías entra en el viewport.
+    // En el resto (categoría, ficha, landings) hace falta scroll profundo Y
+    // tiempo en la página: mientras está eligiendo diseños, no se lo interrumpe.
     function maybeShow() {
       const target = document.getElementById(TRIGGER_ID);
       if (target) {
         if (target.getBoundingClientRect().top <= window.innerHeight * 0.9) trigger();
-      } else if (window.scrollY > SCROLL_FALLBACK_PX) {
+      } else if (
+        window.scrollY > SCROLL_FALLBACK_PX &&
+        Date.now() - montadoEn > MIN_MS_EN_PAGINA
+      ) {
         trigger();
       }
     }
 
+    /** Primer movimiento real del mouse: recién ahí la salida significa algo. */
+    function onMovimiento() {
+      huboMovimiento = true;
+      document.removeEventListener('mousemove', onMovimiento);
+    }
+
+    /**
+     * Intención de salida: el mouse sale por arriba del viewport, camino a la
+     * barra de direcciones o a cerrar la pestaña. Es el único momento en que
+     * interrumpir no le cuesta una venta a nadie.
+     *
+     * `relatedTarget` nulo = salió de la ventana y no a otro elemento; `clientY`
+     * negativo = se fue por arriba y no por los costados.
+     *
+     * Pide además un `mousemove` previo: algunos navegadores emiten un `mouseout`
+     * con clientY 0 apenas carga la página, sin que nadie haya tocado el mouse, y
+     * el popup aparecía solo — justo la interrupción que este cambio saca.
+     */
+    function onSalida(e) {
+      if (!huboMovimiento) return;
+      if (e.relatedTarget || e.clientY > 0) return;
+      if (Date.now() - montadoEn < MIN_MS_EN_PAGINA / 2) return;
+      trigger();
+    }
+
     window.addEventListener('scroll', maybeShow, { passive: true });
+    // Solo con mouse de verdad: en touch no existe el gesto de salida y el
+    // disparo queda en manos del scroll profundo + tiempo.
+    if (window.matchMedia?.('(pointer: fine)')?.matches) {
+      document.addEventListener('mousemove', onMovimiento, { passive: true });
+      document.addEventListener('mouseout', onSalida);
+    }
     maybeShow(); // por si ya está en viewport al montar
     return cleanup;
     // Solo evaluamos al montar la app (no reabrir al navegar entre páginas).
