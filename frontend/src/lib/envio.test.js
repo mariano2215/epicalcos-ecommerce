@@ -67,12 +67,12 @@ describe('costo de envío — paridad frontend ↔ backend', () => {
     expect(UMBRAL_ROSARIO).toBeLessThan(UMBRAL_NACIONAL);
   });
 
-  it('los umbrales nuevos son alcanzables: menos de 25 calcos de 6 cm', () => {
-    // El motivo del cambio: $50.000/$75.000 eran 31 y 47 calcos. Un umbral que
-    // nadie alcanza no incentiva, desmotiva.
-    const calco6cm = 1600;
-    expect(Math.ceil(UMBRAL_ROSARIO / calco6cm)).toBeLessThanOrEqual(16);
-    expect(Math.ceil(UMBRAL_NACIONAL / calco6cm)).toBeLessThanOrEqual(25);
+  it('los umbrales son los que decidió el negocio', () => {
+    // Este test es el candado: los umbrales son una decisión comercial, no un
+    // número que se toca de paso. Si alguien los cambia, tiene que cambiarlos
+    // acá también — y ahí se entera de que está moviendo la oferta.
+    expect(UMBRAL_ROSARIO).toBe(50000);
+    expect(UMBRAL_NACIONAL).toBe(75000);
   });
 });
 

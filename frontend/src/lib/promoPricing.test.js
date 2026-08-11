@@ -418,9 +418,9 @@ describe('archivos imprimibles (producto digital)', () => {
 
   it('no acerca al envío gratis: el umbral mira solo lo que se despacha', () => {
     // Se arma un carrito que queda JUSTO debajo del umbral de Rosario en calcos
-    // y JUSTO arriba sumándole el pack digital. Los montos salen del umbral y no
-    // escritos a mano: cuando el umbral bajó de $50.000 a $25.000, un carrito
-    // fijo de $46.000 dejó de estar debajo y el test medía otra cosa.
+    // y JUSTO arriba sumándole el pack digital. Los montos se derivan del umbral
+    // y no se escriben a mano: con un carrito fijo, mover el umbral deja el test
+    // pasando pero midiendo otra cosa.
     const unidad = 2000; // calco de 9 cm
     const cantidad = Math.ceil((FREE_SHIPPING_THRESHOLD_ROSARIO - pack.price) / unidad);
     const fisico = unidad * cantidad;

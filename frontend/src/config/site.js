@@ -33,20 +33,15 @@ export const contact = {
 export const shipping = {
   /**
    * Envío gratis en Rosario a partir de este monto.
-   *
-   * Estaba en $50.000, que a $1.600 el calco de 6 cm son 31 calcos: un umbral
-   * inalcanzable no incentiva nada, desmotiva. A $25.000 son 16 — un pedido
-   * grande pero posible, que es lo que hace que alguien sume una calco más.
    * ⚠️ Espejado en netlify/functions/lib/pricing.js (FREE_SHIPPING_THRESHOLD_ROSARIO).
    */
-  freeShippingThresholdRosario: 25000,
+  freeShippingThresholdRosario: 50000,
   /**
    * Envío gratis al RESTO DEL PAÍS (ciudades próximas + interior) a partir de
    * este monto. En Rosario sigue mandando el umbral de arriba, que es más bajo.
-   * Bajó de $75.000 (47 calcos) a $35.000 (22) por el mismo motivo.
    * ⚠️ Espejado en netlify/functions/lib/pricing.js (FREE_SHIPPING_THRESHOLD_NATIONAL).
    */
-  freeShippingThresholdNational: 35000,
+  freeShippingThresholdNational: 75000,
   /** Costo de envío dentro de Rosario bajo el mínimo (motomensajería) */
   costRosario: 4500,
   /** Costo de envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) */
