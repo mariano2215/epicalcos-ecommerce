@@ -204,6 +204,21 @@ Con el reloj del sistema dentro de la ventana de la promo (17–19/08/2026), o c
 
 ---
 
+## Fase 8.5 — Precio tachado *(agregada el 11/08/2026, a pedido de Mariano)*
+
+Resolución de la pregunta abierta de `design.md` §12. No es una feature nueva:
+estaba declarada como decisión pendiente dentro de esta misma spec.
+
+- [x] **8.5.1** Tachado en `routes/Cart.jsx`, con `aria-hidden`
+- [x] **8.5.2** Tachado en `components/CartDrawer.jsx`, mismo criterio
+- [x] **8.5.3** La condición es `price < basePrice`, no la promo puntual
+  - *Verificación*: sirve para cualquier promo por categoría futura
+- [x] **8.5.4** Verificado en navegador con el reloj al 18/8 y con el real
+  - *Verificación*: con promo, ~~$3.200~~ $1.600; sin promo, 0 tachados
+- [x] **8.5.5** Suite en verde (109) y build de producción OK
+
+---
+
 ## Fase 9 — Cierre
 
 - [x] **9.1** Recorrer `acceptance.md` punto por punto con resultados reales

@@ -61,7 +61,7 @@ ventana de la promo** (17–19/08/2026) y con este carrito:
 |---|---|---|---|
 | **ANF-1** *(RNF-1)* | El carrito funciona a 375 px sin scroll horizontal | DevTools, iPhone SE | ✅ verificado a 375 px |
 | **ANF-2** *(RNF-2)* | El cálculo sigue dentro del `useMemo` de `derived`; sin recálculos por render | lectura del código | ✅ dentro del useMemo |
-| **ANF-3** *(RNF-3)* | Si se agregó precio tachado, el lector de pantalla anuncia el vigente | VoiceOver | ⏭️ no se agregó tachado (ver Notas) |
+| **ANF-3** *(RNF-3)* | Si se agregó precio tachado, el lector de pantalla anuncia el vigente | árbol accesible del navegador | ✅ el tachado lleva `aria-hidden`; el texto accesible lee $1.600 (real), no $3.200 |
 | **ANF-4** *(RNF-4)* | Un carrito guardado **antes** del deploy sigue funcionando sin vaciarlo | `localStorage` con datos previos | ✅ misma forma de línea |
 | **ANF-5** *(RNF-5)* | **Ninguna línea del carrito guarda el precio con descuento** | inspeccionar `epicalcos.cart.v2`: `basePrice` de A debe ser **1600**, no 800 | ✅ **basePrice 1600 en localStorage** |
 | **ANF-6** *(RNF-7)* | Sin dependencias nuevas | `git diff package.json frontend/package.json` vacío | ✅ package.json intacto |
@@ -167,6 +167,9 @@ window.dataLayer.filter(e => ['add_to_cart','view_cart','remove_from_cart'].incl
 - [x] `pricedItems` y `eligibleUnitBasePrices` sin tocar
 - [x] El comentario de `derived` fue **extendido**, no borrado
 - [x] `precioVidrieraLinea` explica por qué su resultado no se persiste
+
+### Accesibilidad
+- [x] El importe tachado lleva `aria-hidden="true"` y no se anuncia
 
 ### Seguridad
 - [x] Ningún secreto nuevo

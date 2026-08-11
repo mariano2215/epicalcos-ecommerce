@@ -127,13 +127,15 @@ un precio congelado que el servidor rechazaría (RNF-5).
 | `frontend/src/context/CartContext.jsx` | usar el helper en `derived.items` y en los `track*` | 🔴 **módulo compartido — es el corazón del carrito** |
 | `frontend/src/routes/Checkout.jsx` | agregar la promo al `discountLabel` (RF-5) | 🟢 solo un rótulo |
 | `frontend/src/lib/promoPricing.test.js` | tests nuevos del eje "ve == paga" | 🟢 |
+| `frontend/src/routes/Cart.jsx` | precio tachado (§12, agregado el 11/08) | 🟢 solo presentación |
+| `frontend/src/components/CartDrawer.jsx` | ídem | 🟢 solo presentación |
 
 ### Archivos que NO se modifican (y por qué)
 
 | Archivo | Por qué no |
 |---|---|
 | `netlify/functions/lib/pricing.js` | ya aplica el 50 % bien; ninguna regla cambia |
-| `routes/Cart.jsx`, `components/CartDrawer.jsx` | ya muestran `it.price`: se corrigen solos |
+| ~~`routes/Cart.jsx`, `components/CartDrawer.jsx`~~ | El **precio** se corrigió solo (ya muestran `it.price`). Después se los tocó igual para agregar el tachado — ver §12. |
 | `components/FreeShippingProgress.jsx` | recibe `physicalSubtotal` por props: se corrige solo |
 | `components/StickerCard.jsx`, `routes/Producto.jsx`, `SizePicker.jsx` | ya usan `precioVidriera`, ya están bien |
 | `lib/purchaseTracking.js` | el `purchase` ya reporta bien |
@@ -384,6 +386,20 @@ que tocar, es señal de que el cambio se fue de scope.
 
 ## 12. Preguntas abiertas del diseño
 
-- [ ] **Precio tachado en el carrito** (ver `requirements.md` §12).
-      Recomendación: sí, replicando el tratamiento de `StickerCard.jsx:91-95`.
-      Es puramente visual y no afecta ningún cálculo.
+- [x] **Precio tachado en el carrito** — ✅ **DECIDIDO POR MARIANO: sí**
+      (11/08/2026). Implementado en `routes/Cart.jsx` y
+      `components/CartDrawer.jsx`.
+
+      **Cómo se decide si va el tachado**: se compara `it.price < it.basePrice`
+      en vez de preguntar por la promo puntual (`esPromoArgentina`). El precio de
+      vidriera solo puede ser menor que el de lista cuando corre una promo por
+      categoría, así que la condición es equivalente hoy y **sigue funcionando
+      con cualquier promo futura** sin tocar estos componentes.
+
+      **Accesibilidad**: el importe tachado lleva `aria-hidden="true"`. Sin eso,
+      el lector de pantalla anuncia los dos números seguidos ("3.200, 1.600") y
+      el cliente no sabe cuál paga. Verificado recorriendo el árbol accesible:
+      el tachado no aparece.
+
+      El checkout **no** lleva tachado: ya lista a precio de lista y compensa con
+      la línea "Descuento" (sigue fuera de scope, ver §4 de requirements).

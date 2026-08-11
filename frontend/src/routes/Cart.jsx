@@ -128,7 +128,23 @@ export default function Cart() {
                             : `${it.quantity} unidad${it.quantity === 1 ? '' : 'es'}`}
                       </span>
                     )}
-                    <span className="font-display font-extrabold">{formatPrice(it.price * it.quantity)}</span>
+                    {/* Tachado cuando la línea tiene una promo por categoría (ver
+                        `precioVidrieraLinea` en config/pricing.js). Se compara contra
+                        `basePrice` en vez de preguntar por una promo puntual: cualquier
+                        promo futura muestra el antes/después sin tocar esto.
+                        `aria-hidden` en el tachado para que el lector de pantalla lea el
+                        precio vigente y no los dos números seguidos. */}
+                    <div className="text-right">
+                      {it.price < it.basePrice && (
+                        <span
+                          className="block text-xs font-normal text-white/40 line-through leading-none"
+                          aria-hidden="true"
+                        >
+                          {formatPrice(it.basePrice * it.quantity)}
+                        </span>
+                      )}
+                      <span className="font-display font-extrabold">{formatPrice(it.price * it.quantity)}</span>
+                    </div>
                   </div>
                 </div>
               </div>

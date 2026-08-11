@@ -73,9 +73,21 @@ export default function CartDrawer() {
                           : `x${item.quantity}`}
                     </span>
                   )}
-                  <span className="ml-auto font-semibold text-sm">
-                    {formatPrice(item.price * item.quantity)}
-                  </span>
+                  {/* Mismo criterio que /carrito: tachado si la línea tiene una promo
+                      por categoría, `aria-hidden` para no leer los dos precios. */}
+                  <div className="ml-auto text-right">
+                    {item.price < item.basePrice && (
+                      <span
+                        className="block text-[10px] font-normal text-white/40 line-through leading-none"
+                        aria-hidden="true"
+                      >
+                        {formatPrice(item.basePrice * item.quantity)}
+                      </span>
+                    )}
+                    <span className="font-semibold text-sm">
+                      {formatPrice(item.price * item.quantity)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
