@@ -1,6 +1,13 @@
 # ANALYTICS — EPICALCOS
 
 Estado del tracking después de la fase P0. Moneda siempre **ARS**.
+Verificado contra el código el 11/8/2026.
+
+> **Rol en el SDD**: este es el documento de referencia de analytics. Toda spec
+> que toque el funnel declara sus eventos en `requirements.md` (sección
+> *Analytics necesarios*) y los implementa **solo** a través de
+> `frontend/src/lib/analytics.js` — nunca llamando a `gtag`, `fbq` o `dataLayer`
+> desde un componente. Ver `CLAUDE.md` regla 13.
 
 ---
 
@@ -231,10 +238,47 @@ Procedimiento seguro, en este orden:
 
 ---
 
-## 8. Pendientes
+## 8. Riesgo abierto: `add_to_cart` reporta precio de lista
+
+Detectado en la auditoría SDD del 11/8/2026. **Es el mismo problema de §3.1, pero
+en el otro extremo del funnel** — y ahí todavía no está resuelto.
+
+`CartContext.addSticker()` guarda `basePrice = priceForSize(size)`, el precio de
+**lista**, y `trackAddToCart` recibe `price: line.basePrice`. Los descuentos que
+dependen del carrito (cupón, 10 % por transferencia) se resuelven recién en
+`pricedItems()`, así que es correcto que no estén acá.
+
+**Pero el 50 % de la promo Argentina no depende del carrito**: depende solo del
+diseño. La grilla y la ficha ya lo muestran (`precioVidriera()`), y el checkout
+lo cobra — el `basePrice` de la línea es el único lugar que se quedó con el
+precio de lista.
+
+Durante la ventana del **17 al 19/8/2026**, para un calco de la categoría
+`argentina` de 6 cm:
+
+| | valor reportado | valor real |
+|---|---|---|
+| `add_to_cart` → `value` | 1.600 | **800** |
+| `view_cart` → `value` | 1.600 | **800** |
+| `purchase` → `value` | ✅ correcto (`purchaseTracking.js`) | |
+
+Consecuencia: durante la promo, GA4 y Meta **sobreestiman** el valor del carrito
+en la mitad para esa categoría, mientras el `purchase` reporta bien. Los ratios
+`add_to_cart → purchase` por valor quedan distorsionados, y Meta optimiza contra
+una señal de valor inflada en la parte alta del funnel.
+
+Esto es **la mitad analítica** de una inconsistencia más grande: el carrito
+también *muestra* el precio de lista al cliente. Ver `docs/architecture.md`
+§12.1 — se arregla junto, en una sola spec.
+
+---
+
+## 9. Pendientes
 
 - [ ] **Validar el `purchase` en producción** (ver `QA-CHECKLIST.md` §6). Es lo
       único que bloquea confiar en todo el resto.
+- [ ] **Corregir el `value` de `add_to_cart` / `view_cart` durante promos por
+      categoría** (§8). Ideal: antes del 17/8/2026.
 - [ ] Enforcar la CSP siguiendo el procedimiento de arriba.
 - [ ] Crear el feed programado en Meta Commerce Manager (el CSV ya está deployado).
 - [ ] `view_item_list` en `SuggestedStickers` (rota cada 7 s; hay que decidir si
