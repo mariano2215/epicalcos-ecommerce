@@ -61,8 +61,13 @@ Reglas propias, todas verificadas en el servidor:
   `quantity ≠ 1`.
 - Un pedido **solo** de digitales pasa a método de entrega `digital` — el
   servidor lo decide, no el cliente.
-- `disenos: null` → la card no promete cantidad de diseños.
-  ⚠️ Falta cargar el número real y la env var `DIGITAL_LINK_PACK_STICKERS`.
+- **+7.000 diseños** (`disenos: 7000`, dato de Mariano del 11/8/2026).
+- **Entrega**: por Mercado Pago sale sola al aprobarse el pago; por
+  **transferencia** se dispara a un click desde el aviso interno, cuando llega el
+  comprobante (spec 002). El archivo **nunca** se entrega antes de confirmar el
+  pago.
+  ⚠️ Falta cargar `DIGITAL_LINK_PACK_STICKERS`: sin esa variable no se entrega
+  por ningún camino.
 
 ---
 
@@ -405,8 +410,8 @@ unidad queda positivo y verificable idéntico en el servidor.
 
 `UNKNOWN / REQUIRES CONFIRMATION`
 
-3. **`disenos` del pack imprimible** sigue en `null` y falta
-   `DIGITAL_LINK_PACK_STICKERS`: hoy la entrega del producto digital es manual.
+3. **Falta cargar `DIGITAL_LINK_PACK_STICKERS`** (y `DIGITAL_DELIVERY_SECRET`).
+   El código de entrega ya está; sin esas variables no se entrega nada.
 4. **Costos reales** de producción y envío: no están en el repo, así que no se
    puede validar margen de ninguna promo desde acá.
 5. **`stock: 50`** en los JSON del catálogo es un valor fijo para el feed de

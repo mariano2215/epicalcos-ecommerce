@@ -23,7 +23,7 @@
  *   NOTION_DATABASE_ID  → id de la base de datos donde se cargan los pedidos
  */
 
-import { digitalDeliveries, needsManualDelivery } from './digital.js';
+import { digitalDeliveries, needsManualDelivery, tieneArchivosDigitales, linkEntrega } from './digital.js';
 
 const DEFAULT_TO = 'epicalcos@gmail.com';
 const DEFAULT_FROM = 'EPICALCOS <onboarding@resend.dev>';
@@ -105,6 +105,19 @@ function isPendingTransfer(o) {
   return o.paymentMethod === 'transferencia' && o.paymentStatus !== 'approved';
 }
 
+/**
+ * true si el pedido tiene archivos imprimibles y está esperando que se confirme
+ * una transferencia.
+ *
+ * Es el caso que se le escapaba al sistema: la transferencia no tiene webhook,
+ * así que después de confirmarla a mano NADA volvía a ejecutarse y el archivo
+ * llegaba solo si el vendedor se acordaba. Ahora el aviso interno marca estos
+ * pedidos y trae el botón para entregarlos. Ver lib/digital.js.
+ */
+function esperaConfirmacionParaEntregar(o) {
+  return isPendingTransfer(o) && tieneArchivosDigitales(o);
+}
+
 /** Etiqueta del badge de estado para el mail interno. */
 function statusLabel(o) {
   if (o.paymentStatus === 'approved') return 'PAGO APROBADO';
@@ -181,12 +194,44 @@ function buildEmailHtml(o) {
          </div>`
       : '';
 
+  // Pedido con archivos que espera la confirmación de una transferencia. El
+  // botón manda la descarga al cliente en un click (ver entregar-digital.js).
+  // Sin DIGITAL_DELIVERY_SECRET no hay botón, pero el aviso igual aparece: la
+  // entrega se hace a mano, como se venía haciendo.
+  const entregaTrasConfirmar = (() => {
+    if (!esperaConfirmacionParaEntregar(o)) return '';
+    const url = linkEntrega(o.orderId, process.env.URL);
+    const boton = url
+      ? `<p style="margin:12px 0 0">
+           <a href="${esc(url)}" style="display:inline-block;background:#1d4ed8;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">
+             📩 Enviarle los archivos ahora
+           </a>
+         </p>
+         <p style="margin:8px 0 0;font-size:12px;color:#555">
+           Tocá el botón <strong>recién cuando tengas el comprobante</strong>: le manda la descarga a
+           <strong>${esc(o.email)}</strong> al instante.
+         </p>`
+      : `<p style="margin:10px 0 0;font-size:13px;color:#555">
+           Cargá <code>DIGITAL_DELIVERY_SECRET</code> en Netlify para poder entregarlo desde acá.
+           Por ahora, mandale la descarga a <strong>${esc(o.email)}</strong> a mano.
+         </p>`;
+    return `<div style="margin:0 0 16px;padding:14px;background:#eff6ff;border:2px solid #1d4ed8;border-radius:8px">
+              <strong style="color:#1d4ed8;font-size:15px">📩 ARCHIVOS PENDIENTES DE ENTREGA</strong><br>
+              <span style="font-size:14px">
+                Este pedido tiene archivos imprimibles y se paga por transferencia:
+                el cliente <strong>todavía no</strong> recibió la descarga.
+              </span>
+              ${boton}
+            </div>`;
+  })();
+
   return `
   <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:620px;margin:0 auto;color:#111">
     <h2 style="margin:0 0 4px">🛒 Nuevo pedido EPICALCOS</h2>
     <p style="margin:0 0 16px">${statusBadge} &nbsp; <strong>Ref:</strong> ${esc(o.orderId)}</p>
 
     ${manualDigital}
+    ${entregaTrasConfirmar}
 
     <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Cliente</h3>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
@@ -259,9 +304,21 @@ function buildEmailText(o) {
           .map((d) => d.envVar)
           .join(', ')}\n`
       : '';
+  // Espejo en texto del bloque de entrega tras confirmar la transferencia.
+  const entregaTrasConfirmar = (() => {
+    if (!esperaConfirmacionParaEntregar(o)) return '';
+    const url = linkEntrega(o.orderId, process.env.URL);
+    return (
+      `\n📩 ARCHIVOS PENDIENTES DE ENTREGA — el cliente todavía NO recibió la descarga.\n` +
+      (url
+        ? `   Cuando tengas el comprobante, entregáselos acá:\n   ${url}\n`
+        : `   Cargá DIGITAL_DELIVERY_SECRET en Netlify para entregarlo desde el mail.\n` +
+          `   Por ahora, mandale la descarga a ${o.email} a mano.\n`)
+    );
+  })();
   return `NUEVO PEDIDO EPICALCOS — Ref: ${o.orderId}
 Estado del pago: ${statusLabel(o)}
-${manualDigital}
+${manualDigital}${entregaTrasConfirmar}
 CLIENTE
   Nombre: ${o.name}
   Email: ${o.email}
@@ -528,9 +585,19 @@ export async function sendOrderEmail(o) {
     .filter(Boolean);
   const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
 
-  // El prefijo 📩 marca los pedidos que hay que entregar a mano (archivos
-  // imprimibles sin link configurado): en la bandeja se ven de un vistazo.
-  const prefijo = o.paymentStatus === 'approved' && needsManualDelivery(o) ? '📩 ENVIAR ARCHIVO · ' : '';
+  // El prefijo 📩 marca los pedidos con archivos pendientes de entrega: en la
+  // bandeja se ven de un vistazo. Son DOS casos distintos y conviene
+  // distinguirlos, porque piden acciones distintas:
+  //   - ENVIAR ARCHIVO      → ya está pagado, hay que mandarlo YA a mano
+  //     (falta el DIGITAL_LINK_*, así que el mail al cliente salió sin descarga)
+  //   - ENTREGAR AL CONFIRMAR → transferencia pendiente, se entrega recién
+  //     cuando llegue el comprobante (botón en el cuerpo del mail)
+  const prefijo =
+    o.paymentStatus === 'approved' && needsManualDelivery(o)
+      ? '📩 ENVIAR ARCHIVO · '
+      : esperaConfirmacionParaEntregar(o)
+        ? '📩 ENTREGAR AL CONFIRMAR · '
+        : '';
   const subject = `${prefijo}🛒 Nuevo pedido ${o.orderId} — ${o.name} — ${money(
     o.amountPaid ?? o.total
   )}`;

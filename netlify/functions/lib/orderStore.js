@@ -66,3 +66,29 @@ export async function markNotified(orderId, paymentInfo = {}) {
     console.error('[orderStore] no se pudo marcar como notificado:', err?.message || err);
   }
 }
+
+/**
+ * Marca que ya se le entregaron los archivos imprimibles al cliente.
+ *
+ * Sirve para saber qué pedidos digitales quedaron sin entregar: sin esta marca,
+ * un archivo olvidado no deja ningún rastro (no hay caja sin despachar que lo
+ * delate). Los pedidos viejos no tienen el campo: ausente = no entregado.
+ *
+ * Se llama SOLO si el mail salió (ver entregar-digital.js), con el mismo
+ * criterio que `markNotified`: marcar algo que no ocurrió es peor que no marcar.
+ * Nunca lanza.
+ */
+export async function markDigitalDelivered(orderId, info = {}) {
+  try {
+    const existing = (await getOrder(orderId)) || {};
+    await store().setJSON(orderId, {
+      ...existing,
+      digitalDeliveredAt: new Date().toISOString(),
+      digitalDelivery: info
+    });
+    return true;
+  } catch (err) {
+    console.error('[orderStore] no se pudo marcar la entrega digital:', err?.message || err);
+    return false;
+  }
+}

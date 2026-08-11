@@ -16,6 +16,8 @@ Qué corre solo hoy, y qué falta. Escrito al cerrar P3 (8/8/2026).
 | **Planilla PEDIDOS → CRM** | edición en la planilla | webhook `sheet-order` + Apps Script |
 | **Lead del popup → CRM** | mail dejado en el popup | `functions/capture-lead.js` |
 | **Recordatorio de carrito** | cada hora, carritos de +4 h sin compra | `functions/abandoned-cart.js` ⚠️ apagada |
+| **Archivos imprimibles → cliente (MP)** | pago aprobado | `functions/lib/digital.js` + `notify.js` |
+| **Archivos imprimibles → cliente (transferencia)** | **semi**: un click en el aviso interno | `functions/entregar-digital.js` |
 | **Sitemap** | cada build | `scripts/generate-sitemap.mjs` |
 | **Feed de catálogo Meta** | manual (`build-meta-feed.mjs`) | pendiente de programar en Meta |
 | **Promos que se apagan solas** | por fecha, sin cron | `config/pricing.js` |
@@ -125,6 +127,25 @@ Hoy `/pago-transferencia` dispara `purchase` cuando el pedido se **registra**,
 no cuando se cobra (ver `ANALYTICS.md` §3.2). Cerrar el círculo requiere que,
 al confirmar el comprobante en el CRM, se mande el evento real. Es trabajo del
 lado del CRM (`epicalcos-app`), no de la tienda.
+
+---
+
+### 2.5 Entrega digital por transferencia — ✅ **semi-automática (spec 002)**
+
+La transferencia no tiene webhook: se confirma a mano con el comprobante por
+WhatsApp. Por eso la entrega del archivo **no puede** ser 100 % automática sin
+inventar una confirmación de pago que nadie verificó.
+
+Lo que sí se automatizó (11/8/2026):
+- el aviso interno de esos pedidos llega con el prefijo `📩 ENTREGAR AL CONFIRMAR ·`
+- trae un botón firmado que, en un click, le manda la descarga al cliente
+- el pedido queda marcado (`digitalDeliveredAt`) para saber cuáles faltan
+
+**El paso 100 % automático** sería que el CRM avise al sitio cuando se marca el
+pedido como pagado. Hoy el webhook es solo de salida (sitio → CRM); haría falta
+uno de entrada. Está anotado en `specs/002-…/requirements.md` §12.
+
+⚠️ Requiere `DIGITAL_LINK_PACK_STICKERS` y `DIGITAL_DELIVERY_SECRET` cargadas.
 
 ---
 

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `002-entrega-imprimibles-por-transferencia` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` (11/08/2026) |
 | **Fecha** | 11/08/2026 |
 | **Autor** | Claude (discovery sobre el camino digital) |
 
@@ -227,6 +227,20 @@ El `purchase` del pedido ya se dispara en `/pago-transferencia` (ver
 ---
 
 ## 12. Preguntas abiertas
+
+- [x] ✅ **¿Entrega directa o con confirmación intermedia?** — **DIRECTA**
+      (Mariano, 11/08/2026). Implementado así. Riesgo asumido: un pre-fetcher del
+      cliente de mail podría dispararla; el peor caso es que el cliente reciba su
+      descarga antes de tiempo o repetida, y solo se le manda a quien ya compró.
+
+- [x] ✅ **¿Hubo pedidos digitales por transferencia hasta hoy?** — **No hubo
+      ninguno** (Mariano). No hay nada que reparar hacia atrás.
+
+- [x] ✅ **Nº de diseños del pack** — **7.000** (Mariano). Cargado en
+      `IMPRIMIBLES[0].disenos`.
+      ⚠️ La carpeta de origen tiene **4.796 archivos**; el número mayor solo
+      cierra si las plantillas A4 traen varios diseños por hoja. Se usó el dato
+      de Mariano por ser suyo el criterio comercial.
 
 - [ ] **¿Vale la pena la entrega 100 % automática vía CRM?** Cuando Mariano marca
       el pedido como pagado en `app.epicalcos.com`, el CRM podría avisarle al

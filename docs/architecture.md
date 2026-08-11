@@ -78,6 +78,7 @@ Hay **tres** `package.json`:
 │   ├── track-cart.js              POST — registro de carrito abandonado
 │   ├── abandoned-cart.js          CRON @hourly — envío del recordatorio
 │   ├── unsubscribe.js             GET/POST — baja de recordatorios
+│   ├── entregar-digital.js        GET — entrega de archivos (link firmado)
 │   ├── _notion.js                 helper (el "_" evita que se despliegue)
 │   └── lib/                       pricing, notify, stores, firmas, CAPI…
 │
@@ -119,6 +120,7 @@ Definidas como redirects `status = 200` en `netlify.toml`:
 | `/api/mercadopago-webhook` | `mercadopago-webhook.js` |
 | `/api/track-cart` | `track-cart.js` |
 | `/api/unsubscribe` | `unsubscribe.js` |
+| `/api/entregar-digital` | `entregar-digital.js` |
 
 `abandoned-cart.js` no tiene ruta: se dispara por cron (`schedule: '@hourly'`,
 formato v2 de Netlify).
@@ -285,7 +287,7 @@ hay que portarle `validateAndPriceOrder()`.
 ```bash
 npm test --prefix frontend      # vitest run
 ```
-**8 archivos, 100 tests, todos pasan** (verificado el 11/8/2026).
+**9 archivos, 131 tests, todos pasan** (verificado el 11/8/2026).
 
 | Archivo | Qué cubre |
 |---|---|
@@ -297,9 +299,12 @@ npm test --prefix frontend      # vitest run
 | `experiments.test.js` | asignación de variantes A/B |
 | `seo.test.js` | helpers de SEO |
 | `carritoAbandonado.test.js` | lógica del recordatorio |
+| `entregaDigital.test.js` | 22 — token firmado y endpoint de entrega (spec 002) |
 
-**Cobertura conceptual**: fuerte en el camino de precios (que es lo crítico),
-**nula** en componentes, rutas y en las Netlify Functions como unidad.
+**Cobertura conceptual**: fuerte en el camino de precios (que es lo crítico) y,
+desde la spec 002, en el camino de entrega digital — `entregaDigital.test.js` es
+el primer archivo que testea una Netlify Function directamente, mockeando Blobs y
+Resend. Sigue **sin cobertura**: componentes, rutas, y el resto de las Functions.
 
 ---
 
@@ -381,12 +386,14 @@ Ordenada por impacto, con lo verificado en el código.
 
 6. **CSP en Report-Only** desde hace tiempo, sin fecha de enforce.
 
-7. **Sin tests de las Netlify Functions.** El módulo más crítico
-   (`validateAndPriceOrder`) se testea indirectamente desde el frontend.
+7. **Casi sin tests de las Netlify Functions.** La spec 002 abrió el camino
+   (`entregaDigital.test.js`), pero el módulo más crítico
+   (`validateAndPriceOrder`) se sigue testeando indirectamente desde el frontend.
 
-8. **`IMPRIMIBLES[0].disenos` es `null`** — la card no promete cantidad de
-   diseños, y falta la env var `DIGITAL_LINK_PACK_STICKERS`: hoy la entrega del
-   producto digital es **manual**.
+8. ~~**`IMPRIMIBLES[0].disenos` es `null`**~~ ✅ resuelto el 11/8/2026
+   (`disenos: 7000`). La entrega digital dejó de ser un agujero con la spec 002,
+   pero **sigue pendiente cargar `DIGITAL_LINK_PACK_STICKERS`**: sin esa variable
+   no se entrega nada por ningún camino.
 
 ### Baja
 

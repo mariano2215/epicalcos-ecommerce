@@ -172,7 +172,16 @@ El mail de carrito abandonado incluye `List-Unsubscribe-Post` (RFC 8058), por es
 `DIGITAL_LINK_{PACK_ID}` (ej. `DIGITAL_LINK_PACK_STICKERS`). Si no está cargada,
 no se rompe nada: el cliente recibe "te lo mandamos a este mismo mail" y el aviso
 interno arranca con "📩 ENVIAR ARCHIVO" para hacerlo a mano.
-⚠️ **Hoy no está configurada → la entrega es manual.**
+
+**Los dos caminos de entrega** (spec 002):
+
+| Pago | Cómo se entrega |
+|---|---|
+| Mercado Pago | **solo**: el webhook manda el mail con la descarga al aprobarse |
+| Transferencia | **a un click**: no hay webhook, así que el aviso interno llega con el prefijo `📩 ENTREGAR AL CONFIRMAR ·` y un botón firmado que dispara la entrega (`/api/entregar-digital`) |
+
+⚠️ Sin `DIGITAL_LINK_PACK_STICKERS` cargada, ningún camino entrega nada: el
+endpoint responde 409 y **no manda un mail sin link** (sería peor que no mandarlo).
 
 ---
 
@@ -369,6 +378,9 @@ ABANDONED_CART_MAX_PER_RUN   default 25
 ABANDONED_CART_TEST_EMAIL    modo prueba
 
 DIGITAL_LINK_PACK_STICKERS   ⚠️ no configurada → entrega manual
+DIGITAL_DELIVERY_SECRET      firma el link de entrega de los pedidos por
+                             transferencia (openssl rand -hex 32). Sin ella el
+                             botón no aparece y la entrega sigue siendo manual.
 
 NETLIFY_BLOBS_SITE_ID        opcional (fallback si Netlify no inyecta)
 NETLIFY_BLOBS_TOKEN
