@@ -532,7 +532,7 @@ export const IMPRIMIBLES = [
      * ⚠️ Poné acá el número real: se muestra en la página, en el Home y en el
      * catálogo de Meta. Si lo dejás en null, la card no promete ninguna cantidad.
      */
-    disenos: 7000,
+    disenos: 5000,
     emoji: '🖨️',
     /** Formato de los archivos que recibe (se listan en la ficha del producto). */
     formatos: 'PNG y PDF listos para imprimir',
