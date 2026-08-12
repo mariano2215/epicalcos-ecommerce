@@ -134,6 +134,7 @@ specs/
 002-entrega-imprimibles-por-transferencia
 003-tests-del-servidor
 004-tests-obligatorios-antes-del-deploy
+005-checkout-precio-tachado
 ```
 
 El número da orden cronológico; el nombre dice de qué se trata. No se renumera.
