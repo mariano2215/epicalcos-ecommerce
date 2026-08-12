@@ -10,7 +10,22 @@
   publish = "dist"
   # Instala deps del frontend (vite) Y de la raíz (mercadopago para las Functions).
   # Necesario porque, al haber package.json en la raíz, Netlify no instala solo el de frontend.
-  command = "npm ci && npm ci --prefix .. && npm run build"
+  #
+  # ⚠️ `npm test` ES UNA BARRERA, no un paso más: si la suite está en rojo el
+  # comando devuelve ≠ 0, Netlify corta el build y NO PUBLICA — la tienda sigue
+  # con la versión anterior. Sacar esta cláusula permite deployar con los tests
+  # rotos, que es exactamente lo que pasaba antes de la spec 004: había 210 tests
+  # y nada obligaba a correrlos.
+  #
+  # Va ANTES de `npm run build` para fallar en ~1 s en vez de después de
+  # construir algo que no se va a publicar. `--prefix ..` porque el script vive
+  # en el package.json de la raíz (base = "frontend").
+  #
+  # Para saltearlo en una urgencia real: sacar `npm test --prefix .. &&` de acá,
+  # commitear diciendo POR QUÉ, y reponerlo al arreglar el test. No hay una env
+  # var para desactivarlo a propósito: un interruptor cómodo termina quedando
+  # apagado.
+  command = "npm ci && npm ci --prefix .. && npm test --prefix .. && npm run build"
   # exit ≠ 0 ⇒ Netlify NO saltea el build, aunque el push solo toque archivos
   # fuera de base="frontend" (p. ej. netlify/functions/* o la raíz). Sin esto,
   # un cambio function-only queda "Canceled — no content change" y no se deploya.

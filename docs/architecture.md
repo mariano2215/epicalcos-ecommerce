@@ -128,10 +128,11 @@ formato v2 de Netlify).
 ### Build
 ```
 base = "frontend"
-command = "npm ci && npm ci --prefix .. && npm run build"
+command = "npm ci && npm ci --prefix .. && npm test --prefix .. && npm run build"
 ignore = "exit 1"        # fuerza build en TODO push
 functions.directory = "../netlify/functions"
 ```
+`npm test` es una **barrera**: si falla, no se publica (ver §11).
 El `prebuild` corre `scripts/generate-sitemap.mjs`.
 
 `ignore = "exit 1"` está puesto a propósito: sin eso, un push que solo toca
@@ -346,6 +347,13 @@ Sigue **sin cobertura**: componentes, rutas, los 7 handlers completos,
 - **Trigger**: push a `main`. No hay staging ni preview branch declarado.
 - **Deploy garantizado**: `ignore = "exit 1"` fuerza el build en todo push.
 - **Consecuencia**: *un push a `main` es un deploy a producción.*
+- **Gate de tests** (spec 004): el `command` corre `npm test` **antes** de
+  `npm run build`. Suite en rojo ⇒ build cortado ⇒ **no se publica** y la
+  versión anterior sigue viva. Verificado: con un test roto la cadena devuelve
+  1 y `vite build` no llega a ejecutarse.
+- **Hook opcional** `pre-push` (`.githooks/`, se activa con
+  `git config core.hooksPath .githooks`): avisa antes de pushear. Es comodidad
+  —se saltea con `--no-verify`—, no la barrera.
 - Rollback: desde el dashboard de Netlify (deploys anteriores).
 
 `UNKNOWN / REQUIRES CONFIRMATION`: nombre exacto del site en Netlify y si hay

@@ -110,7 +110,7 @@ Lo mismo aplica a `config/site.js` ↔ el bloque de envío del servidor.
 
 Los tests que verifican la paridad:
 ```bash
-npm test --prefix frontend
+npm test
 ```
 - `src/lib/promoPricing.test.js` — promos, cupones, precios espejados
 - `src/lib/envio.test.js` — umbrales y costos de envío
@@ -165,14 +165,29 @@ real de cada uno. Si algo no se cumple, se dice — no se cierra la feature.
 
 ### Al terminar
 ```bash
-npm test --prefix frontend      # 100 tests, todos tienen que pasar
+npm test                        # desde la raíz. 210 tests, todos tienen que pasar
 ```
 
 ### Deploy
 `main` deploya solo. `netlify.toml` tiene `ignore = "exit 1"`, así que **todo**
 push a `main` dispara build, incluso si solo tocaste `netlify/functions/`.
-No hace falta forzar nada. Esto significa que **un push es un deploy a
-producción**.
+Esto significa que **un push es un deploy a producción**.
+
+**Los tests son una condición del deploy, no un recordatorio.** El comando de
+build corre `npm test` antes de construir: si la suite está en rojo, Netlify
+corta el build y **no publica** — la tienda sigue con la versión anterior.
+
+Para enterarte antes de pushear, activá el hook (una vez por clon):
+```bash
+git config core.hooksPath .githooks
+```
+Corre la suite en el `pre-push` y cancela si está en rojo. Se saltea con
+`git push --no-verify`, pero eso **no** saltea el gate del deploy.
+
+**Salida de emergencia**: si hay una urgencia real y un test ajeno al fix está
+roto, sacá `npm test --prefix .. &&` del `command` en `netlify.toml`, commiteá
+diciendo POR QUÉ, y reponelo al arreglarlo. No hay una variable para
+desactivarlo: un interruptor cómodo termina quedando apagado.
 
 ### Idioma
 El código, los comentarios y la documentación de este repo están **en español**.

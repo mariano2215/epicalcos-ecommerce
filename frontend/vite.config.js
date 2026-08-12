@@ -9,6 +9,11 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.{js,jsx}']
+    include: ['src/**/*.test.{js,jsx}'],
+    // Limpia las variables de entorno del servidor antes de cada test. Desde la
+    // spec 004 la suite corre dentro del build de Netlify, donde TODAS las
+    // variables del sitio están cargadas: sin esto, los tests que verifican
+    // "qué pasa cuando la variable no está" fallarían en el deploy.
+    setupFiles: ['./src/test-setup.js']
   }
 });

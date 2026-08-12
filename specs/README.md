@@ -90,10 +90,14 @@ hallazgo y se sigue.
 
 ### 8. TESTING
 ```bash
-npm test --prefix frontend
+npm test
 ```
-Los 100 tests existentes tienen que seguir pasando. Si la feature toca precios,
+Los 210 tests existentes tienen que seguir pasando. Si la feature toca precios,
 promos o envíos, **agregar tests de paridad** frontend↔servidor.
+
+Desde la spec 004 esto **ya no depende de acordarse**: el build de Netlify corre
+la suite y no publica si está en rojo. El paso sigue acá porque enterarse antes
+de pushear es más barato que enterarse en el deploy.
 
 ### 9. ACCEPTANCE
 Recorrer `acceptance.md` punto por punto y reportar el resultado **real** de cada
@@ -127,8 +131,9 @@ specs/
 
 ```
 001-fix-precio-carrito-promo-categoria
-002-entrega-automatica-imprimibles
-003-enforcar-csp
+002-entrega-imprimibles-por-transferencia
+003-tests-del-servidor
+004-tests-obligatorios-antes-del-deploy
 ```
 
 El número da orden cronológico; el nombre dice de qué se trata. No se renumera.

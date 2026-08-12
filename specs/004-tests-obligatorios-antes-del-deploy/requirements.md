@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `004-tests-obligatorios-antes-del-deploy` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` (11/08/2026) — con la Fase 5 en producción pendiente |
 | **Fecha** | 11/08/2026 |
 | **Autor** | Claude (pedido de Mariano al cerrar la spec 003) |
 

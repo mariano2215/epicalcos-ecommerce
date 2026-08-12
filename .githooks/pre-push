@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Corre la suite antes de dejar salir un push — spec 004.
+#
+# ESTO NO ES LA BARRERA. La barrera real es `npm test` dentro del comando de
+# build en netlify.toml: esa no se puede saltear desde git y funciona en
+# cualquier clon sin configurar nada.
+#
+# Este hook es COMODIDAD: avisa en 1 segundo en vez de en un minuto, y evita el
+# viaje de ida y vuelta de pushear, esperar el build y descubrir que estaba en
+# rojo. Se saltea con --no-verify y hay que instalarlo a mano en cada clon
+# (`git config core.hooksPath .githooks`), así que no se puede confiar en él.
+#
+# Sin husky ni ninguna dependencia: git ya sabe hacer esto con core.hooksPath.
+
+RAIZ=$(git rev-parse --show-toplevel)
+
+echo "▸ Corriendo la suite antes del push…"
+
+if npm test --prefix "$RAIZ"; then
+  exit 0
+fi
+
+cat <<'FIN'
+
+──────────────────────────────────────────────────────────────────────
+  PUSH CANCELADO: la suite está en rojo.
+
+  Estos tests cubren el camino de precios, la entrega de archivos y la
+  firma de los webhooks de Mercado Pago. Si están rotos, el build de
+  Netlify también los va a frenar y el deploy no se va a publicar.
+
+  Arreglá el test, o —si sabés lo que estás haciendo—:
+
+      git push --no-verify
+
+  (saltea este aviso, pero NO saltea el gate del deploy)
+──────────────────────────────────────────────────────────────────────
+
+FIN
+exit 1

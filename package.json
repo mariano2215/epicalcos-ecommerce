@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "description": "Root package — solo contiene las dependencias de Netlify Functions. El frontend tiene su propio package.json en /frontend.",
+  "scripts": {
+    "//test": "UN solo lugar define qué significa 'correr los tests'. Lo usan el hook de pre-push (.githooks/pre-push) y el build de Netlify (netlify.toml). Si mañana cambia el runner, cambia acá y los dos siguen andando.",
+    "test": "npm test --prefix frontend"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",
     "mercadopago": "^3.2.0"
