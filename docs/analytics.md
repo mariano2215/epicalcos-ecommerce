@@ -283,6 +283,8 @@ spec, como correspondía.
 
 ## 9. Pendientes
 
+- [x] ~~**Validar el `add_to_cart` en producción**~~ — ✅ **confirmado por
+      Mariano el 11/8/2026** en GA4. Cierra el pendiente que dejó la spec 001.
 - [ ] **Validar el `purchase` en producción** (ver `QA-CHECKLIST.md` §6). Es lo
       único que bloquea confiar en todo el resto.
 - [x] ~~Corregir el `value` de `add_to_cart` / `view_cart` durante promos por

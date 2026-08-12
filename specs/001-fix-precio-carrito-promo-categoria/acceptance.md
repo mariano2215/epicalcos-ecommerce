@@ -128,11 +128,9 @@ ventana de la promo** (17–19/08/2026) y con este carrito:
 ```js
 window.dataLayer.filter(e => ['add_to_cart','view_cart','remove_from_cart'].includes(e.event))
 ```
-- [ ] **GA4 DebugView los recibe con el valor correcto — NO VERIFICADO.**
-      Requiere tráfico real contra la propiedad de GA4; en local no se comprobó.
-      Lo que sí está verificado es que `trackAddToCart`/`trackRemoveFromCart`
-      reciben el precio de vidriera y que `view_cart` se alimenta de
-      `derived.items`. **Pendiente: confirmarlo en DebugView tras el deploy.**
+- [x] **GA4 recibe `add_to_cart` con el valor correcto** — ✅ **confirmado por
+      Mariano el 11/8/2026**, tras el deploy. Era el único criterio de esta spec
+      que había quedado sin verificar.
 - [x] No viaja PII (los `track*` solo cambiaron el campo `price`)
 - [x] Ningún componente llama a `gtag`/`fbq`/`dataLayer` directo
 
