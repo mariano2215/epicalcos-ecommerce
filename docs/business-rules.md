@@ -137,7 +137,8 @@ barata gratis**. Acumulable con cupón de %, pero con el % topeado en
   mayorista de siempre.
 - Línea: `pack:mayorista100:{size}:{ts}` con `quantity = 1` (1 línea = 1 pack).
 - **No participa** de cupones, del 10 % por transferencia ni de promos N×M.
-- **Trae el envío incluido** (ver §5).
+- **Paga envío como cualquier pedido**: $39.999 no llega a ningún umbral, así
+  que suma $4.500 en Rosario y $8.500 al interior (ver §5).
 - Interruptor manual `activa`, además del vencimiento por fecha.
 
 Mientras esté activa, los escalones x20 y x50 de `/armar-pack` **se ocultan**
@@ -186,7 +187,9 @@ siguen funcionando.
 ### Pack mayorista
 `WHOLESALE_QTY = 100` · `WHOLESALE_DISCOUNT = 0.5`
 **Desde** 100 calcos (mínimo, sin tope), **50 % off** en todos los tamaños.
-Línea `pack:mayorista:{size}:{ts}`. Trae el envío incluido.
+Línea `pack:mayorista:{size}:{ts}`. Paga envío por umbral como todo el resto: en
+6 y 9 cm el pack ya supera los $75.000 y viaja gratis; en 4 cm son $60.000, así
+que es gratis en Rosario y paga al resto del país.
 
 ### Pack de personalizados
 `PERSONALIZADOS_MIN = 10` · `PERSONALIZADOS_DISCOUNT = 0.10`
@@ -203,7 +206,7 @@ Línea `pack:personalizados:{size}:{ts}`, mínimo 10 unidades, 10 % ya incluido.
 
 100 calcos de **un solo diseño** (el logo del cliente) en 6 cm, precio fijo
 $39.999. `listPrice` es solo el tachado de display. Línea `negocio:{ts}`,
-**1 unidad por línea**. No trae envío incluido.
+**1 unidad por línea**. Paga envío por umbral, como todo.
 
 ---
 
@@ -231,19 +234,27 @@ acentos). Las tarifas especiales **solo aplican en Santa Fe**.
 Además, el envío es **$0** cuando:
 - el método es `retiro` (retiro en Ov. Lagos y Bv. Seguí, Rosario)
 - el método es `digital` (pedido de solo archivos — lo decide el servidor)
-- el carrito tiene un pack con envío incluido
 
-### Packs con envío incluido
-`FREE_SHIPPING_PACK_TYPES = ['mayorista', 'mayorista100']`
+**No hay ninguna otra forma de tener envío gratis.** Ningún pack, promo ni cupón
+saltea el umbral, y el servidor no lee ningún flag del cliente.
 
-Con **una** de esas líneas, el envío vale 0 sin importar zona ni subtotal.
+### Ninguna promo regala el envío (12/8/2026)
+Existió un `FREE_SHIPPING_PACK_TYPES = ['mayorista', 'mayorista100']` que ponía
+el envío en 0 con solo tener una línea de pack en el carrito, sin mirar zona ni
+monto. Con eso, **un pedido de la promo de 100 calcos a $39.999 viajó gratis a
+Buenos Aires**: $8.500 de Correo Argentino salidos del margen de esa venta.
 
-*Por qué*: la oferta más agresiva del año (100 calcos a $39.999) terminaba
-pagando $8.500 de Correo Argentino al interior. El cliente leía el precio grande
-y después la letra chica — la forma exacta de perder la venta en el último paso.
+Se eliminó por completo — la constante, el flag `envioGratis` de la línea y el
+copy que lo prometía (card del x100, carrito, checkout, `/politicas/envios`).
 
-⚠️ El servidor **nunca** confía en el flag `envioGratis` del cliente: lo deriva
-del `id` de la línea.
+El umbral nacional es $75.000 justamente porque abajo de eso el correo se come
+la ganancia. Si hace falta una promo con el envío puesto, **no** se hace
+reponiendo el atajo: se sube el precio del pack por encima del umbral, o se
+declara como regla propia con su spec, pensando antes qué pasa cuando ese pack
+viaja a Ushuaia.
+
+Lo cubre `src/lib/envio.test.js` → *"ninguna promo regala el envío: manda el
+umbral"*, con el caso de Buenos Aires como test de regresión.
 
 ### Plazos
 - **Producción**: 2 a 3 días hábiles (igual para todo destino, desde el pago).
@@ -350,7 +361,6 @@ Qué está espejado y hay que cambiar en ambos lados:
 - `PROMO_3X2` (`endsAt`, `buy`, `pay`, `percentCap`)
 - `PROMO_MAYORISTA_100` (`activa`, `endsAt`, `price`, `qty`, `sizes`)
 - `PROMO_ARGENTINA` (`activa`, `categoria`, `discount`, `startsAt`, `endsAt`)
-- `FREE_SHIPPING_PACK_TYPES`
 - `NEGOCIO.price`, `FIXED_PRICES`, `DIGITAL_PRICES`
 - umbrales y costos de envío, ciudades `nearby`
 - `BULK_THRESHOLD`, `BULK_DISCOUNT`, `MAX_STICKER_DISCOUNT`

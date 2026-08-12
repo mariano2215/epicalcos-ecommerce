@@ -170,8 +170,8 @@ Un solo contexto: `CartContext`.
 - Persiste en `localStorage` bajo `epicalcos.cart.v2`.
 - Descarta al hidratar las líneas del configurador viejo (`esCustomViejo()`),
   que el servidor rechazaría y trabarían todo el checkout.
-- Expone `derived` (subtotales, promos, envío incluido) y `pricedItems(método,
-  cupón)` — el cálculo final que se manda al servidor.
+- Expone `derived` (subtotales, promos) y `pricedItems(método, cupón)` — el
+  cálculo final que se manda al servidor.
 
 ### Capa `config/` — la fuente de verdad comercial
 | Archivo | Contenido |
@@ -230,7 +230,6 @@ custom:{tamano}:{corte}:{ts}
 ```
 
 También se derivan del `id`, nunca de flags del cliente:
-- si la línea es un pack con envío incluido (`packIncludesShipping`)
 - si entra en la promo de Argentina (`esPromoArgentina`)
 - si el pedido es solo digital (`isDigitalOnly`)
 

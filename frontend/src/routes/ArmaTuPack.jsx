@@ -140,9 +140,9 @@ export default function ArmaTuPack() {
                 : 'El mejor precio por calco. Para revender o para tu negocio.'
             }
             to="/mayorista"
-            // El x100 (promo o mayorista) trae el envío puesto por regla: su
-            // línea está en FREE_SHIPPING_PACK_TYPES, no depende del umbral.
-            envioIncluido
+            // El x100 no tiene envío regalado: paga por umbral como todo el
+            // resto. El card lo deriva de `precioFijo`, así que con la promo
+            // ($39.999) muestra "gratis en Rosario" y no promete el país.
             // Sin promo, el mayorista NO es el 10 % por volumen: es 50 % off, y
             // el precio se arma igual que en el servidor
             // (netlify/functions/lib/pricing.js → pack:mayorista).

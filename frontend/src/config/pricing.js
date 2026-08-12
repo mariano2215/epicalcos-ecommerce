@@ -398,40 +398,23 @@ export function precioVidrieraLinea(line, now = Date.now()) {
 }
 
 /**
- * ─── PACKS CON EL ENVÍO INCLUIDO ──────────────────────────────────────────────
- * Tipos de línea `pack:{tipo}:…` que se llevan el envío puesto: mientras haya
- * una de estas líneas en el carrito, el envío vale 0 sin importar la zona ni el
- * subtotal.
+ * ─── NO HAY PACKS CON EL ENVÍO INCLUIDO ───────────────────────────────────────
+ * El envío gratis se gana de UNA sola forma: cruzando el umbral de la zona
+ * (`freeShippingThresholdRosario` / `freeShippingThresholdNational` en
+ * config/site.js). Ninguna promo, pack ni cupón lo regala por su cuenta.
  *
- * POR QUÉ: la oferta más agresiva del año (100 calcos a $39.999) terminaba
- * pagando $8.500 de Correo Argentino al interior. El cliente leía el precio
- * grande y después la letra chica, que es exactamente la forma de perder la
- * venta en el último paso.
+ * POR QUÉ ESTÁ ESCRITO ACÁ EN NEGATIVO: existió un `FREE_SHIPPING_PACK_TYPES`
+ * (`['mayorista', 'mayorista100']`) que ponía el envío en 0 con solo tener una
+ * línea de pack en el carrito, sin mirar zona ni monto. Con eso, un pedido de la
+ * promo de 100 calcos a $39.999 viajó GRATIS a Buenos Aires: $8.500 de Correo
+ * Argentino salidos del margen de una venta de $39.999. El umbral nacional es
+ * $75.000 justamente porque abajo de eso el correo se come la ganancia.
  *
- * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js
- * (FREE_SHIPPING_PACK_TYPES). El servidor NUNCA confía en el flag que manda el
- * cliente: lo deriva del id de la línea, igual que el precio. Si acá agregás un
- * tipo y allá no, el checkout muestra $0 y Mercado Pago cobra el envío igual.
- * El test `src/lib/envio.test.js` verifica la paridad.
+ * Si mañana hace falta una promo con el envío puesto, NO se hace reponiendo este
+ * atajo: se sube el precio del pack por encima del umbral, o se declara como
+ * una regla de negocio propia con su spec — y se piensa antes qué pasa cuando
+ * ese pack viaja a Ushuaia.
  */
-export const FREE_SHIPPING_PACK_TYPES = ['mayorista', 'mayorista100'];
-
-/** ¿El id de esta línea es un pack que trae el envío incluido? */
-export function packIncludesShipping(lineId) {
-  const parts = String(lineId || '').split(':');
-  return parts[0] === 'pack' && FREE_SHIPPING_PACK_TYPES.includes(parts[1]);
-}
-
-/**
- * ¿Esta línea del carrito trae el envío incluido?
- *
- * Mira el flag `envioGratis` que le pone `addPack`, pero cae al id si no está:
- * un carrito guardado en localStorage ANTES de este cambio no tiene el flag, y
- * sin el fallback el cliente vería el envío cobrado hasta vaciar el carrito.
- */
-export function lineaConEnvioGratis(line) {
-  return line?.envioGratis === true || packIncludesShipping(line?.id);
-}
 
 /**
  * ─── ESCALERA DE PACKS DE CATÁLOGO (/armar-pack) ──────────────────────────────

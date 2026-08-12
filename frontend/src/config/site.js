@@ -130,19 +130,21 @@ export function shippingZone(city, province) {
 /**
  * Calcula el costo de envío en pesos según método, subtotal y destino.
  * - retiro → 0 (gratis)
- * - carrito con un pack que trae el envío incluido (`freeShipping`) → 0, sin
- *   importar zona ni subtotal (ver FREE_SHIPPING_PACK_TYPES en config/pricing.js)
  * - envío a Rosario (motomensajería) → `costRosario` (gratis desde `freeShippingThresholdRosario`)
  * - envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) → `costNearby`
  * - envío al resto del país (Correo Argentino) → `costInterior`
  * - fuera de Rosario, cualquier destino viaja GRATIS desde `freeShippingThresholdNational`
- * @param {{ method: string, subtotal?: number, city?: string, province?: string,
- *           freeShipping?: boolean }} opts
+ *
+ * ⚠️ El umbral es el ÚNICO camino al envío gratis. No hay parámetro para que un
+ * pack o una promo lo saltee, y no hay que agregarlo: ver el bloque "NO HAY
+ * PACKS CON EL ENVÍO INCLUIDO" en config/pricing.js.
+ *
+ * @param {{ method: string, subtotal?: number, city?: string, province?: string }} opts
  * @returns {number}
  */
-export function calculateShipping({ method, subtotal = 0, city, province, freeShipping = false }) {
+export function calculateShipping({ method, subtotal = 0, city, province }) {
   // 'digital' = el pedido son solo archivos imprimibles: no hay nada que despachar.
-  if (method === 'retiro' || method === 'digital' || freeShipping) return 0;
+  if (method === 'retiro' || method === 'digital') return 0;
   const zone = shippingZone(city, province);
   if (zone === 'rosario') {
     return subtotal >= shipping.freeShippingThresholdRosario ? 0 : shipping.costRosario;

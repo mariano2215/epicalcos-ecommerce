@@ -38,10 +38,6 @@ export default function Envios() {
           desde {formatPrice(shipping.freeShippingThresholdRosario)}).
         </li>
         <li>
-          <strong>Packs de 100 calcos:</strong> traen el <strong>envío incluido</strong> a cualquier
-          punto del país, sin importar el monto.
-        </li>
-        <li>
           <strong>Retiro en mano:</strong> sin costo. Coordinamos lugar y horario por WhatsApp.
         </li>
       </ul>

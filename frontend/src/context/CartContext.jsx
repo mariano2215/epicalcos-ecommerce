@@ -10,8 +10,6 @@ import {
   BULK_DISCOUNT_PAYMENT_METHOD,
   findCoupon,
   couponBundle,
-  packIncludesShipping,
-  lineaConEnvioGratis,
   MAX_STICKER_DISCOUNT,
   PROMO_3X2,
   PROMO_ARGENTINA,
@@ -153,15 +151,14 @@ export function CartProvider({ children }) {
   /**
    * Agregar una línea de pack ya armada (mayorista).
    *
-   * `envioGratis` marca los packs que se llevan el envío puesto (ver
-   * FREE_SHIPPING_PACK_TYPES en config/pricing.js). Se deriva del id para que la
-   * línea no pueda quedar desincronizada del tipo de pack que realmente es.
+   * Un pack NO trae el envío incluido: paga lo mismo que cualquier pedido, según
+   * zona y subtotal. Acá vivía un flag `envioGratis` que lo regalaba — los
+   * carritos guardados en localStorage todavía lo traen y se ignora a propósito.
    */
   const addPack = useCallback((line) => {
     const enriched = {
       ...line,
       type: 'pack',
-      envioGratis: packIncludesShipping(line.id),
       catalogSku: line.catalogSku || META_LINE_SKU.mayorista
     };
     dispatch({ type: 'ADD', line: enriched });
@@ -277,8 +274,9 @@ export function CartProvider({ children }) {
    *     ficha ya los muestran, y que el carrito no lo hiciera era mostrar el
    *     precio al DOBLE justo antes de pagar.
    *
-   * Packs y negocio ya traen su propio descuento en basePrice y no cuentan para
-   * el umbral de envío gratis.
+   * Packs y negocio ya traen su propio descuento en basePrice, así que quedan
+   * afuera del descuento por volumen. Para el umbral de envío gratis, en cambio,
+   * suman como cualquier cosa que viaje en la caja: es plata del pedido.
    */
   const derived = useMemo(() => {
     const stickerLines = state.items.filter((i) => i.type === 'sticker');
@@ -334,17 +332,12 @@ export function CartProvider({ children }) {
     const hasDigital = items.some((i) => i.type === 'digital');
     const digitalOnly = items.length > 0 && items.every((i) => i.type === 'digital');
 
-    // Packs con el envío incluido: alcanza con UNA línea para que todo el pedido
-    // viaje gratis (espejado en el servidor, que lo deriva de los ids).
-    const envioGratisIncluido = items.some(lineaConEnvioGratis);
-
     return {
       items,
       subtotal,
       physicalSubtotal: subtotal - digitalSubtotal,
       hasDigital,
       digitalOnly,
-      envioGratisIncluido,
       totalItems,
       bulkUnits,
       bulkEligible,
