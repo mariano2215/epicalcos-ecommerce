@@ -287,7 +287,7 @@ hay que portarle `validateAndPriceOrder()`.
 ```bash
 npm test --prefix frontend      # vitest run
 ```
-**9 archivos, 131 tests, todos pasan** (verificado el 11/8/2026).
+**12 archivos, 210 tests, todos pasan** (verificado el 11/8/2026).
 
 | Archivo | Qué cubre |
 |---|---|
@@ -298,13 +298,22 @@ npm test --prefix frontend      # vitest run
 | `searchCatalog.test.js` | buscador |
 | `experiments.test.js` | asignación de variantes A/B |
 | `seo.test.js` | helpers de SEO |
-| `carritoAbandonado.test.js` | lógica del recordatorio |
+| `carritoAbandonado.test.js` | 24 — el cron real, con el store y los mails mockeados |
 | `entregaDigital.test.js` | 22 — token firmado y endpoint de entrega (spec 002) |
+| `mpSignature.test.js` | 20 — firma de los webhooks de MP (spec 003) |
+| `abandonedStore.test.js` | 21 — opt-out, persistencia y token de baja (spec 003) |
+| `metaMatching.test.js` | 15 — espejo de normalización Píxel ↔ CAPI (spec 003) |
 
-**Cobertura conceptual**: fuerte en el camino de precios (que es lo crítico) y,
-desde la spec 002, en el camino de entrega digital — `entregaDigital.test.js` es
-el primer archivo que testea una Netlify Function directamente, mockeando Blobs y
-Resend. Sigue **sin cobertura**: componentes, rutas, y el resto de las Functions.
+**Cobertura conceptual**: fuerte en el camino de precios, en la entrega digital
+(spec 002) y —desde la spec 003— en los módulos del servidor cuya falla es
+**silenciosa**: la firma de los webhooks de MP, el opt-out de los carritos y el
+espejo de normalización de Meta.
+
+Los dos bugs que ya habían roto producción tienen ahora un test que los atrapa,
+y se verificó reintroduciéndolos a mano (spec 003, `acceptance.md` §4).
+
+Sigue **sin cobertura**: componentes, rutas, los 7 handlers completos,
+`_notion.js`, `crmWebhook.js` y `notify.js`.
 
 ---
 
@@ -386,9 +395,9 @@ Ordenada por impacto, con lo verificado en el código.
 
 6. **CSP en Report-Only** desde hace tiempo, sin fecha de enforce.
 
-7. **Casi sin tests de las Netlify Functions.** La spec 002 abrió el camino
-   (`entregaDigital.test.js`), pero el módulo más crítico
-   (`validateAndPriceOrder`) se sigue testeando indirectamente desde el frontend.
+7. ~~**Casi sin tests de las Netlify Functions.**~~ ✅ **muy mejorado** por las
+   specs 002 y 003: 131 → 210 tests, con los módulos de falla silenciosa
+   cubiertos. Queda pendiente lo listado arriba (handlers, Notion, CRM, notify).
 
 8. ~~**`IMPRIMIBLES[0].disenos` es `null`**~~ ✅ resuelto el 11/8/2026
    (`disenos: 7000`). La entrega digital dejó de ser un agujero con la spec 002,

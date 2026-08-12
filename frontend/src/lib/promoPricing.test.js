@@ -825,3 +825,97 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
     expect(res.ok).toBe(true);
   });
 });
+
+/**
+ * ─── LAS GUARDAS DEL PAYLOAD (spec 003, P4) ───────────────────────────────────
+ *
+ * Los límites anti-abuso de `validateAndPriceOrder`. Hasta la spec 003 estaban
+ * cubiertos `item_invalid`, `price_mismatch` y `shipping_invalid`, pero no los
+ * cuatro que frenan un payload directamente malformado o abusivo.
+ *
+ * No son reglas comerciales: son el borde donde el servidor decide que algo ni
+ * siquiera merece que se le calcule un precio.
+ */
+describe('las guardas del payload (spec 003)', () => {
+  const item = (extra = {}) => ({
+    id: 'sticker:goku:6cm',
+    title: 'Goku 6cm',
+    quantity: 1,
+    unit_price: priceForSize('6cm'),
+    ...extra
+  });
+  const validar = (items) => validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+
+  it('carrito vacío → items_empty', () => {
+    expect(validar([]).error).toBe('items_empty');
+    expect(validar(null).error).toBe('items_empty');
+    expect(validar(undefined).error).toBe('items_empty');
+    expect(validar('no soy un array').error).toBe('items_empty');
+  });
+
+  it('más de 130 líneas → too_many_lines', () => {
+    // El tope deja pasar los 100 archivos del configurador + calcos de catálogo.
+    expect(validar(Array.from({ length: 130 }, () => item())).ok).toBe(true);
+    const res = validar(Array.from({ length: 131 }, () => item()));
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('too_many_lines');
+  });
+
+  it('cantidades fuera de rango → quantity_invalid', () => {
+    for (const quantity of [0, -1, 1001, 2.5, NaN, null, undefined, 'tres', {}]) {
+      const res = validar([item({ quantity })]);
+      expect(res.ok, `quantity=${String(quantity)} debería rechazarse`).toBe(false);
+      expect(res.error).toBe('quantity_invalid');
+    }
+  });
+
+  it('una cantidad numérica en string SE ACEPTA: el servidor la coacciona', () => {
+    // `Number(raw.quantity)` convierte antes de validar, así que un cliente que
+    // mande "3" en vez de 3 no queda afuera. Sigue verificándose que sea entero
+    // y esté en rango, así que la coacción no abre ningún agujero.
+    const res = validar([item({ quantity: '3' })]);
+    expect(res.ok).toBe(true);
+    expect(res.items[0].quantity).toBe(3);
+  });
+
+  it('el borde de la cantidad: 1 y 1000 se aceptan', () => {
+    expect(validar([item({ quantity: 1 })]).ok).toBe(true);
+    // 1000 unidades de un calco: el precio unitario no cambia por cantidad.
+    expect(validar([item({ quantity: 1000 })]).ok).toBe(true);
+  });
+
+  it('precios que no son números → price_invalid', () => {
+    for (const unit_price of [NaN, 'abc', undefined, Infinity, -Infinity, {}]) {
+      const res = validar([item({ unit_price })]);
+      expect(res.ok, `unit_price=${String(unit_price)} debería rechazarse`).toBe(false);
+      expect(res.error).toBe('price_invalid');
+    }
+  });
+
+  it('un precio null se coacciona a 0 y cae en price_mismatch (igual se rechaza)', () => {
+    // `Number(null)` es 0, que SÍ es finito: pasa la guarda de forma y lo frena
+    // el reprecio. Distinto código de error, mismo resultado — el pedido no
+    // entra. Ningún ítem puede valer 0: el tope de descuento es 90 %.
+    const res = validar([item({ unit_price: null })]);
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('price_mismatch');
+  });
+
+  it('item sin id o sin título → item_invalid', () => {
+    expect(validar([item({ id: '' })]).error).toBe('item_invalid');
+    expect(validar([item({ title: '' })]).error).toBe('item_invalid');
+    expect(validar([item({ title: '   ' })]).error).toBe('item_invalid');
+  });
+
+  it('un título largo se RECORTA a 150, no rechaza el pedido', () => {
+    const res = validar([item({ title: 'x'.repeat(200) })]);
+    expect(res.ok).toBe(true);
+    expect(res.items[0].title).toHaveLength(150);
+  });
+
+  it('las guardas corren ANTES de calcular precios (un payload roto no llega al reprecio)', () => {
+    // Cantidad inválida + precio adulterado: gana la guarda, no price_mismatch.
+    const res = validar([item({ quantity: 0, unit_price: 1 })]);
+    expect(res.error).toBe('quantity_invalid');
+  });
+});

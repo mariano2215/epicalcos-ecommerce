@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `003-tests-del-servidor` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` (11/08/2026) |
 | **Fecha** | 11/08/2026 |
 | **Autor** | Claude (discovery sobre la cobertura del servidor) |
 
@@ -250,7 +250,16 @@ Los que los tests tienen que contemplar:
 
 ## 12. Preguntas abiertas
 
-- [ ] **¿Se quiere además que la suite corra sola antes de cada push?** Hoy nada
+- [x] ✅ **¿Se aceptan los mocks de `@netlify/blobs`?** — **SÍ** (Mariano,
+      11/08/2026). Se usó el mock mínimo: solo `setJSON`, `get`, `delete` y
+      `list`, documentado como tal en `abandonedStore.test.js`.
+
+- [x] ✅ **¿Que la suite corra sola antes de cada push?** — **SÍ**, Mariano lo
+      quiere. **NO se implementó acá**: es tocar el harness, no los tests, y
+      meterlo en esta spec sería el refactor de oportunidad que la regla 8
+      prohíbe. Queda propuesto como **spec 004**.
+
+- [ ] ~~**¿Se quiere además que la suite corra sola antes de cada push?**~~ Hoy nada
       obliga a correr los tests: `main` deploya igual con la suite en rojo.
       **Recomendación**: sí, pero como spec aparte — es tocar el harness, no los
       tests. Sin eso, esta spec depende de que alguien se acuerde de correrlos.
