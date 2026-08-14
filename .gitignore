@@ -8,3 +8,7 @@ dist
 # Local Netlify folder
 .netlify
 .mcp.json
+# Lo escribe el runtime Deno del CLI al correr `netlify dev`: es el cache del
+# bootstrap de edge functions, que este repo no usa (netlify/ solo tiene
+# functions). Artefacto local de cada máquina, no entra al repo.
+deno.lock
