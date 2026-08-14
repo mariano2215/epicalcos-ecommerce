@@ -90,7 +90,7 @@ export const LANDINGS = [
     promesa: 'Vinilo pensado para la intemperie: sol, lluvia y lavados. El mismo que usamos para vidrieras.',
     tamanoRecomendado: '9cm',
     tamanoPorQue: 'A la distancia desde la que se mira un auto, los de 4 y 6 cm se pierden. El de 9 cm se lee.',
-    categorias: ['autos-y-motos', 'argentina', 'futbol', 'marcas', 'disenos-falopa', 'weed-creepy'],
+    categorias: ['autos-y-motos', 'argentina', 'futbol', 'marcas', 'weed-creepy'],
     testimonio: 1,
     beneficios: [
       { icon: '🌧️', t: 'Aguanta la intemperie', d: 'Sol directo y lluvia. Es el material que usamos para vidrieras.' },

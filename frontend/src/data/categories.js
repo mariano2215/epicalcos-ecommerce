@@ -55,10 +55,8 @@ export const CATEGORIES = [
   // --- Lote "Stickers CATALOGO" (importado 2026-06-27) ---
   { slug: 'caras-sonrientes', name: 'Caras Sonrientes', emoji: '😊' },
   { slug: 'comida-y-bebida', name: 'Comida y Bebida', emoji: '🍔' },
-  { slug: 'deportes-autos', name: 'Deportes - Autos', emoji: '🏁' },
   { slug: 'deportes-nba', name: 'Deportes - NBA', emoji: '🏀' },
   { slug: 'disenos-aesthetic', name: 'Diseños - Aesthetic', emoji: '🎨' },
-  { slug: 'disenos-falopa', name: 'Diseños - Falopa', emoji: '🍄' },
   { slug: 'disenos-muerte', name: 'Diseños - Muerte', emoji: '💀' },
   { slug: 'disenos-shaka', name: 'Diseños - Shaka', emoji: '🤙' },
   { slug: 'disenos-universo', name: 'Diseños - Universo', emoji: '🌌' },
@@ -69,11 +67,9 @@ export const CATEGORIES = [
   { slug: 'futbol-boca', name: 'Futbol - Boca', emoji: '💙' },
   { slug: 'futbol-dioses-futbol', name: 'Futbol - Dioses Futbol', emoji: '🐐' },
   { slug: 'futbol-escudos', name: 'Futbol - Escudos', emoji: '🛡️' },
-  { slug: 'futbol-jugadores', name: 'Futbol - Jugadores', emoji: '⚽' },
   { slug: 'futbol-maradona', name: 'Futbol - Maradona', emoji: '🙌' },
   { slug: 'futbol-messi', name: 'Futbol - Messi', emoji: '🐐' },
   { slug: 'futbol-nob', name: 'Futbol - NOB', emoji: '🔴' },
-  { slug: 'futbol-racing', name: 'Futbol - Racing', emoji: '🩵' },
   { slug: 'futbol-river', name: 'Futbol - River', emoji: '🤍' },
   { slug: 'futbol-rosario-central', name: 'Futbol - Rosario Central', emoji: '💛' },
   { slug: 'futbol-scaloneta', name: 'Futbol - Scaloneta', emoji: '🏆' },
@@ -113,7 +109,6 @@ export const CATEGORIES = [
   { slug: 'tv-nickelodeon', name: 'TV - Nickelodeon', emoji: '🟠' },
   { slug: 'tv-padrinos-magicos', name: 'TV - Padrinos Magicos', emoji: '🪄' },
   { slug: 'tv-rick-y-morty', name: 'TV - Rick y Morty', emoji: '🛸' },
-  { slug: 'tv-series', name: 'TV - Series', emoji: '🎬' },
   { slug: 'tv-varios', name: 'TV - Varios', emoji: '📺' },
 ];
 
