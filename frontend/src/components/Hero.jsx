@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { trackSearch } from '../lib/analytics.js';
 import { suggest } from '../lib/searchCatalog.js';
 import { CATEGORIES } from '../data/categories.js';
+import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { formatPrice } from '../context/CartContext.jsx';
 import { PROMO_MAYORISTA_100, PROMO_MAYORISTA_END_MS, mayoristaPromoOffMax } from '../config/pricing.js';
 import { shipping } from '../config/site.js';
@@ -152,7 +153,7 @@ export default function Hero() {
         </h1>
 
         <p className="mt-3 max-w-2xl mx-auto text-white/70 text-sm md:text-base hidden sm:block">
-          Miles de diseños en 99 categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. {BULK_DISCOUNT_SHORT}.
+          Miles de diseños en {CATEGORY_COUNT} categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. {BULK_DISCOUNT_SHORT}.
         </p>
 
         {/* Confianza: visible TAMBIÉN en mobile (el badge de arriba y el párrafo

@@ -11,6 +11,7 @@ import TrustBadges from '../components/TrustBadges.jsx';
 import Reveal from '../components/Reveal.jsx';
 import { getLanding } from '../config/landings.js';
 import { categoryName } from '../data/categories.js';
+import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { formatPrice } from '../context/CartContext.jsx';
 import { priceForSize, sizeLabel, BULK_THRESHOLD } from '../config/pricing.js';
 import { useSeo } from '../lib/seo.js';
@@ -166,7 +167,7 @@ export default function LandingUso({ slug }) {
               </h2>
             </div>
             <Link to="/categorias" className="btn-ghost hidden sm:inline-flex shrink-0">
-              Ver las 99 categorías →
+              Ver las {CATEGORY_COUNT} categorías →
             </Link>
           </div>
 
@@ -189,7 +190,7 @@ export default function LandingUso({ slug }) {
           )}
 
           <div className="mt-5 text-center sm:hidden">
-            <Link to="/categorias" className="btn-secondary">Ver las 99 categorías →</Link>
+            <Link to="/categorias" className="btn-secondary">Ver las {CATEGORY_COUNT} categorías →</Link>
           </div>
         </section>
 

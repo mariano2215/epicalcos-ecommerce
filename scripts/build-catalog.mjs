@@ -4,6 +4,7 @@
  * Escanea frontend/public/stickers/<categoria>/*.webp y genera:
  *   - frontend/public/data/<categoria>.json  → [{ id, file }]   (fetch on-demand por categoría)
  *   - frontend/public/data/catalog.json       → [{ slug, count, cover }]  (metadata liviana)
+ *   - frontend/src/data/catalogStats.js       → CATEGORY_COUNT  (se hornea en el bundle)
  *
  * Correr DESPUÉS de import-stickers.sh. Es resumible: regenera con lo que haya.
  */
@@ -67,4 +68,24 @@ for (const slug of cats) {
 
 writeFileSync(join(DATA, 'catalog.json'), JSON.stringify(catalog, null, 0));
 const total = catalog.reduce((a, c) => a + c.count, 0);
+
+// La cantidad de categorías se muestra en el Hero y en las landings por caso de
+// uso. Estaba escrita a mano ("99 categorías") en tres lugares y quedaba vieja
+// cada vez que cambiaba el catálogo: ahora sale de acá.
+//
+// Se escribe como módulo JS y NO se lee de /data/catalog.json en runtime a
+// propósito: el Hero es eager por LCP (regla 12) y un fetch para pintar un
+// número del copy sería un salto de layout servido a costa del LCP. Como el
+// build de Netlify no corre este script, el archivo se commitea igual que
+// catalog.json.
+const STATS_FILE = join(ROOT, '..', 'src', 'data', 'catalogStats.js');
+writeFileSync(
+  STATS_FILE,
+  '// GENERADO por scripts/build-catalog.mjs — no editar a mano.\n' +
+    '// Se regenera al correr el pipeline del catálogo y se commitea con él.\n\n' +
+    '/** Categorías de calcos publicadas (las que tienen al menos un .webp). */\n' +
+    `export const CATEGORY_COUNT = ${catalog.length};\n`
+);
+
 console.log(`\ncatalog.json → ${catalog.length} categorías, ${total} stickers`);
+console.log(`catalogStats.js → CATEGORY_COUNT = ${catalog.length}`);
