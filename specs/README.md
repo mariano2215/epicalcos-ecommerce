@@ -135,6 +135,7 @@ specs/
 003-tests-del-servidor
 004-tests-obligatorios-antes-del-deploy
 005-checkout-precio-tachado
+006-orden-catalogo
 ```
 
 El número da orden cronológico; el nombre dice de qué se trata. No se renumera.
