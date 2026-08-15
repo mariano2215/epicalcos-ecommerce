@@ -49,6 +49,21 @@
 - [x] Reglas en el `@media (prefers-reduced-motion: reduce)` existente.
 - [x] Subir el anillo a `ring-white/20` tras ver los logos de fondo negro.
 
+## Fase 3.5 — Rescate de las 11 marcas del collage *(agregada después)*
+
+Mariano eligió recuperarlas en vez de darlas de baja.
+
+- [x] Ubicar los 11 wordmarks dentro de `marcas-clientes.webp` con
+      `-connected-components` sobre la imagen umbralizada y dilatada.
+- [x] Unir a mano las dos que quedaron partidas en dos manchas
+      (`GOAT BRAND` + isotipo, `BALANCE` + `FIT`).
+- [x] Verificar los 11 recortes antes de meterlos al pipeline.
+- [x] Soporte de `crop` en el script: la marca sale del collage en vez de la
+      carpeta y sigue por el mismo camino.
+- [x] Reordenar la tabla repartiendo los 11 (todos gris oscuro) entre las de
+      color, para que no caigan en bloque.
+- [x] Actualizar los cuatro documentos de la spec, que estaban escritos para 24.
+
 ## Fase 4 — Espejo de precios
 
 - [x] **No aplica.** La feature no toca `pricing.js` ni `site.js` en ninguno de
@@ -77,9 +92,9 @@
 
 ## Hallazgos fuera de scope
 
-1. **11 marcas quedan sin migrar.** Las que solo existen dentro de
-   `marcas-clientes.webp`. No se borra el archivo hasta que Mariano decida.
-   → `requirements.md` §12.1.
+1. **`Balance Fit` se lee flojo** a 96 px: en el collage original el wordmark es
+   gris claro y muy fino. Es el primero a reemplazar si aparece el logo real.
+   → `requirements.md` §12.3.
 2. **El comentario de `StickerField.jsx:62` menciona `marcas-clientes.webp`.**
    Se dejó como está: es un relato en pasado de un bug de LCP ya corregido, y
    reescribirlo borraría la historia que el comentario existe para conservar.
@@ -91,6 +106,10 @@
 
 ## Bitácora
 
+- **15/08/2026 (2)** — Después de mostrarle la tira, Mariano eligió recuperar
+  las 11 marcas del collage. La feature pasó de 24 a 35 logos sin tocar el
+  componente ni el CSS: sólo la tabla del script y una rama de recorte. Eso es
+  la prueba de que la separación script ↔ datos ↔ componente estaba bien puesta.
 - **15/08/2026** — Implementado de una sola pasada. La verificación visual no se
   pudo hacer con capturas del navegador (el panel de preview devolvía negro
   porque el documento estaba `hidden`), así que se verificó de dos maneras:

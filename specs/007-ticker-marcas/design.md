@@ -28,6 +28,10 @@
   `marcasviejas.webp` es byte a byte la tira vieja
   (`frontend/public/images/marcas-clientes.webp`) y `wensredondo.jpeg` es una
   captura de pantalla de la propia carpeta. Se descartan.
+- La tira vieja tiene **11 marcas que no están en la carpeta**: su logo no
+  existe en ningún otro lado. Mariano pidió recuperarlas, así que el collage
+  pasa de ser "la imagen que se reemplaza" a ser **una fuente más** del
+  pipeline.
 - `strive-1.png` **no es un PNG**: es un PDF con la extensión cambiada.
 - `SACRO.png` es RGBA y no es cuadrado (542×480).
 
@@ -38,15 +42,17 @@
 Tres piezas, cada una con una responsabilidad:
 
 ```
-carpeta de origen (fuera del repo)
-        │
-        │  node scripts/build-marcas.mjs
-        ▼
-frontend/public/images/marcas/<slug>.webp   (24 archivos, 256×256)
+carpeta de origen (fuera del repo)      images/marcas-clientes.webp
+   24 archivos sueltos                    la tira vieja: 11 recortes
+        │                                          │
+        └──────────────┬───────────────────────────┘
+                       │  node scripts/build-marcas.mjs
+                       ▼
+frontend/public/images/marcas/<slug>.webp   (35 archivos, 256×256)
 frontend/src/data/marcas.js                 (lista {slug, nombre}, GENERADA)
-        │
-        │  import
-        ▼
+                       │
+                       │  import
+                       ▼
 components/MarcasConfiaron.jsx  +  .marcas-ticker* en styles/index.css
 ```
 
@@ -70,7 +76,7 @@ componente solo mapea una lista.
 |---|---|
 | `scripts/build-marcas.mjs` | Prepara los logos y genera la lista. |
 | `frontend/src/data/marcas.js` | **Generado.** Lista de `{ slug, nombre }` en orden de pasarela. |
-| `frontend/public/images/marcas/*.webp` | 24 logos de 256×256. |
+| `frontend/public/images/marcas/*.webp` | 35 logos de 256×256. |
 
 ### ⚠️ Módulos compartidos
 
@@ -97,8 +103,8 @@ roza precios, envíos, carrito ni analytics.
 
 ```js
 export const MARCAS = [
-  { slug: 'shippear', nombre: 'Shippear' },
-  // …24 en total
+  { slug: "shippear", nombre: "Shippear" },
+  // …35 en total
 ];
 ```
 
@@ -155,6 +161,20 @@ Tres modos, porque no todos los archivos son el mismo problema:
 
 El lienzo se rellena con el **color de fondo del propio logo** (muestreado en la
 esquina), así el círculo se lee como el fondo de la marca y no como un recorte.
+
+### Las 11 del collage
+
+No tienen archivo propio: se recortan de `images/marcas-clientes.webp` con una
+caja fija por marca (campo `crop`) y de ahí siguen por el modo `ajustar` como
+cualquier otra. El fondo que muestrea es el gris `#242424` del collage, así que
+quedan 11 círculos gris oscuro con el wordmark blanco — coherentes entre sí y
+repartidos en el orden para que no caigan en bloque.
+
+Las cajas **no se midieron a ojo**: se umbralizó la imagen, se dilataron las
+letras hasta que cada wordmark quedó como una mancha sola y se leyeron los
+bounding boxes con `-connected-components`. Dos marcas necesitaron unir dos
+manchas (`GOAT BRAND` + su isotipo, y `BALANCE` + `FIT`, separados por un
+espacio más ancho que el kernel de dilatación).
 
 ---
 
@@ -231,8 +251,8 @@ marcas aparecerían dos veces al scrollear.
 - Marcado como `<ul>` / `<li>`: es una lista de marcas, no decoración.
 - `alt` = nombre real de la marca **solo en la primera copia**.
 - La segunda copia va con `aria-hidden="true"` y `alt=""`: es relleno visual, y
-  sin eso un lector de pantalla leería las 24 marcas dos veces.
-- El anillo `ring-white/20` no es adorno: 7 de los 24 logos tienen fondo casi
+  sin eso un lector de pantalla leería las 35 marcas dos veces.
+- El anillo `ring-white/20` no es adorno: 18 de los 35 logos tienen fondo casi
   negro y sin él no se distinguen del fondo de la página.
 
 ---

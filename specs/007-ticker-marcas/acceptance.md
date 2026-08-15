@@ -17,7 +17,7 @@ caminos que no dependen de esa captura:
 
 1. **Geometría medida en el DOM real**, con JavaScript sobre la página servida
    por Vite en `localhost:5173` (`/` y `/negocio`, a 1280 px y a 375 px).
-2. **Composición offline con ImageMagick** de los 24 círculos exactamente como
+2. **Composición offline con ImageMagick** de los 35 círculos exactamente como
    los dibuja el navegador: 96 px de diámetro, máscara circular, anillo y fondo
    `#121212`. Es lo que se miró para decidir recortes y contraste.
 
@@ -31,14 +31,14 @@ deploy.
 
 | # | Criterio | Resultado | Cómo se verificó |
 |---|---|---|---|
-| RF-1 | Las 24 marcas, cada una en un círculo | ✅ | 48 `<img>` en el DOM (24 × 2 copias), 0 rotas, 24 con `alt`. Los 24 `.webp` existen en `public/images/marcas/`. |
-| RF-2 | Loop continuo sin salto | ✅ | Pista = 5760 px, grupo = 2880 px. La animación desplaza `-50 %` = 2880 px = exactamente un grupo. Verificado a 1280 px y a 375 px (2160 / 4320). |
+| RF-1 | Las 35 marcas, cada una en un círculo | ✅ | 70 `<img>` en el DOM (35 × 2 copias), 0 rotas, 35 con `alt`. Los 35 `.webp` existen en `public/images/marcas/`. |
+| RF-2 | Loop continuo sin salto | ✅ | Pista = 6300 px, grupo = 3150 px a 375 px de viewport. La animación desplaza `-50 %` = exactamente un grupo. Verificado también a 1280 px con la versión de 24 (5760 / 2880). |
 | RF-3 | Ancho completo + desvanecido en los extremos | ✅ | `.marcas-ticker` mide 1280 px a 1280 px de viewport y 375 px a 375 px, arrancando en `x = 0`. `mask-image` presente en los estilos computados y en el CSS compilado. |
 | RF-4 | Los logos conservan color y fondo | ✅ | Se sacó el `mix-blend-screen` y el `filter: contrast()` de la versión vieja. Confirmado en la composición offline. |
-| RF-5 | Ningún logo cortado por el círculo | ✅ | Los 24 revisados uno por uno con la máscara aplicada. Los casos de riesgo (`Shippear.`, `MANHATTAN`, `EUNOIA · ESTUDIO`, `ESPACIO TERRA`) entran enteros gracias al rectángulo inscripto. |
+| RF-5 | Ningún logo cortado por el círculo | ✅ | Los 35 revisados uno por uno con la máscara aplicada. Los casos de riesgo (`Shippear.`, `MANHATTAN`, `EUNOIA · ESTUDIO`, `ESPACIO TERRA`, `HOOPSHOES`, `BALANCE FIT`) entran enteros gracias al rectángulo inscripto. |
 | RF-6 | El movimiento se detiene con el mouse encima | ✅ | `.marcas-ticker:hover .marcas-ticker__pista{animation-play-state:paused}` presente en el CSS compilado. *No se pudo ejercitar el hover real* — ver §Notas. |
 | RF-7 | `prefers-reduced-motion` sin animación y recorrible | ✅ | Las cuatro reglas están dentro del `@media (prefers-reduced-motion: reduce)`, verificadas leyendo `document.styleSheets` en la página servida y en el CSS compilado. *No se ejercitó con la preferencia activada* — ver §Notas. |
-| RF-8 | Sumar una marca = una fila + un comando | ✅ | `node scripts/build-marcas.mjs` corrido 3 veces; las 3 regeneró los 24 logos y reescribió `data/marcas.js`. |
+| RF-8 | Sumar una marca = una fila + un comando | ✅ | Probado de verdad: sumar las 11 del collage fueron 11 filas en la tabla y una corrida del script. **No hubo que tocar el componente ni el CSS.** |
 
 ---
 
@@ -46,9 +46,9 @@ deploy.
 
 | # | Criterio | Resultado | Cómo se verificó |
 |---|---|---|---|
-| RNF-1 | Mobile-first, sin scroll horizontal de página | ✅ | A 375 px: en `/negocio`, `scrollWidth == clientWidth`. En el Home hay 21 px de diferencia **preexistentes**: con la sección entera en `display:none` el `scrollWidth` sigue siendo 396. El ticker no aporta overflow. |
-| RNF-2 | No competir con el LCP; peso del mismo orden | ✅ | Los 48 `<img>` van en `loading="lazy"` + `decoding="async"`. Peso total 144 KB en 24 archivos (media 6 KB) contra 61 KB del archivo único que reemplaza. Mismo orden de magnitud, y ahora se bajan de a poco y por debajo del fold. |
-| RNF-3 | Accesibilidad | ✅ | Marcado `<ul>/<li>`. 24 `alt` con el nombre real (`Shippear`, `Cilantro Espacio Holístico`, …, `Sacro`); la segunda copia va con `aria-hidden="true"` y `alt=""`. |
+| RNF-1 | Mobile-first, sin scroll horizontal de página | ✅ | A 375 px: en `/negocio`, `scrollWidth == clientWidth` con las 35. En el Home hay 21 px de diferencia **preexistentes**: con la sección entera en `display:none` el `scrollWidth` sigue siendo 396. El ticker no aporta overflow. |
+| RNF-2 | No competir con el LCP; peso del mismo orden | ✅ | Los 70 `<img>` van en `loading="lazy"` + `decoding="async"` y son 35 URLs únicas. Peso total 192 KB en 35 archivos (media 5,5 KB) contra 61 KB del archivo único que reemplaza. Mismo orden de magnitud, y ahora se bajan de a poco y por debajo del fold. |
+| RNF-3 | Accesibilidad | ✅ | Marcado `<ul>/<li>`. 35 `alt` con el nombre real (`Shippear`, `Cilantro Espacio Holístico`, …, `Balance Fit`); la segunda copia va con `aria-hidden="true"` y `alt=""`. |
 | RNF-4 | Animación por `transform` | ✅ | `@keyframes marcas-scroll` usa solo `translateX`. Sin `left`, sin `margin` animado. |
 | RNF-5 | El `alt` es el nombre real del cliente | ✅ | La tabla de nombres se armó leyendo cada logo, no del nombre de archivo (`emma compleme.jpg` → *Emma Complementos*, `FYF.jpg` → *FyF Gym*, `lwlacteos.jpg` → *LW Lácteos*). |
 
@@ -63,7 +63,8 @@ deploy.
 | Foto sin fondo plano | ✅ | Monchito Merlo entra completo, con el nombre legible. |
 | URL impresa en el logo | ✅ | Wens con `cover` + `zoom: 1.3`: queda la marca, se va la URL. |
 | PNG con alfa / PDF disfrazado | ✅ | `SACRO.png` (RGBA, 542×480) y `strive-1.png` (PDF) procesados sin caso especial en el componente. |
-| Fondo casi negro | ✅ | 7 logos. `ring-white/20` los separa del fondo de la página. |
+| Fondo casi negro | ✅ | 18 logos. `ring-white/20` los separa del fondo de la página. |
+| Marca sin archivo propio | ✅ | Las 11 del collage se recortan con caja fija y entran al mismo pipeline. Las cajas salieron de `-connected-components`, no de medir a ojo. |
 | Una imagen falla | ✅ | Queda el círculo con `bg-white/5` y el resto sigue. Ya **no** se esconde la sección entera, como sí hacía la versión vieja con su única imagen. |
 
 ---
@@ -72,11 +73,12 @@ deploy.
 
 | Qué | Resultado | Verificación |
 |---|---|---|
-| Suite de tests | ✅ | `npm test` → **229/229**, 14 archivos. |
-| Build de producción | ✅ | `npm run build --prefix frontend` → `✓ built in 7.45s`, sin warnings nuevos. |
+| Suite de tests | ✅ | `npm test` → **229/229**, 14 archivos. Corrida de nuevo con las 35. |
+| Build de producción | ✅ | `npm run build --prefix frontend` → `✓ built in 6.07s`, sin warnings nuevos. |
+| Los 11 recortes no rompen el collage original | ✅ | El script **lee** `marcas-clientes.webp`, nunca lo escribe. El archivo queda intacto en el repo. |
 | El CSS del ticker sobrevive al build | ✅ | Las 12 reglas `.marcas-ticker*` y el `@keyframes` están en `dist/assets/index-*.css`. |
 | El ticker viejo del header | ✅ | `.announcement-ticker` intacto: no se tocó ni su regla ni su `@keyframes`. Se agregó un bloque nuevo al lado. |
-| Home y `/negocio` renderizan | ✅ | Las dos cargan y muestran la sección con las 24 marcas. |
+| Home y `/negocio` renderizan | ✅ | Las dos cargan y muestran la sección con las 35 marcas. |
 | Camino de precios | ✅ | El diff no toca `config/pricing.js`, `config/site.js`, `CartContext.jsx`, `lib/analytics.js` ni `netlify/functions/**`. |
 
 ---
@@ -124,7 +126,7 @@ deploy.
 
 ### Resumen
 
-**20 de 20 criterios cumplidos** (8 funcionales + 5 no funcionales + 7 edge
+**21 de 21 criterios cumplidos** (8 funcionales + 5 no funcionales + 8 edge
 cases). Ninguno incumplido.
 
 ### Criterios no cumplidos
@@ -140,6 +142,12 @@ Ninguno.
    del sistema, porque el panel del navegador no estaba pintando. Son reglas CSS
    declarativas de una línea, así que el riesgo es bajo — pero *verificado* no
    es lo mismo que *visto funcionando*, y la diferencia queda anotada.
-2. **Quedan 11 marcas afuera** (`requirements.md` §12.1). Es una decisión
-   pendiente de Mariano, no un criterio incumplido: nunca estuvo en el scope de
-   esta spec migrarlas.
+2. **Las 11 marcas de la tira vieja entraron.** La pregunta abierta se resolvió
+   dentro de la misma sesión: Mariano eligió recortarlas del collage. La feature
+   cerró con **35** marcas, no 24. Que eso se haya hecho tocando sólo la tabla
+   del script —sin abrir el componente ni el CSS— es la mejor evidencia de que
+   RF-8 se cumple de verdad.
+3. **`Balance Fit` queda en el límite de lo legible** a 96 px, por cómo es el
+   wordmark en el collage original (gris claro y muy fino). No incumple RF-5
+   —entra entero, no está cortado— pero es el primero a reemplazar si aparece el
+   logo real. Anotado en `requirements.md` §12.3.

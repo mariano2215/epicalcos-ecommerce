@@ -51,7 +51,9 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 - Reemplazar la imagen única por una pasarela (ticker) horizontal infinita.
 - Cada logo en **formato circular**.
-- Las 24 marcas de la carpeta `~/Documents/Mariano/Marcas que confiaron`.
+- **35 marcas**: las 24 de la carpeta `~/Documents/Mariano/Marcas que confiaron`
+  más las 11 que sólo existían adentro de la imagen vieja y se recortaron de
+  ahí. Mariano pidió explícitamente no perder ninguna.
 - Un proceso repetible para preparar los archivos.
 - La sección se ve igual en las dos páginas que la usan: Home y `/negocio`.
 
@@ -59,14 +61,13 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 ## 4. Fuera de scope
 
-- Las 11 marcas que **solo** existen dentro de la imagen vieja (Lo de Tarpino,
-  Goat Brand, Fursten, Elles Rosario, Positano Vinos, HoopShoes, Vya Store, iep,
-  Poly, Hoopers, Balance Fit). Recortarlas del collage es posible pero es una
-  decisión de Mariano: ver *Preguntas abiertas*.
 - Enlazar cada logo al Instagram o sitio de la marca.
 - Cambiar el texto, el badge o la posición de la sección.
-- Tocar `/images/marcas-clientes.webp`: el archivo queda en el repo porque es la
-  única fuente de esos 11 logos.
+- Borrar `/images/marcas-clientes.webp`: el archivo se queda porque es el
+  **original** de 11 de los 35 logos — el script los recorta de ahí en cada
+  corrida.
+- Conseguir los logos a color de esas 11. Se recuperaron como estaban en el
+  collage: wordmark blanco sobre gris oscuro.
 
 ---
 
@@ -74,7 +75,7 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 | Usuario | Qué cambia |
 |---|---|
-| Visitante de `/negocio` | Ve 24 logos a color en movimiento en vez de 11 en blanco, estáticos. Es el público que está evaluando encargar calcos de su logo: la prueba social es el argumento principal de esa página. |
+| Visitante de `/negocio` | Ve 35 logos en movimiento (24 a color) en vez de 11 en blanco, estáticos. Es el público que está evaluando encargar calcos de su logo: la prueba social es el argumento principal de esa página. |
 | Visitante del Home | Lo mismo, más abajo en la página. |
 | Mariano | Sumar una marca pasa de "rehacer la imagen en un editor" a "poner el archivo en la carpeta y correr un comando". |
 | Usuario con `prefers-reduced-motion` | No ve movimiento; puede recorrer la tira a mano. |
@@ -99,7 +100,7 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 | # | Requisito |
 |---|---|
-| RF-1 | La sección muestra las 24 marcas, cada una en un círculo. |
+| RF-1 | La sección muestra las 35 marcas, cada una en un círculo. |
 | RF-2 | Los círculos se desplazan horizontalmente en loop continuo, sin salto visible al reiniciar. |
 | RF-3 | La tira ocupa el ancho completo de la pantalla y se desvanece en los dos extremos. |
 | RF-4 | Cada logo conserva su color y su fondo original. |
@@ -115,7 +116,7 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 | # | Requisito |
 |---|---|
 | RNF-1 | **Mobile-first**: la tira funciona a 375 px y **no genera scroll horizontal en la página**. |
-| RNF-2 | **Performance**: la sección está muy por debajo del fold en las dos páginas. No puede competir por ancho de banda durante el LCP. El peso total de los 24 logos tiene que quedar en el orden del archivo único que reemplaza (61 KB), no en un orden de magnitud más. |
+| RNF-2 | **Performance**: la sección está muy por debajo del fold en las dos páginas. No puede competir por ancho de banda durante el LCP. El peso total de los logos tiene que quedar en el orden del archivo único que reemplaza (61 KB), no en un orden de magnitud más. |
 | RNF-3 | **Accesibilidad**: cada logo tiene texto alternativo con el nombre real de la marca. La duplicación técnica de la lista no puede leerse dos veces. |
 | RNF-4 | **Performance de animación**: la animación es de `transform`, no de `left`/`margin`. |
 | RNF-5 | El texto alternativo es el nombre real del cliente — es lo único que lee un lector de pantalla, y es prueba social, no decoración. |
@@ -141,7 +142,8 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 | El logo es una foto sin fondo plano (Monchito Merlo) | Entra completo; el nombre impreso no se corta. |
 | El logo trae la URL de la marca impresa abajo (Wens) | No se muestra cortada a la mitad. |
 | El archivo viene con transparencia (Sacro) o es un PDF con extensión `.png` (Strive) | Se procesa igual que el resto. |
-| El fondo del logo es casi negro (7 de 24) | Se sigue distinguiendo el círculo contra el fondo oscuro de la página. |
+| El fondo del logo es casi negro (18 de 35) | Se sigue distinguiendo el círculo contra el fondo oscuro de la página. |
+| La marca no tiene archivo propio: sólo existe adentro del collage viejo | Se recorta de ahí y entra al mismo pipeline que las demás. |
 | Falla la carga de una imagen | El resto de la tira sigue funcionando. |
 
 ---
@@ -159,10 +161,14 @@ sí hay que declarar el evento de click y pasarlo por `lib/analytics.js`.
 
 ## 12. Preguntas abiertas
 
-1. **Las 11 marcas de la tira vieja.** Quedaron fuera de la pasarela porque solo
-   existen como wordmarks blancos dentro del collage. Se pueden recortar de a
-   una y armarles un círculo oscuro, o darlas de baja. **Pendiente de decisión
-   de Mariano.** Hasta que se decida, `/images/marcas-clientes.webp` no se borra.
+1. ~~**Las 11 marcas de la tira vieja.**~~ **RESUELTO el 15/08/2026.** Se le
+   preguntó a Mariano qué hacer con las 11 que sólo existían dentro del collage
+   y eligió **recortarlas y sumarlas**. Están las 35. Si algún día aparecen los
+   logos originales a color de esas 11, se reemplazan agregando el archivo a la
+   carpeta y cambiando `crop` por `archivo` en la tabla del script.
 2. **¿Los logos deberían linkear al Instagram de cada marca?** Sumaría prueba
    social verificable, pero también saca gente del sitio en una página de
    conversión. No se hizo.
+3. **`Balance Fit` se lee flojo.** En el collage original el wordmark es gris
+   claro y fino; a 96 px queda al límite de lo legible. Si Mariano consigue el
+   logo original, ese es el primero a reemplazar.

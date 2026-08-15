@@ -47,6 +47,15 @@ const SRC = process.env.MARCAS_SRC || '/Users/marianocalandra/Documents/Mariano/
 const OUT_IMG = join(ROOT, 'frontend', 'public', 'images', 'marcas');
 const OUT_DATA = join(ROOT, 'frontend', 'src', 'data', 'marcas.js');
 
+/**
+ * La tira vieja. De estas 11 marcas NO existe el archivo suelto: el único lugar
+ * donde sobrevive su logo es adentro de este collage, en blanco sobre gris.
+ * Por eso el archivo no se borra aunque ya no se muestre en ninguna página: es
+ * el original. Las coordenadas de cada recorte salieron de un análisis de
+ * componentes conexos sobre la imagen umbralizada, no de medir a ojo.
+ */
+const COLLAGE = join(ROOT, 'frontend', 'public', 'images', 'marcas-clientes.webp');
+
 /** Diámetro del archivo final. El slot más grande del ticker son 96 px. */
 const D = 256;
 /** Aire entre el contenido y el borde del círculo. 1.0 = pegado al filo. */
@@ -54,11 +63,14 @@ const PADDING = 0.92;
 
 /**
  * El orden de esta tabla ES el orden del ticker: va alternando fondos claros y
- * oscuros a propósito, porque 24 logos ordenados alfabéticamente amontonan
- * cinco fondos blancos seguidos y la tira parece un bloque vacío.
+ * oscuros a propósito, porque ordenadas alfabéticamente se amontonan cinco
+ * fondos blancos seguidos y la tira parece un bloque vacío. Las 11 recortadas
+ * del collage son todas gris oscuro, así que van repartidas entre las de color
+ * y no en bloque.
  *
  * `archivo` es el nombre tal cual está en la carpeta de origen — no se
- * renombran los originales, se mapean acá.
+ * renombran los originales, se mapean acá. `crop` significa que la marca no
+ * tiene archivo propio y sale del collage viejo (ver COLLAGE arriba).
  *
  * Quedaron AFUERA a propósito:
  *   - marcasviejas.webp   → es la tira vieja (idéntica a images/marcas-clientes.webp)
@@ -67,28 +79,39 @@ const PADDING = 0.92;
 const MARCAS = [
   { archivo: 'Shippear.jpg', slug: 'shippear', nombre: 'Shippear' },
   { archivo: 'Cilantro.jpg', slug: 'cilantro', nombre: 'Cilantro Espacio Holístico' },
-  { archivo: 'Malte project.jpg', slug: 'malte-project', nombre: 'Malte Project' },
+  { crop: '366x184+91+60', slug: 'lo-de-tarpino', nombre: 'Lo de Tarpino' },
   { archivo: 'MedioMedico.jpg', slug: 'medio-medico', nombre: 'Medio Médico' },
   { archivo: 'brutoestudio.jpg', slug: 'bruto-estudio', nombre: 'Bruto Estudio' },
   { archivo: 'emma compleme.jpg', slug: 'emma-complementos', nombre: 'Emma Complementos' },
-  { archivo: 'strive-1.png', slug: 'strive', nombre: 'Strive', pdf: true },
+  { crop: '464x111+520+96', slug: 'goat-brand', nombre: 'Goat Brand' },
   { archivo: 'huella.jpg', slug: 'huella', nombre: 'Huella Tienda de Mascotas' },
-  { archivo: 'epicademy1.jpg', slug: 'epicademy', nombre: 'Epicademy' },
+  { archivo: 'strive-1.png', slug: 'strive', nombre: 'Strive', pdf: true },
   { archivo: 'Olivia.jpg', slug: 'olivia', nombre: 'Olivia' },
-  { archivo: 'lwlacteos.jpg', slug: 'lw-lacteos', nombre: 'LW Lácteos', recorte: 'circulo' },
+  { crop: '445x107+1023+95', slug: 'fursten', nombre: 'Fursten' },
   { archivo: 'espacioterra.jpg', slug: 'espacio-terra', nombre: 'Espacio Terra' },
-  { archivo: 'wens.jpeg', slug: 'wens-sports', nombre: 'Wens Sports', recorte: 'cover', zoom: 1.3 },
+  { archivo: 'lwlacteos.jpg', slug: 'lw-lacteos', nombre: 'LW Lácteos', recorte: 'circulo' },
   { archivo: 'fama-automotores.jpeg', slug: 'fama-automotores', nombre: 'Fama Automotores' },
-  { archivo: 'eunoia.jpg', slug: 'eunoia', nombre: 'Eunoia Estudio' },
+  { crop: '416x173+1504+83', slug: 'elles-rosario', nombre: 'Elles Rosario' },
   { archivo: 'FisioForce.jpg', slug: 'fisioforce', nombre: 'FisioForce' },
-  { archivo: 'manhattan cocktails.jpg', slug: 'manhattan-cocktails', nombre: 'Manhattan Cocktails' },
+  { archivo: 'wens.jpeg', slug: 'wens-sports', nombre: 'Wens Sports', recorte: 'cover', zoom: 1.3 },
   { archivo: 'degani.jpg', slug: 'degani', nombre: 'Degani' },
-  { archivo: 'mentha.jpg', slug: 'mentha', nombre: 'Mentha', recorte: 'circulo' },
+  { crop: '427x126+78+278', slug: 'positano-vinos', nombre: 'Positano Vinos' },
   { archivo: 'FYF.jpg', slug: 'fyf-gym', nombre: 'FyF Gym' },
-  { archivo: 'Boiler.webp', slug: 'boiler', nombre: 'Boiler' },
+  { archivo: 'manhattan cocktails.jpg', slug: 'manhattan-cocktails', nombre: 'Manhattan Cocktails' },
   { archivo: 'trapitosdolls.jpg', slug: 'trapitos-dolls', nombre: 'Trapitos Dolls', recorte: 'circulo' },
+  { crop: '466x141+516+257', slug: 'hoopshoes', nombre: 'HoopShoes' },
   { archivo: 'monchito merlo.jpg', slug: 'monchito-merlo', nombre: 'Monchito Merlo' },
-  { archivo: 'SACRO.png', slug: 'sacro', nombre: 'Sacro', recorte: 'circulo' }
+  { archivo: 'Boiler.webp', slug: 'boiler', nombre: 'Boiler' },
+  { archivo: 'Malte project.jpg', slug: 'malte-project', nombre: 'Malte Project' },
+  { crop: '476x121+1027+271', slug: 'vya-store', nombre: 'Vya Store' },
+  { archivo: 'epicademy1.jpg', slug: 'epicademy', nombre: 'Epicademy' },
+  { crop: '329x205+1547+276', slug: 'iep', nombre: 'iep' },
+  { archivo: 'eunoia.jpg', slug: 'eunoia', nombre: 'Eunoia Estudio' },
+  { crop: '368x170+224+475', slug: 'poly', nombre: 'Poly' },
+  { archivo: 'mentha.jpg', slug: 'mentha', nombre: 'Mentha', recorte: 'circulo' },
+  { crop: '459x194+644+460', slug: 'hoopers', nombre: 'Hoopers' },
+  { archivo: 'SACRO.png', slug: 'sacro', nombre: 'Sacro', recorte: 'circulo' },
+  { crop: '633x86+1155+521', slug: 'balance-fit', nombre: 'Balance Fit' }
 ];
 
 const sh = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8' }).trim();
@@ -127,16 +150,18 @@ function cajaInscripta(r) {
 }
 
 function procesar(marca, tmp) {
-  const origen = join(SRC, marca.archivo);
+  const origen = marca.crop ? COLLAGE : join(SRC, marca.archivo);
   if (!existsSync(origen)) {
-    console.error(`[marcas] ⚠️  no está: ${marca.archivo}`);
+    console.error(`[marcas] ⚠️  no está: ${marca.archivo || marca.slug}`);
     return false;
   }
 
   const plano = join(tmp, `${marca.slug}-plano.png`);
   const final = join(tmp, `${marca.slug}-final.png`);
 
-  if (marca.pdf) {
+  if (marca.crop) {
+    sh('magick', [origen, '-crop', marca.crop, '+repage', plano]);
+  } else if (marca.pdf) {
     // strive-1.png es un PDF con extensión .png. Sin esto, magick delega en
     // ghostscript (que no está instalado) y el archivo se pierde en silencio.
     sh('pdftoppm', ['-png', '-r', '200', '-singlefile', origen, join(tmp, marca.slug)]);
@@ -180,7 +205,11 @@ function procesar(marca, tmp) {
 }
 
 function escribirData() {
-  const filas = MARCAS.map((m) => `  { slug: '${m.slug}', nombre: ${JSON.stringify(m.nombre)} }`).join(',\n');
+  // JSON.stringify en los dos campos (no comillas simples a mano): un nombre con
+  // apóstrofo rompería el archivo generado y el error aparecería en el build.
+  const filas = MARCAS.map(
+    (m) => `  { slug: ${JSON.stringify(m.slug)}, nombre: ${JSON.stringify(m.nombre)} }`
+  ).join(',\n');
   const contenido = `/**
  * Marcas que ya imprimieron con EPICALCOS — las que se ven en el ticker de
  * components/MarcasConfiaron.jsx.
