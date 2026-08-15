@@ -351,6 +351,59 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
+   Marcas que confiaron — pasarela de logos circulares
+   ============================================================ */
+@keyframes marcas-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marcas-ticker {
+  overflow: hidden;
+  /* Desvanece los dos extremos: sin esto los logos aparecen y desaparecen
+     cortados contra el borde de la pantalla y se ve el truco de la cinta. */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 8%, #000 92%, transparent 100%);
+}
+
+.marcas-ticker__pista {
+  display: flex;
+  width: max-content;
+  animation: marcas-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+/* Frenar al pasar el mouse: son 24 marcas y la gracia es poder mirar una. */
+.marcas-ticker:hover .marcas-ticker__pista {
+  animation-play-state: paused;
+}
+
+.marcas-ticker__grupo {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.marcas-ticker__item {
+  flex-shrink: 0;
+  /* El espacio va como margen del item y NO como `gap` del contenedor: el
+     salto de la animación es exactamente el ancho de un grupo, y un `gap`
+     entre los dos grupos agregaría un hueco que no está en el loop — se vería
+     un tirón en cada vuelta. */
+  margin-right: 18px;
+}
+
+.marcas-ticker__item img {
+  transition: transform 0.25s ease;
+}
+.marcas-ticker__item:hover img {
+  transform: scale(1.07);
+}
+
+@media (min-width: 768px) {
+  .marcas-ticker__item { margin-right: 24px; }
+}
+
+/* ============================================================
    Promo 3x2 — banner del header (fondo de calcos + cuenta regresiva)
    ============================================================ */
 .promo-banner {
@@ -463,6 +516,13 @@ a { color: inherit; text-decoration: none; }
     animation: none !important;
   }
   .announcement-ticker { animation: none !important; }
+  /* Sin animación la tira queda cortada al ancho de la pantalla, así que se
+     entrega scrolleable a mano y se esconde la copia de relleno (si no, las
+     marcas aparecen dos veces). */
+  .marcas-ticker { overflow-x: auto; }
+  .marcas-ticker__pista { animation: none !important; }
+  .marcas-ticker__grupo[aria-hidden='true'] { display: none; }
+  .marcas-ticker__item:hover img { transform: none; }
   .sticker-float { transition: none !important; transform: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
   .rotating-headline__item { transition: none !important; }

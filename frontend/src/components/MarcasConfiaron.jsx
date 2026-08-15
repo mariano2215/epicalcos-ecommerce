@@ -1,32 +1,34 @@
-import { useState } from 'react';
 import Reveal from './Reveal.jsx';
+import { MARCAS } from '../data/marcas.js';
 
 /**
- * Tira de logos de clientes. La imagen viene con fondo gris oscuro plano y logos
- * blancos, así que se integra al sitio con `mix-blend-screen`: el gris se disuelve
- * contra el fondo oscuro de la página y sólo quedan los logos.
+ * Pasarela infinita con los logos de clientes, cada uno en un círculo.
  *
- * Los degradados de máscara van separados a propósito — el vertical en el wrapper y
- * el horizontal en la <img> — para desvanecer los cuatro bordes sin depender de
- * `mask-composite`. El blend va en el wrapper (no en la <img>) porque la máscara crea
- * un contexto de apilamiento y, si estuviera en el hijo, mezclaría contra el wrapper
- * transparente en vez de contra la página.
+ * Antes esto era UNA imagen con todos los logos en blanco sobre gris, integrada
+ * con `mix-blend-screen`. El problema no era técnico: para sumar una marca había
+ * que rehacer el archivo entero en un editor, así que la prueba social quedaba
+ * congelada. Ahora cada logo es su propio archivo y la lista vive en
+ * data/marcas.js, que genera scripts/build-marcas.mjs.
+ *
+ * Los logos van a color y con su propio fondo (son capturas de perfil de cada
+ * marca) en vez de blanco sobre transparente: recortarlos a monocromo era
+ * borrarles la identidad, y en una tira de 24 el color es lo que hace que se
+ * reconozcan al pasar.
+ *
+ * La tira sale del `container-app` a propósito — cruza el ancho completo de la
+ * pantalla y se desvanece en los dos extremos, así el movimiento se lee como
+ * continuo y no como una caja que se mueve.
  */
-const SRC = '/images/marcas-clientes.webp';
-
-const FADE_Y = 'linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%)';
-const FADE_X = 'linear-gradient(to right, transparent 0%, #000 4%, #000 96%, transparent 100%)';
 
 /**
- * El `contrast` empuja el gris del fondo (#2b2b2b) prácticamente a negro sin tocar los
- * logos blancos; combinado con `screen` el rectángulo desaparece y sólo quedan los logos.
+ * Dos copias idénticas de la lista. La animación desplaza la pista -50%, o sea
+ * exactamente el ancho de una copia: cuando termina, la segunda quedó donde
+ * estaba la primera y el salto al frame 0 es invisible. Con una sola copia se
+ * vería el vacío entrando por la derecha.
  */
-const PUNCH = 'contrast(1.4) brightness(1.05)';
+const COPIAS = [0, 1];
 
 export default function MarcasConfiaron() {
-  const [failed, setFailed] = useState(false);
-  if (failed) return null;
-
   return (
     <section className="py-10">
       <div className="container-app">
@@ -39,34 +41,43 @@ export default function MarcasConfiaron() {
             Bares, tiendas, gimnasios y emprendimientos que ya imprimieron sus calcos con nosotros.
           </p>
         </Reveal>
-
-        <Reveal delay={100}>
-          <div
-            className="mt-6 mix-blend-screen"
-            style={{ WebkitMaskImage: FADE_Y, maskImage: FADE_Y }}
-          >
-            <img
-              src={SRC}
-              alt="Logos de marcas que ya compraron calcos en EPICALCOS"
-              /* `lazy`: esta sección vive muy por debajo del fold y era la ÚNICA
-                 imagen del sitio que se pedía con prioridad — competía por ancho
-                 de banda con el hero justo durante el LCP.
-                 El `onError` sigue funcionando: `lazy` no cancela la descarga,
-                 la difiere hasta que la sección se acerca al viewport, que es
-                 exactamente cuando importa saber si la imagen falló. */
-              loading="lazy"
-              decoding="async"
-              /* Tamaño intrínseco del archivo: reserva el alto antes de bajarla
-                 y el bloque no salta cuando entra (CLS). */
-              width={2000}
-              height={710}
-              onError={() => setFailed(true)}
-              className="w-full h-auto max-w-4xl mx-auto"
-              style={{ WebkitMaskImage: FADE_X, maskImage: FADE_X, filter: PUNCH }}
-            />
-          </div>
-        </Reveal>
       </div>
+
+      <Reveal delay={100} className="mt-8">
+        <div className="marcas-ticker">
+          <div className="marcas-ticker__pista">
+            {COPIAS.map((copia) => (
+              <ul
+                key={copia}
+                className="marcas-ticker__grupo"
+                /* La segunda copia es puro relleno visual: si no se oculta, un
+                   lector de pantalla lee las 24 marcas dos veces. */
+                aria-hidden={copia === 1 ? 'true' : undefined}
+              >
+                {MARCAS.map((marca) => (
+                  <li key={marca.slug} className="marcas-ticker__item">
+                    <img
+                      src={`/images/marcas/${marca.slug}.webp`}
+                      alt={copia === 0 ? marca.nombre : ''}
+                      /* Sección muy por debajo del fold en las dos páginas que la
+                         usan: 24 imágenes acá no pueden competir con el LCP. */
+                      loading="lazy"
+                      decoding="async"
+                      width={96}
+                      height={96}
+                      /* El anillo no es decoración: siete de estos logos vienen
+                         con fondo casi negro y sin él se derriten contra el
+                         fondo de la página — se ve el logo flotando, no un
+                         círculo. */
+                      className="w-[72px] h-[72px] md:w-24 md:h-24 rounded-full object-cover ring-1 ring-white/20 bg-white/5"
+                    />
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        </div>
+      </Reveal>
     </section>
   );
 }
