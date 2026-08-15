@@ -5,18 +5,32 @@ import CategoryCard from '../components/CategoryCard.jsx';
 import StickerField from '../components/StickerField.jsx';
 import { CATEGORIES, SPECIALS } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
-import { searchCatalog } from '../lib/searchCatalog.js';
-import { trackSearchNoResults } from '../lib/analytics.js';
+import { searchCatalog, esOrdenValido, ORDEN_POR_DEFECTO } from '../lib/searchCatalog.js';
+import { rotacionesSinRepetir } from '../lib/portadas.js';
+import { trackSearchNoResults, trackOrdenCatalogo } from '../lib/analytics.js';
 import { contact } from '../config/site.js';
 import { BULK_DISCOUNT_SHORT } from '../components/DiscountNote.jsx';
+
+const OPCIONES_ORDEN = [
+  { valor: 'az', label: 'A-Z' },
+  { valor: 'disenos', label: 'Más diseños' }
+];
 
 export default function Categorias() {
   const [params, setParams] = useSearchParams();
   // Término crudo (searchCatalog ya normaliza acentos/mayúsculas internamente).
   const q = (params.get('q') || '').trim();
+  const ordenParam = params.get('orden');
+  const orden = esOrdenValido(ordenParam) ? ordenParam : ORDEN_POR_DEFECTO;
   const navigate = useNavigate();
   const [catalog, setCatalog] = useState({}); // slug -> { count, cover }
   const [aliases, setAliases] = useState({ categorias: {}, rutas: {} });
+  // Diseños que están repetidos en dos carpetas (scripts/build-duplicados.mjs).
+  const [duplicados, setDuplicados] = useState({});
+  // Una semilla por visita: las portadas cambian cada vez que entrás, pero se
+  // quedan quietas mientras estás en la página (si se recalcularan en cada
+  // render, escribir en el buscador cambiaría todas las imágenes al tipear).
+  const [semilla] = useState(() => Math.floor(Math.random() * 10000));
 
   useSeo({
     title: 'Categorías',
@@ -44,9 +58,26 @@ export default function Categorias() {
       .catch(() => {});
   }, []);
 
+  // Si este fetch falla la grilla funciona igual: sin el mapa sólo se pierde la
+  // garantía de que no se repita un diseño que está en dos carpetas.
+  useEffect(() => {
+    fetch('/data/duplicados.json')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setDuplicados)
+      .catch(() => {});
+  }, []);
+
   const out = useMemo(
-    () => searchCatalog(q, CATEGORIES, catalog, aliases),
-    [q, catalog, aliases]
+    () => searchCatalog(q, CATEGORIES, catalog, aliases, orden),
+    [q, catalog, aliases, orden]
+  );
+
+  // Portadas resueltas en conjunto: la primera categoría se queda con su diseño
+  // y la que choca corre la rotación hasta uno libre. Depende del orden porque
+  // el desempate es "el primero que llega se lo queda".
+  const rotaciones = useMemo(
+    () => rotacionesSinRepetir(out.results, catalog, semilla, duplicados),
+    [out.results, catalog, semilla, duplicados]
   );
 
   // Intención comercial ("mi logo", "por mayor"…) → a la página de mayor margen.
@@ -67,6 +98,17 @@ export default function Categorias() {
     setParams(next, { replace: true });
   };
 
+  // El orden viaja en la URL: sobrevive al refresh, al botón "atrás" y a
+  // compartir el link. El default no ensucia la URL.
+  const setOrden = (val) => {
+    if (val === orden) return;
+    const next = new URLSearchParams(params);
+    if (val === ORDEN_POR_DEFECTO) next.delete('orden');
+    else next.set('orden', val);
+    setParams(next, { replace: true });
+    trackOrdenCatalogo(val);
+  };
+
   const whatsappHref = `${contact.whatsappUrl}?text=${encodeURIComponent(
     `Hola! Busqué "${q}" en la web y no lo encontré. ¿Lo pueden hacer?`
   )}`;
@@ -77,7 +119,7 @@ export default function Categorias() {
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Categorías' }]} />
 
         <header className="mb-8 relative overflow-hidden rounded-3xl">
-          <StickerField count={9} opacity={0.22} />
+          <StickerField count={9} opacity={0.22} className="sticker-field--lateral" />
           <div className="relative z-10 py-2">
             <span className="badge badge-soft mb-3">Catálogo</span>
             <h1 className="font-display font-extrabold text-4xl md:text-5xl">
@@ -136,6 +178,30 @@ export default function Categorias() {
           )}
         </div>
 
+        {/* Orden — sólo con el listado completo. Cuando hay búsqueda los
+            resultados vienen por relevancia (el mejor match primero) y un
+            selector que no hace nada confunde más de lo que ayuda. */}
+        {out.kind === 'all' && (
+          <div className="flex flex-wrap items-center gap-2 mb-6" role="group" aria-label="Ordenar categorías">
+            <span className="text-xs uppercase tracking-wider text-white/50 mr-1">Ordenar</span>
+            {OPCIONES_ORDEN.map((o) => (
+              <button
+                key={o.valor}
+                type="button"
+                onClick={() => setOrden(o.valor)}
+                aria-pressed={orden === o.valor}
+                className={`min-h-[44px] px-4 rounded-full text-sm font-semibold border transition-colors ${
+                  orden === o.valor
+                    ? 'bg-white/15 border-white/30 text-white'
+                    : 'bg-white/5 border-white/10 text-white/70 hover:text-white hover:border-white/25'
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Resultados */}
         {out.kind === 'route' ? (
           <p className="text-white/50 py-10 text-center">Te llevamos a la página indicada…</p>
@@ -187,6 +253,7 @@ export default function Categorias() {
                 emoji={c.emoji}
                 cover={catalog[c.slug]?.cover}
                 count={catalog[c.slug]?.count}
+                rotation={rotaciones[c.slug] || 0}
               />
             ))}
           </div>

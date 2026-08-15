@@ -176,12 +176,14 @@ Un archivo por categoría (99 en total):
 | `cutouts.json` | recortes de portada por categoría |
 | `aliases.json` | alias del buscador |
 | `nuevas-catalogo.json` | lote de diseños nuevos |
+| `duplicados.json` | diseños que están en dos carpetas: `archivo duplicado → canónico` |
 
 ### Cómo se regenera
 Scripts manuales en `/scripts` (Node, no corren en el build):
 ```
 import-catalogo.mjs   → importa imágenes desde iCloud, las convierte a .webp
 build-catalog.mjs     → genera catalog.json y los <categoria>.json
+build-duplicados.mjs  → duplicados.json (correlo después de build-catalog)
 build-meta-feed.mjs   → asigna SKUs estables + stock, genera el CSV de Meta
 gen-categories.mjs    → agrega a src/data/categories.js las categorías nuevas
 generate-sitemap.mjs  → sitemap.xml  (este SÍ corre en el prebuild)

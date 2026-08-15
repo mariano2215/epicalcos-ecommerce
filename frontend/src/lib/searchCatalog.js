@@ -36,23 +36,48 @@ const SCORE = {
 };
 
 /**
+ * Órdenes del listado completo (sin búsqueda). El valor viaja en la URL
+ * (?orden=) para que el orden elegido sobreviva a un refresh o a compartir el
+ * link.
+ *
+ * `disenos` es el orden con el que nació la página: las categorías más gordas
+ * primero. NO es "las más vendidas" — de ventas por categoría no hay dato en el
+ * repo, así que la etiqueta dice lo que realmente ordena.
+ */
+export const ORDENES = ['az', 'disenos'];
+export const ORDEN_POR_DEFECTO = 'az';
+
+export const esOrdenValido = (o) => ORDENES.includes(o);
+
+/** Comparador del listado. Empate en cantidad → alfabético, para que sea estable. */
+function comparador(orden, counts) {
+  const porNombre = (a, b) => norm(a.name).localeCompare(norm(b.name), 'es');
+  if (orden === 'disenos') {
+    return (a, b) =>
+      (counts[b.slug]?.count || 0) - (counts[a.slug]?.count || 0) || porNombre(a, b);
+  }
+  return porNombre;
+}
+
+/**
  * @param {string} query        lo que escribió el usuario
  * @param {Array}  categories   [{ slug, name, emoji }]  (constante CATEGORIES del proyecto)
  * @param {Object} counts       { [slug]: { count, cover } }  (de /data/catalog.json)
  * @param {Object} aliases      contenido de /data/aliases.json
+ * @param {string} [orden]      'az' | 'disenos' — sólo aplica al listado completo
  * @returns {{ kind:'all'|'route'|'results'|'empty', route?:string, results:Array, suggestions:Array }}
  */
-export function searchCatalog(query, categories, counts, aliases) {
+export function searchCatalog(query, categories, counts, aliases, orden = ORDEN_POR_DEFECTO) {
   const q = norm(query);
   const available = categories.filter((c) => counts[c.slug]);
 
-  // Sin query: catálogo completo, ordenado por tamaño (las gordas primero).
+  // Sin query: catálogo completo, en el orden que eligió el usuario. Con query
+  // manda la relevancia y `orden` se ignora: buscar es pedir el mejor match
+  // primero, no la primera categoría del abecedario.
   if (!q) {
     return {
       kind: 'all',
-      results: [...available].sort(
-        (a, b) => (counts[b.slug]?.count || 0) - (counts[a.slug]?.count || 0)
-      ),
+      results: [...available].sort(comparador(orden, counts)),
       suggestions: [],
     };
   }

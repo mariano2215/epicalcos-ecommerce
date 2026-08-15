@@ -389,6 +389,15 @@ export function trackSearchNoResults(term) {
   debug('search_no_results', term);
 }
 
+/**
+ * Cambio de orden en la grilla de categorías. Sirve para saber si al que llega
+ * al catálogo le alcanza el orden por defecto o anda buscando otra cosa.
+ */
+export function trackOrdenCatalogo(orden) {
+  pushDataLayer({ event: 'catalogo_orden', orden });
+  debug('catalogo_orden', orden);
+}
+
 export function trackLeadCapture(source = 'welcome_popup') {
   pushDataLayer({ event: 'generate_lead', lead_source: source });
   pixel('Lead', { content_name: source });

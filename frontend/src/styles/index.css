@@ -246,6 +246,35 @@ a { color: inherit; text-decoration: none; }
   50%      { translate: 0 -26px; }
 }
 
+/* Campo de stickers que convive con un texto encima (header de /categorías).
+   Los calcos son decorativos, pero pasaban justo por detrás del título y de la
+   bajada: una bandera o un mate abajo de una línea de texto se la come, por
+   más contraste que tenga el color. La máscara los desvanece sobre la columna
+   del texto y los deja enteros al costado — se arregla la causa (el sticker),
+   no el síntoma (el gris del texto). */
+.sticker-field--lateral {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.5) 66%,
+    #000 82%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.5) 66%,
+    #000 82%
+  );
+}
+/* En mobile el texto ocupa todo el ancho: no queda columna libre donde poner
+   los calcos, así que no se dibujan. De paso el celular —de donde viene casi
+   todo el tráfico— se ahorra las 9 imágenes decorativas. */
+@media (max-width: 639px) {
+  .sticker-field--lateral { display: none; }
+}
+
 /* Texto con degradé animado */
 .gradient-text {
   background-image: linear-gradient(135deg, #FF1B8D 0%, #FF5A1F 50%, #FFD84D 100%);

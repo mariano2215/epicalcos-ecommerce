@@ -59,3 +59,34 @@ describe('searchCatalog', () => {
     expect(out.suggestions.length).toBeGreaterThan(0);
   });
 });
+
+describe('orden del listado', () => {
+  const nombres = (orden) =>
+    searchCatalog('', CATEGORIES, counts, aliases, orden).results.map((c) => c.name);
+
+  it('por defecto el catálogo sale alfabético', () => {
+    const ns = nombres(undefined);
+    const ordenados = [...ns].sort((a, b) => norm(a).localeCompare(norm(b), 'es'));
+    expect(ns).toEqual(ordenados);
+  });
+
+  it('"disenos" ordena de la categoría más grande a la más chica', () => {
+    const out = searchCatalog('', CATEGORIES, counts, aliases, 'disenos');
+    const cs = out.results.map((c) => counts[c.slug].count);
+    expect(cs).toEqual([...cs].sort((a, b) => b - a));
+  });
+
+  it('un orden inválido cae en el alfabético en vez de romper', () => {
+    expect(nombres('lo-que-sea')).toEqual(nombres('az'));
+  });
+
+  it('el orden no cambia QUÉ categorías se muestran, sólo en qué secuencia', () => {
+    expect([...nombres('az')].sort()).toEqual([...nombres('disenos')].sort());
+  });
+
+  it('con búsqueda manda la relevancia: el orden elegido no la pisa', () => {
+    const az = searchCatalog('futbol', CATEGORIES, counts, aliases, 'az');
+    const dis = searchCatalog('futbol', CATEGORIES, counts, aliases, 'disenos');
+    expect(az.results.map((c) => c.slug)).toEqual(dis.results.map((c) => c.slug));
+  });
+});

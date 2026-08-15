@@ -1,21 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { portadaDe } from '../lib/portadas.js';
 
-// Portada determinística por slug: misma categoría → misma imagen siempre
-// (memoria visual del catálogo; sin saltos entre recargas).
-// `rotation` corre ese índice para mostrar otro diseño de la misma categoría.
-function coverFor(slug, count, rotation, cover) {
-  if (!count || count <= 1 || !slug) return cover;
-  const hash = [...slug].reduce((a, ch) => a + ch.charCodeAt(0), 0);
-  const n = ((hash + rotation) % count) + 1;
-  return `/stickers/${slug}/${n}.webp`;
-}
-
+// La portada es determinística por (slug + rotation): con la misma rotación,
+// la misma categoría muestra siempre la misma imagen. Quién elige la rotación
+// decide cuánto cambia: el Home la va corriendo mientras mirás, y /categorías
+// arranca en una distinta en cada visita (ver `rotacionesSinRepetir`).
 export default function CategoryCard({ slug, name, emoji, cover, count, rotation = 0 }) {
-  const [src, setSrc] = useState(() => coverFor(slug, count, 0, cover));
+  // Arranca ya en la rotación pedida: si arrancara en 0 y después saltara a la
+  // rotación real, cada card pediría DOS imágenes en vez de una.
+  const [src, setSrc] = useState(() => portadaDe(slug, count, rotation, cover));
   const [swapping, setSwapping] = useState(false);
 
-  const next = coverFor(slug, count, rotation, cover);
+  const next = portadaDe(slug, count, rotation, cover);
 
   useEffect(() => {
     if (!next || next === src) return;
