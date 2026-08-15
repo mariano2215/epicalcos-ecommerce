@@ -62,10 +62,32 @@ contenedor presente, mandar por los dos caminos contaría cada compra dos veces.
 
 ### Eventos propios
 
-`search` · `search_no_results` · `generate_lead` · `whatsapp_click` (con la ruta
-de origen) · `shipping_calculated` (zona + costo) · `pack_builder_start` ·
-`pack_completed` (unidades + diseños distintos) · `personalizado_inicio` ·
-`personalizado_paso` · `personalizado_archivo_cargado` · `personalizado_precio_calculado`
+`search` · `search_no_results` · `catalogo_orden` · `generate_lead` ·
+`whatsapp_click` (con la ruta de origen) · `shipping_calculated` (zona + costo) ·
+`pack_builder_start` · `pack_completed` (unidades + diseños distintos) ·
+`personalizado_inicio` · `personalizado_paso` · `personalizado_archivo_cargado` ·
+`personalizado_precio_calculado`
+
+#### `catalogo_orden`
+
+| | |
+|---|---|
+| **Dónde** | `routes/Categorias.jsx`, al tocar un orden distinto al activo |
+| **Parámetros** | `orden`: `az` (alfabético, el default) \| `disenos` (por cantidad de diseños) |
+| **Destino** | GA4 solamente — no va al Píxel: es navegación, no conversión |
+| **Ref.** | spec `006-orden-catalogo` |
+
+No se dispara al cargar la página con `?orden=` en la URL: mide la **decisión**
+de cambiar el orden, no el estado en que se abrió el link.
+
+Qué se quiere responder con esto: si al que llega al catálogo le alcanza el
+orden alfabético, y cuál de los dos órdenes termina en más clicks a una
+categoría.
+
+`disenos` **no** es "más vendidas": ordena por cantidad de diseños de la
+categoría. **No hay dato de ventas por categoría en ningún lado del repo** — ni
+siquiera "Los más vendidos" del Home, que son cuatro categorías fijas en
+`FeaturedStickers.jsx`. Ver la spec 006 §12.
 
 ### `item_list_name` en uso
 

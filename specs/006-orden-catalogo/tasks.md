@@ -110,8 +110,11 @@
     tracking no rompe la navegación
 - [x] **4.3** Sin PII
   - *Verificación*: el evento lleva `orden: 'az' | 'disenos'` y nada más
-- [ ] **4.4** Actualizar `docs/analytics.md`
-  - **No se hizo.** Queda como pendiente (ver Hallazgos)
+- [x] **4.4** Actualizar `docs/analytics.md`
+  - *Verificación*: `catalogo_orden` está en la lista de eventos propios y tiene
+    su propia ficha (dónde, parámetros, destino, qué se quiere responder, y por
+    qué `disenos` no es "más vendidas"). Hecho el 15/08/2026, después de cerrar
+    la spec
 
 ---
 
@@ -157,7 +160,7 @@
 | 15 archivos duplicados en el catálogo, 8 entre categorías | `frontend/public/stickers/**` | Se detectan, no se borran: borrarlos renumera y rompe los SKUs de Meta |
 | Categorías que son la misma cosa dos veces (`disney`/`tv-disney`, `anime`/`tv-anime`, `nba`/`deportes-nba`, `los-simpsons`/`tv-los-simpsons`…) | `frontend/src/data/categories.js` | Unificarlas es una decisión de contenido con impacto en SEO y URLs: spec aparte |
 | "Los más vendidos" del Home son 4 categorías hardcodeadas con un sticker al azar | `components/FeaturedStickers.jsx` | Si alguna vez hay dato de ventas, ese componente es el primero que debería usarlo |
-| `docs/analytics.md` no documenta `catalogo_orden` | `docs/analytics.md` | Agregarlo la próxima vez que se toque el doc |
+| ~~`docs/analytics.md` no documenta `catalogo_orden`~~ | `docs/analytics.md` | ✅ resuelto el 15/08/2026, a pedido de Mariano |
 | El texto de las cards de "Destacados" sigue en `text-white/60` | `routes/Categorias.jsx` | No es subtítulo de encabezado; se dejó a propósito para no aplanar la jerarquía |
 
 ---

@@ -103,7 +103,7 @@ window.dataLayer.filter(e => e.event === 'catalogo_orden')
 - [x] No viaja PII
 - [ ] **GA4 DebugView**: no verificado — solo se comprobó el `dataLayer` local
 - [x] Meta: no aplica, el evento no va al pixel
-- [ ] **`docs/analytics.md`**: no documenta todavía el evento
+- [x] **`docs/analytics.md`**: documentado el 15/08/2026 (§2, *Eventos propios*)
 
 ---
 
@@ -150,7 +150,7 @@ pasando como parte de los 229.
 - [x] `business-rules.md` — no aplica
 - [x] `architecture.md` — no aplica
 - [x] `integrations.md` — no aplica
-- [ ] **`analytics.md` — pendiente**: falta documentar `catalogo_orden`
+- [x] `analytics.md` — `catalogo_orden` documentado el 15/08/2026
 - [x] `database.md` — `duplicados.json` y `build-duplicados.mjs` documentados
 
 ### Proceso
