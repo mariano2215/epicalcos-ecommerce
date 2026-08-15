@@ -92,7 +92,11 @@ export default function Categorias() {
         {/* Especiales */}
         <section className="mb-10">
           <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Destacados</h2>
-          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          {/* 3 columnas y no 5: las especiales son 6, y en 5 columnas quedaban
+              5 arriba y 1 huérfana abajo. Con 3 salen dos filas parejas (y en
+              mobile, 2 columnas → tres filas de 2). Si algún día se despublica
+              una sección (HIDDEN_SECTIONS) la última fila queda corta, no rota. */}
+          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3">
             {SPECIALS.map((s) => (
               <Link
                 key={s.slug}
