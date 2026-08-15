@@ -152,7 +152,7 @@ export default function Hero() {
           Calcos y stickers personalizados en Rosario
         </h1>
 
-        <p className="mt-3 max-w-2xl mx-auto text-white/70 text-sm md:text-base hidden sm:block">
+        <p className="mt-3 max-w-2xl mx-auto text-white/80 text-sm md:text-base hidden sm:block">
           Miles de diseños en {CATEGORY_COUNT} categorías. Elegís cada calco, su tamaño (4, 6 o 9 cm) y la cantidad. {BULK_DISCOUNT_SHORT}.
         </p>
 

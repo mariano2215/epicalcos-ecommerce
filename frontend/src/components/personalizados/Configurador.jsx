@@ -223,7 +223,7 @@ export default function Configurador() {
       <header className="mb-6">
         <span className="badge badge-hot mb-3">Sin mínimo de compra</span>
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Armá tu calco personalizado</h1>
-        <p className="text-white/60 mt-2 max-w-xl">
+        <p className="text-white/80 mt-2 max-w-xl">
           Elegí el tamaño y el corte, subí tus diseños y cada uno se suma al carrito como una calco.
           Mismo precio que los calcos del catálogo, desde una sola unidad.
         </p>

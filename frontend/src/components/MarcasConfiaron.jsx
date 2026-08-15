@@ -35,7 +35,7 @@ export default function MarcasConfiaron() {
           <h2 className="font-display font-extrabold text-3xl md:text-4xl">
             Marcas que ya confiaron en nosotros
           </h2>
-          <p className="text-white/60 mt-2 text-sm md:text-base">
+          <p className="text-white/80 mt-2 text-sm md:text-base">
             Bares, tiendas, gimnasios y emprendimientos que ya imprimieron sus calcos con nosotros.
           </p>
         </Reveal>

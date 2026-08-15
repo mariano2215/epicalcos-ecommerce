@@ -19,7 +19,7 @@ export default function LegalLayout({ title, intro, lastUpdated, children, bread
           <header className="mb-8">
             <span className="badge badge-soft mb-3">Información</span>
             <h1 className="font-display font-extrabold text-3xl md:text-5xl">{title}</h1>
-            {intro && <p className="text-white/70 mt-4">{intro}</p>}
+            {intro && <p className="text-white/80 mt-4">{intro}</p>}
             {lastUpdated && (
               <p className="text-white/40 text-xs mt-3">Última actualización: {lastUpdated}</p>
             )}

@@ -177,7 +177,7 @@ export default function Home() {
             style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(58,134,255,.35), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,27,141,.35), transparent 50%), rgba(32,32,32,.82)' }}>
             <span className="badge badge-hot mb-3">Descuentos</span>
             <h3 className="font-display font-extrabold text-2xl md:text-4xl">Desde 10 calcos, 10% off por transferencia</h3>
-            <p className="text-white/70 mt-3 max-w-xl mx-auto">
+            <p className="text-white/80 mt-3 max-w-xl mx-auto">
               Mezclá los diseños y tamaños que quieras, y pagá por transferencia bancaria. Y si vas por volumen, el Pack Mayorista desde 100 calcos tiene 50% de descuento.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">

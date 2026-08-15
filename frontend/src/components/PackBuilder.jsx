@@ -242,7 +242,7 @@ export default function PackBuilder({
             {esCatalogo ? `${totalSelected || effTarget || min} calcos` : `${offLabel}% OFF`}
           </span>
           <h1 className="font-display font-extrabold text-3xl md:text-4xl">{title}</h1>
-          <p className="text-white/60 mt-2 max-w-xl">{subtitle}</p>
+          <p className="text-white/80 mt-2 max-w-xl">{subtitle}</p>
         </header>
 
         {/* Paso 1: tamaño */}

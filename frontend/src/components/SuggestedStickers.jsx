@@ -310,7 +310,7 @@ export default function SuggestedStickers() {
         <div>
           <span className="badge badge-soft mb-2">✨ Sumalos a este pedido</span>
           <h2 className="font-display font-extrabold text-2xl md:text-3xl">Calcos sugeridas</h2>
-          <p className="text-white/60 text-sm mt-1">
+          <p className="text-white/80 text-sm mt-1">
             Parecidas a las que llevás · elegí el tamaño y se suman a este pedido, sin costo de envío extra.
           </p>
         </div>

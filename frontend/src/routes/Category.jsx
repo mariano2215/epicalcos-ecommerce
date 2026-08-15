@@ -111,7 +111,7 @@ export default function Category() {
           <h1 className="font-display font-extrabold text-4xl md:text-5xl">
             <span className="gradient-text">{category.name}</span>
           </h1>
-          <p className="text-white/60 mt-3 max-w-xl">
+          <p className="text-white/80 mt-3 max-w-xl">
             {items === null
               ? 'Cargando diseños…'
               : `${stickers.length} ${stickers.length === 1 ? 'diseño' : 'diseños'}. Elegí el tamaño una vez y tocá + en los que quieras.`}

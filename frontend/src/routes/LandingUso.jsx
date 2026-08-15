@@ -118,8 +118,8 @@ export default function LandingUso({ slug }) {
           <h1 className="font-display font-extrabold text-4xl md:text-5xl">
             <span className="gradient-text">{landing.h1}</span>
           </h1>
-          <p className="text-white/70 mt-3 text-lg">{landing.promesa}</p>
-          <p className="text-white/55 mt-2">
+          <p className="text-white/80 mt-3 text-lg">{landing.promesa}</p>
+          <p className="text-white/80 mt-2">
             Desde <strong className="text-white">{formatPrice(unit)}</strong> por calco.{' '}
             {BULK_THRESHOLD} o más, 10% off pagando por transferencia bancaria.
           </p>
@@ -135,7 +135,7 @@ export default function LandingUso({ slug }) {
           <h2 className="font-display font-extrabold text-xl">
             ¿Qué tamaño le va mejor?
           </h2>
-          <p className="text-white/70 mt-2 max-w-2xl">
+          <p className="text-white/80 mt-2 max-w-2xl">
             Para esto recomendamos el de{' '}
             <strong className="text-white">{sizeLabel(landing.tamanoRecomendado)}</strong>. {landing.tamanoPorQue}
           </p>
@@ -245,7 +245,7 @@ export default function LandingUso({ slug }) {
           <h2 className="font-display font-extrabold text-2xl md:text-3xl">
             Armá tu pedido de {landing.h1.toLowerCase()}
           </h2>
-          <p className="text-white/65 mt-2 max-w-xl mx-auto">
+          <p className="text-white/80 mt-2 max-w-xl mx-auto">
             Desde una sola calco. {BULK_THRESHOLD} o más, 10% off pagando por transferencia bancaria.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">

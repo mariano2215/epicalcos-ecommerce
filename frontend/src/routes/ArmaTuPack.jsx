@@ -109,7 +109,7 @@ export default function ArmaTuPack() {
           <h1 className="font-display font-extrabold text-4xl md:text-5xl">
             <span className="gradient-text">Armá tu pack</span>
           </h1>
-          <p className="text-white/65 mt-3">
+          <p className="text-white/80 mt-3">
             Elegí cuántas calcos querés, después los diseños. Podés mezclar categorías y repetir el
             mismo diseño las veces que quieras. Desde {BULK_THRESHOLD} calcos,{' '}
             <strong className="text-white">10% off pagando por transferencia bancaria</strong>.

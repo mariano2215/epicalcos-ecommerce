@@ -75,7 +75,7 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
           <div className="card-glass p-6 md:p-8">
             <span className="badge badge-new mb-3">{badge}</span>
             <h1 className="font-display font-extrabold text-3xl md:text-4xl">{title}</h1>
-            <p className="text-white/70 mt-3">{subtitle}</p>
+            <p className="text-white/80 mt-3">{subtitle}</p>
 
             <div className="mt-5 font-display font-extrabold text-3xl"
               style={{ backgroundImage: 'linear-gradient(135deg,#FF1B8D,#FF5A1F)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>

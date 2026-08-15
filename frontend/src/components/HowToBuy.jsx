@@ -14,7 +14,7 @@ export default function HowToBuy() {
         <div className="text-center mb-10">
           <span className="badge badge-soft mb-3">Cómo comprar</span>
           <h2 className="font-display font-extrabold text-3xl md:text-4xl">Súper simple</h2>
-          <p className="text-white/60 mt-2 max-w-xl mx-auto">
+          <p className="text-white/80 mt-2 max-w-xl mx-auto">
             4 pasos y tus calcos están en camino.
           </p>
         </div>

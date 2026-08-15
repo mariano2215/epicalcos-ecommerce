@@ -34,7 +34,7 @@ export default function Cart() {
         <div className="container-app py-20 text-center">
           <div className="text-6xl mb-3">🛒</div>
           <h1 className="font-display font-extrabold text-3xl">Tu carrito está vacío</h1>
-          <p className="text-white/60 mt-3">Sumá tus calcos favoritos y volvé acá para finalizar.</p>
+          <p className="text-white/80 mt-3">Sumá tus calcos favoritos y volvé acá para finalizar.</p>
           <Link to="/categorias" className="btn-primary mt-6 inline-flex">Ver categorías</Link>
         </div>
       </div>

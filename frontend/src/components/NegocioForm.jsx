@@ -79,7 +79,7 @@ export default function NegocioForm() {
         <div className="p-6 md:p-8">
         <span className="badge badge-new mb-3">Para tu negocio</span>
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Promo Negocio</h1>
-        <p className="text-white/70 mt-3">
+        <p className="text-white/80 mt-3">
           <strong className="text-white">100 calcos</strong> de un solo diseño (tu logo o el arte de tu
           marca) en <strong className="text-white">6 cm</strong>.
         </p>

@@ -41,7 +41,7 @@ export default function Mayorista() {
                   {PROMO_MAYORISTA_100.qty} calcos a{' '}
                   <span className="gradient-text">{formatPrice(PROMO_MAYORISTA_100.price)}</span>
                 </h2>
-                <p className="text-white/70 text-sm mt-1.5 max-w-xl">
+                <p className="text-white/80 text-sm mt-1.5 max-w-xl">
                   Podés elegir{' '}
                   <strong className="text-white">{PROMO_MAYORISTA_100.qty} diseños distintos</strong> del catálogo,
                   subir los tuyos, o mezclar. Solo en <strong className="text-white">4 y 6 cm</strong> —

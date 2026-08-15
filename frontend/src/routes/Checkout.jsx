@@ -325,7 +325,7 @@ export default function Checkout() {
       <div className="container-app py-10">
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Carrito', to: '/carrito' }, { name: 'Checkout' }]} />
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Checkout</h1>
-        <p className="text-white/60 mt-2">Revisá tu pedido y completá tus datos para pagar online.</p>
+        <p className="text-white/80 mt-2">Revisá tu pedido y completá tus datos para pagar online.</p>
 
         <div className="grid lg:grid-cols-3 gap-6 mt-8">
           <div className="lg:col-span-2">

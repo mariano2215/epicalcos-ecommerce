@@ -16,7 +16,7 @@ export default function Contact() {
         <div className="max-w-2xl mx-auto text-center">
           <span className="badge badge-soft mb-3">Hablemos</span>
           <h1 className="font-display font-extrabold text-4xl md:text-5xl">Contacto</h1>
-          <p className="text-white/70 mt-4">
+          <p className="text-white/80 mt-4">
             Para consultas, diseños personalizados o pedidos especiales, escribinos por cualquiera de estos canales.
           </p>
           <p className="text-white/40 text-sm mt-2">

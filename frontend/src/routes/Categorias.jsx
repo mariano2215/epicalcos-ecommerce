@@ -83,7 +83,7 @@ export default function Categorias() {
             <h1 className="font-display font-extrabold text-4xl md:text-5xl">
               <span className="gradient-text">Categorías</span>
             </h1>
-            <p className="text-white/60 mt-3 max-w-xl">
+            <p className="text-white/80 mt-3 max-w-xl">
               Elegí una categoría y armá tu pedido calco por calco. {BULK_DISCOUNT_SHORT}.
             </p>
           </div>

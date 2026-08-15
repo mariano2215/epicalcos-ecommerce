@@ -46,7 +46,7 @@ export default function PaymentTransfer() {
         <div className="card-glass p-10 max-w-xl mx-auto text-center">
           <div className="text-6xl mb-4">📥</div>
           <h1 className="font-display font-extrabold text-3xl md:text-4xl">¡Registramos tu pedido!</h1>
-          <p className="text-white/70 mt-3">
+          <p className="text-white/80 mt-3">
             Ya te mandamos un mail con el resumen. Ahora hacé la transferencia y envianos el comprobante
             para que pasemos tu pedido a producción.
           </p>

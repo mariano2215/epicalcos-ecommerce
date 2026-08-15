@@ -75,7 +75,7 @@ export default function ImprimiblesCard({ pack, photo, incluye }) {
         <div className="p-6 md:p-8">
           <span className="badge badge-new mb-3">Descarga digital</span>
           <h1 className="font-display font-extrabold text-3xl md:text-4xl">{pack.name}</h1>
-          <p className="text-white/70 mt-3">
+          <p className="text-white/80 mt-3">
             {pack.disenos ? (
               <>
                 <strong className="text-white">+{pack.disenos.toLocaleString('es-AR')} diseños</strong> listos
