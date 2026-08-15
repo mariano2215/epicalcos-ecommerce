@@ -16,10 +16,11 @@ const PASOS = [
 /**
  * Bloque "Qué pasa después de comprar" — visible en la página, no enterrado en el FAQ.
  *
- * Incluye la objeción que faltaba responder: "¿y si mi archivo no está bueno?".
- * No es una promesa nueva — es lo que el sitio YA hace y dice en /pago-exitoso
- * ("revisamos tu archivo… si algo no da, te escribimos por WhatsApp"). Estaba
- * dicho recién DESPUÉS de pagar, que es tarde para que sirva de algo.
+ * Tenía además una card "¿Y si mi archivo no está perfecto?". Se sacó el
+ * 15/8/2026 por pedido de Mariano: sembraba la duda de que el archivo podía no
+ * servir justo cuando el cliente está por subirlo. El paso 1 de la lista sigue
+ * diciendo que revisamos el archivo antes de imprimir, que es la parte que
+ * tranquiliza sin plantear el problema.
  */
 export default function QueSigue() {
   return (
@@ -33,15 +34,6 @@ export default function QueSigue() {
           </li>
         ))}
       </ol>
-
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.04] p-3.5">
-        <div className="text-sm font-semibold">¿Y si mi archivo no está perfecto?</div>
-        <p className="text-sm text-white/65 mt-1">
-          No lo imprimimos y listo. Miramos cada diseño antes de producir y, si la calidad no da o hay
-          algo raro con el corte, te escribimos por WhatsApp para resolverlo antes de que se imprima
-          nada. No hace falta que mandes el archivo perfecto.
-        </p>
-      </div>
     </section>
   );
 }

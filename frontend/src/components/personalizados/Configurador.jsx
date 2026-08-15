@@ -229,6 +229,13 @@ export default function Configurador() {
         </p>
       </header>
 
+      {/* Prueba social arriba de todo, antes del paso 1: el que llega acá con
+          su logo quiere ver cómo queda un diseño puesto, no leerlo. Estaba al
+          final de la columna izquierda, o sea después de decidir. El testimonio
+          del logo (index 1) es el único que muestra un calco de cliente
+          aplicado, que es de lo que se trata esta página. */}
+      <SocialProof index={1} destacado className="mb-6" />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 min-w-0 space-y-4">
           <PasoSelector
@@ -296,10 +303,6 @@ export default function Configurador() {
           </section>
 
           <QueSigue />
-
-          {/* Prueba social justo antes del resumen: el testimonio del logo es el
-              que habla de este producto. */}
-          <SocialProof index={1} />
         </div>
 
         <div className="min-w-0">
