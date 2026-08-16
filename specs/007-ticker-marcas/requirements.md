@@ -51,9 +51,10 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 - Reemplazar la imagen única por una pasarela (ticker) horizontal infinita.
 - Cada logo en **formato circular**.
-- **35 marcas**: 34 de la carpeta `~/Documents/Mariano/Marcas que confiaron` y
-  una sola (Elles Rosario) recortada de la imagen vieja, porque su logo no
-  existe en ningún otro lado. Mariano pidió explícitamente no perder ninguna.
+- **35 marcas**, todas con su logo original en
+  `~/Documents/Mariano/Marcas que confiaron`. Mariano pidió explícitamente no
+  perder ninguna de la tira vieja: las 11 se recortaron del collage y después él
+  fue consiguiendo los 11 originales a color.
 - Un proceso repetible para preparar los archivos.
 - La sección se ve igual en las dos páginas que la usan: Home y `/negocio`.
 
@@ -63,11 +64,9 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 - Enlazar cada logo al Instagram o sitio de la marca.
 - Cambiar el texto, el badge o la posición de la sección.
-- Borrar `/images/marcas-clientes.webp`: el archivo se queda porque es el
-  **original** del logo de Elles Rosario — el script lo recorta de ahí en cada
-  corrida.
-- Conseguir el logo a color de Elles Rosario. Se muestra como estaba en el
-  collage: wordmark blanco sobre gris oscuro.
+- Borrar `/images/marcas-clientes.webp`. Ya no es fuente de ningún logo y **se
+  puede borrar**, pero sacarlo es una decisión aparte de esta spec: queda
+  anotado, no ejecutado.
 
 ---
 
@@ -142,10 +141,11 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 | El logo es una foto sin fondo plano (Monchito Merlo) | Entra completo; el nombre impreso no se corta. |
 | El logo trae la URL de la marca impresa abajo (Wens) | No se muestra cortada a la mitad. |
 | El archivo viene con transparencia (Sacro) o es un PDF con extensión `.png` (Strive) | Se procesa igual que el resto. |
-| El fondo del logo es casi negro (13 de 35) | Se sigue distinguiendo el círculo contra el fondo oscuro de la página. |
+| El fondo del logo es casi negro (12 de 35) | Se sigue distinguiendo el círculo contra el fondo oscuro de la página. |
 | Dos marcas del mismo color (Poly y Eunoia, los dos verdes) | No quedan pegadas: juntas se leen como una sola mancha. |
-| La marca no tiene archivo propio: sólo existe adentro del collage viejo | Se recorta de ahí y entra al mismo pipeline que las demás. |
+| La marca no tiene archivo propio: sólo existe adentro de una imagen más grande | Se recorta de ahí y entra al mismo pipeline que las demás. |
 | Llega el logo original de una marca que estaba recortada | Se cambia `crop` por `archivo` en la tabla y se corre el script. Sin tocar código. |
+| El logo nuevo cambia de claro a oscuro (o al revés) | Se reacomoda el orden para no dejar dos claros o dos oscuros pegados. |
 | Falla la carga de una imagen | El resto de la tira sigue funcionando. |
 
 ---
@@ -166,13 +166,17 @@ sí hay que declarar el evento de click y pasarlo por `lib/analytics.js`.
 1. ~~**Las 11 marcas de la tira vieja.**~~ **RESUELTO el 15/08/2026.** Se le
    preguntó a Mariano qué hacer con las 11 que sólo existían dentro del collage
    y eligió **recortarlas y sumarlas**. Están las 35.
-2. ~~**`Balance Fit` se lee flojo.**~~ **RESUELTO el 15/08/2026**, junto con
-   otras 9: Mariano mandó los logos originales a color de 10 de las 11. Ahora
-   sólo **Elles Rosario** sigue saliendo del collage. Cuando aparezca su logo,
-   se cambia `crop` por `archivo` en la tabla del script y listo.
-3. **¿Los logos deberían linkear al Instagram de cada marca?** Sumaría prueba
+2. ~~**`Balance Fit` se lee flojo.**~~ **RESUELTO el 15/08/2026.** Mariano fue
+   consiguiendo los logos originales a color de las 11: primero 10, después el
+   de Elles Rosario. **Ninguna marca sale ya del collage** y el soporte de
+   `crop` quedó sin uso (se deja porque el caso vuelve).
+3. **`/images/marcas-clientes.webp` quedó huérfano.** Ya no lo lee nadie. Se
+   puede borrar —el historial de git lo conserva— pero se dejó porque sacarlo
+   no era parte del pedido.
+4. **¿Los logos deberían linkear al Instagram de cada marca?** Sumaría prueba
    social verificable, pero también saca gente del sitio en una página de
    conversión. No se hizo.
-4. **`HoopShoes` ahora es sólo el isotipo** (el aro, sin el wordmark), porque
-   así llegó el archivo. Se reconoce menos que el resto a 96 px. Si existe una
-   versión con el nombre, conviene esa.
+5. **Dos marcas quedaron representadas por su isotipo, sin el nombre**:
+   `HoopShoes` (el aro) y `Elles Rosario` (la "E"), porque así llegaron los
+   archivos. Se reconocen menos que el resto a 96 px. Si existe una versión con
+   el wordmark, conviene esa.

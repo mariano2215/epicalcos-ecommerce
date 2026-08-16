@@ -79,6 +79,14 @@ Mariano mandó a la carpeta los logos reales de 10 de las 11 recortadas.
       verde. Se mandó al final.
 - [x] Elles Rosario queda como único recorte del collage.
 
+## Fase 3.7 — Elles Rosario *(agregada después)*
+
+- [x] Sumar `elles-rosario.jpg`: la última que salía del collage.
+- [x] Reordenar: pasó de gris oscuro a crema y quedaba entre Fama y FisioForce,
+      que son los dos blancos. Boiler subió a ese lugar y Elles bajó al 25.
+- [x] Marcar el soporte de `crop` como sin uso y anotar que
+      `marcas-clientes.webp` quedó huérfano. **No se borró**: no era el pedido.
+
 ## Fase 4 — Espejo de precios
 
 - [x] **No aplica.** La feature no toca `pricing.js` ni `site.js` en ninguno de
@@ -107,9 +115,11 @@ Mariano mandó a la carpeta los logos reales de 10 de las 11 recortadas.
 
 ## Hallazgos fuera de scope
 
-1. **`HoopShoes` quedó como isotipo solo** (el aro, sin el nombre), porque así
-   llegó el archivo. Se reconoce menos que el resto a 96 px.
-   → `requirements.md` §12.4.
+1. **`HoopShoes` y `Elles Rosario` quedaron como isotipo solo** (el aro y la
+   "E", sin el nombre), porque así llegaron los archivos. Se reconocen menos que
+   el resto a 96 px. → `requirements.md` §12.5.
+2. **`/images/marcas-clientes.webp` quedó huérfano** al entrar el último logo
+   original. Se puede borrar; no se hizo. → `requirements.md` §12.3.
 2. **El comentario de `StickerField.jsx:62` menciona `marcas-clientes.webp`.**
    Se dejó como está: es un relato en pasado de un bug de LCP ya corregido, y
    reescribirlo borraría la historia que el comentario existe para conservar.
@@ -121,6 +131,10 @@ Mariano mandó a la carpeta los logos reales de 10 de las 11 recortadas.
 
 ## Bitácora
 
+- **15/08/2026 (4)** — Llegó el logo de Elles Rosario, la última que salía del
+  collage. Único ajuste no obvio: el logo real es crema y el recorte era gris
+  oscuro, así que hubo que reacomodar el orden. `marcas-clientes.webp` dejó de
+  ser fuente de nada.
 - **15/08/2026 (3)** — Mariano consiguió los logos originales a color de 10 de
   las 11 recortadas y los puso en la carpeta. Cambiar `crop` por `archivo` fue
   una línea por marca. Segunda vez que la feature crece sin abrir el componente.
@@ -132,5 +146,5 @@ Mariano mandó a la carpeta los logos reales de 10 de las 11 recortadas.
   pudo hacer con capturas del navegador (el panel de preview devolvía negro
   porque el documento estaba `hidden`), así que se verificó de dos maneras:
   midiendo la geometría real en el DOM con JavaScript, y componiendo aparte, con
-  ImageMagick, los 24 círculos exactamente como los va a dibujar el navegador
-  (96 px, anillo, fondo `#121212`).
+  ImageMagick, los círculos exactamente como los va a dibujar el navegador
+  (96 px, anillo, fondo `#121212`). Ese chequeo se repitió en cada tanda.

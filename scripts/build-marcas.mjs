@@ -48,16 +48,17 @@ const OUT_IMG = join(ROOT, 'frontend', 'public', 'images', 'marcas');
 const OUT_DATA = join(ROOT, 'frontend', 'src', 'data', 'marcas.js');
 
 /**
- * La tira vieja. Es la ÚNICA fuente del logo de Elles Rosario: no existe el
- * archivo suelto, sobrevive sólo adentro de este collage, en blanco sobre gris.
- * Por eso el archivo no se borra aunque ya no se muestre en ninguna página.
+ * La tira vieja, de la que se recortaron las 11 marcas que no tenían archivo
+ * propio. Mariano terminó mandando los 11 logos originales a color, así que
+ * **hoy ninguna marca sale de acá** y `marcas-clientes.webp` ya no es fuente de
+ * nada: se puede borrar cuando se quiera (queda en el historial de git).
  *
- * Al principio salían de acá las 11 marcas viejas; Mariano después mandó 10 de
- * los logos originales a color y quedó sólo esta. Cuando aparezca el de Elles
- * Rosario, se cambia su `crop` por `archivo` y este bloque se puede borrar.
+ * El soporte de `crop` se deja porque el caso vuelve solo: cada tanto aparece
+ * una marca cuyo logo únicamente existe adentro de una captura. Para usarlo,
+ * poner `crop: 'AnchoxAlto+X+Y'` en vez de `archivo`.
  *
- * Las coordenadas del recorte salieron de un análisis de componentes conexos
- * sobre la imagen umbralizada, no de medir a ojo.
+ * Las coordenadas de aquellos recortes no se midieron a ojo: salieron de un
+ * análisis de componentes conexos sobre la imagen umbralizada y dilatada.
  */
 const COLLAGE = join(ROOT, 'frontend', 'public', 'images', 'marcas-clientes.webp');
 
@@ -96,7 +97,9 @@ const MARCAS = [
   { archivo: 'espacioterra.jpg', slug: 'espacio-terra', nombre: 'Espacio Terra' },
   { archivo: 'lwlacteos.jpg', slug: 'lw-lacteos', nombre: 'LW Lácteos', recorte: 'circulo' },
   { archivo: 'fama-automotores.jpeg', slug: 'fama-automotores', nombre: 'Fama Automotores' },
-  { crop: '416x173+1504+83', slug: 'elles-rosario', nombre: 'Elles Rosario' },
+  // Boiler se subió acá cuando llegó el logo real de Elles Rosario: era el
+  // único oscuro entre Fama y FisioForce, que son los dos blancos.
+  { archivo: 'Boiler.webp', slug: 'boiler', nombre: 'Boiler' },
   { archivo: 'FisioForce.jpg', slug: 'fisioforce', nombre: 'FisioForce' },
   { archivo: 'wens.jpeg', slug: 'wens-sports', nombre: 'Wens Sports', recorte: 'cover', zoom: 1.3 },
   { archivo: 'degani.jpg', slug: 'degani', nombre: 'Degani' },
@@ -106,7 +109,7 @@ const MARCAS = [
   { archivo: 'trapitosdolls.jpg', slug: 'trapitos-dolls', nombre: 'Trapitos Dolls', recorte: 'circulo' },
   { archivo: 'hoopshoes.jpg', slug: 'hoopshoes', nombre: 'HoopShoes' },
   { archivo: 'monchito merlo.jpg', slug: 'monchito-merlo', nombre: 'Monchito Merlo' },
-  { archivo: 'Boiler.webp', slug: 'boiler', nombre: 'Boiler' },
+  { archivo: 'elles-rosario.jpg', slug: 'elles-rosario', nombre: 'Elles Rosario' },
   { archivo: 'Malte project.jpg', slug: 'malte-project', nombre: 'Malte Project' },
   { archivo: 'vyastore.jpg', slug: 'vya-store', nombre: 'Vyastore' },
   { archivo: 'epicademy1.jpg', slug: 'epicademy', nombre: 'Epicademy' },

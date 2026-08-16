@@ -30,9 +30,9 @@
   captura de pantalla de la propia carpeta. Se descartan.
 - La tira vieja tiene **11 marcas que no están en la carpeta**: su logo no
   existe en ningún otro lado. Mariano pidió recuperarlas, así que el collage
-  pasa de ser "la imagen que se reemplaza" a ser **una fuente más** del
-  pipeline. Después mandó los originales a color de 10 de esas 11, y quedó
-  sólo Elles Rosario saliendo de ahí.
+  pasó de ser "la imagen que se reemplaza" a ser **una fuente más** del
+  pipeline. Después fue consiguiendo los 11 originales a color, y hoy el collage
+  no es fuente de nada.
 - `strive-1.png` **no es un PNG**: es un PDF con la extensión cambiada.
 - `SACRO.png` es RGBA y no es cuadrado (542×480).
 
@@ -44,7 +44,7 @@ Tres piezas, cada una con una responsabilidad:
 
 ```
 carpeta de origen (fuera del repo)      images/marcas-clientes.webp
-   34 archivos sueltos                    la tira vieja: 1 recorte
+   35 archivos sueltos                    (fuente de recortes: hoy sin uso)
         │                                          │
         └──────────────┬───────────────────────────┘
                        │  node scripts/build-marcas.mjs
@@ -163,23 +163,22 @@ Tres modos, porque no todos los archivos son el mismo problema:
 El lienzo se rellena con el **color de fondo del propio logo** (muestreado en la
 esquina), así el círculo se lee como el fondo de la marca y no como un recorte.
 
-### El recorte del collage
+### El recorte del collage *(mecanismo hoy sin uso)*
 
-Una marca —hoy sólo Elles Rosario— no tiene archivo propio: se recorta de
-`images/marcas-clientes.webp` con una caja fija (campo `crop`) y de ahí sigue
-por el modo `ajustar` como cualquier otra. El fondo que muestrea es el gris
-`#242424` del collage, así que queda un círculo gris oscuro con el wordmark
-blanco.
+Cuando una marca no tiene archivo propio, se recorta de una imagen más grande
+con una caja fija (campo `crop`) y de ahí sigue por el modo `ajustar` como
+cualquier otra: el resto del pipeline no distingue de dónde salió la imagen.
 
-Las cajas **no se midieron a ojo**: se umbralizó la imagen, se dilataron las
-letras hasta que cada wordmark quedó como una mancha sola y se leyeron los
-bounding boxes con `-connected-components`. Dos marcas necesitaron unir dos
-manchas (`GOAT BRAND` + su isotipo, y `BALANCE` + `FIT`, separados por un
-espacio más ancho que el kernel de dilatación).
+Así entraron las 11 marcas de la tira vieja. Las cajas **no se midieron a ojo**:
+se umbralizó `images/marcas-clientes.webp`, se dilataron las letras hasta que
+cada wordmark quedó como una mancha sola y se leyeron los bounding boxes con
+`-connected-components`. Dos necesitaron unir dos manchas (`GOAT BRAND` + su
+isotipo, y `BALANCE` + `FIT`, separados por un espacio más ancho que el kernel).
 
-Arrancó siendo el camino de las 11 marcas viejas. Cuando Mariano mandó 10 de
-los logos originales, pasar cada una de `crop` a `archivo` fue una línea por
-marca: el resto del pipeline no distingue de dónde salió la imagen.
+Después Mariano fue consiguiendo los 11 logos originales a color, y pasar cada
+uno de `crop` a `archivo` fue **una línea por marca**. Hoy no queda ninguna
+usando `crop`: el mecanismo se deja porque el caso vuelve solo, y
+`marcas-clientes.webp` quedó huérfano (ver `requirements.md` §12.3).
 
 ---
 
@@ -257,7 +256,7 @@ marcas aparecerían dos veces al scrollear.
 - `alt` = nombre real de la marca **solo en la primera copia**.
 - La segunda copia va con `aria-hidden="true"` y `alt=""`: es relleno visual, y
   sin eso un lector de pantalla leería las 35 marcas dos veces.
-- El anillo `ring-white/20` no es adorno: 13 de los 35 logos tienen fondo casi
+- El anillo `ring-white/20` no es adorno: 12 de los 35 logos tienen fondo casi
   negro y sin él no se distinguen del fondo de la página.
 
 ---

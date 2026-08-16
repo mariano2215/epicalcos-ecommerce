@@ -38,7 +38,7 @@ deploy.
 | RF-5 | Ningún logo cortado por el círculo | ✅ | Los 35 revisados uno por uno con la máscara aplicada. Los casos de riesgo (`Shippear.`, `MANHATTAN`, `EUNOIA · ESTUDIO`, `ESPACIO TERRA`, `HOOPSHOES`, `BALANCE FIT`) entran enteros gracias al rectángulo inscripto. |
 | RF-6 | El movimiento se detiene con el mouse encima | ✅ | `.marcas-ticker:hover .marcas-ticker__pista{animation-play-state:paused}` presente en el CSS compilado. *No se pudo ejercitar el hover real* — ver §Notas. |
 | RF-7 | `prefers-reduced-motion` sin animación y recorrible | ✅ | Las cuatro reglas están dentro del `@media (prefers-reduced-motion: reduce)`, verificadas leyendo `document.styleSheets` en la página servida y en el CSS compilado. *No se ejercitó con la preferencia activada* — ver §Notas. |
-| RF-8 | Sumar una marca = una fila + un comando | ✅ | Probado dos veces: sumar las 11 del collage fueron 11 filas y una corrida; reemplazar 10 de ellas por el logo original fue cambiar `crop` por `archivo` y correr de nuevo. **Ninguna de las dos veces hubo que tocar el componente ni el CSS.** |
+| RF-8 | Sumar una marca = una fila + un comando | ✅ | Probado tres veces: sumar las 11 del collage, reemplazar 10 por su logo original, y sumar el de Elles Rosario. **Ninguna de las tres hubo que tocar el componente ni el CSS.** |
 
 ---
 
@@ -63,10 +63,11 @@ deploy.
 | Foto sin fondo plano | ✅ | Monchito Merlo entra completo, con el nombre legible. |
 | URL impresa en el logo | ✅ | Wens con `cover` + `zoom: 1.3`: queda la marca, se va la URL. |
 | PNG con alfa / PDF disfrazado | ✅ | `SACRO.png` (RGBA, 542×480) y `strive-1.png` (PDF) procesados sin caso especial en el componente. |
-| Fondo casi negro | ✅ | 13 logos. `ring-white/20` los separa del fondo de la página. |
+| Fondo casi negro | ✅ | 12 logos. `ring-white/20` los separa del fondo de la página. |
 | Dos marcas del mismo color | ✅ | Poly llegó verde y quedaba pegado a Eunoia, también verde. Se movió al final de la lista. |
-| Marca sin archivo propio | ✅ | Elles Rosario se recorta del collage con caja fija y entra al mismo pipeline. La caja salió de `-connected-components`, no de medir a ojo. |
-| Llega el logo original de una recortada | ✅ | Pasó con 10 de las 11: `crop` → `archivo`, una corrida del script y listo. |
+| Marca sin archivo propio | ✅ | Las 11 de la tira vieja se recortaron del collage con caja fija y entraron al mismo pipeline. Las cajas salieron de `-connected-components`, no de medir a ojo. Hoy ninguna marca lo necesita. |
+| Llega el logo original de una recortada | ✅ | Pasó con las 11: `crop` → `archivo`, una corrida del script y listo. |
+| El logo nuevo invierte claro/oscuro | ✅ | Elles Rosario pasó de gris oscuro a crema y quedaba entre dos blancos. Boiler ocupó ese lugar y Elles bajó al 25. |
 | Una imagen falla | ✅ | Queda el círculo con `bg-white/5` y el resto sigue. Ya **no** se esconde la sección entera, como sí hacía la versión vieja con su única imagen. |
 
 ---
@@ -75,9 +76,9 @@ deploy.
 
 | Qué | Resultado | Verificación |
 |---|---|---|
-| Suite de tests | ✅ | `npm test` → **229/229**, 14 archivos. Corrida de nuevo con los logos originales. |
-| Build de producción | ✅ | `npm run build --prefix frontend` → `✓ built in 5.77s`, sin warnings nuevos. |
-| El recorte no rompe el collage original | ✅ | El script **lee** `marcas-clientes.webp`, nunca lo escribe. El archivo queda intacto en el repo. |
+| Suite de tests | ✅ | `npm test` → **229/229**, 14 archivos. Corrida de nuevo con los 35 logos originales. |
+| Build de producción | ✅ | `npm run build --prefix frontend` → `✓ built in 5.61s`, sin warnings nuevos. |
+| El recorte no rompe el collage original | ✅ | El script **lee** `marcas-clientes.webp`, nunca lo escribe. El archivo queda intacto en el repo, ahora sin uso. |
 | El CSS del ticker sobrevive al build | ✅ | Las 12 reglas `.marcas-ticker*` y el `@keyframes` están en `dist/assets/index-*.css`. |
 | El ticker viejo del header | ✅ | `.announcement-ticker` intacto: no se tocó ni su regla ni su `@keyframes`. Se agregó un bloque nuevo al lado. |
 | Home y `/negocio` renderizan | ✅ | Las dos cargan y muestran la sección con las 35 marcas. |
@@ -128,7 +129,7 @@ deploy.
 
 ### Resumen
 
-**23 de 23 criterios cumplidos** (8 funcionales + 5 no funcionales + 10 edge
+**24 de 24 criterios cumplidos** (8 funcionales + 5 no funcionales + 11 edge
 cases). Ninguno incumplido.
 
 ### Criterios no cumplidos
@@ -149,10 +150,11 @@ Ninguno.
    cerró con **35** marcas, no 24. Que eso se haya hecho tocando sólo la tabla
    del script —sin abrir el componente ni el CSS— es la mejor evidencia de que
    RF-8 se cumple de verdad.
-3. **10 de esas 11 ya tienen su logo original a color.** Mariano los mandó en la
-   misma sesión, así que `Balance Fit` —que se leía flojo recortado del
-   collage— y otras nueve pasaron a su versión real. Queda **sólo Elles
-   Rosario** saliendo del collage.
-4. **`HoopShoes` quedó como isotipo solo**, sin el wordmark, porque así llegó el
-   archivo. No incumple ningún criterio, pero se reconoce menos que el resto a
-   96 px. Anotado en `requirements.md` §12.4.
+3. **Las 11 terminaron con su logo original a color.** Mariano los fue
+   consiguiendo en la misma sesión: primero 10, después el de Elles Rosario. El
+   soporte de `crop` quedó sin uso y `/images/marcas-clientes.webp` huérfano —
+   se puede borrar, pero no se hizo porque no era el pedido
+   (`requirements.md` §12.3).
+4. **`HoopShoes` y `Elles Rosario` quedaron como isotipo solo**, sin wordmark,
+   porque así llegaron los archivos. No incumplen ningún criterio, pero se
+   reconocen menos que el resto a 96 px. Anotado en `requirements.md` §12.5.
