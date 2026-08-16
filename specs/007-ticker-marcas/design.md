@@ -158,7 +158,18 @@ Tres modos, porque no todos los archivos son el mismo problema:
 |---|---|---|
 | `ajustar` (default) | Logo sobre fondo plano | Recorta el fondo y aplica la fórmula. |
 | `circulo` | El logo **ya es** un círculo (Sacro, Mentha, Trapitos, LW Lácteos) | Recorta el fondo y lo estira al diámetro completo. Con `ajustar` quedaría un círculo dentro de otro. |
-| `cover` | No hay fondo plano que recortar (Wens: trama de galones) | Recorte cuadrado central, como foto de perfil. `zoom` opcional para empujar afuera lo que sobra. |
+| `cover` | No hay fondo plano que recortar: tramas (Wens), fotos (Monchito) o **degradados** (HoopShoes, Positano) | Recorte cuadrado central, como foto de perfil. `zoom` opcional para empujar afuera lo que sobra o para agrandar el logo. |
+
+**Los degradados son la trampa del modo `ajustar`.** Si el fondo no es plano,
+`-trim` no encuentra dónde cortar, el "contenido" pasa a ser el cuadrado entero
+y el logo cae a la caja de un logo cuadrado: HoopShoes quedaba al **53 %** del
+diámetro contra el ~90 % de un wordmark bien recortado.
+
+Forzarlo con más `fuzz` es peor: recorta bien, pero después pega ese parche del
+degradado sobre el color plano de la esquina y **se ve el rectángulo** dentro
+del círculo. Por eso van con `cover` + `zoom`, que conserva el degradado
+completo y llena el círculo (`zoom` 1,12 y 1,25 respectivamente — más que eso
+el aro de HoopShoes empieza a rozar el borde).
 
 El lienzo se rellena con el **color de fondo del propio logo** (muestreado en la
 esquina), así el círculo se lee como el fondo de la marca y no como un recorte.

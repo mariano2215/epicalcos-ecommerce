@@ -68,6 +68,7 @@ deploy.
 | Marca sin archivo propio | ✅ | Las 11 de la tira vieja se recortaron del collage con caja fija y entraron al mismo pipeline. Las cajas salieron de `-connected-components`, no de medir a ojo. Hoy ninguna marca lo necesita. |
 | Llega el logo original de una recortada | ✅ | Pasó con las 11: `crop` → `archivo`, una corrida del script y listo. |
 | El logo nuevo invierte claro/oscuro | ✅ | Elles Rosario pasó de gris oscuro a crema y quedaba entre dos blancos. Boiler ocupó ese lugar y Elles bajó al 25. |
+| Fondo con degradado | ✅ | HoopShoes y Positano quedaban al 53 % y 65 % del diámetro porque `-trim` no encuentra borde en un degradado. Resueltos con `cover` + `zoom` (1,12 y 1,25), que llena el círculo sin dejar la costura del recorte. |
 | Una imagen falla | ✅ | Queda el círculo con `bg-white/5` y el resto sigue. Ya **no** se esconde la sección entera, como sí hacía la versión vieja con su única imagen. |
 
 ---
@@ -129,7 +130,7 @@ deploy.
 
 ### Resumen
 
-**24 de 24 criterios cumplidos** (8 funcionales + 5 no funcionales + 11 edge
+**25 de 25 criterios cumplidos** (8 funcionales + 5 no funcionales + 12 edge
 cases). Ninguno incumplido.
 
 ### Criterios no cumplidos

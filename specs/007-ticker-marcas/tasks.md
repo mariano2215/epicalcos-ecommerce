@@ -87,6 +87,20 @@ Mariano mandó a la carpeta los logos reales de 10 de las 11 recortadas.
 - [x] Marcar el soporte de `crop` como sin uso y anotar que
       `marcas-clientes.webp` quedó huérfano. **No se borró**: no era el pedido.
 
+## Fase 3.8 — HoopShoes y Positano *(agregada después)*
+
+Mariano los vio chicos en la tira. Tenía razón: los dos tienen fondo con
+degradado y por eso `ajustar` los dejaba al 53 % y 65 % del diámetro.
+
+- [x] Diagnosticar: medir el `-trim` a 6 / 15 / 25 / 35 % de fuzz y confirmar
+      que a 6 % no recorta nada porque el fondo no es plano.
+- [x] Descartar la solución obvia (subir el fuzz): recorta bien pero después
+      pega el parche del degradado sobre el color plano y se ve el rectángulo.
+- [x] Pasarlos a `cover` + `zoom`, comparando 1,00 / 1,12 / 1,25 en círculo.
+- [x] Elegir 1,12 para HoopShoes (a 1,25 el aro roza el borde) y 1,25 para
+      Positano.
+- [x] Dejar escrito en el script por qué los degradados rompen `ajustar`.
+
 ## Fase 4 — Espejo de precios
 
 - [x] **No aplica.** La feature no toca `pricing.js` ni `site.js` en ninguno de
@@ -131,6 +145,9 @@ Mariano mandó a la carpeta los logos reales de 10 de las 11 recortadas.
 
 ## Bitácora
 
+- **15/08/2026 (5)** — HoopShoes y Positano se veían chicos. La causa no era el
+  padding sino el degradado de fondo, que deja a `-trim` sin borde contra el
+  cual recortar. Es el límite del modo `ajustar` y ahora está documentado.
 - **15/08/2026 (4)** — Llegó el logo de Elles Rosario, la última que salía del
   collage. Único ajuste no obvio: el logo real es crema y el recorte era gris
   oscuro, así que hubo que reacomodar el orden. `marcas-clientes.webp` dejó de

@@ -22,10 +22,17 @@
  *   - `circulo`  → el logo YA es un círculo (Sacro, Mentha, Trapitos, LW). Se
  *                  recorta el fondo y se estira al diámetro completo: si se
  *                  "ajustara" quedaría un círculo dentro de otro círculo.
- *   - `cover`    → no hay fondo plano que recortar (fotos, tramas). Se recorta
- *                  al cuadrado central como una foto de perfil. Con `zoom` se
- *                  agranda antes de recortar, para empujar afuera lo que no
- *                  suma (Wens trae la URL impresa abajo del logo).
+ *   - `cover`    → no hay fondo plano que recortar (fotos, tramas, DEGRADADOS).
+ *                  Se recorta al cuadrado central como una foto de perfil. Con
+ *                  `zoom` se agranda antes de recortar, para empujar afuera lo
+ *                  que no suma (Wens trae la URL impresa abajo del logo) o para
+ *                  que el logo llene el círculo (HoopShoes, Positano).
+ *
+ * OJO CON LOS DEGRADADOS: si el fondo no es plano, `ajustar` no tiene contra
+ * qué recortar y el logo cae al tamaño de uno cuadrado (~53 % del diámetro en
+ * vez de ~90 %). Y forzar el recorte con más `fuzz` es peor: pega el parche del
+ * degradado sobre el color plano de la esquina y se ve el rectángulo. Para esos
+ * casos va `cover` + `zoom`, que conserva el degradado entero.
  *
  * Salida: frontend/public/images/marcas/<slug>.webp de 256×256 (el slot más
  * grande son 96 px, así que cubre pantallas 2,5×) + reescribe
@@ -103,11 +110,11 @@ const MARCAS = [
   { archivo: 'FisioForce.jpg', slug: 'fisioforce', nombre: 'FisioForce' },
   { archivo: 'wens.jpeg', slug: 'wens-sports', nombre: 'Wens Sports', recorte: 'cover', zoom: 1.3 },
   { archivo: 'degani.jpg', slug: 'degani', nombre: 'Degani' },
-  { archivo: 'positano.jpg', slug: 'positano-vinos', nombre: 'Positano Club de Vinos' },
+  { archivo: 'positano.jpg', slug: 'positano-vinos', nombre: 'Positano Club de Vinos', recorte: 'cover', zoom: 1.25 },
   { archivo: 'FYF.jpg', slug: 'fyf-gym', nombre: 'FyF Gym' },
   { archivo: 'manhattan cocktails.jpg', slug: 'manhattan-cocktails', nombre: 'Manhattan Cocktails' },
   { archivo: 'trapitosdolls.jpg', slug: 'trapitos-dolls', nombre: 'Trapitos Dolls', recorte: 'circulo' },
-  { archivo: 'hoopshoes.jpg', slug: 'hoopshoes', nombre: 'HoopShoes' },
+  { archivo: 'hoopshoes.jpg', slug: 'hoopshoes', nombre: 'HoopShoes', recorte: 'cover', zoom: 1.12 },
   { archivo: 'monchito merlo.jpg', slug: 'monchito-merlo', nombre: 'Monchito Merlo' },
   { archivo: 'elles-rosario.jpg', slug: 'elles-rosario', nombre: 'Elles Rosario' },
   { archivo: 'Malte project.jpg', slug: 'malte-project', nombre: 'Malte Project' },

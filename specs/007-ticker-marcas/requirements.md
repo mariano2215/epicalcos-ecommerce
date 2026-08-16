@@ -146,6 +146,7 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 | La marca no tiene archivo propio: sólo existe adentro de una imagen más grande | Se recorta de ahí y entra al mismo pipeline que las demás. |
 | Llega el logo original de una marca que estaba recortada | Se cambia `crop` por `archivo` en la tabla y se corre el script. Sin tocar código. |
 | El logo nuevo cambia de claro a oscuro (o al revés) | Se reacomoda el orden para no dejar dos claros o dos oscuros pegados. |
+| El fondo del logo es un degradado, no un color plano | El logo tiene que llenar el círculo igual que los demás, sin que se vea el rectángulo del recorte. |
 | Falla la carga de una imagen | El resto de la tira sigue funcionando. |
 
 ---
