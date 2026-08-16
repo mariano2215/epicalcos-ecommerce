@@ -54,21 +54,6 @@ const SRC = process.env.MARCAS_SRC || '/Users/marianocalandra/Documents/Mariano/
 const OUT_IMG = join(ROOT, 'frontend', 'public', 'images', 'marcas');
 const OUT_DATA = join(ROOT, 'frontend', 'src', 'data', 'marcas.js');
 
-/**
- * La tira vieja, de la que se recortaron las 11 marcas que no tenían archivo
- * propio. Mariano terminó mandando los 11 logos originales a color, así que
- * **hoy ninguna marca sale de acá** y `marcas-clientes.webp` ya no es fuente de
- * nada: se puede borrar cuando se quiera (queda en el historial de git).
- *
- * El soporte de `crop` se deja porque el caso vuelve solo: cada tanto aparece
- * una marca cuyo logo únicamente existe adentro de una captura. Para usarlo,
- * poner `crop: 'AnchoxAlto+X+Y'` en vez de `archivo`.
- *
- * Las coordenadas de aquellos recortes no se midieron a ojo: salieron de un
- * análisis de componentes conexos sobre la imagen umbralizada y dilatada.
- */
-const COLLAGE = join(ROOT, 'frontend', 'public', 'images', 'marcas-clientes.webp');
-
 /** Diámetro del archivo final. El slot más grande del ticker son 96 px. */
 const D = 256;
 /** Aire entre el contenido y el borde del círculo. 1.0 = pegado al filo. */
@@ -81,8 +66,14 @@ const PADDING = 0.92;
  * poner juntas dos marcas del mismo color (ver Poly y Eunoia abajo).
  *
  * `archivo` es el nombre tal cual está en la carpeta de origen — no se
- * renombran los originales, se mapean acá. `crop` significa que la marca no
- * tiene archivo propio y sale del collage viejo (ver COLLAGE arriba).
+ * renombran los originales, se mapean acá.
+ *
+ * `crop: 'AnchoxAlto+X+Y'` recorta un pedazo del archivo antes de procesarlo.
+ * Hoy no lo usa nadie. Está porque el caso vuelve: hubo 11 marcas cuyo logo
+ * sólo existía adentro de la tira vieja (`images/marcas-clientes.webp`, ya
+ * borrada) y se recortaron de ahí hasta que Mariano consiguió los originales.
+ * Aquellas coordenadas no se midieron a ojo: salieron de un análisis de
+ * componentes conexos sobre la imagen umbralizada y dilatada.
  *
  * Quedaron AFUERA a propósito:
  *   - marcasviejas.webp   → es la tira vieja (idéntica a images/marcas-clientes.webp)
@@ -167,9 +158,9 @@ function cajaInscripta(r) {
 }
 
 function procesar(marca, tmp) {
-  const origen = marca.crop ? COLLAGE : join(SRC, marca.archivo);
+  const origen = join(SRC, marca.archivo);
   if (!existsSync(origen)) {
-    console.error(`[marcas] ⚠️  no está: ${marca.archivo || marca.slug}`);
+    console.error(`[marcas] ⚠️  no está: ${marca.archivo}`);
     return false;
   }
 
@@ -177,7 +168,10 @@ function procesar(marca, tmp) {
   const final = join(tmp, `${marca.slug}-final.png`);
 
   if (marca.crop) {
-    sh('magick', [origen, '-crop', marca.crop, '+repage', plano]);
+    // El aplanado de alfa va acá también: si no, un recorte sobre un PNG con
+    // transparencia llega al `-trim` con el canvas vacío incluido.
+    sh('magick', [origen, '-crop', marca.crop, '+repage',
+      '-background', 'white', '-alpha', 'remove', '-alpha', 'off', plano]);
   } else if (marca.pdf) {
     // strive-1.png es un PDF con extensión .png. Sin esto, magick delega en
     // ghostscript (que no está instalado) y el archivo se pierde en silencio.

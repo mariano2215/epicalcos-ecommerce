@@ -57,6 +57,7 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
   fue consiguiendo los 11 originales a color.
 - Un proceso repetible para preparar los archivos.
 - La sección se ve igual en las dos páginas que la usan: Home y `/negocio`.
+- Dar de baja `/images/marcas-clientes.webp`, la imagen que se reemplaza.
 
 ---
 
@@ -64,9 +65,6 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 - Enlazar cada logo al Instagram o sitio de la marca.
 - Cambiar el texto, el badge o la posición de la sección.
-- Borrar `/images/marcas-clientes.webp`. Ya no es fuente de ningún logo y **se
-  puede borrar**, pero sacarlo es una decisión aparte de esta spec: queda
-  anotado, no ejecutado.
 
 ---
 
@@ -171,9 +169,9 @@ sí hay que declarar el evento de click y pasarlo por `lib/analytics.js`.
    consiguiendo los logos originales a color de las 11: primero 10, después el
    de Elles Rosario. **Ninguna marca sale ya del collage** y el soporte de
    `crop` quedó sin uso (se deja porque el caso vuelve).
-3. **`/images/marcas-clientes.webp` quedó huérfano.** Ya no lo lee nadie. Se
-   puede borrar —el historial de git lo conserva— pero se dejó porque sacarlo
-   no era parte del pedido.
+3. ~~**`/images/marcas-clientes.webp` quedó huérfano.**~~ **RESUELTO el
+   15/08/2026:** Mariano pidió borrarlo y se borró. Queda en el historial de git
+   (`8adbd5b`) si alguna vez hace falta volver a recortar algo de ahí.
 4. **¿Los logos deberían linkear al Instagram de cada marca?** Sumaría prueba
    social verificable, pero también saca gente del sitio en una página de
    conversión. No se hizo.

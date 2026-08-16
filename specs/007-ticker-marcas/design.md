@@ -43,10 +43,9 @@
 Tres piezas, cada una con una responsabilidad:
 
 ```
-carpeta de origen (fuera del repo)      images/marcas-clientes.webp
-   35 archivos sueltos                    (fuente de recortes: hoy sin uso)
-        │                                          │
-        └──────────────┬───────────────────────────┘
+carpeta de origen (fuera del repo)
+   35 archivos sueltos
+                       │
                        │  node scripts/build-marcas.mjs
                        ▼
 frontend/public/images/marcas/<slug>.webp   (35 archivos, 256×256)
@@ -78,6 +77,12 @@ componente solo mapea una lista.
 | `scripts/build-marcas.mjs` | Prepara los logos y genera la lista. |
 | `frontend/src/data/marcas.js` | **Generado.** Lista de `{ slug, nombre }` en orden de pasarela. |
 | `frontend/public/images/marcas/*.webp` | 35 logos de 256×256. |
+
+### Archivos que se borran
+
+| Archivo | Por qué |
+|---|---|
+| `frontend/public/images/marcas-clientes.webp` | La tira vieja. Dejó de mostrarse al reemplazar la sección y dejó de ser fuente de recortes cuando llegó el último logo original. Sigue en el historial de git (`8adbd5b`). |
 
 ### ⚠️ Módulos compartidos
 
@@ -174,11 +179,12 @@ el aro de HoopShoes empieza a rozar el borde).
 El lienzo se rellena con el **color de fondo del propio logo** (muestreado en la
 esquina), así el círculo se lee como el fondo de la marca y no como un recorte.
 
-### El recorte del collage *(mecanismo hoy sin uso)*
+### El recorte *(mecanismo hoy sin uso)*
 
-Cuando una marca no tiene archivo propio, se recorta de una imagen más grande
-con una caja fija (campo `crop`) y de ahí sigue por el modo `ajustar` como
-cualquier otra: el resto del pipeline no distingue de dónde salió la imagen.
+Cuando una marca no tiene archivo propio y su logo sólo existe adentro de una
+imagen más grande, se recorta con una caja fija (campo `crop`) y de ahí sigue
+por el modo `ajustar` como cualquier otra: el resto del pipeline no distingue de
+dónde salió la imagen.
 
 Así entraron las 11 marcas de la tira vieja. Las cajas **no se midieron a ojo**:
 se umbralizó `images/marcas-clientes.webp`, se dilataron las letras hasta que
@@ -187,9 +193,12 @@ cada wordmark quedó como una mancha sola y se leyeron los bounding boxes con
 isotipo, y `BALANCE` + `FIT`, separados por un espacio más ancho que el kernel).
 
 Después Mariano fue consiguiendo los 11 logos originales a color, y pasar cada
-uno de `crop` a `archivo` fue **una línea por marca**. Hoy no queda ninguna
-usando `crop`: el mecanismo se deja porque el caso vuelve solo, y
-`marcas-clientes.webp` quedó huérfano (ver `requirements.md` §12.3).
+uno de `crop` a `archivo` fue **una línea por marca**. Con el último, el collage
+dejó de ser fuente de nada y se borró.
+
+El campo `crop` se conserva —ahora recorta sobre cualquier archivo de la carpeta
+de origen, no sobre un collage hardcodeado— porque el caso vuelve solo: cada
+tanto llega una marca cuyo logo únicamente existe adentro de una captura.
 
 ---
 

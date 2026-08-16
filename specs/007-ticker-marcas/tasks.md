@@ -101,6 +101,17 @@ degradado y por eso `ajustar` los dejaba al 53 % y 65 % del diámetro.
       Positano.
 - [x] Dejar escrito en el script por qué los degradados rompen `ajustar`.
 
+## Fase 3.9 — Baja del collage *(agregada después)*
+
+- [x] Confirmar que no lo lee nadie: sin referencias en `frontend/src`,
+      `netlify/` ni en el `dist` construido.
+- [x] `git rm frontend/public/images/marcas-clientes.webp`.
+- [x] Sacar la constante `COLLAGE` del script, que quedaba apuntando a un
+      archivo borrado.
+- [x] Generalizar `crop`: ahora recorta sobre cualquier archivo de la carpeta
+      de origen. De paso se le agregó el aplanado de alfa que le faltaba.
+- [x] Reconstruir: los 35 `.webp` salen byte a byte iguales.
+
 ## Fase 4 — Espejo de precios
 
 - [x] **No aplica.** La feature no toca `pricing.js` ni `site.js` en ninguno de
@@ -132,8 +143,8 @@ degradado y por eso `ajustar` los dejaba al 53 % y 65 % del diámetro.
 1. **`HoopShoes` y `Elles Rosario` quedaron como isotipo solo** (el aro y la
    "E", sin el nombre), porque así llegaron los archivos. Se reconocen menos que
    el resto a 96 px. → `requirements.md` §12.5.
-2. **`/images/marcas-clientes.webp` quedó huérfano** al entrar el último logo
-   original. Se puede borrar; no se hizo. → `requirements.md` §12.3.
+2. ~~**`/images/marcas-clientes.webp` quedó huérfano.**~~ Mariano pidió la baja
+   y se borró. → `requirements.md` §12.3.
 2. **El comentario de `StickerField.jsx:62` menciona `marcas-clientes.webp`.**
    Se dejó como está: es un relato en pasado de un bug de LCP ya corregido, y
    reescribirlo borraría la historia que el comentario existe para conservar.
@@ -145,6 +156,11 @@ degradado y por eso `ajustar` los dejaba al 53 % y 65 % del diámetro.
 
 ## Bitácora
 
+- **15/08/2026 (6)** — Baja de `marcas-clientes.webp`. Con el archivo borrado, la
+  constante `COLLAGE` del script quedaba apuntando a la nada, así que `crop`
+  pasó a recortar sobre cualquier archivo de la carpeta de origen. Los 35
+  `.webp` se regeneraron idénticos, que es la prueba de que el collage ya no
+  participaba de nada.
 - **15/08/2026 (5)** — HoopShoes y Positano se veían chicos. La causa no era el
   padding sino el degradado de fondo, que deja a `-trim` sin borde contra el
   cual recortar. Es el límite del modo `ajustar` y ahora está documentado.

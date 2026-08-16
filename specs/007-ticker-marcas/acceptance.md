@@ -79,7 +79,7 @@ deploy.
 |---|---|---|
 | Suite de tests | ✅ | `npm test` → **229/229**, 14 archivos. Corrida de nuevo con los 35 logos originales. |
 | Build de producción | ✅ | `npm run build --prefix frontend` → `✓ built in 5.61s`, sin warnings nuevos. |
-| El recorte no rompe el collage original | ✅ | El script **lee** `marcas-clientes.webp`, nunca lo escribe. El archivo queda intacto en el repo, ahora sin uso. |
+| Borrar el collage no cambia ningún logo | ✅ | Con `marcas-clientes.webp` ya borrado, el script regenera los 35 `.webp` **byte a byte iguales** (no aparecen en el diff). Tampoco quedan referencias en `frontend/src`, `netlify/` ni en el `dist` construido. |
 | El CSS del ticker sobrevive al build | ✅ | Las 12 reglas `.marcas-ticker*` y el `@keyframes` están en `dist/assets/index-*.css`. |
 | El ticker viejo del header | ✅ | `.announcement-ticker` intacto: no se tocó ni su regla ni su `@keyframes`. Se agregó un bloque nuevo al lado. |
 | Home y `/negocio` renderizan | ✅ | Las dos cargan y muestran la sección con las 35 marcas. |
@@ -152,10 +152,9 @@ Ninguno.
    del script —sin abrir el componente ni el CSS— es la mejor evidencia de que
    RF-8 se cumple de verdad.
 3. **Las 11 terminaron con su logo original a color.** Mariano los fue
-   consiguiendo en la misma sesión: primero 10, después el de Elles Rosario. El
-   soporte de `crop` quedó sin uso y `/images/marcas-clientes.webp` huérfano —
-   se puede borrar, pero no se hizo porque no era el pedido
-   (`requirements.md` §12.3).
+   consiguiendo en la misma sesión: primero 10, después el de Elles Rosario. Con
+   eso `/images/marcas-clientes.webp` dejó de ser fuente de nada y, a pedido de
+   Mariano, se borró. El soporte de `crop` quedó sin uso pero se conserva.
 4. **`HoopShoes` y `Elles Rosario` quedaron como isotipo solo**, sin wordmark,
    porque así llegaron los archivos. No incumplen ningún criterio, pero se
    reconocen menos que el resto a 96 px. Anotado en `requirements.md` §12.5.
