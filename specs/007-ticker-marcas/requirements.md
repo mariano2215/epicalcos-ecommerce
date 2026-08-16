@@ -51,9 +51,9 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 
 - Reemplazar la imagen única por una pasarela (ticker) horizontal infinita.
 - Cada logo en **formato circular**.
-- **35 marcas**: las 24 de la carpeta `~/Documents/Mariano/Marcas que confiaron`
-  más las 11 que sólo existían adentro de la imagen vieja y se recortaron de
-  ahí. Mariano pidió explícitamente no perder ninguna.
+- **35 marcas**: 34 de la carpeta `~/Documents/Mariano/Marcas que confiaron` y
+  una sola (Elles Rosario) recortada de la imagen vieja, porque su logo no
+  existe en ningún otro lado. Mariano pidió explícitamente no perder ninguna.
 - Un proceso repetible para preparar los archivos.
 - La sección se ve igual en las dos páginas que la usan: Home y `/negocio`.
 
@@ -64,9 +64,9 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 - Enlazar cada logo al Instagram o sitio de la marca.
 - Cambiar el texto, el badge o la posición de la sección.
 - Borrar `/images/marcas-clientes.webp`: el archivo se queda porque es el
-  **original** de 11 de los 35 logos — el script los recorta de ahí en cada
+  **original** del logo de Elles Rosario — el script lo recorta de ahí en cada
   corrida.
-- Conseguir los logos a color de esas 11. Se recuperaron como estaban en el
+- Conseguir el logo a color de Elles Rosario. Se muestra como estaba en el
   collage: wordmark blanco sobre gris oscuro.
 
 ---
@@ -142,8 +142,10 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
 | El logo es una foto sin fondo plano (Monchito Merlo) | Entra completo; el nombre impreso no se corta. |
 | El logo trae la URL de la marca impresa abajo (Wens) | No se muestra cortada a la mitad. |
 | El archivo viene con transparencia (Sacro) o es un PDF con extensión `.png` (Strive) | Se procesa igual que el resto. |
-| El fondo del logo es casi negro (18 de 35) | Se sigue distinguiendo el círculo contra el fondo oscuro de la página. |
+| El fondo del logo es casi negro (13 de 35) | Se sigue distinguiendo el círculo contra el fondo oscuro de la página. |
+| Dos marcas del mismo color (Poly y Eunoia, los dos verdes) | No quedan pegadas: juntas se leen como una sola mancha. |
 | La marca no tiene archivo propio: sólo existe adentro del collage viejo | Se recorta de ahí y entra al mismo pipeline que las demás. |
+| Llega el logo original de una marca que estaba recortada | Se cambia `crop` por `archivo` en la tabla y se corre el script. Sin tocar código. |
 | Falla la carga de una imagen | El resto de la tira sigue funcionando. |
 
 ---
@@ -163,12 +165,14 @@ sí hay que declarar el evento de click y pasarlo por `lib/analytics.js`.
 
 1. ~~**Las 11 marcas de la tira vieja.**~~ **RESUELTO el 15/08/2026.** Se le
    preguntó a Mariano qué hacer con las 11 que sólo existían dentro del collage
-   y eligió **recortarlas y sumarlas**. Están las 35. Si algún día aparecen los
-   logos originales a color de esas 11, se reemplazan agregando el archivo a la
-   carpeta y cambiando `crop` por `archivo` en la tabla del script.
-2. **¿Los logos deberían linkear al Instagram de cada marca?** Sumaría prueba
+   y eligió **recortarlas y sumarlas**. Están las 35.
+2. ~~**`Balance Fit` se lee flojo.**~~ **RESUELTO el 15/08/2026**, junto con
+   otras 9: Mariano mandó los logos originales a color de 10 de las 11. Ahora
+   sólo **Elles Rosario** sigue saliendo del collage. Cuando aparezca su logo,
+   se cambia `crop` por `archivo` en la tabla del script y listo.
+3. **¿Los logos deberían linkear al Instagram de cada marca?** Sumaría prueba
    social verificable, pero también saca gente del sitio en una página de
    conversión. No se hizo.
-3. **`Balance Fit` se lee flojo.** En el collage original el wordmark es gris
-   claro y fino; a 96 px queda al límite de lo legible. Si Mariano consigue el
-   logo original, ese es el primero a reemplazar.
+4. **`HoopShoes` ahora es sólo el isotipo** (el aro, sin el wordmark), porque
+   así llegó el archivo. Se reconoce menos que el resto a 96 px. Si existe una
+   versión con el nombre, conviene esa.

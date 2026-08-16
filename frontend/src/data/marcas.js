@@ -29,7 +29,7 @@ export const MARCAS = [
   { slug: "fisioforce", nombre: "FisioForce" },
   { slug: "wens-sports", nombre: "Wens Sports" },
   { slug: "degani", nombre: "Degani" },
-  { slug: "positano-vinos", nombre: "Positano Vinos" },
+  { slug: "positano-vinos", nombre: "Positano Club de Vinos" },
   { slug: "fyf-gym", nombre: "FyF Gym" },
   { slug: "manhattan-cocktails", nombre: "Manhattan Cocktails" },
   { slug: "trapitos-dolls", nombre: "Trapitos Dolls" },
@@ -37,13 +37,13 @@ export const MARCAS = [
   { slug: "monchito-merlo", nombre: "Monchito Merlo" },
   { slug: "boiler", nombre: "Boiler" },
   { slug: "malte-project", nombre: "Malte Project" },
-  { slug: "vya-store", nombre: "Vya Store" },
+  { slug: "vya-store", nombre: "Vyastore" },
   { slug: "epicademy", nombre: "Epicademy" },
   { slug: "iep", nombre: "iep" },
   { slug: "eunoia", nombre: "Eunoia Estudio" },
-  { slug: "poly", nombre: "Poly" },
+  { slug: "balance-fit", nombre: "Balance Fit" },
   { slug: "mentha", nombre: "Mentha" },
   { slug: "hoopers", nombre: "Hoopers" },
   { slug: "sacro", nombre: "Sacro" },
-  { slug: "balance-fit", nombre: "Balance Fit" }
+  { slug: "poly", nombre: "Poly" }
 ];

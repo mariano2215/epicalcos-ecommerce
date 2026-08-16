@@ -31,7 +31,8 @@
 - La tira vieja tiene **11 marcas que no están en la carpeta**: su logo no
   existe en ningún otro lado. Mariano pidió recuperarlas, así que el collage
   pasa de ser "la imagen que se reemplaza" a ser **una fuente más** del
-  pipeline.
+  pipeline. Después mandó los originales a color de 10 de esas 11, y quedó
+  sólo Elles Rosario saliendo de ahí.
 - `strive-1.png` **no es un PNG**: es un PDF con la extensión cambiada.
 - `SACRO.png` es RGBA y no es cuadrado (542×480).
 
@@ -43,7 +44,7 @@ Tres piezas, cada una con una responsabilidad:
 
 ```
 carpeta de origen (fuera del repo)      images/marcas-clientes.webp
-   24 archivos sueltos                    la tira vieja: 11 recortes
+   34 archivos sueltos                    la tira vieja: 1 recorte
         │                                          │
         └──────────────┬───────────────────────────┘
                        │  node scripts/build-marcas.mjs
@@ -162,19 +163,23 @@ Tres modos, porque no todos los archivos son el mismo problema:
 El lienzo se rellena con el **color de fondo del propio logo** (muestreado en la
 esquina), así el círculo se lee como el fondo de la marca y no como un recorte.
 
-### Las 11 del collage
+### El recorte del collage
 
-No tienen archivo propio: se recortan de `images/marcas-clientes.webp` con una
-caja fija por marca (campo `crop`) y de ahí siguen por el modo `ajustar` como
-cualquier otra. El fondo que muestrea es el gris `#242424` del collage, así que
-quedan 11 círculos gris oscuro con el wordmark blanco — coherentes entre sí y
-repartidos en el orden para que no caigan en bloque.
+Una marca —hoy sólo Elles Rosario— no tiene archivo propio: se recorta de
+`images/marcas-clientes.webp` con una caja fija (campo `crop`) y de ahí sigue
+por el modo `ajustar` como cualquier otra. El fondo que muestrea es el gris
+`#242424` del collage, así que queda un círculo gris oscuro con el wordmark
+blanco.
 
 Las cajas **no se midieron a ojo**: se umbralizó la imagen, se dilataron las
 letras hasta que cada wordmark quedó como una mancha sola y se leyeron los
 bounding boxes con `-connected-components`. Dos marcas necesitaron unir dos
 manchas (`GOAT BRAND` + su isotipo, y `BALANCE` + `FIT`, separados por un
 espacio más ancho que el kernel de dilatación).
+
+Arrancó siendo el camino de las 11 marcas viejas. Cuando Mariano mandó 10 de
+los logos originales, pasar cada una de `crop` a `archivo` fue una línea por
+marca: el resto del pipeline no distingue de dónde salió la imagen.
 
 ---
 
@@ -252,7 +257,7 @@ marcas aparecerían dos veces al scrollear.
 - `alt` = nombre real de la marca **solo en la primera copia**.
 - La segunda copia va con `aria-hidden="true"` y `alt=""`: es relleno visual, y
   sin eso un lector de pantalla leería las 35 marcas dos veces.
-- El anillo `ring-white/20` no es adorno: 18 de los 35 logos tienen fondo casi
+- El anillo `ring-white/20` no es adorno: 13 de los 35 logos tienen fondo casi
   negro y sin él no se distinguen del fondo de la página.
 
 ---

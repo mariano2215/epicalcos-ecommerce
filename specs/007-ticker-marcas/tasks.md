@@ -64,6 +64,21 @@ Mariano eligió recuperarlas en vez de darlas de baja.
       color, para que no caigan en bloque.
 - [x] Actualizar los cuatro documentos de la spec, que estaban escritos para 24.
 
+## Fase 3.6 — Los logos originales *(agregada después)*
+
+Mariano mandó a la carpeta los logos reales de 10 de las 11 recortadas.
+
+- [x] Revisar los 12 archivos nuevos antes de tocar la tabla.
+- [x] Descartar `472397121_…_n.jpg`: es `poly.jpg` de nuevo, byte a byte
+      (mismo md5). Y `wensredondo.jpeg`, que sigue siendo una captura de la
+      carpeta.
+- [x] Pasar las 10 de `crop` a `archivo`.
+- [x] Corregir dos nombres con el logo real a la vista: *Positano Vinos* →
+      **Positano Club de Vinos**, *Vya Store* → **Vyastore**.
+- [x] Reordenar: Poly llegó verde y quedaba pegado a Eunoia, que también es
+      verde. Se mandó al final.
+- [x] Elles Rosario queda como único recorte del collage.
+
 ## Fase 4 — Espejo de precios
 
 - [x] **No aplica.** La feature no toca `pricing.js` ni `site.js` en ninguno de
@@ -92,9 +107,9 @@ Mariano eligió recuperarlas en vez de darlas de baja.
 
 ## Hallazgos fuera de scope
 
-1. **`Balance Fit` se lee flojo** a 96 px: en el collage original el wordmark es
-   gris claro y muy fino. Es el primero a reemplazar si aparece el logo real.
-   → `requirements.md` §12.3.
+1. **`HoopShoes` quedó como isotipo solo** (el aro, sin el nombre), porque así
+   llegó el archivo. Se reconoce menos que el resto a 96 px.
+   → `requirements.md` §12.4.
 2. **El comentario de `StickerField.jsx:62` menciona `marcas-clientes.webp`.**
    Se dejó como está: es un relato en pasado de un bug de LCP ya corregido, y
    reescribirlo borraría la historia que el comentario existe para conservar.
@@ -106,6 +121,9 @@ Mariano eligió recuperarlas en vez de darlas de baja.
 
 ## Bitácora
 
+- **15/08/2026 (3)** — Mariano consiguió los logos originales a color de 10 de
+  las 11 recortadas y los puso en la carpeta. Cambiar `crop` por `archivo` fue
+  una línea por marca. Segunda vez que la feature crece sin abrir el componente.
 - **15/08/2026 (2)** — Después de mostrarle la tira, Mariano eligió recuperar
   las 11 marcas del collage. La feature pasó de 24 a 35 logos sin tocar el
   componente ni el CSS: sólo la tabla del script y una rama de recorte. Eso es

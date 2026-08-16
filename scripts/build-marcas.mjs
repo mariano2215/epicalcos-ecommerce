@@ -48,11 +48,16 @@ const OUT_IMG = join(ROOT, 'frontend', 'public', 'images', 'marcas');
 const OUT_DATA = join(ROOT, 'frontend', 'src', 'data', 'marcas.js');
 
 /**
- * La tira vieja. De estas 11 marcas NO existe el archivo suelto: el único lugar
- * donde sobrevive su logo es adentro de este collage, en blanco sobre gris.
- * Por eso el archivo no se borra aunque ya no se muestre en ninguna página: es
- * el original. Las coordenadas de cada recorte salieron de un análisis de
- * componentes conexos sobre la imagen umbralizada, no de medir a ojo.
+ * La tira vieja. Es la ÚNICA fuente del logo de Elles Rosario: no existe el
+ * archivo suelto, sobrevive sólo adentro de este collage, en blanco sobre gris.
+ * Por eso el archivo no se borra aunque ya no se muestre en ninguna página.
+ *
+ * Al principio salían de acá las 11 marcas viejas; Mariano después mandó 10 de
+ * los logos originales a color y quedó sólo esta. Cuando aparezca el de Elles
+ * Rosario, se cambia su `crop` por `archivo` y este bloque se puede borrar.
+ *
+ * Las coordenadas del recorte salieron de un análisis de componentes conexos
+ * sobre la imagen umbralizada, no de medir a ojo.
  */
 const COLLAGE = join(ROOT, 'frontend', 'public', 'images', 'marcas-clientes.webp');
 
@@ -64,9 +69,8 @@ const PADDING = 0.92;
 /**
  * El orden de esta tabla ES el orden del ticker: va alternando fondos claros y
  * oscuros a propósito, porque ordenadas alfabéticamente se amontonan cinco
- * fondos blancos seguidos y la tira parece un bloque vacío. Las 11 recortadas
- * del collage son todas gris oscuro, así que van repartidas entre las de color
- * y no en bloque.
+ * fondos blancos seguidos y la tira parece un bloque vacío. También se evita
+ * poner juntas dos marcas del mismo color (ver Poly y Eunoia abajo).
  *
  * `archivo` es el nombre tal cual está en la carpeta de origen — no se
  * renombran los originales, se mapean acá. `crop` significa que la marca no
@@ -75,19 +79,20 @@ const PADDING = 0.92;
  * Quedaron AFUERA a propósito:
  *   - marcasviejas.webp   → es la tira vieja (idéntica a images/marcas-clientes.webp)
  *   - wensredondo.jpeg    → es una captura de la carpeta, no un logo
+ *   - 472397121_…_n.jpg   → es poly.jpg de nuevo, byte a byte (mismo md5)
  */
 const MARCAS = [
   { archivo: 'Shippear.jpg', slug: 'shippear', nombre: 'Shippear' },
   { archivo: 'Cilantro.jpg', slug: 'cilantro', nombre: 'Cilantro Espacio Holístico' },
-  { crop: '366x184+91+60', slug: 'lo-de-tarpino', nombre: 'Lo de Tarpino' },
+  { archivo: 'lodetarpino.jpg', slug: 'lo-de-tarpino', nombre: 'Lo de Tarpino' },
   { archivo: 'MedioMedico.jpg', slug: 'medio-medico', nombre: 'Medio Médico' },
   { archivo: 'brutoestudio.jpg', slug: 'bruto-estudio', nombre: 'Bruto Estudio' },
   { archivo: 'emma compleme.jpg', slug: 'emma-complementos', nombre: 'Emma Complementos' },
-  { crop: '464x111+520+96', slug: 'goat-brand', nombre: 'Goat Brand' },
+  { archivo: 'goatbrand.jpg', slug: 'goat-brand', nombre: 'Goat Brand' },
   { archivo: 'huella.jpg', slug: 'huella', nombre: 'Huella Tienda de Mascotas' },
   { archivo: 'strive-1.png', slug: 'strive', nombre: 'Strive', pdf: true },
   { archivo: 'Olivia.jpg', slug: 'olivia', nombre: 'Olivia' },
-  { crop: '445x107+1023+95', slug: 'fursten', nombre: 'Fursten' },
+  { archivo: 'fursten.jpg', slug: 'fursten', nombre: 'Fursten' },
   { archivo: 'espacioterra.jpg', slug: 'espacio-terra', nombre: 'Espacio Terra' },
   { archivo: 'lwlacteos.jpg', slug: 'lw-lacteos', nombre: 'LW Lácteos', recorte: 'circulo' },
   { archivo: 'fama-automotores.jpeg', slug: 'fama-automotores', nombre: 'Fama Automotores' },
@@ -95,23 +100,25 @@ const MARCAS = [
   { archivo: 'FisioForce.jpg', slug: 'fisioforce', nombre: 'FisioForce' },
   { archivo: 'wens.jpeg', slug: 'wens-sports', nombre: 'Wens Sports', recorte: 'cover', zoom: 1.3 },
   { archivo: 'degani.jpg', slug: 'degani', nombre: 'Degani' },
-  { crop: '427x126+78+278', slug: 'positano-vinos', nombre: 'Positano Vinos' },
+  { archivo: 'positano.jpg', slug: 'positano-vinos', nombre: 'Positano Club de Vinos' },
   { archivo: 'FYF.jpg', slug: 'fyf-gym', nombre: 'FyF Gym' },
   { archivo: 'manhattan cocktails.jpg', slug: 'manhattan-cocktails', nombre: 'Manhattan Cocktails' },
   { archivo: 'trapitosdolls.jpg', slug: 'trapitos-dolls', nombre: 'Trapitos Dolls', recorte: 'circulo' },
-  { crop: '466x141+516+257', slug: 'hoopshoes', nombre: 'HoopShoes' },
+  { archivo: 'hoopshoes.jpg', slug: 'hoopshoes', nombre: 'HoopShoes' },
   { archivo: 'monchito merlo.jpg', slug: 'monchito-merlo', nombre: 'Monchito Merlo' },
   { archivo: 'Boiler.webp', slug: 'boiler', nombre: 'Boiler' },
   { archivo: 'Malte project.jpg', slug: 'malte-project', nombre: 'Malte Project' },
-  { crop: '476x121+1027+271', slug: 'vya-store', nombre: 'Vya Store' },
+  { archivo: 'vyastore.jpg', slug: 'vya-store', nombre: 'Vyastore' },
   { archivo: 'epicademy1.jpg', slug: 'epicademy', nombre: 'Epicademy' },
-  { crop: '329x205+1547+276', slug: 'iep', nombre: 'iep' },
+  { archivo: 'iep.jpg', slug: 'iep', nombre: 'iep' },
   { archivo: 'eunoia.jpg', slug: 'eunoia', nombre: 'Eunoia Estudio' },
-  { crop: '368x170+224+475', slug: 'poly', nombre: 'Poly' },
+  { archivo: 'balancefit.jpg', slug: 'balance-fit', nombre: 'Balance Fit' },
   { archivo: 'mentha.jpg', slug: 'mentha', nombre: 'Mentha', recorte: 'circulo' },
-  { crop: '459x194+644+460', slug: 'hoopers', nombre: 'Hoopers' },
+  { archivo: 'hooopers.jpg', slug: 'hoopers', nombre: 'Hoopers' },
   { archivo: 'SACRO.png', slug: 'sacro', nombre: 'Sacro', recorte: 'circulo' },
-  { crop: '633x86+1155+521', slug: 'balance-fit', nombre: 'Balance Fit' }
+  // Poly va último y no al lado de Eunoia: los dos son un verde parecido y
+  // pegados se leen como una sola mancha.
+  { archivo: 'poly.jpg', slug: 'poly', nombre: 'Poly' }
 ];
 
 const sh = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8' }).trim();
