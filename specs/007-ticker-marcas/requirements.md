@@ -57,6 +57,7 @@ que sumar una marca nueva sea agregar un archivo y correr un comando.
   fue consiguiendo los 11 originales a color.
 - Un proceso repetible para preparar los archivos.
 - La sección se ve igual en las dos páginas que la usan: Home y `/negocio`.
+  **El lugar sí cambia**: en el Home va al final y en `/negocio`, arriba de todo.
 - Dar de baja `/images/marcas-clientes.webp`, la imagen que se reemplaza.
 
 ---

@@ -112,6 +112,15 @@ degradado y por eso `ajustar` los dejaba al 53 % y 65 % del diámetro.
       de origen. De paso se le agregó el aplanado de alfa que le faltaba.
 - [x] Reconstruir: los 35 `.webp` salen byte a byte iguales.
 
+## Fase 3.10 — La pasarela primero en `/negocio` *(agregada después)*
+
+- [x] Mover `<MarcasConfiaron />` arriba de todo en `routes/Negocio.jsx`,
+      incluso arriba de los breadcrumbs.
+- [x] `py-10` → `pb-10` en el contenedor: la sección de marcas ya trae su
+      espacio abajo y quedaban 80 px de aire.
+- [x] Verificar que el Home no cambió (el diff toca un solo archivo).
+- [x] Medir el costo del cambio arriba del fold y dejarlo dicho.
+
 ## Fase 4 — Espejo de precios
 
 - [x] **No aplica.** La feature no toca `pricing.js` ni `site.js` en ninguno de
@@ -156,6 +165,11 @@ degradado y por eso `ajustar` los dejaba al 53 % y 65 % del diámetro.
 
 ## Bitácora
 
+- **15/08/2026 (7)** — La pasarela pasó a estar arriba de todo en `/negocio`.
+  Costo medido a 375 px: el bloque ocupa 376 px (46 % de la primera pantalla) y
+  el `<h1>` "Promo Negocio" se va de 463 px a 839 px, o sea justo abajo del
+  fold en una pantalla de 812. Además el `<h2>` de marcas queda antes del `<h1>`
+  de la página en el orden del documento. Las dos cosas quedaron avisadas.
 - **15/08/2026 (6)** — Baja de `marcas-clientes.webp`. Con el archivo borrado, la
   constante `COLLAGE` del script quedaba apuntando a la nada, así que `crop`
   pasó a recortar sobre cualquier archivo de la carpeta de origen. Los 35

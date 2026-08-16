@@ -82,7 +82,7 @@ deploy.
 | Borrar el collage no cambia ningún logo | ✅ | Con `marcas-clientes.webp` ya borrado, el script regenera los 35 `.webp` **byte a byte iguales** (no aparecen en el diff). Tampoco quedan referencias en `frontend/src`, `netlify/` ni en el `dist` construido. |
 | El CSS del ticker sobrevive al build | ✅ | Las 12 reglas `.marcas-ticker*` y el `@keyframes` están en `dist/assets/index-*.css`. |
 | El ticker viejo del header | ✅ | `.announcement-ticker` intacto: no se tocó ni su regla ni su `@keyframes`. Se agregó un bloque nuevo al lado. |
-| Home y `/negocio` renderizan | ✅ | Las dos cargan y muestran la sección con las 35 marcas. |
+| Home y `/negocio` renderizan | ✅ | Las dos cargan y muestran la sección con las 35 marcas. En `/negocio` va arriba de todo; en el Home sigue al final (el diff de ese cambio toca un solo archivo). |
 | Camino de precios | ✅ | El diff no toca `config/pricing.js`, `config/site.js`, `CartContext.jsx`, `lib/analytics.js` ni `netlify/functions/**`. |
 
 ---
@@ -158,3 +158,11 @@ Ninguno.
 4. **`HoopShoes` y `Elles Rosario` quedaron como isotipo solo**, sin wordmark,
    porque así llegaron los archivos. No incumplen ningún criterio, pero se
    reconocen menos que el resto a 96 px. Anotado en `requirements.md` §12.5.
+5. **Poner la pasarela arriba de todo en `/negocio` tiene un costo medido.** A
+   375 px el bloque ocupa 376 px —el 46 % de la primera pantalla— y empuja el
+   `<h1>` "Promo Negocio" de 463 px a 839 px, o sea justo abajo del fold. Y el
+   `<h2>` de marcas queda **antes** del `<h1>` de la página en el orden del
+   documento, así que quien navegue por encabezados con lector de pantalla llega
+   primero a las marcas. Fue un pedido explícito de Mariano y se hizo, pero no
+   es gratis: la salida sería una variante compacta de la sección (sin `<h2>` ni
+   bajada, sólo la tira con un rótulo chico), que bajaría el bloque a ~150 px.

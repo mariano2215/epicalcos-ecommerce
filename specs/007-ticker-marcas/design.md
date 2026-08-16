@@ -96,6 +96,13 @@ frontend/src/routes/Negocio.jsx:2   → <MarcasConfiaron /> en :21
 En las dos se invoca **sin props** y fuera de un `container-app`, así que el
 cambio a ancho completo funciona igual en ambas. No hay ningún otro consumidor.
 
+**La posición no es la misma en las dos.** En el Home la sección va al final,
+después de los testimonios. En `/negocio` va **primero, arriba de todo**, a
+pedido de Mariano: a esa página se llega desde un anuncio sin conocer la marca,
+y la prueba social tiene que estar antes que el formulario. El componente no
+sabe nada de esto — la diferencia es puramente el orden en el JSX de cada ruta,
+que es la razón por la que no hizo falta ninguna prop.
+
 **No se toca** ninguno de los módulos de la tabla de la regla 9: esta feature no
 roza precios, envíos, carrito ni analytics.
 
