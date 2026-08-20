@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `009-cupon-epi50` |
 | **Requirements** | [`requirements.md`](requirements.md) |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `IMPLEMENTADO` — 20/08/2026 |
 | **Fecha** | 20/08/2026 |
 
 > **Este documento define CÓMO se implementa.** Acá sí van rutas de archivo,

@@ -33,33 +33,82 @@ export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
  * corren ni el 10 % por transferencia ni el 10 % por volumen (+10 calcos) ni
  * otro cupón.
  *
+ * `exclusivo: true` = un cupón de % que NO se acumula con nada, igual que un
+ * bundle: mientras esté aplicado no corren el 10 % por transferencia, el 10 %
+ * por volumen, el % de una promo por categoría ni la agrupación N x M de una
+ * promo por fecha. Su % es el descuento final y no depende del medio de pago
+ * ni de la cantidad.
+ *
+ * POR QUÉ ES UN FLAG Y NO UN TOPE MÁS BAJO: el tope (MAX_STICKER_DISCOUNT) es
+ * una red de seguridad, no una regla de negocio. Usarlo para "que no pase de
+ * 50" haría que el descuento real cambie según cómo pague el cliente — y lo
+ * que se prometió por privado es 50 %, siempre.
+ *
+ * `incluyeCustom: true` = el % también alcanza a los personalizados sueltos
+ * (líneas `custom`), que fuera de una promo N x M no participan de ningún
+ * cupón. Es opt-in por cupón para no cambiarle el precio a EPICA10.
+ *
  * `hidden: true` = el código NO se nombra en ninguna pantalla del sitio (ni
- * banners, ni carrito, ni checkout). HOY EL ÚNICO CUPÓN VIVO ES EPICA10, y es
- * oculto: solo para quien deja su mail en el popup de bienvenida (se lo muestra
- * el popup y se autocompleta en el checkout). El sitio lo sigue aceptando si el
- * cliente lo escribe: "oculto" es no publicitarlo, no un secreto criptográfico
- * (viaja en el bundle JS).
+ * banners, ni carrito, ni checkout). LOS DOS CUPONES VIVOS SON OCULTOS:
+ * EPICA10 se entrega a quien deja su mail en el popup de bienvenida (se lo
+ * muestra el popup y se autocompleta en el checkout), y EPI50 lo manda Mariano
+ * a mano por privado. El sitio los acepta igual si el cliente los escribe:
+ * "oculto" es no publicitarlo, no un secreto criptográfico (viaja en el bundle
+ * JS). De ahí que EPI50 tenga interruptor: ver `activa`.
  *
  * `endsAt` = fecha de vencimiento (hora Argentina, inclusive). Pasado ese
  * instante el cupón deja de existir para todo el sitio: no se aplica en el
  * carrito ni en el checkout (que responde "no existe o venció") y el servidor
  * tampoco lo acepta. Sin `endsAt`, no vence nunca.
  *
+ * `activa: false` = interruptor manual, aparte del vencimiento. Existe para los
+ * cupones SIN fecha: un 50 % reutilizable que se filtra no se apaga solo. Vive
+ * dentro de `isCouponActive()` —el único filtro por el que pasan `findCoupon` y
+ * `couponBundle`— justo para que apagarlo sea UNA línea de cada lado y el cupón
+ * desaparezca a la vez del carrito, del checkout y del servidor.
+ *
  * EMOJI50 (2x1 por mensaje privado) venció el 4/8/2026 y se sacó de acá: era
  * una entrada muerta. El MOTOR de bundles sigue intacto — para prender otro
  * alcanza con agregar `bundle: { buy, pay }` acá y en COUPON_BUNDLES del server.
  *
  * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (COUPONS,
- * COUPON_BUNDLES y COUPON_ENDS_MS). Si agregás, vencés o cambiás un cupón acá,
- * cambialo TAMBIÉN allá o el checkout se rechaza con `price_mismatch`.
+ * COUPON_BUNDLES y COUPON_ENDS_MS). Si agregás, vencés o cambiás un cupón acá
+ * —incluidos `discount`, `exclusivo`, `incluyeCustom` y `activa`— cambialo
+ * TAMBIÉN allá o el checkout se rechaza con `price_mismatch`. El test
+ * `promoPricing.test.js` compara las dos tablas campo por campo.
  */
 export const COUPONS = {
-  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF', hidden: true }
+  EPICA10: { discount: 0.10, label: 'Bienvenida 10% OFF', hidden: true },
+  /**
+   * 50 % off por menor, para mandar POR PRIVADO (spec 009). Alcanza calcos de
+   * catálogo y personalizados sueltos; los packs, negocio, fijos y digitales
+   * quedan afuera solos, porque no participan de ningún % (ver `lineBase` del
+   * servidor).
+   *
+   * ⚠️ Baja el subtotal, así que ALEJA del envío gratis: con 50 % off hace
+   * falta el DOBLE de precio de lista para cruzar el umbral de la zona
+   * ($100.000 en Rosario, $150.000 en el resto del país). Es correcto según la
+   * regla de envíos y está aceptado en specs/009-cupon-epi50 §9.1 — no se
+   * arregla regalando el envío (hay precedente de lo que costó ese atajo, más
+   * abajo en este mismo archivo).
+   */
+  EPI50: {
+    discount: 0.50,
+    label: '50% OFF',
+    hidden: true,
+    exclusivo: true,
+    incluyeCustom: true,
+    activa: true
+  }
 };
 export const MAX_STICKER_DISCOUNT = 0.9;
 
-/** ¿El cupón sigue vigente en este instante? Sin `endsAt`, no vence nunca. */
+/**
+ * ¿El cupón sigue vigente en este instante? Sin `endsAt`, no vence nunca —
+ * pero `activa: false` lo apaga igual, sin tocar ninguna fecha.
+ */
 export function isCouponActive(coupon, now = Date.now()) {
+  if (coupon?.activa === false) return false;
   if (!coupon?.endsAt) return true;
   const end = Date.parse(coupon.endsAt);
   return !Number.isFinite(end) || now <= end;
@@ -74,6 +123,25 @@ export function findCoupon(code, now = Date.now()) {
 /** Bundle (N x M) del cupón, si es de ese tipo y sigue vigente. Null si no. */
 export function couponBundle(code, now = Date.now()) {
   return findCoupon(code, now)?.bundle || null;
+}
+
+/**
+ * ¿Este cupón anula TODOS los demás descuentos?
+ *
+ * Es el predicado que decide, en un solo lugar, los tres puntos donde el
+ * carrito y el servidor se preguntan lo mismo: si corre el 10 % por
+ * transferencia/volumen, si corre la agrupación N x M de una promo por fecha y
+ * si corre el % de una promo por categoría. Antes el código preguntaba
+ * `!bundle` en los tres; ahora un cupón `exclusivo` entra por la misma puerta.
+ */
+export function couponAnulaTodo(code, now = Date.now()) {
+  const coupon = findCoupon(code, now);
+  return Boolean(coupon?.bundle || coupon?.exclusivo);
+}
+
+/** ¿El % de este cupón alcanza también a los personalizados sueltos (`custom`)? */
+export function couponIncluyeCustom(code, now = Date.now()) {
+  return Boolean(findCoupon(code, now)?.incluyeCustom);
 }
 
 /**

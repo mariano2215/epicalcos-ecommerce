@@ -10,6 +10,8 @@ import {
   BULK_DISCOUNT_PAYMENT_METHOD,
   findCoupon,
   couponBundle,
+  couponAnulaTodo,
+  couponIncluyeCustom,
   MAX_STICKER_DISCOUNT,
   PROMO_3X2,
   PROMO_ARGENTINA,
@@ -368,18 +370,33 @@ export function CartProvider({ children }) {
    * Con un CUPÓN DE BUNDLE (N x M): manda el bundle del cupón — cada N,
    * la más barata gratis y NINGÚN % (ni transferencia, ni volumen, ni otro
    * cupón), y reemplaza a la promo 3x2 si estuviera vigente.
+   *
+   * Con un CUPÓN EXCLUSIVO (EPI50): corre SOLO el % del cupón. No se le suma el
+   * 10 % por transferencia ni el de volumen, no corre el % de la promo por
+   * categoría y no se aplica la agrupación N x M por fecha. Si además trae
+   * `incluyeCustom`, el % alcanza a los personalizados sueltos.
+   *
+   * ⚠️ Espejo de validateAndPriceOrder() en netlify/functions/lib/pricing.js:
+   * si tocás una de estas reglas acá y no allá, el checkout se rechaza con
+   * `price_mismatch`. La paridad la verifica src/lib/promoPricing.test.js.
    */
   const pricedItems = useCallback(
     (paymentMethod, couponCode) => {
       const bundle = couponBundle(couponCode); // 2x1 del cupón oculto, si aplica
+      // ¿El cupón es el único descuento que corre? (bundle o `exclusivo`).
+      const anulaTodo = couponAnulaTodo(couponCode);
+      const incluyeCustom = couponIncluyeCustom(couponCode);
       const bulkRate =
-        !bundle && derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
+        !anulaTodo && derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
       const couponRate = bundle ? 0 : findCoupon(couponCode)?.discount || 0;
-      const cap = derived.promoActive ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
+      // El tope de la promo sigue a la promo REAL, no a la fecha: un cupón que
+      // la anula deja al pedido sin 3x2, así que tampoco corre su tope de 10 %.
+      const cap = derived.promoActive && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
       const percentRate = Math.min(bulkRate + couponRate, cap);
 
-      // Agrupación N x M vigente: el cupón de bundle pisa a la promo por fecha.
-      const grouping = bundle || (derived.promoActive ? PROMO_3X2 : null);
+      // Agrupación N x M vigente: el cupón de bundle pisa a la promo por fecha,
+      // y un cupón exclusivo la anula (su % es el descuento final).
+      const grouping = bundle || (!anulaTodo && derived.promoActive ? PROMO_3X2 : null);
       const keep = bundle
         ? promo3x2({ unitBasePrices: derived.eligibleUnitBasePrices, buy: bundle.buy, pay: bundle.pay }).keepFraction
         : derived.promoKeepFraction;
@@ -388,16 +405,20 @@ export function CartProvider({ children }) {
       // ir en `percentRate`, que es uno solo para todo el carrito. Se suma
       // encima y se vuelve a topear. Espejado en el servidor.
       //
-      // Con un cupón de BUNDLE (N x M) no corre: ese cupón anula TODOS los % por
-      // definición, y el 50 % de Argentina es uno más.
+      // Con un cupón que anula todo (bundle o `exclusivo`) no corre: esos cupones
+      // anulan TODOS los % por definición, y el 50 % de Argentina es uno más.
       const rateDe = (i) =>
-        !bundle && esPromoArgentina(i.id)
+        !anulaTodo && esPromoArgentina(i.id)
           ? Math.min(percentRate + PROMO_ARGENTINA.discount, MAX_STICKER_DISCOUNT)
           : percentRate;
 
+      // Fuera de una agrupación N x M, el % solo toca calcos de catálogo — salvo
+      // que el cupón traiga `incluyeCustom`, que suma los personalizados sueltos.
+      const alcanza = (i) => i.type === 'sticker' || (incluyeCustom && i.type === 'custom');
+
       if (!grouping) {
         return derived.items.map((i) => {
-          if (i.type !== 'sticker') return i;
+          if (!alcanza(i)) return i;
           const rate = rateDe(i);
           return rate === 0 ? i : { ...i, price: round(i.basePrice * (1 - rate)) };
         });

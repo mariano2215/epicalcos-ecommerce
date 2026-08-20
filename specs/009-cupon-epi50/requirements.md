@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `009-cupon-epi50` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `IMPLEMENTADA` — 20/08/2026 |
 | **Fecha** | 20/08/2026 |
 | **Autor** | Claude, a pedido de Mariano |
 
@@ -271,17 +271,18 @@ Ninguno.
 
 ## 12. Preguntas abiertas
 
-- [ ] `REQUIRES CONFIRMATION` — **§9.2: ¿el armador de personalizados
+- [x] `RESUELTA` (Mariano, 20/8/2026 — se implementó con la recomendación) —
+      **§9.2: ¿el armador de personalizados
       (`pack:personalizados`, 10 % off) queda afuera a propósito?** Tal como está
       pedido, sí — es un pack y los packs no entran. La consecuencia es que diez
       personalizados salen $1.440/u por el armador y $800/u por el configurador.
       **Recomendación: dejarlo afuera** (es lo pedido y no toca el espejo de los
       packs), y si molesta, resolverlo bajando el armador en otra spec.
-- [ ] `REQUIRES CONFIRMATION` — **§9.1: ¿se acepta que el cupón haga perder el
+- [x] `RESUELTA` (Mariano, 20/8/2026 — aceptado) — **§9.1: ¿se acepta que el cupón haga perder el
       envío gratis?** Se diseña que sí, porque la alternativa es el atajo que ya
       costó plata. Si el código se manda a clientes de otras provincias, conviene
       avisarlo en el mensaje que manda Mariano.
-- [ ] `REQUIRES CONFIRMATION` — **¿Interruptor sí o sí?** Mariano pidió plazo
+- [x] `RESUELTA` (Mariano, 20/8/2026 — se dejó el interruptor) — **¿Interruptor sí o sí?** Mariano pidió plazo
       indefinido, así que no lleva `endsAt`. Un 50 % reutilizable y sin fecha no
       se apaga solo si se filtra, así que se diseña **con interruptor manual**
       (`activa`, mismo patrón que las promos). **Recomendación: dejarlo.**

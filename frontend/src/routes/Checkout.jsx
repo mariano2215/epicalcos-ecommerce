@@ -10,6 +10,7 @@ import { calculateShipping, freeShippingThresholdFor } from '../config/site.js';
 import {
   findCoupon,
   couponBundle,
+  couponAnulaTodo,
   esPromoArgentina,
   PROMO_ARGENTINA,
   WELCOME_COUPON_STORAGE_KEY,
@@ -152,12 +153,18 @@ export default function Checkout() {
     setCouponOpen(false);
   };
 
-  // Precios reales según el medio de pago y el cupón aplicado: a los calcos
-  // sueltos se les aplica el MAYOR entre el 10% por transferencia y el cupón
-  // (ver CartContext.pricedItems) — nunca se suman.
+  // Precios reales según el medio de pago y el cupón aplicado. Un cupón de %
+  // normal (EPICA10) se SUMA al 10% por transferencia; uno de bundle o uno
+  // `exclusivo` (EPI50) no se acumula con nada. Ver CartContext.pricedItems.
   const items = pricedItems(paymentMethod, appliedCoupon);
   // Cupón de bundle (2x1): no se acumula con ningún % — ni transferencia, ni volumen.
   const appliedBundle = couponBundle(appliedCoupon);
+  // Cupón exclusivo (EPI50): su % es el descuento final y tampoco se acumula.
+  // Se separa del bundle porque el aviso que se muestra es distinto: acá hay un
+  // % que nombrar, en el bundle hay un N x M.
+  const cuponExclusivo = !appliedBundle && couponAnulaTodo(appliedCoupon)
+    ? findCoupon(appliedCoupon)
+    : null;
   const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
   const listSubtotal = items.reduce((a, i) => a + i.basePrice * i.quantity, 0);
   const discount = listSubtotal - subtotal;
@@ -336,7 +343,7 @@ export default function Checkout() {
               onEmailValid={onEmailValid}
               submitting={submitting}
               errorMsg={errorMsg}
-              percentBlocked={Boolean(appliedBundle)}
+              percentBlocked={couponAnulaTodo(appliedCoupon)}
               digitalOnly={digitalOnly}
             />
           </div>
@@ -471,6 +478,13 @@ export default function Checkout() {
                     <div className="text-emerald-400">
                       🎟️ Cupón {appliedBundle.buy}x{appliedBundle.pay} en calcos y personalizados: cada {appliedBundle.buy},
                       la más barata gratis. No se combina con el 10% por transferencia ni con el 10% desde 10 calcos.
+                    </div>
+                  ) : cuponExclusivo ? (
+                    /* El % sale del config, no escrito a mano: si mañana cambia,
+                       el cartel no puede quedar prometiendo otra cosa. */
+                    <div className="text-emerald-400">
+                      🎟️ Cupón {appliedCoupon}: {Math.round(cuponExclusivo.discount * 100)}% off en calcos y
+                      personalizados. No se combina con el 10% por transferencia ni con el 10% desde 10 calcos.
                     </div>
                   ) : (
                     <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>

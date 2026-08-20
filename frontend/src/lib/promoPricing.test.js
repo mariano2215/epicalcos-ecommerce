@@ -12,6 +12,9 @@ import {
   priceForSize,
   findCoupon,
   couponBundle,
+  couponAnulaTodo,
+  couponIncluyeCustom,
+  isCouponActive as isCouponActiveFE,
   COUPONS,
   round,
   BULK_THRESHOLD,
@@ -39,6 +42,7 @@ import {
 import {
   PROMO_END_MS as BE_END,
   PROMO_PERCENT_CAP,
+  COUPONS as BE_COUPONS,
   COUPON_BUNDLES,
   COUPON_ENDS_MS,
   isCouponActive as beCouponActive,
@@ -75,13 +79,15 @@ afterEach(() => vi.useRealTimers());
 function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) {
   const promoActive = feActive();
   const bundle = couponBundle(coupon); // cupón N x M (EMOJI50): anula todos los %
+  const anulaTodo = couponAnulaTodo(coupon); // bundle o cupón exclusivo (EPI50)
+  const incluyeCustom = couponIncluyeCustom(coupon);
   const stickerUnits = cart.filter((l) => l.type === 'sticker').reduce((a, l) => a + l.quantity, 0);
-  const bulkRate = !bundle && stickerUnits >= BULK_THRESHOLD && paymentMethod === 'transferencia' ? BULK_DISCOUNT : 0;
+  const bulkRate = !anulaTodo && stickerUnits >= BULK_THRESHOLD && paymentMethod === 'transferencia' ? BULK_DISCOUNT : 0;
   const couponRate = bundle ? 0 : findCoupon(coupon)?.discount || 0;
-  const cap = promoActive ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
+  const cap = promoActive && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
   const percentRate = Math.min(bulkRate + couponRate, cap);
 
-  const grouping = bundle || (promoActive ? PROMO_3X2 : null);
+  const grouping = bundle || (!anulaTodo && promoActive ? PROMO_3X2 : null);
   let keep = 1;
   if (grouping) {
     const prices = [];
@@ -91,14 +97,16 @@ function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) 
 
   // El 50 % de Argentina se suma por línea y se vuelve a topear (ver CartContext).
   const rateDe = (l) =>
-    !bundle && feEsPromoArgentina(l.id)
+    !anulaTodo && feEsPromoArgentina(l.id)
       ? Math.min(percentRate + PROMO_ARGENTINA.discount, MAX_STICKER_DISCOUNT)
       : percentRate;
+
+  const alcanza = (l) => l.type === 'sticker' || (incluyeCustom && l.type === 'custom');
 
   return cart.map((l) => {
     let price;
     if (grouping && PROMO_ELIGIBLE.has(l.type)) price = round(l.basePrice * keep * (1 - rateDe(l)));
-    else if (!grouping && l.type === 'sticker') price = round(l.basePrice * (1 - rateDe(l)));
+    else if (!grouping && alcanza(l)) price = round(l.basePrice * (1 - rateDe(l)));
     else price = l.basePrice;
     return { id: l.id, title: l.title, quantity: l.quantity, unit_price: price };
   });
@@ -257,6 +265,20 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(
       validateAndPriceOrder({ items: conEpica, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10' }).couponApplied
     ).toBe('EPICA10');
+  });
+
+  it('la tabla de cupones está espejada frontend ↔ backend, campo por campo', () => {
+    // Reemplaza al assert suelto de un solo cupón: si mañana se agrega uno en un
+    // lado y no en el otro, o se le cambia el % o un flag, esto falla ANTES que
+    // un checkout real con `price_mismatch`.
+    expect(Object.keys(COUPONS).sort()).toEqual(Object.keys(BE_COUPONS).sort());
+    for (const [code, fe] of Object.entries(COUPONS)) {
+      const be = BE_COUPONS[code];
+      expect(fe.discount ?? null).toBe(be.discount ?? null);
+      expect(Boolean(fe.exclusivo)).toBe(Boolean(be.exclusivo));
+      expect(Boolean(fe.incluyeCustom)).toBe(Boolean(be.incluyeCustom));
+      expect(fe.activa ?? true).toBe(be.activa ?? true);
+    }
   });
 
   it('la promo mayorista (100 calcos a $39.999) está espejada frontend ↔ backend', () => {
@@ -514,6 +536,148 @@ describe('archivos imprimibles (producto digital)', () => {
       readFileSync(join(dir, '..', '..', 'public', 'data', 'skus.json'), 'utf8')
     );
     expect(DIGITAL_SKU[pack.id]).toBe(registry.byKey['linea:archivos-imprimibles']);
+  });
+});
+
+describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
+  const AFTER = new Date('2026-07-27T12:00:00-03:00'); // sin promos por fecha vivas
+  const DURANTE_ARG = new Date('2026-08-18T12:00:00-03:00'); // promo Argentina viva
+  const sinPromos = () => { vi.useFakeTimers(); vi.setSystemTime(AFTER); };
+
+  const catalogo = (size, qty = 1, id = 'goku') =>
+    ({ id: `sticker:${id}:${size}`, title: `Goku ${size}`, type: 'sticker', basePrice: priceForSize(size), quantity: qty });
+  const personalizado = (size, qty = 1) =>
+    ({ id: `custom:${size}:silueta:1`, title: `Custom ${size}`, type: 'custom', basePrice: priceForSize(size), quantity: qty });
+
+  /** Cotiza con el cliente y confirma que el servidor acepta ese mismo precio. */
+  const cotizar = (cart, opts = {}) => {
+    const items = clientItems(cart, opts);
+    const res = validateAndPriceOrder({
+      items, shipping: retiro,
+      paymentMethod: opts.paymentMethod || 'mercadopago',
+      couponCode: opts.coupon
+    });
+    expect(res.ok).toBe(true);
+    return items;
+  };
+
+  it('deja los calcos de catálogo a mitad de precio en los tres tamaños', () => {
+    sinPromos();
+    for (const [size, esperado] of [['4cm', 600], ['6cm', 800], ['9cm', 1000]]) {
+      const items = cotizar([catalogo(size)], { coupon: 'EPI50' });
+      expect(price(items, `sticker:goku:${size}`)).toBe(esperado);
+    }
+  });
+
+  it('alcanza también a los personalizados sueltos (`custom`)', () => {
+    sinPromos();
+    const items = cotizar([personalizado('6cm', 3)], { coupon: 'EPI50' });
+    expect(price(items, 'custom:6cm:silueta:1')).toBe(800);
+  });
+
+  it('NO se acumula con el 10 % por transferencia ni con el de volumen', () => {
+    sinPromos();
+    const carrito = [catalogo('6cm', 12)]; // 12 calcos: pasa el umbral de volumen
+    const porTransferencia = cotizar(carrito, { coupon: 'EPI50', paymentMethod: 'transferencia' });
+    const porMercadoPago = cotizar(carrito, { coupon: 'EPI50', paymentMethod: 'mercadopago' });
+    // 50 %, no 60 %: el descuento del cupón no depende del medio de pago.
+    expect(price(porTransferencia, 'sticker:goku:6cm')).toBe(800);
+    expect(price(porMercadoPago, 'sticker:goku:6cm')).toBe(800);
+  });
+
+  it('EPICA10 sigue acumulando y sigue sin tocar los personalizados', () => {
+    sinPromos();
+    // El test que protege de que los flags de EPI50 se filtren al otro cupón.
+    const carrito = [catalogo('6cm', 12), personalizado('6cm', 2)];
+    const items = cotizar(carrito, { coupon: 'EPICA10', paymentMethod: 'transferencia' });
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.8)); // 10 % + 10 % = 20 %
+    expect(price(items, 'custom:6cm:silueta:1')).toBe(1600); // sin cupón que lo alcance
+    expect(couponAnulaTodo('EPICA10')).toBe(false);
+    expect(couponIncluyeCustom('EPICA10')).toBe(false);
+  });
+
+  it('no toca packs, negocio, productos de precio fijo ni digitales', () => {
+    sinPromos();
+    const carrito = [
+      catalogo('6cm', 2),
+      { id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista', type: 'pack', basePrice: round(1600 * 0.5), quantity: 100 },
+      { id: 'pack:personalizados:6cm:1', title: 'Pack Personalizados', type: 'pack', basePrice: round(1600 * 0.9), quantity: 10 },
+      { id: 'negocio:1', title: 'Promo Negocio', type: 'negocio', basePrice: 39999, quantity: 1 },
+      { id: 'fixed:tatuajes-hoja', title: 'Tatuajes', type: 'fixed', basePrice: 12000, quantity: 1 },
+      { id: 'digital:pack-stickers', title: 'Pack imprimible', type: 'digital', basePrice: 5999, quantity: 1 }
+    ];
+    const items = cotizar(carrito, { coupon: 'EPI50' });
+    expect(price(items, 'sticker:goku:6cm')).toBe(800); // el único descontado
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(800);
+    expect(price(items, 'pack:personalizados:6cm:1')).toBe(1440);
+    expect(price(items, 'negocio:1')).toBe(39999);
+    expect(price(items, 'fixed:tatuajes-hoja')).toBe(12000);
+    expect(price(items, 'digital:pack-stickers')).toBe(5999);
+  });
+
+  it('con la promo Argentina viva da 50 %, no 90 %', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURANTE_ARG);
+    expect(isArgentinaPromoActive()).toBe(true);
+    const items = cotizar([catalogo('6cm', 2, 'argentina-72')], { coupon: 'EPI50' });
+    // Sin cupón la promo ya lo deja en 800; con EPI50 sigue en 800 y no en 160:
+    // el cupón exclusivo REEMPLAZA a la promo, no se le suma.
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(800);
+  });
+
+  it('con la promo 3x2 viva da 50 % y no aplica el N x M', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    expect(feActive()).toBe(true);
+    const items = cotizar([catalogo('6cm', 3)], { coupon: 'EPI50' });
+    // Con 3x2 + tope del 10 % daría 1008; con EPI50 manda el cupón: 800.
+    expect(price(items, 'sticker:goku:6cm')).toBe(800);
+  });
+
+  it('el interruptor `activa` lo apaga en los dos lados', () => {
+    sinPromos();
+    // Hoy está prendido en ambos lados (es lo que hace que el cupón exista).
+    expect(COUPONS.EPI50.activa).toBe(true);
+    expect(BE_COUPONS.EPI50.activa).toBe(true);
+    expect(findCoupon('EPI50')).not.toBeNull();
+
+    // Frontend: apagado, el cupón deja de existir para el carrito y el checkout.
+    expect(isCouponActiveFE({ discount: 0.5, activa: false })).toBe(false);
+    expect(isCouponActiveFE({ discount: 0.5, activa: true })).toBe(true);
+
+    // Servidor: apagado, cobra precio de LISTA y rechaza el precio con descuento.
+    // Se muta y se restaura en finally: si esto quedara apagado, la mitad de la
+    // suite pasaría a verde por la razón equivocada.
+    BE_COUPONS.EPI50.activa = false;
+    try {
+      expect(beCouponActive('EPI50')).toBe(false);
+      const conDescuento = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 800 }];
+      const rechazado = validateAndPriceOrder({ items: conDescuento, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPI50' });
+      expect(rechazado.ok).toBe(false);
+      expect(rechazado.error).toBe('price_mismatch');
+
+      const aLista = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 1600 }];
+      const aceptado = validateAndPriceOrder({ items: aLista, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPI50' });
+      expect(aceptado.ok).toBe(true);
+      expect(aceptado.couponApplied).toBeNull();
+    } finally {
+      BE_COUPONS.EPI50.activa = true;
+    }
+    expect(beCouponActive('EPI50')).toBe(true);
+  });
+
+  it('el servidor rechaza el precio con descuento si no viene el cupón', () => {
+    sinPromos();
+    const items = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 800 }];
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('price_mismatch');
+  });
+
+  it('el cupón no vence: sigue vivo con el reloj un año adelante', () => {
+    const dentroDeUnAnio = new Date('2027-08-20T12:00:00-03:00').getTime();
+    expect(findCoupon('EPI50', dentroDeUnAnio)?.discount).toBe(0.5);
+    expect(beCouponActive('EPI50', dentroDeUnAnio)).toBe(true);
   });
 });
 

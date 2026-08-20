@@ -19,7 +19,20 @@ const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia'; // el 10 % solo aplica pag
 // calcos sueltos). El cupón de % es ACUMULABLE con el 10 % por transferencia:
 // los descuentos se SUMAN (ej. transferencia 10 % + EPICA10 10 % = 20 % off),
 // con un tope de seguridad para no llegar a precio negativo.
-const COUPONS = { EPICA10: 0.1 };
+//
+// ...salvo que el cupón sea `exclusivo` (EPI50): ese NO se acumula con nada —
+// ni transferencia, ni volumen, ni promo por categoría, ni N x M por fecha— y
+// `incluyeCustom` le extiende el % a los personalizados sueltos, que fuera de
+// una promo N x M no participan de ningún cupón.
+//
+// ⚠️ Espejo de COUPONS en frontend/src/config/pricing.js, campo por campo
+// (`discount`, `exclusivo`, `incluyeCustom`, `activa`). Se exporta para que
+// promoPricing.test.js pueda comparar las dos tablas: si cambiás un cupón en un
+// solo lado, el test falla antes de que lo haga un checkout real.
+export const COUPONS = {
+  EPICA10: { discount: 0.1 },
+  EPI50: { discount: 0.5, exclusivo: true, incluyeCustom: true, activa: true }
+};
 const MAX_STICKER_DISCOUNT = 0.9;
 
 // Cupones de BUNDLE (N x M sobre calcos de catálogo + personalizados: cada
@@ -36,12 +49,20 @@ export const COUPON_BUNDLES = {};
 
 // Vencimiento de cada cupón (hora Argentina, inclusive). Pasado ese instante el
 // cupón se trata como inexistente: no descuenta nada acá y el frontend tampoco
-// lo aplica. Sin entrada, el cupón no vence nunca (es el caso de EPICA10).
+// lo aplica. Sin entrada, el cupón no vence nunca (es el caso de EPICA10 y EPI50).
 // ⚠️ Espejo de `endsAt` en COUPONS del frontend (lo verifica promoPricing.test.js).
 export const COUPON_ENDS_MS = {};
 
+/**
+ * ¿El cupón está vigente? Además del vencimiento mira el interruptor manual
+ * `activa`, que es lo único que apaga un cupón sin fecha (EPI50).
+ * ⚠️ Apagarlo SOLO en el frontend deja al servidor aceptando el precio con
+ * descuento: hay que ponerlo en false en los DOS lados.
+ */
 export function isCouponActive(code, now = Date.now()) {
-  const end = COUPON_ENDS_MS[String(code || '').trim().toUpperCase()];
+  const normalized = String(code || '').trim().toUpperCase();
+  if (COUPONS[normalized]?.activa === false) return false;
+  const end = COUPON_ENDS_MS[normalized];
   return !Number.isFinite(end) || now <= end;
 }
 
@@ -364,14 +385,22 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   }
 
   // Cupón: el de % es ACUMULABLE con el descuento por transferencia (se SUMAN)
-  // y no requiere umbral de cantidad ni medio de pago. El de bundle (2x1) NO se
-  // acumula con nada: anula todos los %.
-  // Un cupón vencido (COUPON_ENDS_MS) es como si no existiera.
+  // y no requiere umbral de cantidad ni medio de pago. El de bundle (2x1) y el
+  // `exclusivo` (EPI50) NO se acumulan con nada: anulan todos los %.
+  // Un cupón vencido o apagado (`activa: false`) es como si no existiera.
   const rawCoupon = String(couponCode || '').trim().toUpperCase();
   const normalizedCoupon = isCouponActive(rawCoupon) ? rawCoupon : '';
+  const coupon = COUPONS[normalizedCoupon] || null;
   const bundle = COUPON_BUNDLES[normalizedCoupon] || null;
-  const couponDiscount = bundle ? 0 : COUPONS[normalizedCoupon] || 0;
+  const couponDiscount = bundle ? 0 : coupon?.discount || 0;
   const couponApplied = bundle || couponDiscount > 0 ? normalizedCoupon : null;
+  // `anulaTodo` = este cupón es el ÚNICO descuento que corre. Espejo de
+  // couponAnulaTodo() del frontend. Los tres usos de abajo (volumen, agrupación
+  // N x M y promo por categoría) preguntaban `!bundle`: ahora el cupón
+  // exclusivo entra por la misma puerta en vez de tener su propio camino.
+  const anulaTodo = Boolean(bundle) || Boolean(coupon?.exclusivo);
+  // El % de este cupón, ¿alcanza también a los personalizados sueltos?
+  const incluyeCustom = Boolean(coupon?.incluyeCustom);
 
   // El 10 % por volumen aplica a calcos sueltos cuando el carrito suma ≥ 10
   // calcos TOTALES (se pueden combinar tamaños) Y el pago es por transferencia.
@@ -379,12 +408,18 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     .filter((i) => i.id.startsWith('sticker:'))
     .reduce((a, i) => a + i.quantity, 0);
   const bulkDiscount =
-    !bundle && stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
+    !anulaTodo && stickerUnits >= BULK_THRESHOLD && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
 
   // Durante la promo 3x2 el % (cupón + transferencia) queda topeado en
   // PROMO_PERCENT_CAP (10 %); fuera de la promo, el tope es MAX_STICKER_DISCOUNT.
+  //
+  // El tope sigue a la promo REAL, no a la fecha: un cupón que la anula
+  // (`anulaTodo`) deja al pedido sin 3x2, así que tampoco corre su tope. Sin
+  // este `!anulaTodo`, EPI50 caído en una ventana de 3x2 daría 10 % en vez del
+  // 50 % prometido — y el cliente vería el descuento derretirse por una promo
+  // que ni siquiera se le está aplicando.
   const promoActive = isPromoActive();
-  const cap = promoActive ? PROMO_PERCENT_CAP : MAX_STICKER_DISCOUNT;
+  const cap = promoActive && !anulaTodo ? PROMO_PERCENT_CAP : MAX_STICKER_DISCOUNT;
   const percentRate = Math.min(bulkDiscount + couponDiscount, cap);
 
   // Pre-pass: base de lista + validaciones de forma de cada línea.
@@ -400,7 +435,7 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   // N x M: bolsa común de unidades elegibles (sticker + custom), se regalan las
   // más baratas de cada `buy` → keepFraction uniforme por línea. Vale el bundle
   // del cupón (2x1) y, si no hay, la promo 3x2 por fecha.
-  const grouping = bundle || (promoActive ? { buy: PROMO_BUY, pay: PROMO_PAY } : null);
+  const grouping = bundle || (!anulaTodo && promoActive ? { buy: PROMO_BUY, pay: PROMO_PAY } : null);
   let keepFraction = 1;
   if (grouping) {
     const unitBasePrices = [];
@@ -416,11 +451,12 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   // `percentRate`, que es uno solo para todo el carrito: se suma encima y se
   // vuelve a topear. Espejo de `rateDe` en el CartContext del frontend.
   //
-  // Con un cupón de BUNDLE (N x M) no corre: ese cupón anula TODOS los % por
-  // definición, y el 50 % de Argentina es uno más. Si no, un 2x1 sobre calcos
-  // ya regalados al 50 % los dejaría casi en cero.
+  // Con un cupón que anula todo (bundle o `exclusivo`) no corre: esos cupones
+  // anulan TODOS los % por definición, y el 50 % de Argentina es uno más. Si no,
+  // un 2x1 sobre calcos ya regalados al 50 % los dejaría casi en cero, y EPI50
+  // sobre un calco de Argentina daría 90 % en vez del 50 % prometido.
   const rateDe = (id) =>
-    !bundle && esPromoArgentina(id)
+    !anulaTodo && esPromoArgentina(id)
       ? Math.min(percentRate + ARGENTINA_DISCOUNT, MAX_STICKER_DISCOUNT)
       : percentRate;
 
@@ -434,8 +470,11 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     } else if (grouping) {
       // Elegibles (catálogo + personalizados): N x M y luego el % (0 con bundle).
       expected = round(lb.base * keepFraction * (1 - rateDe(item.id)));
-    } else if (lb.kind === 'sticker') {
-      // Fuera de promo, el cupón/transferencia solo tocan calcos de catálogo.
+    } else if (lb.kind === 'sticker' || (incluyeCustom && lb.kind === 'custom')) {
+      // Fuera de promo, el cupón/transferencia solo tocan calcos de catálogo —
+      // salvo que el cupón traiga `incluyeCustom` (EPI50), que suma los
+      // personalizados sueltos. Ojo: esto NO extiende el 10 % por volumen, que
+      // se sigue contando solo con líneas `sticker:` (ver stickerUnits arriba).
       expected = round(lb.base * (1 - rateDe(item.id)));
     } else {
       expected = lb.base; // custom fuera de promo: precio por volumen, sin cupón.

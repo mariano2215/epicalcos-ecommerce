@@ -88,7 +88,8 @@ siempre el de vidriera.
 
 | Código | Efecto | Vencimiento | Visible |
 |---|---|---|---|
-| `EPICA10` | 10 % off | sin vencimiento | **oculto** |
+| `EPICA10` | 10 % off, acumulable | sin vencimiento | **oculto** |
+| `EPI50` | 50 % off, **exclusivo** | sin vencimiento (interruptor `activa`) | **oculto** |
 
 - **`hidden: true`** significa que el código **no se nombra en ninguna pantalla**
   del sitio. `EPICA10` se entrega solo a quien deja su mail en el popup de
@@ -96,9 +97,31 @@ siempre el de vidriera.
   igual lo acepta si alguien lo escribe: "oculto" es no publicitarlo, no un
   secreto criptográfico — viaja en el bundle JS.
 - **Acumulable** con el 10 % por transferencia: los porcentajes **se suman**
-  (transferencia 10 % + EPICA10 10 % = 20 % off).
+  (transferencia 10 % + EPICA10 10 % = 20 % off). Salvo los `exclusivo`, abajo.
 - Tope de seguridad: `MAX_STICKER_DISCOUNT = 0.9` (90 %).
 - `EMOJI50` (2×1 por mensaje privado) venció el 4/8/2026 y se eliminó del código.
+
+### Cupones exclusivos (spec 009)
+`exclusivo: true` — un cupón de % que **no se acumula con nada**, igual que un
+bundle: mientras esté aplicado no corren el 10 % por transferencia, el 10 % por
+volumen, otro cupón, el 50 % de Argentina ni la agrupación N×M de una promo por
+fecha. Su % es el descuento final y **no depende del medio de pago ni de la
+cantidad**.
+
+`incluyeCustom: true` — el % alcanza también a los **personalizados sueltos**
+(líneas `custom`), que fuera de una promo N×M no participan de ningún cupón. Es
+opt-in por cupón, justamente para no cambiarle el precio a `EPICA10`.
+
+`activa: false` — interruptor manual, aparte del vencimiento. Existe para los
+cupones **sin fecha**: un 50 % reutilizable que se filtra no se apaga solo.
+⚠️ Hay que ponerlo en `false` en **los dos lados** del espejo; apagarlo solo en
+el frontend deja al servidor aceptando el precio con descuento.
+
+**`EPI50`** es el primero de este tipo: 50 % off sobre calcos de catálogo y
+personalizados sueltos, para mandar por privado. **No** toca packs (mayorista,
+`mayorista100`, personalizados), `negocio`, productos de precio fijo ni
+digitales: esas líneas ya traen su precio final y no participan de ningún %.
+Ver `specs/009-cupon-epi50/`.
 
 ### Cupones de bundle (N×M)
 `COUPON_BUNDLES` — **hoy vacío**. El motor queda listo: agregar
@@ -237,6 +260,14 @@ Además, el envío es **$0** cuando:
 
 **No hay ninguna otra forma de tener envío gratis.** Ningún pack, promo ni cupón
 saltea el umbral, y el servidor no lee ningún flag del cliente.
+
+⚠️ **Un descuento ALEJA del envío gratis.** El umbral se mide sobre el subtotal
+ya descontado (`physicalTotal`), así que con `EPI50` (50 % off) hace falta el
+**doble** de precio de lista para cruzarlo: $100.000 en Rosario y $150.000 en el
+resto del país. Un carrito de $80.000 en 6 cm hoy viaja gratis a todo el país;
+con el cupón pasa a $40.000 y paga envío. Es correcto según la regla y está
+aceptado en `specs/009-cupon-epi50` §9.1 — **no** se arregla salteando el umbral
+(ver el bloque de abajo).
 
 ### Ninguna promo regala el envío (12/8/2026)
 Existió un `FREE_SHIPPING_PACK_TYPES = ['mayorista', 'mayorista100']` que ponía
@@ -381,22 +412,36 @@ comparan ambos lados. **Un cambio de precio sin test verde no se deploya.**
 Tal como lo hacen `CartContext.pricedItems()` y `validateAndPriceOrder()`:
 
 ```
+0. anulaTodo = el cupón aplicado es un bundle O es `exclusivo`
+      es el mismo predicado en los tres puntos de abajo
+
 1. Precio base de la línea, según su id
       packs / negocio / fijos / digitales → precio final, FIN
 
 2. Si hay agrupación N×M vigente (bundle del cupón, o promo 3x2 por fecha):
       keepFraction uniforme sobre las líneas elegibles (sticker + custom)
+      un cupón `exclusivo` la anula: no hay agrupación
 
 3. percentRate = min(volumen + cupón, cap)
-      cap = 0.10 durante la promo 3x2, si no MAX_STICKER_DISCOUNT (0.90)
+      volumen = 0 si anulaTodo
+      cap = 0.10 durante la promo 3x2 SI la promo realmente corre
+            (o sea: promoActive && !anulaTodo), si no MAX_STICKER_DISCOUNT (0.90)
       con bundle aplicado, percentRate = 0
 
 4. Por línea, si es de la categoría en promo Argentina:
       rate = min(percentRate + 0.50, 0.90)
-      (no corre si hay bundle)
+      (no corre si anulaTodo)
 
-5. precio = round(base × keepFraction × (1 − rate))
+5. Alcance del % fuera de agrupación: solo `sticker`
+      …y también `custom` si el cupón trae `incluyeCustom`
+
+6. precio = round(base × keepFraction × (1 − rate))
 ```
+
+⚠️ El `cap` sigue a la promo **real**, no a la fecha. Si mirara solo
+`promoActive`, un cupón exclusivo que cae dentro de una ventana de 3x2 quedaría
+topeado al 10 % — daría 10 % en vez del 50 % prometido, por una promo que ni
+siquiera se le está aplicando al pedido.
 
 El N×M se aplica como **fracción uniforme** (`keepFraction`) y no como línea
 negativa, porque Mercado Pago no admite ítems con precio ≤ 0. Así el precio por
