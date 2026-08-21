@@ -590,7 +590,16 @@ export const IMPRIMIBLES = [
     id: 'pack-stickers',
     /** Nombre que ve el cliente (carrito, checkout, mail y CRM). */
     name: 'Pack de stickers imprimibles',
-    price: 5999,
+    price: 9999,
+    /**
+     * Precio de lista TACHADO — solo display, no se cobra ni se manda al
+     * servidor: el checkout cobra `price` y nada más. Mismo criterio que
+     * `NEGOCIO.listPrice`, y por eso no necesita espejo (el servidor no lo
+     * conoce ni tiene por qué).
+     * ⚠️ Si lo cambiás, el % del cartel se recalcula solo — sale de
+     * `imprimibleOff()`, no está escrito a mano en ninguna pantalla.
+     */
+    listPrice: 39999,
     /**
      * Cantidad de diseños del pack — es EL argumento de venta de la card.
      * ⚠️ Poné acá el número real: se muestra en la página, en el Home y en el
@@ -607,6 +616,17 @@ export const IMPRIMIBLES = [
 
 /** El pack principal: el que se muestra como card grande en /archivos-imprimibles. */
 export const IMPRIMIBLE_PRINCIPAL = IMPRIMIBLES[0];
+
+/**
+ * % de descuento del pack contra su precio de lista. 0 si no tiene `listPrice`.
+ * Derivado a propósito: escrito a mano, un cambio de precio dejaba el cartel
+ * prometiendo un descuento que ya no existía (mismo problema que resolvió
+ * `mayoristaPromoOff`).
+ */
+export function imprimibleOff(pack) {
+  if (!pack?.listPrice || pack.listPrice <= pack.price) return 0;
+  return Math.round((1 - pack.price / pack.listPrice) * 100);
+}
 
 /** Un pack digital por id (null si no existe). */
 export function findImprimible(id) {

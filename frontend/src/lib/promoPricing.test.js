@@ -692,7 +692,7 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
       { id: 'pack:personalizados:6cm:1', title: 'Pack Personalizados', type: 'pack', basePrice: round(1600 * 0.9), quantity: 10 },
       { id: 'negocio:1', title: 'Promo Negocio', type: 'negocio', basePrice: 39999, quantity: 1 },
       { id: 'fixed:tatuajes-hoja', title: 'Tatuajes', type: 'fixed', basePrice: 12000, quantity: 1 },
-      { id: 'digital:pack-stickers', title: 'Pack imprimible', type: 'digital', basePrice: 5999, quantity: 1 }
+      { id: 'digital:pack-stickers', title: 'Pack imprimible', type: 'digital', basePrice: IMPRIMIBLE_PRINCIPAL.price, quantity: 1 }
     ];
     const items = cotizar(carrito, { coupon: 'EPI50' });
     expect(price(items, 'sticker:goku:6cm')).toBe(800); // el único descontado
@@ -700,7 +700,7 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
     expect(price(items, 'pack:personalizados:6cm:1')).toBe(1440);
     expect(price(items, 'negocio:1')).toBe(39999);
     expect(price(items, 'fixed:tatuajes-hoja')).toBe(12000);
-    expect(price(items, 'digital:pack-stickers')).toBe(5999);
+    expect(price(items, 'digital:pack-stickers')).toBe(IMPRIMIBLE_PRINCIPAL.price);
   });
 
   it('con la promo Argentina viva da 50 %, no 90 %', () => {
@@ -1035,7 +1035,7 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
       { id: 'custom:6cm:silueta:1', basePrice: 1600 },
       { id: 'negocio:1', basePrice: 39999 },
       { id: 'fixed:tatuajes-hoja', basePrice: 12000 },
-      { id: 'digital:pack-stickers', basePrice: 5999 }
+      { id: 'digital:pack-stickers', basePrice: IMPRIMIBLE_PRINCIPAL.price }
     ];
     for (const l of ajenas) expect(precioVidrieraLinea(l)).toBe(l.basePrice);
   });

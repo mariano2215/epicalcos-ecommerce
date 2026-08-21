@@ -58,10 +58,6 @@ export default function Imprimibles() {
                 a: 'Pagando con Mercado Pago, apenas se acredita el pago. Si pagás por transferencia, te lo mandamos en cuanto recibimos el comprobante.'
               },
               {
-                q: '¿Puedo imprimirlos y venderlos?',
-                a: 'Sí. Podés imprimir los diseños y vender los stickers que hagas con ellos. Lo que no se puede es revender los archivos digitales tal cual.'
-              },
-              {
                 q: '¿Y si no me llega el mail?',
                 a: 'Revisá la carpeta de spam o promociones. Si no está, escribinos por WhatsApp con tu número de pedido y te lo reenviamos.'
               },

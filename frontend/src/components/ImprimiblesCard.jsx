@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
+import { imprimibleOff } from '../config/pricing.js';
 import { contact } from '../config/site.js';
 import { DIGITAL_SKU } from '../config/metaCatalog.js';
 import { trackViewItem } from '../lib/analytics.js';
@@ -32,6 +33,9 @@ export default function ImprimiblesCard({ pack, photo, incluye }) {
   const [fotoOk, setFotoOk] = useState(Boolean(photo));
 
   const image = photo && fotoOk ? photo : fallbackImg(pack.emoji);
+  // % de descuento contra el precio de lista. 0 si el pack no tiene `listPrice`,
+  // y en ese caso no se muestra ni el tachado ni el cartel.
+  const off = imprimibleOff(pack);
 
   // Meta Pixel / GA4: ViewContent con el SKU del catálogo, igual que el resto
   // de las líneas especiales (ver FixedProductPage).
@@ -90,6 +94,19 @@ export default function ImprimiblesCard({ pack, photo, incluye }) {
           </p>
 
           <div className="mt-5">
+            {/* Precio de lista tachado ARRIBA del precio real, con el % al lado.
+                El % sale de `imprimibleOff()` y no escrito a mano: así un cambio
+                de precio no deja el cartel prometiendo un descuento vencido. */}
+            {off > 0 && (
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <span className="text-white/45 line-through text-lg" aria-label={`Precio de lista ${formatPrice(pack.listPrice)}`}>
+                  {formatPrice(pack.listPrice)}
+                </span>
+                <span className="text-xs font-extrabold px-2 py-1 rounded-full bg-emerald-400/15 text-emerald-300 border border-emerald-400/30">
+                  {off}% OFF
+                </span>
+              </div>
+            )}
             <div className="font-display font-extrabold text-4xl md:text-5xl leading-none"
               style={{ backgroundImage: 'linear-gradient(135deg,#FF1B8D,#FF5A1F)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
               {formatPrice(pack.price)}
@@ -111,9 +128,17 @@ export default function ImprimiblesCard({ pack, photo, incluye }) {
             <div className="flex justify-between"><span className="text-white/60">Producto</span><span>Archivos digitales</span></div>
             <div className="flex justify-between"><span className="text-white/60">Formato</span><span>{pack.formatos}</span></div>
             <div className="flex justify-between"><span className="text-white/60">Entrega</span><span>Por mail</span></div>
-            <div className="flex justify-between"><span className="text-white/60">Envío</span><span className="text-emerald-400 font-semibold">Sin envío</span></div>
+            {/* La fila "Envío · Sin envío" se sacó: en un producto que se entrega
+                por mail, nombrar el envío para decir que no hay planta una duda
+                que nadie tenía. La entrega ya está dicha en la fila de arriba. */}
             <div className="flex justify-between items-baseline font-display font-extrabold text-lg pt-1">
-              <span>Total</span><span>{formatPrice(pack.price)}</span>
+              <span>Total</span>
+              <span className="flex items-baseline gap-2">
+                {off > 0 && (
+                  <span className="text-sm font-semibold text-white/40 line-through">{formatPrice(pack.listPrice)}</span>
+                )}
+                <span>{formatPrice(pack.price)}</span>
+              </span>
             </div>
           </div>
 

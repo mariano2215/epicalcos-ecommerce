@@ -51,7 +51,7 @@ carrito completo.
 
 | Pack | Precio | Id |
 |---|---|---|
-| Pack de stickers imprimibles | $5.999 | `digital:pack-stickers` |
+| Pack de stickers imprimibles | $9.999 (lista $39.999, −75 %) | `digital:pack-stickers` |
 
 Reglas propias, todas verificadas en el servidor:
 - **No participa de ningún descuento**: ni cupones, ni el 10 % por

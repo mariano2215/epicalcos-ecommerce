@@ -202,7 +202,7 @@ const FIXED_PRICES = {
 // ⚠️ Si cambiás un precio acá, cambialo TAMBIÉN en el frontend
 // (lo verifica frontend/src/lib/promoPricing.test.js).
 export const DIGITAL_PRICES = {
-  'pack-stickers': 5999
+  'pack-stickers': 9999
 };
 
 /** true si TODAS las líneas del pedido son archivos digitales (no hay nada que enviar). */
@@ -520,7 +520,7 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   const itemsTotal = priced.reduce((a, i) => a + i.unit_price * i.quantity, 0);
 
   // Los archivos digitales no se despachan: no cuentan para el umbral de envío
-  // gratis. Sin esto, sumar un pack de $5.999 al carrito acercaría el pedido a
+  // gratis. Sin esto, sumar un pack de $9.999 al carrito acercaría el pedido a
   // los umbrales sin agregar un solo gramo a la caja.
   const physicalTotal = priced.reduce(
     (a, i, idx) => (bases[idx].kind === 'digital' ? a : a + i.unit_price * i.quantity),
