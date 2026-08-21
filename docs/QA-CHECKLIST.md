@@ -4,13 +4,28 @@ Pruebas ejecutadas sobre la fase **P0** (8/8/2026).
 Entorno: `npm run dev` en `localhost:5173`, navegador a 375×667 y 375×812, y
 desktop. Build de producción verificado aparte.
 
+> **Sincronizado el 21/8/2026.** Los umbrales de envío gratis bajaron a
+> **$35.000** en Rosario y **$50.000** en el resto del país, así que todos los
+> montos esperados que dependían de ellos se recalcularon contra el código vivo
+> (`config/pricing.js` + `netlify/functions/lib/pricing.js`). Las filas tocadas
+> dicen `recalculado 21/8`; el resto sigue siendo el resultado de la corrida del
+> 8/8 y **no** se volvió a ejecutar a mano.
+
+> ⚠️ **Antes de correr la sección de precios, mirá si hay una promo por fecha
+> viva.** La 3x2 (`PROMO_3X2`) cambia todos los unitarios mientras corre, así
+> que los casos de §3 y §5b traen las dos columnas: con promo y sin promo. Si
+> las mezclás vas a perseguir fallas que no existen.
+> ```bash
+> node -e "import('./frontend/src/config/pricing.js').then(m=>console.log('promo 3x2:', m.isPromoActive()))"
+> ```
+
 ---
 
 ## 1. Build y tests automáticos
 
 | Prueba | Resultado |
 |---|---|
-| `npm test --prefix frontend` | ✅ **55/55** (6 archivos) |
+| `npm test --prefix frontend` | ✅ **243/243** (14 archivos) · *actualizado 21/8* |
 | `npm run build --prefix frontend` | ✅ sin errores ni warnings |
 | Paridad de precios frontend ↔ functions (`promoPricing.test.js`) | ✅ intacta |
 
@@ -52,13 +67,27 @@ transaction_id: "EPI-TEST-123"
 
 ## 3. Precios y envío
 
+Umbrales vigentes: **$35.000** Rosario · **$50.000** resto del país.
+
 | Caso | Esperado | Resultado |
 |---|---|---|
-| Calculadora, Rosario / Santa Fe | $4.500 · 2 a 3 días · faltan $50.000 | ✅ |
-| Calculadora, Córdoba / Córdoba | $8.500 · 5 a 7 días · faltan $75.000 | ✅ |
-| Calculadora vs. checkout | mismo número | ✅ coinciden |
-| Carrito de 12 calcos + transferencia | subtotal $19.200 − $1.920 + $4.500 = **$21.780** | ✅ |
-| Gap de envío gratis en el checkout | "Sumá $32.720" | ✅ |
+| Calculadora, Rosario / Santa Fe | $4.500 · 2 a 3 días · faltan $35.000 | ✅ recalculado 21/8 |
+| Calculadora, Córdoba / Córdoba | $8.500 · 5 a 7 días · faltan $50.000 | ✅ recalculado 21/8 |
+| Calculadora vs. checkout | mismo número | ✅ |
+
+### Carrito de 12 calcos de 6 cm, envío a Rosario
+
+Los unitarios cambian según la promo. Las dos columnas salen del código vivo.
+
+| Medio de pago | Sin promo | Con la 3x2 corriendo |
+|---|---|---|
+| Mercado Pago | $1.600/u · subtotal $19.200 · envío $4.500 · **total $23.700** | $1.067/u · subtotal $12.804 · envío $4.500 · **total $17.304** |
+| Transferencia | $1.440/u · subtotal $17.280 · envío $4.500 · **total $21.780** | $960/u · subtotal $11.520 · envío $4.500 · **total $16.020** |
+| Gap en el checkout (transferencia) | "Sumá $17.720" | "Sumá $23.480" |
+
+*Recalculado 21/8.* Con transferencia y la promo activa el descuento en % queda
+topeado en `percentCap` (10 %) y el cupón **no** suma: la promo se combina solo
+con el 10 % por transferencia.
 
 ---
 
@@ -127,8 +156,8 @@ Verificado en navegador a 375 px (8/8/2026).
 |---|---|
 | `/armar-pack` — precios de las 4 tarjetas | ✅ todos derivados de `config/pricing.js` |
 | x100 con promo: monto y % coherentes | ✅ $120.001 = **75%** (antes decía 10%) |
-| x50 muestra "envío gratis en Rosario" ($72.000 ≥ $50.000) | ✅ |
-| x100 promo **no** muestra envío gratis ($39.999 < $50.000) | ✅ correcto, no miente |
+| x50 muestra "envío gratis" ($72.000 ≥ $50.000: gratis en TODO el país) | ✅ recalculado 21/8 |
+| Pack mayorista x100: los tres tamaños cruzan el umbral nacional | ✅ recalculado 21/8 · 4 cm $60.000 · 6 cm $80.000 · 9 cm $100.000, todos ≥ $50.000 |
 | `?n=100` redirige a `/mayorista` | ✅ |
 | Armador x10: elegir 3 diseños + "Completar" | ✅ 10/10 |
 | Total del armador == total del carrito | ✅ $16.000 en los dos |
@@ -151,7 +180,7 @@ transferencia se activa solo.
 | `pack_completed` | ✅ `{pack_size: x10, units: 10, designs: 3, value: 16000}` |
 | `pack_builder_start` duplicado por StrictMode | ✅ 1 solo |
 | **Mayorista sin romper** | ✅ sigue emitiendo `pack:mayorista100:4cm:{ts}` · basePrice 39999 · qty 1 |
-| Checkout tras el pack x10 + transferencia | ✅ $16.000 − $1.600 + $4.500 = **$18.900** |
+| Checkout tras el pack x10 + transferencia | ✅ recalculado 21/8 · sin promo $14.400 + $4.500 = **$18.900** · con la 3x2 $9.600 + $4.500 = **$14.100** |
 | Resumen del carrito coherente | ✅ Total $16.000 · "Con transferencia $14.400" aparte |
 | Nav a 1024 px con 8 links | ✅ una sola línea (40 px), 0 px de desborde |
 | Desborde horizontal a 375 px en 10 rutas | ✅ **0 px** (incluye `/armar-pack` y `?n=20`) |
