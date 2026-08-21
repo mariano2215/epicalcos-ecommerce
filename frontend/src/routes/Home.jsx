@@ -15,7 +15,6 @@ import Reveal from '../components/Reveal.jsx';
 import { CATEGORIES, SPECIALS } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
 import { useReducedMotion } from '../lib/motion.js';
-import { usePromoActive, useMayoristaPromoActive } from '../lib/promo.js';
 
 const FEATURED_SLUGS = ['anime', 'futbol', 'disney', 'pokemon', 'memes', 'gamer', 'superheroes', 'cute', 'autos-y-motos', 'musica'];
 const SERVICE_SLUGS = ['mayorista', 'archivos-imprimibles', 'tatuajes', 'polaroid'];
@@ -25,11 +24,6 @@ export default function Home() {
   const [rotation, setRotation] = useState(0);
   const featuredRef = useRef(null);
   const reducedMotion = useReducedMotion();
-  // ¿Hay un banner de promo ocupando el header? (ver Header.jsx). Los dos hooks se
-  // llaman siempre: con `||` el segundo quedaría condicionado y rompería las reglas de hooks.
-  const promo3x2Activa = usePromoActive();
-  const promoMayoristaActiva = useMayoristaPromoActive();
-  const promoEnHeader = promo3x2Activa || promoMayoristaActiva;
 
   useSeo({ title: undefined, description: undefined });
 
@@ -79,15 +73,14 @@ export default function Home() {
     <>
       <Hero />
 
-      {/* Ticker de anuncios en MOBILE, arriba de "Los más vendidos": mientras corre
-          una promo, el banner con la cuenta regresiva le ocupa el lugar en el header
-          del celular. Cuando la promo vence, el ticker vuelve solo al header (en
-          todas las páginas) y acá deja de renderizarse para no duplicarlo. */}
-      {promoEnHeader && (
-        <div className="sm:hidden">
-          <AnnouncementBar />
-        </div>
-      )}
+      {/* Ticker de anuncios, DEBAJO del hero y en todos los tamaños.
+          Antes vivía en el header —y acá solo aparecía en mobile mientras una
+          promo le ocupaba el lugar—, así que arriba de todo competían dos tiras
+          de colores. Ahora arriba manda el banner de promo y el ticker toma el
+          primer respiro después del hero, que es donde el que scrollea lo lee.
+          ⚠️ El hero es solo del Home: fuera de esta página el ticker no se
+          muestra en ningún lado. */}
+      <AnnouncementBar />
 
       {/* Bifurcación por intención antes del catálogo: el que venía a mandar su
           logo o a comprar para su negocio tenía que deducir solo que existía

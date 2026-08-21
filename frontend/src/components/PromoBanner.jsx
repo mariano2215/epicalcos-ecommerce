@@ -73,18 +73,19 @@ export default function PromoBanner({ title, subtitle, endMs, to, ariaLabel }) {
       <StickerField count={9} opacity={0.16} className="promo-banner__stickers" />
       <div className="promo-banner__scrim" aria-hidden="true" />
 
+      {/* z-10: por encima de los calcos (1), del scrim (2) y del barrido (3). */}
       <div className="container-app relative z-10 py-2.5">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-center sm:justify-between">
           <div className="min-w-0">
             <Link to={to} className="group inline-flex flex-col items-center sm:items-start">
-              <span className="promo-banner__title gradient-text">{title}</span>
+              <span className="promo-banner__title">{title}</span>
               <span className="promo-banner__sub">{subtitle}</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
             <PromoCountdown endMs={endMs} />
-            <Link to={to} className="btn-primary shrink-0 !py-2 !px-3.5 !text-xs hidden md:inline-flex">
+            <Link to={to} className="promo-banner__cta shrink-0 hidden md:inline-flex">
               Comprar
             </Link>
           </div>
