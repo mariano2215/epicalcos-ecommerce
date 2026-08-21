@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import AnnouncementBar from './AnnouncementBar.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import PromoBanner, { endLabel } from './PromoBanner.jsx';
 import { usePromoActive, useMayoristaPromoActive, useArgentinaPromoActive } from '../lib/promo.js';
@@ -20,9 +21,10 @@ export default function Header() {
   const argentinaPromoActive = useArgentinaPromoActive();
 
   return (
-    /* El ticker de anuncios YA NO vive acá: va debajo del hero, en el Home.
-       Arriba de todo queda solo el banner de promo, y cuando no hay promo el
-       header arranca directamente con el logo. */
+    /* Orden del header: banner de promo (si hay) → nav → menú mobile → ticker.
+       El ticker va ÚLTIMO y no entre el nav y el menú: el menú desplegable está
+       hecho para colgar pegado al nav, y meterle una tira de colores en el medio
+       lo parte al abrirlo. */
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
       {promoActive ? (
         <PromoBanner
@@ -140,6 +142,12 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      {/* Ticker de anuncios, debajo del nav y en TODAS las páginas.
+          Estuvo arriba de todo hasta que el banner dorado le ganó ese lugar:
+          dos tiras de colores compitiendo arriba se anulaban entre sí. Acá abajo
+          acompaña sin pelear. */}
+      <AnnouncementBar />
     </header>
   );
 }

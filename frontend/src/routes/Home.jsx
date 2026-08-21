@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
-import AnnouncementBar from '../components/AnnouncementBar.jsx';
 import Benefits from '../components/Benefits.jsx';
 import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import Testimonials from '../components/Testimonials.jsx';
@@ -73,14 +72,6 @@ export default function Home() {
     <>
       <Hero />
 
-      {/* Ticker de anuncios, DEBAJO del hero y en todos los tamaños.
-          Antes vivía en el header —y acá solo aparecía en mobile mientras una
-          promo le ocupaba el lugar—, así que arriba de todo competían dos tiras
-          de colores. Ahora arriba manda el banner de promo y el ticker toma el
-          primer respiro después del hero, que es donde el que scrollea lo lee.
-          ⚠️ El hero es solo del Home: fuera de esta página el ticker no se
-          muestra en ningún lado. */}
-      <AnnouncementBar />
 
       {/* Bifurcación por intención antes del catálogo: el que venía a mandar su
           logo o a comprar para su negocio tenía que deducir solo que existía
