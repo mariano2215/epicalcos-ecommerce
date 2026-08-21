@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState, useCallback } from 'react';
 import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
+import { usePromoActive } from '../lib/promo.js';
 import { META_LINE_SKU, FIXED_SKU, DIGITAL_SKU } from '../config/metaCatalog.js';
 import {
   priceForSize,
@@ -17,7 +18,6 @@ import {
   PROMO_ARGENTINA,
   esPromoArgentina,
   precioVidrieraLinea,
-  isPromoActive,
   promo3x2
 } from '../config/pricing.js';
 
@@ -263,6 +263,20 @@ export function CartProvider({ children }) {
   const closeDrawer = useCallback(() => dispatch({ type: 'CLOSE_DRAWER' }), []);
 
   /**
+   * ¿La promo 3x2 está corriendo? Viene del HOOK y no de `isPromoActive()`
+   * suelto, para que el carrito se entere del cambio de ventana SIN recargar.
+   *
+   * POR QUÉ IMPORTA: `derived` es un useMemo sobre `state.items`. Si la promo
+   * se decidiera adentro del memo, una pestaña abierta a las 22:59 seguiría
+   * calculando precios de LISTA después de las 23:00 —el banner del Header sí
+   * se enciende, porque tiene su propio hook— y el checkout mandaría un precio
+   * que el servidor ya no acepta: `price_mismatch` y compra trabada, justo en
+   * el minuto de más tráfico de la promo. Con el hook, el flip de la ventana
+   * re-renderiza el provider y el memo se recalcula solo.
+   */
+  const promoActive = usePromoActive();
+
+  /**
    * Precios derivados. Hay que distinguir DOS tipos de descuento, porque se
    * muestran en momentos distintos:
    *
@@ -314,9 +328,9 @@ export function CartProvider({ children }) {
     }
 
     // Promo 3x2 (por tiempo limitado): independiente del medio de pago y del
-    // cupón, así ya se puede mostrar en el carrito. El % (EPICA10 /
-    // transferencia) se suma recién en el checkout, en pricedItems.
-    const promoActive = isPromoActive();
+    // cupón, así ya se puede mostrar en el carrito. El % por transferencia se
+    // suma recién en el checkout, en pricedItems. `promoActive` viene del hook
+    // de arriba — ver el comentario de por qué no se decide acá adentro.
     const promo = promo3x2({ unitBasePrices: promoActive ? eligibleUnitBasePrices : [] });
     const promoUnits = promoActive ? eligibleUnitBasePrices.length : 0;
     const promoToNextFree = promoActive
@@ -353,7 +367,7 @@ export function CartProvider({ children }) {
       promoKeepFraction: promo.keepFraction,
       promoToNextFree
     };
-  }, [state.items]);
+  }, [state.items, promoActive]);
 
   /**
    * Recalcula los items con el precio real según el medio de pago y el cupón
@@ -363,8 +377,9 @@ export function CartProvider({ children }) {
    * (solo transferencia y desde el umbral) MÁS el cupón (acumulables, tope 90 %).
    *
    * DURANTE la promo 3x2: a los calcos elegibles (catálogo + personalizados) se
-   * les aplica primero el 3x2 (uniforme vía keepFraction) y después el % (cupón
-   * + transferencia) topeado en PROMO_3X2.percentCap (10 %). Espejado en
+   * les aplica primero el 3x2 (uniforme vía keepFraction) y después el 10 % por
+   * transferencia, topeado en PROMO_3X2.percentCap. Los cupones de % NO se
+   * combinan con la promo: mientras corre, `couponRate` es 0. Espejado en
    * netlify/functions/lib/pricing.js.
    *
    * Con un CUPÓN DE BUNDLE (N x M): manda el bundle del cupón — cada N,
@@ -388,7 +403,12 @@ export function CartProvider({ children }) {
       const incluyeCustom = couponIncluyeCustom(couponCode);
       const bulkRate =
         !anulaTodo && derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
-      const couponRate = bundle ? 0 : findCoupon(couponCode)?.discount || 0;
+      // Durante la promo 3x2 un cupón de % NO suma: la promo se combina con el
+      // 10 % por transferencia y con nada más. EPI50 no cae acá — es `exclusivo`,
+      // así que ya anuló la promo (anulaTodo) y corre solo su 50 %.
+      const cuponAnuladoPorPromo = derived.promoActive && !anulaTodo;
+      const couponRate =
+        bundle || cuponAnuladoPorPromo ? 0 : findCoupon(couponCode)?.discount || 0;
       // El tope de la promo sigue a la promo REAL, no a la fecha: un cupón que
       // la anula deja al pedido sin 3x2, así que tampoco corre su tope de 10 %.
       const cap = derived.promoActive && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;

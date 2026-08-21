@@ -145,52 +145,60 @@ export function couponIncluyeCustom(code, now = Date.now()) {
 }
 
 /**
- * ─── PROMO 3x2 — VENCIDA el 26/7/2026 ─────────────────────────────────────────
- *
- * ⚠️ NO ESTÁ VIVA. `endsAt` quedó en el pasado, así que `isPromoActive()` da
- * false en las dos puntas y no hay banner, ni precio, ni tope de % que corra.
- *
- * POR QUÉ SIGUE ACÁ y no se borró como EMOJI50: esta entrada es el único
- * consumidor del motor N x M (`promo3x2`), que sí hay que conservar, y sus
- * `buy`/`pay`/`percentCap` son los parámetros con los que promoPricing.test.js
- * verifica la paridad de precios frontend ↔ servidor. Sacarla obliga a tocar
- * CartContext, Cart, CartDrawer, Checkout, Home, Header, el espejo del servidor
- * y ~10 tests del checkout: es un refactor del camino de precios, no una
- * limpieza de config, y va en su propia rama.
+ * ─── PROMO 3x2 — VIVA del jue 20/8 23:00 al lun 24/8 23:59 de 2026 ───────────
  *
  * "3x2 en TODAS las calcos": cada 3 calcos elegibles, la MÁS BARATA gratis.
- * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom').
- * NO incluye packs mayoristas ni la promo Negocio.
+ * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom')
+ * — o sea, todo lo minorista. NO incluye packs, mayorista, Negocio, productos
+ * de precio fijo ni digitales: esas líneas ya traen su precio final.
  *
- * ACUMULABLE con un cupón de % (EPICA10), pero durante la promo el descuento en
- * % está topeado en `percentCap` (10 %): el cupón y el 10 % por transferencia NO se
- * suman por encima de ese tope (fuera de la promo, el tope sigue siendo
- * MAX_STICKER_DISCOUNT y el cupón sí se suma a la transferencia como siempre).
+ * TIENE FECHA DE INICIO, no solo de fin. La promo arranca a las 23:00 de un
+ * jueves y nadie va a estar deployando a esa hora: `isPromoActive()` mira las
+ * DOS puntas, así que alcanza con deployar antes y la promo se enciende y se
+ * apaga sola. Antes de `startsAt` el precio válido sigue siendo el de lista —
+ * si mirara solo el fin, deployar hoy la prendería en el acto.
  *
- * Se auto-desactiva por fecha (sin cron): cuando `Date.now() > PROMO_END_MS`,
- * los precios, el banner y el contador vuelven solos a la normalidad.
+ * ACUMULA con el 10 % por transferencia y con NADA MÁS. Los cupones de % NO se
+ * combinan con la promo (decisión de Mariano, 20/8/2026): mientras la promo
+ * corre, un cupón como EPICA10 no suma nada — ver `couponRate` en
+ * CartContext.pricedItems y en validateAndPriceOrder. `percentCap` (10 %) es el
+ * techo del % que puede correr encima del 3x2, y hoy el único que llega ahí es
+ * el de transferencia.
  *
- * ⚠️ ESPEJO OBLIGATORIO: `PROMO_END_MS`, `percentCap` y la función `promo3x2`
- * están espejados en `netlify/functions/lib/pricing.js`. Si cambiás algo acá,
- * cambialo TAMBIÉN allá o el checkout se rechaza con `price_mismatch`.
- * El test `src/lib/promoPricing.test.js` verifica que ambos lados coincidan.
+ * EPI50 es la excepción, y no por un caso especial: es `exclusivo`, así que
+ * anula la agrupación N x M entera y corre solo su 50 %. Quien tiene ese código
+ * no ve 3x2; ve mitad de precio.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO: `PROMO_START_MS`, `PROMO_END_MS`, `percentCap` y la
+ * función `promo3x2` están espejados en `netlify/functions/lib/pricing.js`. Si
+ * cambiás algo acá, cambialo TAMBIÉN allá o el checkout se rechaza con
+ * `price_mismatch`. El test `src/lib/promoPricing.test.js` verifica que ambos
+ * lados coincidan, en los cuatro bordes de la ventana.
  */
 export const PROMO_3X2 = {
-  /** Fin de la promo, en hora de Argentina (UTC−03:00). Inclusive: termina al cerrar el domingo. */
-  endsAt: '2026-07-26T23:59:59-03:00',
+  /** Arranca el jueves 20/8 a las 23:00, hora Argentina (UTC−03:00). */
+  startsAt: '2026-08-20T23:00:00-03:00',
+  /** Fin de la promo, hora Argentina. Inclusive: termina al cerrar el lunes. */
+  endsAt: '2026-08-24T23:59:59-03:00',
   buy: 3,
   pay: 2,
-  /** Tope del descuento en % durante la promo (transferencia + cupón no superan esto). */
+  /** Tope del descuento en % que corre ENCIMA del 3x2 (hoy: solo transferencia). */
   percentCap: 0.10
   // Ojo: NO agregar acá el código de un cupón para mostrarlo en el banner —
   // los cupones son ocultos (ver COUPONS arriba).
 };
 
+export const PROMO_START_MS = Date.parse(PROMO_3X2.startsAt);
 export const PROMO_END_MS = Date.parse(PROMO_3X2.endsAt);
 
-/** ¿La promo 3x2 está vigente en este instante? */
+/** ¿La promo 3x2 está vigente en este instante? Mira las dos puntas. */
 export function isPromoActive(now = Date.now()) {
-  return Number.isFinite(PROMO_END_MS) && now <= PROMO_END_MS;
+  return (
+    Number.isFinite(PROMO_START_MS) &&
+    Number.isFinite(PROMO_END_MS) &&
+    now >= PROMO_START_MS &&
+    now <= PROMO_END_MS
+  );
 }
 
 /**

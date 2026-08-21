@@ -471,8 +471,20 @@ export default function Checkout() {
                 </div>
               ) : (
                 <>
-                  {promoActive && !appliedBundle && (
-                    <div className="text-emerald-400">🎉 Promo 3x2 en calcos y personalizados: cada 3, la más barata gratis.</div>
+                  {promoActive && !appliedBundle && !cuponExclusivo && (
+                    <div className="text-emerald-400">
+                      🎉 Promo 3x2 en calcos y personalizados: cada 3, la más barata gratis.
+                      Se combina con el 10% por transferencia.
+                    </div>
+                  )}
+                  {/* Con la promo corriendo, un cupón de % no suma nada. Sin este
+                      aviso el cliente ve "Cupón aplicado" arriba y ningún
+                      descuento abajo, que es la peor pantalla justo antes de pagar. */}
+                  {promoActive && appliedCoupon && !appliedBundle && !cuponExclusivo && (
+                    <div className="text-white/60">
+                      🎟️ El cupón {appliedCoupon} no se combina con la promo 3x2 — durante la promo
+                      manda el 3x2.
+                    </div>
                   )}
                   {appliedBundle ? (
                     <div className="text-emerald-400">

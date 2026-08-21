@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { DIGITAL_SKU } from '../config/metaCatalog.js';
 // Frontend (fuente de verdad del cliente)
 import {
+  PROMO_START_MS as FE_START,
   PROMO_END_MS as FE_END,
   PROMO_3X2,
   promo3x2 as fePromo3x2,
@@ -40,6 +41,7 @@ import {
 } from '../config/pricing.js';
 // Backend: el que re-precia el checkout (rechaza si no coincide).
 import {
+  PROMO_START_MS as BE_START,
   PROMO_END_MS as BE_END,
   PROMO_PERCENT_CAP,
   COUPONS as BE_COUPONS,
@@ -68,8 +70,10 @@ import {
 } from '../../../netlify/functions/lib/pricing.js';
 
 const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
-const DURING_PROMO = new Date('2026-07-24T12:00:00-03:00'); // vie 24/7, promo vigente
-const AFTER_PROMO = new Date('2026-07-27T12:00:00-03:00'); // lun 27/7, promo vencida
+// Ventana de la 3x2: jue 20/8 23:00 → lun 24/8 23:59 (hora Argentina).
+const BEFORE_PROMO = new Date('2026-08-20T22:59:00-03:00'); // jue 20/8 22:59, un minuto antes
+const DURING_PROMO = new Date('2026-08-22T12:00:00-03:00'); // sáb 22/8, en plena promo
+const AFTER_PROMO = new Date('2026-08-25T12:00:00-03:00'); // mar 25/8, promo vencida
 const DURING_MAYORISTA = new Date('2026-08-10T12:00:00-03:00'); // lun 10/8, promo mayorista vigente
 const AFTER_MAYORISTA = new Date('2026-08-15T00:30:00-03:00'); // sáb 15/8, promo mayorista vencida
 
@@ -83,7 +87,10 @@ function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) 
   const incluyeCustom = couponIncluyeCustom(coupon);
   const stickerUnits = cart.filter((l) => l.type === 'sticker').reduce((a, l) => a + l.quantity, 0);
   const bulkRate = !anulaTodo && stickerUnits >= BULK_THRESHOLD && paymentMethod === 'transferencia' ? BULK_DISCOUNT : 0;
-  const couponRate = bundle ? 0 : findCoupon(coupon)?.discount || 0;
+  // Durante la promo 3x2 el cupón de % no suma (la promo va con transferencia
+  // y nada más). EPI50 no cae acá: es exclusivo, ya anuló la promo.
+  const cuponAnuladoPorPromo = promoActive && !anulaTodo;
+  const couponRate = bundle || cuponAnuladoPorPromo ? 0 : findCoupon(coupon)?.discount || 0;
   const cap = promoActive && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
   const percentRate = Math.min(bulkRate + couponRate, cap);
 
@@ -123,10 +130,15 @@ const retiro = { methodValue: 'retiro' };
 const price = (items, id) => items.find((i) => i.id === id).unit_price;
 
 describe('promo3x2 — mecánica y paridad frontend ↔ backend', () => {
-  it('constantes espejadas idénticas', () => {
+  it('constantes espejadas idénticas (inicio, fin y tope)', () => {
+    expect(FE_START).toBe(BE_START);
     expect(FE_END).toBe(BE_END);
     expect(PROMO_3X2.percentCap).toBe(PROMO_PERCENT_CAP);
+    expect(Number.isFinite(FE_START)).toBe(true);
     expect(Number.isFinite(FE_END)).toBe(true);
+    // La ventana tiene que ir para adelante: un startsAt posterior al endsAt
+    // dejaría la promo apagada para siempre sin que nada avise.
+    expect(FE_START).toBeLessThan(FE_END);
   });
 
   it('cada 3 unidades regala la MÁS BARATA', () => {
@@ -174,16 +186,28 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(res.ok).toBe(true);
   });
 
-  it('promo activa + EPICA10 (transferencia): 3x2 y % topeado en 10%, el server acepta', () => {
+  it('promo activa + EPICA10 (transferencia): el cupón NO suma, sí el 10% por transferencia', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
-    const items = clientItems(cart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    // transferencia 10% + EPICA10 10% = 20% pero el tope de promo lo deja en 10%.
+    // Desde el 20/8/2026 la promo NO se combina con cupones: corre el 3x2 + el
+    // 10% por transferencia y nada más.
+    //
+    // OJO con este carrito: tiene 3 calcos de CATÁLOGO (los 10 personalizados no
+    // cuentan para el umbral de volumen), así que no llega a los 10 y el 10% por
+    // transferencia no corre. Antes este test daba 10% igual — pero venía del
+    // CUPÓN, no de la transferencia. Ahora el cupón no suma y se ve el 3x2 solo.
     const keep = 12400 / 17200;
-    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep * 0.9));
+    const items = clientItems(cart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' });
     expect(res.ok).toBe(true);
-    expect(res.couponApplied).toBe('EPICA10');
+    // El servidor no reporta el cupón como aplicado: no descontó nada.
+    expect(res.couponApplied).toBeNull();
+
+    // Y da exactamente lo mismo por Mercado Pago: el cupón no cambia nada.
+    const conMP = clientItems(cart, { coupon: 'EPICA10' });
+    expect(price(conMP, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
+    expect(validateAndPriceOrder({ items: conMP, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
   it('fuera de la promo vuelve TODO a la normalidad (custom sin cupón, pack intacto)', () => {
@@ -214,6 +238,51 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
     expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.7 * 0.9)); // = 1008
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
+  });
+
+  it('promo activa + transferencia con 12 calcos: el 3x2 SÍ se combina con el 10%', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    // 12 calcos de catálogo de 6cm: pasa el umbral de volumen (10) y va por
+    // transferencia, así que corre el 3x2 y encima el 10%.
+    const doce = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', type: 'sticker', basePrice: 1600, quantity: 12 }];
+    const keep = (12 - 4) / 12; // 12 unidades → 4 gratis, todas del mismo precio
+    const items = clientItems(doce, { paymentMethod: 'transferencia' });
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * keep * 0.9));
+    expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia' }).ok).toBe(true);
+
+    // Con un cupón encima el precio no cambia: el cupón no suma durante la promo.
+    const conCupon = clientItems(doce, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
+    expect(price(conCupon, 'sticker:goku:6cm')).toBe(round(1600 * keep * 0.9));
+  });
+
+  it('la ventana de la promo 3x2 está espejada y cierra en los cuatro bordes', () => {
+    vi.useFakeTimers();
+    const bordes = [
+      [BEFORE_PROMO, false, 'un minuto antes de las 23:00 del jueves'],
+      [new Date('2026-08-20T23:00:00-03:00'), true, 'justo a las 23:00 del jueves'],
+      [new Date('2026-08-24T23:59:59-03:00'), true, 'el último segundo del lunes'],
+      [new Date('2026-08-25T00:00:00-03:00'), false, 'un segundo después']
+    ];
+    for (const [fecha, esperado, que] of bordes) {
+      vi.setSystemTime(fecha);
+      expect(feActive(), `frontend ${que}`).toBe(esperado);
+      expect(beActive(), `servidor ${que}`).toBe(esperado);
+    }
+  });
+
+  it('antes de que arranque la promo, el server rechaza precios de 3x2', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(BEFORE_PROMO);
+    // El deploy es antes de las 23:00: hasta esa hora el precio válido es el de lista.
+    const items = clientItems(cart);
+    expect(price(items, 'sticker:goku:6cm')).toBe(1600);
+    expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' }).ok).toBe(true);
+
+    const conPromo = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 3, unit_price: round(1600 * 2 / 3) }];
+    const res = validateAndPriceOrder({ items: conPromo, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('price_mismatch');
   });
 
   it('los cupones de bundle están espejados frontend ↔ backend', () => {

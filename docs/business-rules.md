@@ -98,6 +98,8 @@ siempre el de vidriera.
   secreto criptográfico — viaja en el bundle JS.
 - **Acumulable** con el 10 % por transferencia: los porcentajes **se suman**
   (transferencia 10 % + EPICA10 10 % = 20 % off). Salvo los `exclusivo`, abajo.
+- ⚠️ **Durante una promo N×M por fecha (la 3x2), un cupón de % NO descuenta
+  nada.** La promo se combina con el 10 % por transferencia y con nada más.
 - Tope de seguridad: `MAX_STICKER_DISCOUNT = 0.9` (90 %).
 - `EMOJI50` (2×1 por mensaje privado) venció el 4/8/2026 y se eliminó del código.
 
@@ -136,19 +138,30 @@ Argentina, y pisa a la promo 3x2 si estuviera vigente.
 
 ## 3. Promociones
 
-### 3.1 Promo 3x2 — ⚠️ VENCIDA
-`PROMO_3X2` · `endsAt: 2026-07-26T23:59:59-03:00`
+### 3.1 Promo 3x2 — ✅ VIVA (jue 20/8 23:00 → lun 24/8 23:59 de 2026)
+`PROMO_3X2` · `startsAt: 2026-08-20T23:00:00-03:00` · `endsAt: 2026-08-24T23:59:59-03:00`
 
-**No está viva.** `isPromoActive()` da `false` en las dos puntas.
+Cada 3 calcos elegibles (**catálogo + personalizados**, o sea todo lo
+minorista), la **más barata gratis**. No entran packs, mayorista, Negocio,
+precio fijo ni digitales: ya traen su precio final.
 
-Sigue en el código a propósito: es el único consumidor del motor N×M y sus
-parámetros son los que usan los tests de paridad. Sacarla obliga a tocar el
-`CartContext`, 5 pantallas, el espejo del servidor y ~10 tests: es un refactor
-del camino de precios, no una limpieza de config.
+**Ventana con inicio y fin.** Es la segunda promo con `startsAt` (después de
+Argentina): arranca 23:00 de un jueves y el deploy es antes, así que
+`isPromoActive()` mira las dos puntas y la promo se enciende y se apaga sola.
+El banner, el contador y los precios del carrito cambian **sin recargar**.
 
-Cómo funcionaba: cada 3 calcos elegibles (catálogo + personalizados), la **más
-barata gratis**. Acumulable con cupón de %, pero con el % topeado en
-`percentCap = 0.10` durante la promo.
+**Qué se combina y qué no** (decisión de Mariano, 20/8/2026):
+
+| Con la promo corriendo | ¿Se suma? |
+|---|---|
+| 10 % por transferencia (desde 10 calcos de catálogo) | **sí**, topeado por `percentCap = 0.10` |
+| Cupones de % (`EPICA10`) | **no** — durante la promo el cupón no descuenta nada |
+| `EPI50` | **no se suma: la reemplaza.** Es `exclusivo`, anula la agrupación N×M y corre su 50 % |
+
+El cliente que llega con un cupón de % ve el aviso de que no se combina, para
+no quedarse esperando un descuento que no va a llegar.
+
+Ver `specs/010-reactivar-3x2/`.
 
 ### 3.2 Promo mayorista — 100 calcos a $39.999
 `PROMO_MAYORISTA_100` · `activa: true` · vence **14/8/2026 23:59** (ART)
@@ -424,6 +437,8 @@ Tal como lo hacen `CartContext.pricedItems()` y `validateAndPriceOrder()`:
 
 3. percentRate = min(volumen + cupón, cap)
       volumen = 0 si anulaTodo
+      cupón  = 0 si anulaTodo, o si la promo 3x2 está corriendo
+               (la promo no se combina con cupones, solo con transferencia)
       cap = 0.10 durante la promo 3x2 SI la promo realmente corre
             (o sea: promoActive && !anulaTodo), si no MAX_STICKER_DISCOUNT (0.90)
       con bundle aplicado, percentRate = 0

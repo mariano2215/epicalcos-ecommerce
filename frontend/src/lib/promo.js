@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
+  PROMO_START_MS,
   PROMO_END_MS,
+  isPromoActive,
   PROMO_MAYORISTA_END_MS,
   PROMO_MAYORISTA_100,
   PROMO_ARGENTINA_START_MS,
@@ -61,49 +63,57 @@ export function useActiveUntil(endMs) {
   return active;
 }
 
-/** ¿Está vigente la promo 3x2 ahora mismo? */
-export function usePromoActive() {
-  return useActiveUntil(PROMO_END_MS);
-}
-
 /**
- * ¿Está vigente la promo de Argentina 50 %?
+ * ¿Está vigente una promo con VENTANA (inicio + fin), ahora mismo?
  *
- * A diferencia de las otras, esta también tiene que ENCENDERSE sola: arranca el
- * lunes 17 a las 00:00 y nadie va a estar deployando a esa hora. Por eso hay
- * dos hitos, el de inicio y el de fin.
+ * Una promo que arranca a una hora en la que nadie va a estar deployando tiene
+ * que ENCENDERSE sola, no solo apagarse. Por eso hay dos hitos.
  *
- * Quién decide es `isArgentinaPromoActive()` —la misma función pura que valida
- * el precio y que cubren los tests en los cuatro bordes—; el hook solo se
- * encarga de RE-RENDERIZAR en el momento justo. Duplicar acá la comparación de
- * fechas sería exactamente el tipo de copia que después se desincroniza.
+ * Quién decide es `esActiva()` —la misma función pura que valida el precio y
+ * que cubren los tests en los cuatro bordes—; el hook solo se encarga de
+ * RE-RENDERIZAR en el momento justo. Duplicar acá la comparación de fechas
+ * sería exactamente el tipo de copia que después se desincroniza.
  *
  * El timeout se limita a un día por vuelta: `setTimeout` desborda pasados ~24,8
  * días y dispararía al instante, así que una promo agendada con meses de
  * anticipación se revisa por tramos.
  */
-export function useArgentinaPromoActive() {
-  const [active, setActive] = useState(isArgentinaPromoActive);
+function useVentanaActiva(esActiva, startMs, endMs) {
+  const [active, setActive] = useState(esActiva);
 
   useEffect(() => {
     const UN_DIA = 86_400_000;
     let id;
     const revisar = () => {
-      setActive(isArgentinaPromoActive());
+      setActive(esActiva());
       const ahora = Date.now();
-      if (ahora > PROMO_ARGENTINA_END_MS) return; // ya pasó: nada que esperar
+      if (ahora > endMs) return; // ya pasó: nada que esperar
       // +1s de colchón para caer del lado correcto del borde.
-      const proximoHito =
-        ahora < PROMO_ARGENTINA_START_MS
-          ? PROMO_ARGENTINA_START_MS - ahora
-          : PROMO_ARGENTINA_END_MS - ahora;
+      const proximoHito = ahora < startMs ? startMs - ahora : endMs - ahora;
       id = setTimeout(revisar, Math.min(proximoHito + 1000, UN_DIA));
     };
     revisar();
     return () => clearTimeout(id);
-  }, []);
+  }, [esActiva, startMs, endMs]);
 
   return active;
+}
+
+/**
+ * ¿Está vigente la promo 3x2 ahora mismo?
+ *
+ * Desde el 20/8/2026 tiene ventana: arranca un jueves a las 23:00 y el deploy
+ * es antes, así que el banner, el contador y los precios se encienden solos a
+ * esa hora sin recargar. Antes usaba `useActiveUntil` (solo el fin), que la
+ * habría mostrado prendida desde el momento del deploy.
+ */
+export function usePromoActive() {
+  return useVentanaActiva(isPromoActive, PROMO_START_MS, PROMO_END_MS);
+}
+
+/** ¿Está vigente la promo de Argentina 50 %? (lun 17 a mié 19 de agosto). */
+export function useArgentinaPromoActive() {
+  return useVentanaActiva(isArgentinaPromoActive, PROMO_ARGENTINA_START_MS, PROMO_ARGENTINA_END_MS);
 }
 
 /**

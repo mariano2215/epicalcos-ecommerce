@@ -68,17 +68,31 @@ export function isCouponActive(code, now = Date.now()) {
 
 // --- Espejo de la PROMO 3x2 de frontend/src/config/pricing.js ---
 // "3x2 en TODAS las calcos": cada 3 calcos elegibles (sticker + custom), la más
-// barata gratis. ACUMULABLE con EPICA10, pero durante la promo el % está topeado
-// en PROMO_PERCENT_CAP (10 %). Se auto-desactiva por fecha (hora Argentina).
+// barata gratis. Viva del jue 20/8 23:00 al lun 24/8 23:59 de 2026.
+//
+// Tiene fecha de INICIO además de fin: arranca a las 23:00 y el deploy es
+// antes, así que se mira la ventana completa. Antes de PROMO_START_MS el
+// precio válido sigue siendo el de lista — si esto mirara solo el fin, el
+// servidor aceptaría precios de 3x2 desde el momento del deploy.
+//
+// ACUMULA con el 10 % por transferencia y con NADA MÁS: los cupones de % no se
+// combinan con la promo (ver couponRate en validateAndPriceOrder).
+// PROMO_PERCENT_CAP (10 %) topea lo que corre encima del 3x2.
 // ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend. El test
-// src/lib/promoPricing.test.js verifica la paridad.
-export const PROMO_END_MS = Date.parse('2026-07-26T23:59:59-03:00');
+// src/lib/promoPricing.test.js verifica la paridad en los cuatro bordes.
+export const PROMO_START_MS = Date.parse('2026-08-20T23:00:00-03:00');
+export const PROMO_END_MS = Date.parse('2026-08-24T23:59:59-03:00');
 const PROMO_BUY = 3;
 const PROMO_PAY = 2;
 export const PROMO_PERCENT_CAP = 0.1;
 
 export function isPromoActive(now = Date.now()) {
-  return Number.isFinite(PROMO_END_MS) && now <= PROMO_END_MS;
+  return (
+    Number.isFinite(PROMO_START_MS) &&
+    Number.isFinite(PROMO_END_MS) &&
+    now >= PROMO_START_MS &&
+    now <= PROMO_END_MS
+  );
 }
 
 // 3x2 sobre una bolsa de unidades elegibles: se regalan las (buy-pay) más
@@ -392,7 +406,12 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   const normalizedCoupon = isCouponActive(rawCoupon) ? rawCoupon : '';
   const coupon = COUPONS[normalizedCoupon] || null;
   const bundle = COUPON_BUNDLES[normalizedCoupon] || null;
-  const couponDiscount = bundle ? 0 : coupon?.discount || 0;
+  // Durante la promo 3x2 un cupón de % NO suma: la promo se combina con el 10 %
+  // por transferencia y con nada más. Un cupón `exclusivo` (EPI50) no cae acá
+  // porque anula la promo entera y corre por su cuenta.
+  const promoActive = isPromoActive();
+  const cuponAnuladoPorPromo = promoActive && !coupon?.exclusivo;
+  const couponDiscount = bundle || cuponAnuladoPorPromo ? 0 : coupon?.discount || 0;
   const couponApplied = bundle || couponDiscount > 0 ? normalizedCoupon : null;
   // `anulaTodo` = este cupón es el ÚNICO descuento que corre. Espejo de
   // couponAnulaTodo() del frontend. Los tres usos de abajo (volumen, agrupación
@@ -418,7 +437,6 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   // este `!anulaTodo`, EPI50 caído en una ventana de 3x2 daría 10 % en vez del
   // 50 % prometido — y el cliente vería el descuento derretirse por una promo
   // que ni siquiera se le está aplicando.
-  const promoActive = isPromoActive();
   const cap = promoActive && !anulaTodo ? PROMO_PERCENT_CAP : MAX_STICKER_DISCOUNT;
   const percentRate = Math.min(bulkDiscount + couponDiscount, cap);
 
