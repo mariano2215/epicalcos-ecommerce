@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -74,6 +74,19 @@ const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
 const BEFORE_PROMO = new Date('2026-08-20T22:59:00-03:00'); // jue 20/8 22:59, un minuto antes
 const DURING_PROMO = new Date('2026-08-22T12:00:00-03:00'); // sáb 22/8, en plena promo
 const AFTER_PROMO = new Date('2026-08-25T12:00:00-03:00'); // mar 25/8, promo vencida
+
+/**
+ * Instante SIN ninguna promo por fecha viva (3x2, mayorista y Argentina, las
+ * tres vencidas). Lo usan los bloques que arman payloads a precio de LISTA.
+ *
+ * POR QUÉ HACE FALTA: esos tests no fijaban el reloj y pasaban porque en ese
+ * momento no había ninguna promo corriendo. Al reactivar la 3x2, el servidor
+ * empezó a esperar precios de 3x2 y seis tests se pusieron en rojo SOLOS, sin
+ * que nadie tocara una línea — y `npm test` es el gate del build de Netlify,
+ * así que la suite en rojo bloquea todos los deploys mientras dure la promo.
+ * Un test que depende de qué día se corre no es un test.
+ */
+const SIN_PROMOS = new Date('2026-08-25T12:00:00-03:00');
 const DURING_MAYORISTA = new Date('2026-08-10T12:00:00-03:00'); // lun 10/8, promo mayorista vigente
 const AFTER_MAYORISTA = new Date('2026-08-15T00:30:00-03:00'); // sáb 15/8, promo mayorista vencida
 
@@ -461,6 +474,12 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
  * para llegar al umbral de envío gratis).
  */
 describe('archivos imprimibles (producto digital)', () => {
+  // Precios de lista: sin esto, la suite se pone en rojo sola cuando hay una
+  // promo por fecha viva (ver SIN_PROMOS).
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(SIN_PROMOS);
+  });
   const pack = IMPRIMIBLE_PRINCIPAL;
   const linea = (unitPrice = pack.price, quantity = 1) => ({
     id: `digital:${pack.id}`,
@@ -1070,6 +1089,10 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
  * siquiera merece que se le calcule un precio.
  */
 describe('las guardas del payload (spec 003)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(SIN_PROMOS);
+  });
   const item = (extra = {}) => ({
     id: 'sticker:goku:6cm',
     title: 'Goku 6cm',

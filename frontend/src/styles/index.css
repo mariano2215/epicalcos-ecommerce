@@ -476,35 +476,148 @@ a { color: inherit; text-decoration: none; }
   .hero-promo-card:hover { transform: none; }
 }
 
+/* ============================================================
+   Contador "oferta relámpago" — dorado con destello
+   ------------------------------------------------------------
+   Las cajas eran blanco translúcido sobre el banner oscuro y se perdían.
+   Ahora son DORADAS con número casi negro: el contraste va al revés que el
+   resto del header, que es justo lo que las hace saltar.
+
+   Tres capas de movimiento, todas de compositor (transform/opacity/filter),
+   sin JS y sin layout: el banner vive en el <header> sticky y cualquier
+   animación que dispare reflow ahí se paga en scroll.
+
+     1. `relampago-dorado`  — el degradado se corre despacio (metal vivo)
+     2. `relampago-destello` — la banda de luz que cruza: EL relámpago
+     3. `relampago-latido`   — los segundos laten, para que se lea "corriendo"
+
+   ⚠️ Todo se apaga con `prefers-reduced-motion` (ver el bloque del final):
+   un destello repetido a 3 segundos es exactamente lo que molesta a quien
+   pidió menos movimiento.
+   ============================================================ */
+.promo-countdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* El rayo. Marca el "relámpago" sin gastar el ancho que costaría un texto:
+   en 375 px el banner ya viene apretado. */
+.promo-countdown__rayo {
+  font-size: 0.95rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(255, 216, 77, 0.95));
+  animation: relampago-rayo 3.2s ease-in-out infinite;
+}
+
 .promo-timebox {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  padding: 3px 7px;
+  min-width: 40px;
+  padding: 4px 7px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
   line-height: 1;
+  background: linear-gradient(135deg, #FFE9A0 0%, #FFCE23 34%, #E8901A 70%, #FFD84D 100%);
+  background-size: 220% 220%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(150, 90, 0, 0.45),
+    0 4px 18px -4px rgba(255, 178, 30, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  animation: relampago-dorado 4s ease-in-out infinite;
 }
+
+/* El destello se ESCALONA caja por caja: la luz entra por los días y sale por
+   los segundos, así se lee un rayo recorriendo el contador y no cuatro cajas
+   parpadeando juntas. `nth-of-type` cuenta solo los <div> — los separadores y
+   el rayo son <span>, así que no corren la numeración. */
+.promo-countdown .promo-timebox:nth-of-type(2)::after { animation-delay: 0.09s; }
+.promo-countdown .promo-timebox:nth-of-type(3)::after { animation-delay: 0.18s; }
+.promo-countdown .promo-timebox:nth-of-type(4)::after { animation-delay: 0.27s; }
+
+/* La banda de luz que cruza la caja: el destello propiamente dicho. */
+.promo-timebox::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -70%;
+  width: 34%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 32%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.55) 68%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-22deg);
+  animation: relampago-destello 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Los segundos laten. El período es 1s igual que el tick, así que el desfase
+   contra el número real queda constante y no se nota — sincronizarlo de verdad
+   obligaría a re-renderizar la caja en cada segundo. */
+.promo-timebox--seg {
+  animation:
+    relampago-dorado 4s ease-in-out infinite,
+    relampago-latido 1s ease-out infinite;
+}
+
 .promo-timebox__num {
+  position: relative;
+  z-index: 1;
   font-family: 'Montserrat', 'Poppins', system-ui, sans-serif;
-  font-weight: 800;
+  font-weight: 900;
   font-size: 1.05rem;
-  color: #fff;
+  color: #2A1B00;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 .promo-timebox__lbl {
+  position: relative;
+  z-index: 1;
   margin-top: 3px;
   font-size: 0.5rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(70, 46, 0, 0.78);
 }
 .promo-timebox__sep {
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.4);
+  font-weight: 900;
+  color: #FFD84D;
+  text-shadow: 0 0 8px rgba(255, 216, 77, 0.75);
+}
+
+@keyframes relampago-dorado {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* El barrido pasa rápido y después descansa: 0-18 % del ciclo cruza, el resto
+   queda afuera. Un destello continuo se vuelve ruido y deja de mirarse. */
+@keyframes relampago-destello {
+  0% { left: -70%; opacity: 0; }
+  6% { opacity: 1; }
+  18% { left: 130%; opacity: 0; }
+  100% { left: 130%; opacity: 0; }
+}
+
+@keyframes relampago-rayo {
+  0%, 88%, 100% { opacity: 1; transform: scale(1); }
+  4% { opacity: 0.35; transform: scale(1.18); }
+  9% { opacity: 1; transform: scale(1.06); }
+  14% { opacity: 0.55; transform: scale(1.14); }
+}
+
+@keyframes relampago-latido {
+  0% { transform: scale(1.07); filter: brightness(1.18); }
+  30%, 100% { transform: scale(1); filter: brightness(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -515,6 +628,14 @@ a { color: inherit; text-decoration: none; }
   .grid-rise > * {
     animation: none !important;
   }
+  /* El contador se queda dorado y legible, pero quieto: sin barrido, sin
+     latido y sin el parpadeo del rayo. */
+  .promo-timebox,
+  .promo-timebox--seg,
+  .promo-countdown__rayo {
+    animation: none !important;
+  }
+  .promo-timebox::after { display: none; }
   .announcement-ticker { animation: none !important; }
   /* Sin animación la tira queda cortada al ancho de la pantalla, así que se
      entrega scrolleable a mano y se esconde la copia de relleno (si no, las

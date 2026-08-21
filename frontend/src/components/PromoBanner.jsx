@@ -24,9 +24,10 @@ export function endLabel(endMs, fallback = '') {
   }
 }
 
-function TimeBox({ value, label }) {
+/** `late` = la caja de los segundos, la única que se mueve en cada tick. */
+function TimeBox({ value, label, late }) {
   return (
-    <div className="promo-timebox">
+    <div className={`promo-timebox${late ? ' promo-timebox--seg' : ''}`}>
       <span className="promo-timebox__num tabular-nums">{pad2(value)}</span>
       <span className="promo-timebox__lbl">{label}</span>
     </div>
@@ -42,16 +43,20 @@ export function PromoCountdown({ endMs, label = 'Termina en' }) {
 
   return (
     <div
-      className="flex items-center gap-1.5"
+      className="promo-countdown"
       aria-label={`${label} ${days} días ${hours} horas ${minutes} minutos ${seconds} segundos`}
     >
+      {/* Decorativo: el rayo dice "relámpago" sin gastar el ancho de un texto,
+          que en 375 px no sobra. Oculto para lectores de pantalla — el
+          aria-label del contador ya dice todo lo que hay que decir. */}
+      <span className="promo-countdown__rayo" aria-hidden="true">⚡</span>
       <TimeBox value={days} label="días" />
       <span className="promo-timebox__sep" aria-hidden="true">:</span>
       <TimeBox value={hours} label="hs" />
       <span className="promo-timebox__sep" aria-hidden="true">:</span>
       <TimeBox value={minutes} label="min" />
       <span className="promo-timebox__sep" aria-hidden="true">:</span>
-      <TimeBox value={seconds} label="seg" />
+      <TimeBox value={seconds} label="seg" late />
     </div>
   );
 }

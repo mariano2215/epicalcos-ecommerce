@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { calcularPrecio } from './precioPersonalizados.js';
 import { TAMANOS, CORTES, CANTIDAD, ARCHIVO, clampCantidad } from '../config/personalizados.js';
 import { SIZES } from '../config/pricing.js';
@@ -70,6 +70,20 @@ describe('calcularPrecio — mismo precio que el catálogo, sin mínimo', () => 
 });
 
 describe('paridad frontend ↔ backend (evita price_mismatch en el checkout)', () => {
+  /**
+   * Reloj fijado en un instante SIN promos por fecha vivas.
+   *
+   * Estos tests mandan al servidor el precio de LISTA del configurador. Sin
+   * fijar el reloj pasaban por casualidad —porque no había promo corriendo— y
+   * se pusieron en rojo solos al reactivar la 3x2, que le cambia el precio
+   * esperado a las líneas `custom`. La suite es el gate del build de Netlify:
+   * un test que depende del día en que se corre bloquea deploys sin aviso.
+   */
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-25T12:00:00-03:00'));
+  });
+  afterEach(() => vi.useRealTimers());
   it('los precios por tamaño son idénticos a los del servidor', () => {
     expect(Object.fromEntries(TAMANOS.map((t) => [t.id, t.precio]))).toEqual(SIZE_PRICES);
   });
