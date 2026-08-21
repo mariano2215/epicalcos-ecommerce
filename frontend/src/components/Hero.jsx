@@ -147,9 +147,12 @@ export default function Hero() {
           <RotatingHeadline />
         </div>
 
-        {/* H1 real, único y estable para SEO. */}
+        {/* H1 real, único y estable para SEO. Sin "en Rosario" por decisión de
+            Mariano (21/8/2026): la marca vende a todo el país y el H1 la estaba
+            achicando a una ciudad. La señal local no se pierde — sigue en el
+            title, en la meta description y en el bloque de envíos de acá arriba. */}
         <h1 className="font-display font-bold text-base md:text-lg text-white/80 mt-4">
-          Calcos y stickers personalizados en Rosario
+          Calcos y stickers personalizados
         </h1>
 
         <p className="mt-3 max-w-2xl mx-auto text-white/80 text-sm md:text-base hidden sm:block">

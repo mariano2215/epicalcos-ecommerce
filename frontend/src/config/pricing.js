@@ -87,7 +87,7 @@ export const COUPONS = {
    *
    * ⚠️ Baja el subtotal, así que ALEJA del envío gratis: con 50 % off hace
    * falta el DOBLE de precio de lista para cruzar el umbral de la zona
-   * ($100.000 en Rosario, $150.000 en el resto del país). Es correcto según la
+   * ($70.000 en Rosario, $100.000 en el resto del país). Es correcto según la
    * regla de envíos y está aceptado en specs/009-cupon-epi50 §9.1 — no se
    * arregla regalando el envío (hay precedente de lo que costó ese atajo, más
    * abajo en este mismo archivo).
@@ -483,8 +483,13 @@ export function precioVidrieraLinea(line, now = Date.now()) {
  * (`['mayorista', 'mayorista100']`) que ponía el envío en 0 con solo tener una
  * línea de pack en el carrito, sin mirar zona ni monto. Con eso, un pedido de la
  * promo de 100 calcos a $39.999 viajó GRATIS a Buenos Aires: $8.500 de Correo
- * Argentino salidos del margen de una venta de $39.999. El umbral nacional es
- * $75.000 justamente porque abajo de eso el correo se come la ganancia.
+ * Argentino salidos del margen de una venta de $39.999.
+ *
+ * ⚠️ El umbral nacional bajó a $50.000 el 21/8/2026 (decisión de Mariano). Antes
+ * eran $75.000, elegidos justamente porque abajo de eso el correo se come la
+ * ganancia: con $50.000, un pedido al interior viaja gratis resignando los
+ * $8.500 de Correo Argentino, o sea el 17 % de esa venta. Es una decisión
+ * comercial tomada a la vista de ese número, no un descuido.
  *
  * Si mañana hace falta una promo con el envío puesto, NO se hace reponiendo este
  * atajo: se sube el precio del pack por encima del umbral, o se declara como

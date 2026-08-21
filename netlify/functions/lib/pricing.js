@@ -224,10 +224,10 @@ export function isDigitalOnly(items) {
 // --- Espejo de frontend/src/config/site.js (envío) ---
 // ⚠️ El test frontend/src/lib/envio.test.js verifica que estos números sean los
 // mismos que los de frontend/src/config/site.js.
-export const FREE_SHIPPING_THRESHOLD_ROSARIO = 50000;
+export const FREE_SHIPPING_THRESHOLD_ROSARIO = 35000;
 // Envío gratis a TODO EL PAÍS (ciudades próximas + interior) desde este monto.
 // En Rosario manda el umbral de arriba, que es más bajo.
-export const FREE_SHIPPING_THRESHOLD_NATIONAL = 75000;
+export const FREE_SHIPPING_THRESHOLD_NATIONAL = 50000;
 const SHIPPING_COST = { rosario: 4500, nearby: 6500, interior: 8500 }; // rosario=motomensajería, interior=Correo Argentino
 const NEARBY_CITIES = ['funes', 'granadero baigorria', 'villa gobernador galvez'];
 

@@ -223,9 +223,11 @@ siguen funcionando.
 ### Pack mayorista
 `WHOLESALE_QTY = 100` · `WHOLESALE_DISCOUNT = 0.5`
 **Desde** 100 calcos (mínimo, sin tope), **50 % off** en todos los tamaños.
-Línea `pack:mayorista:{size}:{ts}`. Paga envío por umbral como todo el resto: en
-6 y 9 cm el pack ya supera los $75.000 y viaja gratis; en 4 cm son $60.000, así
-que es gratis en Rosario y paga al resto del país.
+Línea `pack:mayorista:{size}:{ts}`. Paga envío por umbral como todo el resto —
+pero con los umbrales del 21/8/2026 **los tres tamaños viajan gratis a todo el
+país**: el pack de 100 sale $60.000 en 4 cm, $80.000 en 6 cm y $100.000 en 9 cm,
+y todos superan los $50.000. Antes, con el umbral en $75.000, el de 4 cm pagaba
+los $8.500 de Correo Argentino al interior.
 
 ### Pack de personalizados
 `PERSONALIZADOS_MIN = 10` · `PERSONALIZADOS_DISCOUNT = 0.10`
@@ -264,8 +266,8 @@ acentos). Las tarifas especiales **solo aplican en Santa Fe**.
 
 | Destino | Umbral |
 |---|---|
-| Rosario | desde **$50.000** |
-| Resto del país (nearby + interior) | desde **$75.000** |
+| Rosario | desde **$35.000** |
+| Resto del país (nearby + interior) | desde **$50.000** |
 
 Además, el envío es **$0** cuando:
 - el método es `retiro` (retiro en Ov. Lagos y Bv. Seguí, Rosario)
@@ -276,7 +278,7 @@ saltea el umbral, y el servidor no lee ningún flag del cliente.
 
 ⚠️ **Un descuento ALEJA del envío gratis.** El umbral se mide sobre el subtotal
 ya descontado (`physicalTotal`), así que con `EPI50` (50 % off) hace falta el
-**doble** de precio de lista para cruzarlo: $100.000 en Rosario y $150.000 en el
+**doble** de precio de lista para cruzarlo: $70.000 en Rosario y $100.000 en el
 resto del país. Un carrito de $80.000 en 6 cm hoy viaja gratis a todo el país;
 con el cupón pasa a $40.000 y paga envío. Es correcto según la regla y está
 aceptado en `specs/009-cupon-epi50` §9.1 — **no** se arregla salteando el umbral
@@ -291,7 +293,9 @@ Buenos Aires**: $8.500 de Correo Argentino salidos del margen de esa venta.
 Se eliminó por completo — la constante, el flag `envioGratis` de la línea y el
 copy que lo prometía (card del x100, carrito, checkout, `/politicas/envios`).
 
-El umbral nacional es $75.000 justamente porque abajo de eso el correo se come
+⚠️ **Los umbrales bajaron el 21/8/2026** (decisión de Mariano): Rosario de
+$50.000 a $35.000 y el resto del país de $75.000 a $50.000. El umbral nacional
+anterior era $75.000 justamente porque abajo de eso el correo se come
 la ganancia. Si hace falta una promo con el envío puesto, **no** se hace
 reponiendo el atajo: se sube el precio del pack por encima del umbral, o se
 declara como regla propia con su spec, pensando antes qué pasa cuando ese pack

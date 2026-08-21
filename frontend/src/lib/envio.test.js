@@ -64,8 +64,8 @@ describe('costo de envío — paridad frontend ↔ backend', () => {
     // Este test es el candado: los umbrales son una decisión comercial, no un
     // número que se toca de paso. Si alguien los cambia, tiene que cambiarlos
     // acá también — y ahí se entera de que está moviendo la oferta.
-    expect(UMBRAL_ROSARIO).toBe(50000);
-    expect(UMBRAL_NACIONAL).toBe(75000);
+    expect(UMBRAL_ROSARIO).toBe(35000);
+    expect(UMBRAL_NACIONAL).toBe(50000);
   });
 });
 
@@ -81,7 +81,7 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
 
   it('REGRESIÓN: la promo de 100 calcos a $39.999 PAGA envío a Buenos Aires', () => {
     // El caso real que se cobró mal: $39.999 no llega al umbral nacional
-    // ($75.000), así que el pedido paga los $8.500 de Correo Argentino. Antes
+    // ($50.000), así que el pedido paga los $8.500 de Correo Argentino. Antes
     // viajaba gratis porque la línea `pack:mayorista100` traía el envío puesto.
     conLaPromoViva();
     const pedido = validateAndPriceOrder({
@@ -94,10 +94,14 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
     expect(pedido.itemsTotal + pedido.shippingCost).toBe(39999 + shipping.costInterior);
   });
 
-  it('la misma promo paga el envío en TODAS las zonas (no llega a ningún umbral)', () => {
+  it('la misma promo paga el envío donde no llega al umbral, y solo ahí', () => {
     conLaPromoViva();
+    // Desde el 21/8/2026 los umbrales son $35.000 / $50.000, así que los $39.999
+    // de la promo SÍ cruzan el de Rosario y no el del resto del país. El mismo
+    // pack viaja gratis en una zona y paga en otra, y lo decide el umbral y no
+    // la promo — que es justo lo que este bloque existe para probar.
     const esperado = [
-      [rosario, shipping.costRosario],
+      [rosario, 0],
       [funes, shipping.costNearby],
       [interior, shipping.costInterior]
     ];
@@ -144,8 +148,13 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
   it('calculateShipping no acepta un atajo al umbral, ni en el front ni en el server', () => {
     // Si alguien repone un parámetro tipo `freeShipping`, este test lo caza:
     // pasarlo tiene que ser irrelevante para las dos puntas.
+    //
+    // El subtotal va por debajo del umbral MÁS BAJO (Rosario, $35.000): si
+    // estuviera arriba, el 0 podría venir del umbral y el test pasaría sin
+    // probar nada. Se deriva del config para que mover el umbral no lo afloje.
+    const bajoTodoUmbral = UMBRAL_ROSARIO - 1;
     for (const dest of [rosario, funes, interior]) {
-      expect(both({ method: 'envio', subtotal: 39999, freeShipping: true, ...dest })).not.toBe(0);
+      expect(both({ method: 'envio', subtotal: bajoTodoUmbral, freeShipping: true, ...dest })).not.toBe(0);
     }
   });
 });

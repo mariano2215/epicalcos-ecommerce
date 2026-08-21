@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
-import Benefits from '../components/Benefits.jsx';
 import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import Testimonials from '../components/Testimonials.jsx';
 import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
@@ -145,8 +144,6 @@ export default function Home() {
       </section>
 
       <HowToBuy />
-
-      <Benefits />
 
       <Testimonials />
 

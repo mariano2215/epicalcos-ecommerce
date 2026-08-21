@@ -35,13 +35,13 @@ export const shipping = {
    * Envío gratis en Rosario a partir de este monto.
    * ⚠️ Espejado en netlify/functions/lib/pricing.js (FREE_SHIPPING_THRESHOLD_ROSARIO).
    */
-  freeShippingThresholdRosario: 50000,
+  freeShippingThresholdRosario: 35000,
   /**
    * Envío gratis al RESTO DEL PAÍS (ciudades próximas + interior) a partir de
    * este monto. En Rosario sigue mandando el umbral de arriba, que es más bajo.
    * ⚠️ Espejado en netlify/functions/lib/pricing.js (FREE_SHIPPING_THRESHOLD_NATIONAL).
    */
-  freeShippingThresholdNational: 75000,
+  freeShippingThresholdNational: 50000,
   /** Costo de envío dentro de Rosario bajo el mínimo (motomensajería) */
   costRosario: 4500,
   /** Costo de envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) */
