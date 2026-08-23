@@ -53,7 +53,15 @@ export default function StickerCard({ sticker, listName = 'catalog', mostrarTama
              que las clases mandan sobre estos números. */
           width={320}
           height={320}
-          className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
+          /* `w-full h-full`, NO `max-w-full max-h-full`. Con los max-*, un calco
+             más alto que ancho se renderizaba a 165×205 px dentro de una caja de
+             165×165 y `overflow-hidden` le cortaba la cabeza y los pies: el
+             `max-height: 100%` no resolvía contra el alto que deriva del
+             `aspect-square`. Con la imagen ocupando la caja exacta, `object-contain`
+             hace el letterbox adentro y NADA puede desbordar, sea cual sea la
+             proporción del archivo. El `p-2` del contenedor deja 8 px por lado,
+             más que los 4 px que se come el `scale-105` del hover. */
+          className="w-full h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
         />
         {enCarrito > 0 && (
           <span

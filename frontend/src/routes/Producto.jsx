@@ -208,7 +208,7 @@ export default function Producto() {
               <img
                 src={sticker.images[activeImg] || sticker.image}
                 alt={sticker.name}
-                className="max-w-full max-h-full object-contain drop-shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+                className="w-full h-full object-contain drop-shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
               />
             </div>
 
@@ -226,7 +226,7 @@ export default function Producto() {
                       i === activeImg ? 'border-brand-fuchsia' : 'border-transparent hover:border-white/30'
                     }`}
                   >
-                    <img src={img} alt="" className="max-w-full max-h-full object-contain" />
+                    <img src={img} alt="" className="w-full h-full object-contain" />
                   </button>
                 ))}
               </div>
@@ -388,7 +388,7 @@ export default function Producto() {
                   className="shrink-0 w-32 snap-start group"
                 >
                   <div className="rounded-2xl bg-white p-2.5 aspect-square grid place-items-center border border-white/10 group-hover:border-brand-fuchsia/50 transition-colors">
-                    <img src={r.image} alt={r.name} loading="lazy" className="max-w-full max-h-full object-contain" />
+                    <img src={r.image} alt={r.name} loading="lazy" className="w-full h-full object-contain" />
                   </div>
                   <p className="text-xs text-white/60 mt-1.5 truncate group-hover:text-white">{r.name}</p>
                 </Link>

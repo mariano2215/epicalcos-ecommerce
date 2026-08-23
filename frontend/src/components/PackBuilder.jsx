@@ -336,7 +336,7 @@ export default function PackBuilder({
                     decoding="async"
                     width={320}
                     height={320}
-                    className="max-w-full max-h-full object-contain"
+                    className="w-full h-full object-contain"
                   />
                   {qty > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 grid place-items-center min-w-[20px] h-5 px-1 text-[11px] font-bold rounded-full bg-brand-fuchsia">
