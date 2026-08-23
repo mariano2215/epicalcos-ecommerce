@@ -48,9 +48,9 @@ describe('searchCatalog', () => {
   });
 
   it('resuelve alias a la categoría real', () => {
-    expect(run('goku').kind).toBe('results');
-    expect(slugs(run('goku'))).toContain('dragon-ball');
-    expect(slugs(run('gato'))).toContain('cats');
+    expect(run('diego').kind).toBe('results');
+    expect(slugs(run('diego'))).toContain('maradona');
+    expect(slugs(run('xeneize'))).toContain('boca-juniors');
   });
 
   it('término sin catálogo → estado vacío con sugerencias', () => {

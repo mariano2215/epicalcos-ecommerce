@@ -53,8 +53,8 @@ Hay **tres** `package.json`:
 │   ├── vite.config.js
 │   ├── tailwind.config.js
 │   ├── public/
-│   │   ├── data/              catálogo en JSON estático (99 archivos + índices)
-│   │   ├── stickers/          6.600 imágenes .webp
+│   │   ├── data/              catálogo en JSON estático (61 archivos + índices)
+│   │   ├── stickers/          3.397 imágenes .webp
 │   │   ├── stickers-cutout/   recortes de portada por categoría
 │   │   ├── sitemap.xml        generado en prebuild
 │   │   └── robots.txt

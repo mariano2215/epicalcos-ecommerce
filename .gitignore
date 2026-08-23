@@ -12,3 +12,7 @@ dist
 # bootstrap de edge functions, que este repo no usa (netlify/ solo tiene
 # functions). Artefacto local de cada máquina, no entra al repo.
 deno.lock
+
+# Caché de webp de scripts/import-catalogo-completo.mjs. Evita volver a bajar
+# los originales dataless de iCloud en cada corrida; no es un artefacto del sitio.
+.cache

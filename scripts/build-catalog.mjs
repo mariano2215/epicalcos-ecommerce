@@ -6,7 +6,7 @@
  *   - frontend/public/data/catalog.json       → [{ slug, count, cover }]  (metadata liviana)
  *   - frontend/src/data/catalogStats.js       → CATEGORY_COUNT  (se hornea en el bundle)
  *
- * Correr DESPUÉS de import-stickers.sh. Es resumible: regenera con lo que haya.
+ * Correr DESPUÉS de import-catalogo-completo.mjs. Es resumible: regenera con lo que haya.
  */
 import { readdirSync, statSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -18,7 +18,7 @@ const STICKERS = join(ROOT, 'stickers');
 const DATA = join(ROOT, 'data');
 
 if (!existsSync(STICKERS)) {
-  console.error('No existe', STICKERS, '— corré primero scripts/import-stickers.sh');
+  console.error('No existe', STICKERS, '— corré primero scripts/import-catalogo-completo.mjs');
   process.exit(1);
 }
 mkdirSync(DATA, { recursive: true });

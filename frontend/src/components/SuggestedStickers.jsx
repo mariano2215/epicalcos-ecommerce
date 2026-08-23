@@ -16,13 +16,13 @@ import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
 
 /** Categorías de respaldo cuando en el carrito no hay calcos de catálogo. */
 const FALLBACK_CATEGORIES = [
-  'calcos-especiales',
+  'frases',
   'memes',
-  'buenas-vibras',
-  'disenos-aesthetic',
-  'futbol',
+  'shaka-good-vibes',
+  'aesthetic',
+  'argentina',
   'anime',
-  'cute',
+  'flores',
   'gamer'
 ];
 

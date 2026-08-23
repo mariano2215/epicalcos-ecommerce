@@ -69,7 +69,19 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://epicalcos.com/categoria/aesthetic</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://epicalcos.com/categoria/animales</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://epicalcos.com/categoria/anime</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://epicalcos.com/categoria/arcoiris</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -77,23 +89,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/autos-y-motos</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://epicalcos.com/categoria/bob-esponja</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/buenas-vibras</loc>
+    <loc>https://epicalcos.com/categoria/boca-juniors</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/calcos-especiales</loc>
+    <loc>https://epicalcos.com/categoria/breaking-bad</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/campeones</loc>
+    <loc>https://epicalcos.com/categoria/bts</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -101,11 +109,15 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/cats</loc>
+    <loc>https://epicalcos.com/categoria/cartoon-network</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/ciencia</loc>
+    <loc>https://epicalcos.com/categoria/clubes-rosario</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://epicalcos.com/categoria/coca-cola-pepsi</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -113,43 +125,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/cute</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/deportes</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/deportes-nba</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/digimon</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/disenos-aesthetic</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/disenos-muerte</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/disenos-shaka</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/disenos-universo</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/disenos-videojuegos</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/disenos-vsco</loc>
+    <loc>https://epicalcos.com/categoria/corazones</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -157,11 +133,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/dragon-ball</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/escritura-frases</loc>
+    <loc>https://epicalcos.com/categoria/escudos-futbol</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -169,47 +141,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/futbol</loc>
+    <loc>https://epicalcos.com/categoria/flores</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/futbol-boca</loc>
+    <loc>https://epicalcos.com/categoria/formula-1</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/futbol-dioses-futbol</loc>
+    <loc>https://epicalcos.com/categoria/frases</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/futbol-escudos</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/futbol-maradona</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/futbol-messi</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/futbol-nob</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/futbol-river</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/futbol-rosario-central</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/futbol-scaloneta</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/futbol-scaloneta-qatar</loc>
+    <loc>https://epicalcos.com/categoria/friends</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -217,11 +161,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/girl-power</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/halloween</loc>
+    <loc>https://epicalcos.com/categoria/greys-anatomy</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -229,11 +169,15 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/homedeco</loc>
+    <loc>https://epicalcos.com/categoria/harry-styles</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/infantil</loc>
+    <loc>https://epicalcos.com/categoria/hockey</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://epicalcos.com/categoria/lilo-y-stitch</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -241,27 +185,23 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://epicalcos.com/categoria/mandalas</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://epicalcos.com/categoria/maradona</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://epicalcos.com/categoria/marcas</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/marcas-coca-cola-pepsi</loc>
+    <loc>https://epicalcos.com/categoria/mariposas</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/marcas-nike</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/marcas-santa-cruz</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/marcas-starbucks</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/marcas-vans</loc>
+    <loc>https://epicalcos.com/categoria/marvel</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -269,39 +209,11 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/musica</loc>
+    <loc>https://epicalcos.com/categoria/messi</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/musica-bts</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/musica-harry-styles</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/musica-latinoamerica</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/musica-pop-internacional</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/musica-rock-internacional</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/musica-rock-nacional</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/musica-taylor-swift</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/naruto</loc>
+    <loc>https://epicalcos.com/categoria/musica-latina</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -309,131 +221,87 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/naturaleza-agua</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/naturaleza-arcoiris</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/naturaleza-corazones</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/naturaleza-flores</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/naturaleza-mandalas</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/naturaleza-mariposas</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://epicalcos.com/categoria/nba</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/pokemon</loc>
+    <loc>https://epicalcos.com/categoria/newells-old-boys</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/pride</loc>
+    <loc>https://epicalcos.com/categoria/nike</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/rap-reggaeton</loc>
+    <loc>https://epicalcos.com/categoria/pop-internacional</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/rick-and-morty</loc>
+    <loc>https://epicalcos.com/categoria/racing</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/series-peliculas</loc>
+    <loc>https://epicalcos.com/categoria/rick-y-morty</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/space</loc>
+    <loc>https://epicalcos.com/categoria/river-plate</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/star-wars</loc>
+    <loc>https://epicalcos.com/categoria/rock-internacional</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/superheroes</loc>
+    <loc>https://epicalcos.com/categoria/rock-nacional</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/travel-travel</loc>
+    <loc>https://epicalcos.com/categoria/rosa</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/travel-van-life</loc>
+    <loc>https://epicalcos.com/categoria/rosario-central</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-anime</loc>
+    <loc>https://epicalcos.com/categoria/santa-cruz</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-bob-esponja</loc>
+    <loc>https://epicalcos.com/categoria/scaloneta</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-breaking-bad</loc>
+    <loc>https://epicalcos.com/categoria/shaka-good-vibes</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-cartoon-network</loc>
+    <loc>https://epicalcos.com/categoria/starbucks</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-disney</loc>
+    <loc>https://epicalcos.com/categoria/stranger-things</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-friends</loc>
+    <loc>https://epicalcos.com/categoria/taylor-swift</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-gossip-girl</loc>
+    <loc>https://epicalcos.com/categoria/the-office</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-greys-anatomy</loc>
+    <loc>https://epicalcos.com/categoria/universo</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-harry-potter</loc>
+    <loc>https://epicalcos.com/categoria/van-life</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/tv-los-simpsons</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/tv-marvel</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/tv-nickelodeon</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/tv-padrinos-magicos</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/tv-rick-y-morty</loc>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://epicalcos.com/categoria/tv-varios</loc>
+    <loc>https://epicalcos.com/categoria/vans</loc>
     <priority>0.8</priority>
   </url>
   <url>
@@ -441,7 +309,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://epicalcos.com/categoria/weed-creepy</loc>
+    <loc>https://epicalcos.com/categoria/vsco</loc>
     <priority>0.8</priority>
   </url>
 </urlset>

@@ -33,7 +33,7 @@ El checkout ya es **100 % como invitado** — el punto 29 del plan ya está cump
 
 ```
 /                        Home (eager — LCP)
-/categorias              grilla de 99 categorías + buscador global
+/categorias              grilla de 61 categorías + buscador global
 /categoria/:slug         grilla de diseños de una categoría
 /producto/:slug/:num     PDP
 /personalizados          configurador (3 pasos: tamaño, corte, archivo)

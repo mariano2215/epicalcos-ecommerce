@@ -1,8 +1,8 @@
 /**
  * Categorías vistas recientemente.
  *
- * El catálogo tiene 99 categorías: el que vuelve al sitio y ya estaba mirando
- * "Fútbol Rosario Central" tiene que encontrarla de nuevo entre 99 tarjetas o
+ * El catálogo tiene 61 categorías: el que vuelve al sitio y ya estaba mirando
+ * "Rosario Central" tiene que encontrarla de nuevo entre 61 tarjetas o
  * escribirla en el buscador. Guardar las últimas y ofrecerlas es de las pocas
  * personalizaciones que reducen fricción de verdad en vez de sumar ruido.
  *

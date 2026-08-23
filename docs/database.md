@@ -152,15 +152,15 @@ El catálogo **no está en una base de datos**: son archivos versionados en
 ```json
 [ { "slug": "argentina", "count": 129, "cover": "/stickers/argentina/1.webp" } ]
 ```
-**99 categorías**, ordenadas alfabéticamente por slug. 7,5 KB.
+**61 categorías**, ordenadas alfabéticamente por slug.
 
 ### `<categoria>.json` — diseños de una categoría
-Un archivo por categoría (99 en total):
+Un archivo por categoría (61 en total):
 ```json
 [ { "id": "argentina-1", "file": "/stickers/argentina/1.webp",
     "sku": "000255", "stock": 50 } ]
 ```
-**6.600 diseños** en total.
+**3.397 diseños** en total.
 
 - `id` = `{slug}-{n}`. **Es la clave del sistema de precios**: el servidor deriva
   de acá la categoría (quitando el último `-{número}`) para la promo por
@@ -173,7 +173,6 @@ Un archivo por categoría (99 en total):
 |---|---|
 | `skus.json` | registro append-only de SKUs (166 KB) |
 | `meta-catalog.csv` | feed de producto para Meta Commerce Manager (2,3 MB) |
-| `cutouts.json` | recortes de portada por categoría |
 | `aliases.json` | alias del buscador |
 | `nuevas-catalogo.json` | lote de diseños nuevos |
 | `duplicados.json` | diseños que están en dos carpetas: `archivo duplicado → canónico` |
@@ -181,13 +180,19 @@ Un archivo por categoría (99 en total):
 ### Cómo se regenera
 Scripts manuales en `/scripts` (Node, no corren en el build):
 ```
-import-catalogo.mjs   → importa imágenes desde iCloud, las convierte a .webp
+import-catalogo-completo.mjs → RECONSTRUYE todo el catálogo desde iCloud:
+                              convierte a .webp, deduplica por contenido y
+                              reescribe src/data/categories.js
 build-catalog.mjs     → genera catalog.json y los <categoria>.json
 build-duplicados.mjs  → duplicados.json (correlo después de build-catalog)
 build-meta-feed.mjs   → asigna SKUs estables + stock, genera el CSV de Meta
-gen-categories.mjs    → agrega a src/data/categories.js las categorías nuevas
 generate-sitemap.mjs  → sitemap.xml  (este SÍ corre en el prebuild)
 optimize-images.mjs   → optimización de imágenes
+
+Los tres primeros van en ese orden. `import-catalogo.mjs` e
+`import-category-full.mjs` son los importadores viejos (una categoría por vez,
+dedupe por número de archivo): siguen ahí pero para el lote actual usá
+import-catalogo-completo.mjs.
 ```
 
 **Consecuencia operativa**: agregar productos es un cambio de código + commit +

@@ -14,7 +14,7 @@ import { CATEGORIES, SPECIALS } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
 import { useReducedMotion } from '../lib/motion.js';
 
-const FEATURED_SLUGS = ['anime', 'futbol', 'disney', 'pokemon', 'memes', 'gamer', 'superheroes', 'cute', 'autos-y-motos', 'musica'];
+const FEATURED_SLUGS = ['anime', 'disney', 'memes', 'frases', 'marvel', 'los-simpsons', 'argentina', 'flores', 'scaloneta', 'aesthetic'];
 const SERVICE_SLUGS = ['mayorista', 'archivos-imprimibles', 'tatuajes', 'polaroid'];
 
 export default function Home() {
@@ -77,7 +77,7 @@ export default function Home() {
           una página para eso. */}
       <IntentSelector />
 
-      {/* Solo para quien ya estuvo mirando: con 99 categorías, volver a la que
+      {/* Solo para quien ya estuvo mirando: con 61 categorías, volver a la que
           estabas viendo cuesta. No se renderiza nada si no hay historial. */}
       <RecentCategories />
 

@@ -23,7 +23,7 @@ Moneda: **ARS**. Todos los importes son enteros (`round = Math.round`).
 | 9 cm | $2.000 |
 
 Default: **6 cm** (`DEFAULT_SIZE`).
-Catálogo: **99 categorías, 6.600 diseños**.
+Catálogo: **61 categorías, 3.397 diseños**.
 
 El **precio de vidriera es el de Mercado Pago** (sin descuento). Los descuentos
 por transferencia y cupón se aplican recién en el checkout, porque dependen del

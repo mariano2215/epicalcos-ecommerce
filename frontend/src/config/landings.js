@@ -13,7 +13,7 @@ import { DEFAULT_SIZE } from './pricing.js';
  *
  * Estas tres sí son contenido nuevo: "calcos para termo" no es una categoría de
  * diseño (cualquier diseño sirve), es un caso de uso, y no había ninguna página
- * que respondiera "¿cuál me conviene para esto?". El catálogo tiene 99
+ * que respondiera "¿cuál me conviene para esto?". El catálogo tiene 61
  * categorías temáticas y ninguna de uso.
  *
  * Cada landing continúa la promesa del anuncio (message match, §41) y responde
@@ -31,7 +31,7 @@ export const LANDINGS = [
     // El tamaño es la duda #1 de cada uso, y la respuesta cambia según el objeto.
     tamanoRecomendado: DEFAULT_SIZE,
     tamanoPorQue: 'Es el que mejor entra en la panza de un termo estándar sin quedar chico ni deformarse en la curva.',
-    categorias: ['argentina', 'futbol', 'buenas-vibras', 'cute', 'memes', 'naturaleza-flores'],
+    categorias: ['argentina', 'escudos-futbol', 'shaka-good-vibes', 'frases', 'memes', 'flores'],
     /** Testimonio que habla de ESTE uso (índice en data/testimonials.js). */
     testimonio: 2,
     beneficios: [
@@ -61,7 +61,7 @@ export const LANDINGS = [
     promesa: 'Personalizá tu compu con los diseños que te representan. Corte preciso, colores vivos y se despegan sin dejar marca.',
     tamanoRecomendado: DEFAULT_SIZE,
     tamanoPorQue: 'Entran varios en la tapa sin taparse entre sí. Si querés uno solo bien protagonista, andá al de 9 cm.',
-    categorias: ['gamer', 'anime', 'memes', 'musica', 'disenos-aesthetic', 'space'],
+    categorias: ['gamer', 'anime', 'memes', 'rock-nacional', 'aesthetic', 'universo'],
     testimonio: 0,
     beneficios: [
       { icon: '🎯', t: 'Corte preciso', d: 'Troquelado al contorno del diseño, sin borde blanco feo.' },
@@ -90,7 +90,7 @@ export const LANDINGS = [
     promesa: 'Vinilo pensado para la intemperie: sol, lluvia y lavados. El mismo que usamos para vidrieras.',
     tamanoRecomendado: '9cm',
     tamanoPorQue: 'A la distancia desde la que se mira un auto, los de 4 y 6 cm se pierden. El de 9 cm se lee.',
-    categorias: ['autos-y-motos', 'argentina', 'futbol', 'marcas', 'weed-creepy'],
+    categorias: ['formula-1', 'argentina', 'escudos-futbol', 'marcas', 'rock-nacional'],
     testimonio: 1,
     beneficios: [
       { icon: '🌧️', t: 'Aguanta la intemperie', d: 'Sol directo y lluvia. Es el material que usamos para vidrieras.' },

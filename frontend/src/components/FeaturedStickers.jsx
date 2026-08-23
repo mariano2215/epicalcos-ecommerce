@@ -7,7 +7,7 @@ import { DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
 import { trackViewItemList } from '../lib/analytics.js';
 
 // Un sticker al azar de cada una de estas categorías en cada carga de la página.
-const FEATURED_CATEGORIES = ['dragon-ball', 'argentina', 'disney', 'calcos-especiales'];
+const FEATURED_CATEGORIES = ['anime', 'argentina', 'disney', 'frases'];
 
 const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
 

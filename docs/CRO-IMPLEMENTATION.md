@@ -230,7 +230,7 @@ y dos páginas que mantener por cada intención.
 **Landings nuevas de verdad** — `/calcos-termo`, `/calcos-notebook`,
 `/calcos-auto`. Estas sí son contenido que no existía: *"calcos para termo"* no
 es una categoría de diseño (cualquier diseño sirve), es un **caso de uso**, y el
-catálogo tiene 99 categorías temáticas y **ninguna de uso**.
+catálogo tiene 61 categorías temáticas y **ninguna de uso**.
 
 Cada una responde la objeción propia de ese uso:
 
@@ -360,8 +360,8 @@ Dos experimentos corriendo: `ahorro_pack` (CRO-007) y `guia_tamano` (CRO-011).
 
 ### 25. Personalización
 
-Una sola, y chica a propósito: **"Seguí donde estabas"**. Con 99 categorías, el
-que vuelve tiene que encontrar la suya entre 99 tarjetas o escribirla de nuevo.
+Una sola, y chica a propósito: **"Seguí donde estabas"**. Con 61 categorías, el
+que vuelve tiene que encontrar la suya entre 61 tarjetas o escribirla de nuevo.
 
 - Solo slugs de categoría en `localStorage`. Sin PII, sin backend, sin perfilado.
 - **No se renderiza nada si no hay historial**: el visitante nuevo ve la página de

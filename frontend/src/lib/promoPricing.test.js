@@ -812,8 +812,8 @@ describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', 
 
   it('la categoría sale del id sin romper los slugs con guiones', () => {
     expect(categoriaDeStickerId('argentina-72')).toBe('argentina');
-    expect(categoriaDeStickerId('autos-y-motos-127')).toBe('autos-y-motos');
-    expect(categoriaDeStickerId('futbol-boca-5')).toBe('futbol-boca');
+    expect(categoriaDeStickerId('rosario-central-77')).toBe('rosario-central');
+    expect(categoriaDeStickerId('coca-cola-pepsi-5')).toBe('coca-cola-pepsi');
     expect(categoriaDeStickerId('anime-1')).toBe('anime');
   });
 

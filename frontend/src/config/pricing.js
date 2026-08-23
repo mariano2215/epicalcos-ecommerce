@@ -381,9 +381,9 @@ export function isArgentinaPromoActive(now = Date.now()) {
 /**
  * La categoría de un id de calco del catálogo: `argentina-72` → `argentina`.
  *
- * Se saca el ÚLTIMO tramo `-{número}` y no el primero: hay 99 categorías y
- * varias tienen guiones propios (`autos-y-motos-127`, `futbol-boca-5`), así que
- * partir por el primer guión daría `autos` y rompería la comparación.
+ * Se saca el ÚLTIMO tramo `-{número}` y no el primero: hay 61 categorías y
+ * varias tienen guiones propios (`rosario-central-77`, `coca-cola-pepsi-5`), así
+ * que partir por el primer guión daría `rosario` y rompería la comparación.
  */
 export function categoriaDeStickerId(stickerId) {
   return String(stickerId || '').replace(/-\d+$/, '');
