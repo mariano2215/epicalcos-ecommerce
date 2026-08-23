@@ -8,6 +8,7 @@
 /api/mercadopago-webhook    /.netlify/functions/mercadopago-webhook    200
 /api/track-cart             /.netlify/functions/track-cart             200
 /api/unsubscribe            /.netlify/functions/unsubscribe            200
+/api/entregar-digital       /.netlify/functions/entregar-digital       200
 
 # URLs "bonitas" para anuncios → 301 a la página real (espejo de netlify.toml).
 # NO son landings nuevas: /personalizados, /negocio y /mayorista ya existen, así
@@ -16,6 +17,101 @@
 /calcos-personalizadas   /personalizados  301
 /calcos-para-negocios    /negocio         301
 /pack-100-calcos         /mayorista       301
+/armá-tu-pack            /armar-pack      301
+
+# ── Categorías dadas de baja el 23/8/2026 → 301 ──────────────────────────────
+# El catálogo se reemplazó entero (94 categorías → 61) y estas 79 URLs quedaron
+# sin destino. El SPA ya las mandaba a /categorias, pero recién en el navegador:
+# para Google eso es una página que existe y devuelve 200, no una mudanza. Con
+# el 301 el poco jugo que tuvieran pasa a la categoría que las reemplaza.
+#
+# 67 van a una categoría concreta (futbol-boca → boca-juniors, tv-marvel →
+# marvel, pokemon → anime…) y 12 a /categorias, que son las que no tienen
+# sucesora (halloween, star-wars, weed-creepy, pride…).
+#
+# Es una tabla HISTÓRICA y congelada: describe lo que existía antes del
+# 23/8/2026, así que no se le agregan filas salvo que se den de baja categorías
+# nuevas. Está espejada en frontend/public/_redirects y src/lib/redirects.test.js
+# verifica que los dos archivos digan lo mismo.
+/categoria/autos-y-motos              /categoria/formula-1           301
+/categoria/buenas-vibras              /categoria/shaka-good-vibes    301
+/categoria/calcos-especiales          /categorias                    301
+/categoria/campeones                  /categoria/scaloneta           301
+/categoria/cats                       /categoria/animales            301
+/categoria/ciencia                    /categorias                    301
+/categoria/cute                       /categoria/aesthetic           301
+/categoria/deportes                   /categorias                    301
+/categoria/deportes-nba               /categoria/nba                 301
+/categoria/digimon                    /categoria/anime               301
+/categoria/disenos-aesthetic          /categoria/aesthetic           301
+/categoria/disenos-muerte             /categorias                    301
+/categoria/disenos-shaka              /categoria/shaka-good-vibes    301
+/categoria/disenos-universo           /categoria/universo            301
+/categoria/disenos-videojuegos        /categoria/gamer               301
+/categoria/disenos-vsco               /categoria/vsco                301
+/categoria/dragon-ball                /categoria/anime               301
+/categoria/escritura-frases           /categoria/frases              301
+/categoria/futbol                     /categoria/escudos-futbol      301
+/categoria/futbol-boca                /categoria/boca-juniors        301
+/categoria/futbol-dioses-futbol       /categoria/escudos-futbol      301
+/categoria/futbol-escudos             /categoria/escudos-futbol      301
+/categoria/futbol-maradona            /categoria/maradona            301
+/categoria/futbol-messi               /categoria/messi               301
+/categoria/futbol-nob                 /categoria/newells-old-boys    301
+/categoria/futbol-river               /categoria/river-plate         301
+/categoria/futbol-rosario-central     /categoria/rosario-central     301
+/categoria/futbol-scaloneta           /categoria/scaloneta           301
+/categoria/futbol-scaloneta-qatar     /categoria/scaloneta           301
+/categoria/girl-power                 /categoria/feminismo           301
+/categoria/halloween                  /categorias                    301
+/categoria/homedeco                   /categorias                    301
+/categoria/infantil                   /categoria/disney              301
+/categoria/marcas-coca-cola-pepsi     /categoria/coca-cola-pepsi     301
+/categoria/marcas-nike                /categoria/nike                301
+/categoria/marcas-santa-cruz          /categoria/santa-cruz          301
+/categoria/marcas-starbucks           /categoria/starbucks           301
+/categoria/marcas-vans                /categoria/vans                301
+/categoria/musica                     /categoria/rock-nacional       301
+/categoria/musica-bts                 /categoria/bts                 301
+/categoria/musica-harry-styles        /categoria/harry-styles        301
+/categoria/musica-latinoamerica       /categoria/musica-latina       301
+/categoria/musica-pop-internacional   /categoria/pop-internacional   301
+/categoria/musica-rock-internacional  /categoria/rock-internacional  301
+/categoria/musica-rock-nacional       /categoria/rock-nacional       301
+/categoria/musica-taylor-swift        /categoria/taylor-swift        301
+/categoria/naruto                     /categoria/anime               301
+/categoria/naturaleza-agua            /categoria/naturaleza          301
+/categoria/naturaleza-arcoiris        /categoria/arcoiris            301
+/categoria/naturaleza-corazones       /categoria/corazones           301
+/categoria/naturaleza-flores          /categoria/flores              301
+/categoria/naturaleza-mandalas        /categoria/mandalas            301
+/categoria/naturaleza-mariposas       /categoria/mariposas           301
+/categoria/pokemon                    /categoria/anime               301
+/categoria/pride                      /categorias                    301
+/categoria/rap-reggaeton              /categoria/musica-latina       301
+/categoria/rick-and-morty             /categoria/rick-y-morty        301
+/categoria/series-peliculas           /categorias                    301
+/categoria/space                      /categoria/universo            301
+/categoria/star-wars                  /categorias                    301
+/categoria/superheroes                /categoria/marvel              301
+/categoria/travel-travel              /categoria/viajes              301
+/categoria/travel-van-life            /categoria/van-life            301
+/categoria/tv-anime                   /categoria/anime               301
+/categoria/tv-bob-esponja             /categoria/bob-esponja         301
+/categoria/tv-breaking-bad            /categoria/breaking-bad        301
+/categoria/tv-cartoon-network         /categoria/cartoon-network     301
+/categoria/tv-disney                  /categoria/disney              301
+/categoria/tv-friends                 /categoria/friends             301
+/categoria/tv-gossip-girl             /categorias                    301
+/categoria/tv-greys-anatomy           /categoria/greys-anatomy       301
+/categoria/tv-harry-potter            /categoria/harry-potter        301
+/categoria/tv-los-simpsons            /categoria/los-simpsons        301
+/categoria/tv-marvel                  /categoria/marvel              301
+/categoria/tv-nickelodeon             /categoria/cartoon-network     301
+/categoria/tv-padrinos-magicos        /categoria/cartoon-network     301
+/categoria/tv-rick-y-morty            /categoria/rick-y-morty        301
+/categoria/tv-varios                  /categorias                    301
+/categoria/weed-creepy                /categorias                    301
 
 # SPA fallback (SIEMPRE al final)
 /*  /index.html  200

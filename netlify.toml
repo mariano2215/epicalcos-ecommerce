@@ -116,6 +116,416 @@
   to     = "/armar-pack"
   status = 301
 
+# ── Categorías dadas de baja el 23/8/2026 → 301 ──────────────────────────────
+# El catálogo se reemplazó entero (94 categorías → 61) y estas 79 URLs quedaron
+# sin destino. El SPA ya las mandaba a /categorias, pero recién en el navegador:
+# para Google eso es una página que existe y devuelve 200, no una mudanza. Con
+# el 301 el poco jugo que tuvieran pasa a la categoría que las reemplaza.
+#
+# 67 van a una categoría concreta (futbol-boca → boca-juniors, tv-marvel →
+# marvel, pokemon → anime…) y 12 a /categorias, que son las que no tienen
+# sucesora (halloween, star-wars, weed-creepy, pride…).
+#
+# Es una tabla HISTÓRICA y congelada: describe lo que existía antes del
+# 23/8/2026, así que no se le agregan filas salvo que se den de baja categorías
+# nuevas. Está espejada en frontend/public/_redirects y src/lib/redirects.test.js
+# verifica que los dos archivos digan lo mismo.
+
+[[redirects]]
+  from   = "/categoria/autos-y-motos"
+  to     = "/categoria/formula-1"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/buenas-vibras"
+  to     = "/categoria/shaka-good-vibes"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/calcos-especiales"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/campeones"
+  to     = "/categoria/scaloneta"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/cats"
+  to     = "/categoria/animales"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/ciencia"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/cute"
+  to     = "/categoria/aesthetic"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/deportes"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/deportes-nba"
+  to     = "/categoria/nba"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/digimon"
+  to     = "/categoria/anime"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/disenos-aesthetic"
+  to     = "/categoria/aesthetic"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/disenos-muerte"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/disenos-shaka"
+  to     = "/categoria/shaka-good-vibes"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/disenos-universo"
+  to     = "/categoria/universo"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/disenos-videojuegos"
+  to     = "/categoria/gamer"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/disenos-vsco"
+  to     = "/categoria/vsco"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/dragon-ball"
+  to     = "/categoria/anime"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/escritura-frases"
+  to     = "/categoria/frases"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol"
+  to     = "/categoria/escudos-futbol"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-boca"
+  to     = "/categoria/boca-juniors"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-dioses-futbol"
+  to     = "/categoria/escudos-futbol"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-escudos"
+  to     = "/categoria/escudos-futbol"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-maradona"
+  to     = "/categoria/maradona"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-messi"
+  to     = "/categoria/messi"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-nob"
+  to     = "/categoria/newells-old-boys"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-river"
+  to     = "/categoria/river-plate"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-rosario-central"
+  to     = "/categoria/rosario-central"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-scaloneta"
+  to     = "/categoria/scaloneta"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/futbol-scaloneta-qatar"
+  to     = "/categoria/scaloneta"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/girl-power"
+  to     = "/categoria/feminismo"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/halloween"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/homedeco"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/infantil"
+  to     = "/categoria/disney"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/marcas-coca-cola-pepsi"
+  to     = "/categoria/coca-cola-pepsi"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/marcas-nike"
+  to     = "/categoria/nike"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/marcas-santa-cruz"
+  to     = "/categoria/santa-cruz"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/marcas-starbucks"
+  to     = "/categoria/starbucks"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/marcas-vans"
+  to     = "/categoria/vans"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica"
+  to     = "/categoria/rock-nacional"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica-bts"
+  to     = "/categoria/bts"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica-harry-styles"
+  to     = "/categoria/harry-styles"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica-latinoamerica"
+  to     = "/categoria/musica-latina"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica-pop-internacional"
+  to     = "/categoria/pop-internacional"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica-rock-internacional"
+  to     = "/categoria/rock-internacional"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica-rock-nacional"
+  to     = "/categoria/rock-nacional"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/musica-taylor-swift"
+  to     = "/categoria/taylor-swift"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/naruto"
+  to     = "/categoria/anime"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/naturaleza-agua"
+  to     = "/categoria/naturaleza"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/naturaleza-arcoiris"
+  to     = "/categoria/arcoiris"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/naturaleza-corazones"
+  to     = "/categoria/corazones"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/naturaleza-flores"
+  to     = "/categoria/flores"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/naturaleza-mandalas"
+  to     = "/categoria/mandalas"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/naturaleza-mariposas"
+  to     = "/categoria/mariposas"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/pokemon"
+  to     = "/categoria/anime"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/pride"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/rap-reggaeton"
+  to     = "/categoria/musica-latina"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/rick-and-morty"
+  to     = "/categoria/rick-y-morty"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/series-peliculas"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/space"
+  to     = "/categoria/universo"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/star-wars"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/superheroes"
+  to     = "/categoria/marvel"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/travel-travel"
+  to     = "/categoria/viajes"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/travel-van-life"
+  to     = "/categoria/van-life"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-anime"
+  to     = "/categoria/anime"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-bob-esponja"
+  to     = "/categoria/bob-esponja"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-breaking-bad"
+  to     = "/categoria/breaking-bad"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-cartoon-network"
+  to     = "/categoria/cartoon-network"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-disney"
+  to     = "/categoria/disney"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-friends"
+  to     = "/categoria/friends"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-gossip-girl"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-greys-anatomy"
+  to     = "/categoria/greys-anatomy"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-harry-potter"
+  to     = "/categoria/harry-potter"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-los-simpsons"
+  to     = "/categoria/los-simpsons"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-marvel"
+  to     = "/categoria/marvel"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-nickelodeon"
+  to     = "/categoria/cartoon-network"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-padrinos-magicos"
+  to     = "/categoria/cartoon-network"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-rick-y-morty"
+  to     = "/categoria/rick-y-morty"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/tv-varios"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/categoria/weed-creepy"
+  to     = "/categorias"
+  status = 301
+
 # SPA fallback (debe ir DESPUÉS de los redirects de /api/* y de los 301)
 [[redirects]]
   from   = "/*"
