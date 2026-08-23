@@ -25,12 +25,21 @@ export default function Home() {
 
   useSeo({ title: undefined, description: undefined });
 
+  // portadas.json dice qué diseños de cada categoría tienen fondo gris uniforme:
+  // son los únicos que sirven de portada (ver lib/portadas.js). Va en paralelo y
+  // mezclado en el mismo estado para que las cards no se pinten dos veces.
   useEffect(() => {
-    fetch('/data/catalog.json')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list) => {
+    Promise.all([
+      fetch('/data/catalog.json').then((r) => (r.ok ? r.json() : [])),
+      fetch('/data/portadas.json')
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => ({}))
+    ])
+      .then(([list, portadas]) => {
         const map = {};
-        for (const c of list) map[c.slug] = { count: c.count, cover: c.cover };
+        for (const c of list) {
+          map[c.slug] = { count: c.count, cover: c.cover, portadas: portadas[c.slug] };
+        }
         setCatalog(map);
       })
       .catch(() => setCatalog({}));
@@ -135,7 +144,15 @@ export default function Home() {
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {featured.map((c, i) => (
                 <Reveal key={c.slug} delay={i * 60} className="h-full">
-                  <CategoryCard slug={c.slug} name={c.name} emoji={c.emoji} cover={catalog[c.slug]?.cover} count={catalog[c.slug]?.count} rotation={rotation} />
+                  <CategoryCard
+                    slug={c.slug}
+                    name={c.name}
+                    emoji={c.emoji}
+                    cover={catalog[c.slug]?.cover}
+                    count={catalog[c.slug]?.count}
+                    portadas={catalog[c.slug]?.portadas}
+                    rotation={rotation}
+                  />
                 </Reveal>
               ))}
             </div>

@@ -7,6 +7,11 @@
  *   - frontend/src/data/catalogStats.js       → CATEGORY_COUNT  (se hornea en el bundle)
  *
  * Correr DESPUÉS de import-catalogo-completo.mjs. Es resumible: regenera con lo que haya.
+ *
+ * Y DESPUÉS de este, build-portadas.mjs: decide qué diseños de cada categoría
+ * sirven de portada (los de fondo gris uniforme) y escribe data/portadas.json.
+ * Si se reemplaza el catálogo y no se corre, los índices quedan apuntando a
+ * otros dibujos — hay un test que lo caza.
  */
 import { readdirSync, statSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';

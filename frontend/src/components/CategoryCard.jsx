@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { portadaDe } from '../lib/portadas.js';
+import { portadaDe, PORTADA_BG } from '../lib/portadas.js';
 
 // La portada es determinística por (slug + rotation): con la misma rotación,
 // la misma categoría muestra siempre la misma imagen. Quién elige la rotación
 // decide cuánto cambia: el Home la va corriendo mientras mirás, y /categorías
 // arranca en una distinta en cada visita (ver `rotacionesSinRepetir`).
-export default function CategoryCard({ slug, name, emoji, cover, count, rotation = 0 }) {
+//
+// `portadas` restringe la elección a los diseños con fondo gris uniforme. Las
+// categorías que no tienen ninguno vienen sin lista y eligen entre todos: el
+// gris se los pone igual el recuadro de acá abajo.
+export default function CategoryCard({ slug, name, emoji, cover, count, rotation = 0, portadas }) {
   // Arranca ya en la rotación pedida: si arrancara en 0 y después saltara a la
   // rotación real, cada card pediría DOS imágenes en vez de una.
-  const [src, setSrc] = useState(() => portadaDe(slug, count, rotation, cover));
+  const [src, setSrc] = useState(() => portadaDe(slug, count, rotation, cover, portadas));
   const [swapping, setSwapping] = useState(false);
 
-  const next = portadaDe(slug, count, rotation, cover);
+  const next = portadaDe(slug, count, rotation, cover, portadas);
 
   useEffect(() => {
     if (!next || next === src) return;
@@ -44,7 +48,15 @@ export default function CategoryCard({ slug, name, emoji, cover, count, rotation
       to={`/categoria/${slug}`}
       className="card-glass card-glass-hover overflow-hidden flex flex-col group"
     >
-      <div className="relative aspect-square overflow-hidden bg-white/[0.03] grid place-items-center p-4">
+      {/* El recuadro va del gris del catálogo y no del glass oscuro: los diseños
+          que vienen de un .jpg traen ESE mismo gris adentro del archivo, así que
+          el borde del cuadrado desaparece y el calco se ve flotando. Los pocos
+          recortes transparentes que quedan se apoyan sobre el mismo gris y
+          terminan igual. */}
+      <div
+        className="relative aspect-square overflow-hidden grid place-items-center p-4"
+        style={{ background: PORTADA_BG }}
+      >
         {src || cover ? (
           <div
             className="w-full h-full grid place-items-center transition-opacity duration-200"
@@ -60,14 +72,19 @@ export default function CategoryCard({ slug, name, emoji, cover, count, rotation
               width={320}
               height={320}
               onError={() => { if (src !== cover) setSrc(cover); }}
-              className="max-w-full max-h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-110"
+              /* Sin drop-shadow: sobre el gris, la sombra de una imagen OPACA
+                 dibuja el contorno del cuadrado del archivo y delata el recorte
+                 justo en lo que esta card quiere disimular. */
+              className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
             />
           </div>
         ) : (
           <span className="text-5xl opacity-80">{emoji || '🏷️'}</span>
         )}
         {typeof count === 'number' && (
-          <span className="absolute top-2 right-2 badge badge-soft !text-[10px] !py-1 !px-2">
+          /* `badge-soft` es blanco sobre blanco translúcido: sobre el gris no se
+             leía. Pill oscuro con texto blanco. */
+          <span className="absolute top-2 right-2 badge bg-black/55 border border-white/20 !text-[10px] !py-1 !px-2">
             {count}
           </span>
         )}

@@ -23,7 +23,7 @@ export default function Categorias() {
   const ordenParam = params.get('orden');
   const orden = esOrdenValido(ordenParam) ? ordenParam : ORDEN_POR_DEFECTO;
   const navigate = useNavigate();
-  const [catalog, setCatalog] = useState({}); // slug -> { count, cover }
+  const [catalog, setCatalog] = useState({}); // slug -> { count, cover, portadas }
   const [aliases, setAliases] = useState({ categorias: {}, rutas: {} });
   // Diseños que están repetidos en dos carpetas (scripts/build-duplicados.mjs).
   const [duplicados, setDuplicados] = useState({});
@@ -40,12 +40,22 @@ export default function Categorias() {
     noindex: !!q
   });
 
+  // Los dos JSON en paralelo y mezclados en UN estado: las cards no se pintan
+  // hasta que llega el catálogo, así que si `portadas` viajara aparte la primera
+  // pintada saldría con el diseño viejo y saltaría al bueno a la vista.
+  // Si portadas.json no está, la grilla elige entre todos los diseños (como antes).
   useEffect(() => {
-    fetch('/data/catalog.json')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((list) => {
+    Promise.all([
+      fetch('/data/catalog.json').then((r) => (r.ok ? r.json() : [])),
+      fetch('/data/portadas.json')
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => ({}))
+    ])
+      .then(([list, portadas]) => {
         const map = {};
-        for (const c of list) map[c.slug] = { count: c.count, cover: c.cover };
+        for (const c of list) {
+          map[c.slug] = { count: c.count, cover: c.cover, portadas: portadas[c.slug] };
+        }
         setCatalog(map);
       })
       .catch(() => setCatalog({}));
@@ -253,6 +263,7 @@ export default function Categorias() {
                 emoji={c.emoji}
                 cover={catalog[c.slug]?.cover}
                 count={catalog[c.slug]?.count}
+                portadas={catalog[c.slug]?.portadas}
                 rotation={rotaciones[c.slug] || 0}
               />
             ))}
