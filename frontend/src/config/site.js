@@ -217,8 +217,13 @@ export const announcements = [
  * PARA DESPUBLICAR UNA: agregá su slug acá y listo, no hay que tocar nada más.
  * (`/personalizados` estuvo apagada del 27/7/2026 al 3/8/2026, hasta rehacer el
  * configurador: hoy son tres pasos —tamaño, corte y archivo— y volvió a estar viva.)
+ *
+ * `archivos-imprimibles`: despublicada el 24/8/2026 por decisión de Mariano. El
+ * producto digital sigue ENTERO —precio espejado, checkout sin dirección,
+ * entregar-digital.js y sus mails— justamente para que los pedidos ya vendidos
+ * se puedan seguir entregando y reenviando. Solo se cerraron las puertas.
  */
-export const HIDDEN_SECTIONS = [];
+export const HIDDEN_SECTIONS = ['archivos-imprimibles'];
 
 /** true si la sección está despublicada. Acepta el slug ('personalizados') o el path ('/personalizados'). */
 export const isSectionHidden = (slugOrPath) =>
