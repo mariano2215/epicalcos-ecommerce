@@ -68,7 +68,8 @@ export function isCouponActive(code, now = Date.now()) {
 
 // --- Espejo de la PROMO 3x2 de frontend/src/config/pricing.js ---
 // "3x2 en TODAS las calcos": cada 3 calcos elegibles (sticker + custom), la más
-// barata gratis. Viva del jue 20/8 23:00 al lun 24/8 23:59 de 2026.
+// barata gratis. Viva del jue 20/8 23:00 al vie 28/8 23:59 de 2026 (extendida
+// el 24/8: cerraba ese lunes).
 //
 // Tiene fecha de INICIO además de fin: arranca a las 23:00 y el deploy es
 // antes, así que se mira la ventana completa. Antes de PROMO_START_MS el
@@ -81,7 +82,7 @@ export function isCouponActive(code, now = Date.now()) {
 // ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend. El test
 // src/lib/promoPricing.test.js verifica la paridad en los cuatro bordes.
 export const PROMO_START_MS = Date.parse('2026-08-20T23:00:00-03:00');
-export const PROMO_END_MS = Date.parse('2026-08-24T23:59:59-03:00');
+export const PROMO_END_MS = Date.parse('2026-08-28T23:59:59-03:00');
 const PROMO_BUY = 3;
 const PROMO_PAY = 2;
 export const PROMO_PERCENT_CAP = 0.1;

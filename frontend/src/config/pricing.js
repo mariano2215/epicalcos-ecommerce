@@ -145,7 +145,7 @@ export function couponIncluyeCustom(code, now = Date.now()) {
 }
 
 /**
- * ─── PROMO 3x2 — VIVA del jue 20/8 23:00 al lun 24/8 23:59 de 2026 ───────────
+ * ─── PROMO 3x2 — VIVA del jue 20/8 23:00 al vie 28/8 23:59 de 2026 ───────────
  *
  * "3x2 en TODAS las calcos": cada 3 calcos elegibles, la MÁS BARATA gratis.
  * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom')
@@ -157,6 +157,10 @@ export function couponIncluyeCustom(code, now = Date.now()) {
  * DOS puntas, así que alcanza con deployar antes y la promo se enciende y se
  * apaga sola. Antes de `startsAt` el precio válido sigue siendo el de lista —
  * si mirara solo el fin, deployar hoy la prendería en el acto.
+ *
+ * EXTENDIDA el 24/8/2026: cerraba ese mismo lunes y Mariano la estiró al
+ * viernes 28. Solo se movió `endsAt`: el banner, su contador y la fecha que
+ * muestra salen todos de ahí, no hay ninguna fecha escrita a mano en la UI.
  *
  * ACUMULA con el 10 % por transferencia y con NADA MÁS. Los cupones de % NO se
  * combinan con la promo (decisión de Mariano, 20/8/2026): mientras la promo
@@ -178,8 +182,8 @@ export function couponIncluyeCustom(code, now = Date.now()) {
 export const PROMO_3X2 = {
   /** Arranca el jueves 20/8 a las 23:00, hora Argentina (UTC−03:00). */
   startsAt: '2026-08-20T23:00:00-03:00',
-  /** Fin de la promo, hora Argentina. Inclusive: termina al cerrar el lunes. */
-  endsAt: '2026-08-24T23:59:59-03:00',
+  /** Fin de la promo, hora Argentina. Inclusive: termina al cerrar el viernes. */
+  endsAt: '2026-08-28T23:59:59-03:00',
   buy: 3,
   pay: 2,
   /** Tope del descuento en % que corre ENCIMA del 3x2 (hoy: solo transferencia). */

@@ -29,7 +29,7 @@ export default function Header() {
       {promoActive ? (
         <PromoBanner
           title="3×2 EN TODAS LAS CALCOS"
-          subtitle={`Cada 3, la más barata gratis · hasta ${endLabel(PROMO_END_MS, 'el lunes')}`}
+          subtitle={`Cada 3, la más barata gratis · hasta ${endLabel(PROMO_END_MS, 'el viernes')}`}
           endMs={PROMO_END_MS}
           to="/categorias"
           ariaLabel="Promoción 3x2 en todas las calcos"

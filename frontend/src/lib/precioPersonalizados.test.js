@@ -81,7 +81,7 @@ describe('paridad frontend ↔ backend (evita price_mismatch en el checkout)', (
    */
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-08-25T12:00:00-03:00'));
+    vi.setSystemTime(new Date('2026-08-29T12:00:00-03:00'));
   });
   afterEach(() => vi.useRealTimers());
   it('los precios por tamaño son idénticos a los del servidor', () => {

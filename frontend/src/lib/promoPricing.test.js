@@ -70,10 +70,10 @@ import {
 } from '../../../netlify/functions/lib/pricing.js';
 
 const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
-// Ventana de la 3x2: jue 20/8 23:00 → lun 24/8 23:59 (hora Argentina).
+// Ventana de la 3x2: jue 20/8 23:00 → vie 28/8 23:59 (hora Argentina).
 const BEFORE_PROMO = new Date('2026-08-20T22:59:00-03:00'); // jue 20/8 22:59, un minuto antes
 const DURING_PROMO = new Date('2026-08-22T12:00:00-03:00'); // sáb 22/8, en plena promo
-const AFTER_PROMO = new Date('2026-08-25T12:00:00-03:00'); // mar 25/8, promo vencida
+const AFTER_PROMO = new Date('2026-08-29T12:00:00-03:00'); // sáb 29/8, promo vencida
 
 /**
  * Instante SIN ninguna promo por fecha viva (3x2, mayorista y Argentina, las
@@ -86,7 +86,7 @@ const AFTER_PROMO = new Date('2026-08-25T12:00:00-03:00'); // mar 25/8, promo ve
  * así que la suite en rojo bloquea todos los deploys mientras dure la promo.
  * Un test que depende de qué día se corre no es un test.
  */
-const SIN_PROMOS = new Date('2026-08-25T12:00:00-03:00');
+const SIN_PROMOS = new Date('2026-08-29T12:00:00-03:00');
 const DURING_MAYORISTA = new Date('2026-08-10T12:00:00-03:00'); // lun 10/8, promo mayorista vigente
 const AFTER_MAYORISTA = new Date('2026-08-15T00:30:00-03:00'); // sáb 15/8, promo mayorista vencida
 
@@ -274,8 +274,8 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     const bordes = [
       [BEFORE_PROMO, false, 'un minuto antes de las 23:00 del jueves'],
       [new Date('2026-08-20T23:00:00-03:00'), true, 'justo a las 23:00 del jueves'],
-      [new Date('2026-08-24T23:59:59-03:00'), true, 'el último segundo del lunes'],
-      [new Date('2026-08-25T00:00:00-03:00'), false, 'un segundo después']
+      [new Date('2026-08-28T23:59:59-03:00'), true, 'el último segundo del viernes'],
+      [new Date('2026-08-29T00:00:00-03:00'), false, 'un segundo después']
     ];
     for (const [fecha, esperado, que] of bordes) {
       vi.setSystemTime(fecha);
