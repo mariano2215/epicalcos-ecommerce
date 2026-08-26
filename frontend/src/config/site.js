@@ -222,8 +222,16 @@ export const announcements = [
  * producto digital sigue ENTERO —precio espejado, checkout sin dirección,
  * entregar-digital.js y sus mails— justamente para que los pedidos ya vendidos
  * se puedan seguir entregando y reenviando. Solo se cerraron las puertas.
+ *
+ * `armar-pack`: despublicada el 26/8/2026 por decisión de Mariano. La escalera
+ * de precios de packs de catálogo (PACK_TIERS en config/pricing.js, espejada en
+ * el servidor) queda INTACTA: la sigue usando /mayorista, que comparte el
+ * componente PackBuilder. Lo único que dejó de tener entrada es el armador de
+ * /armar-pack. Ojo si se republica: el experimento CRO-007 (`ahorro_pack`, en
+ * lib/experiments.js) sigue `active: true` y mide la card de esa página, así
+ * que mientras esté despublicada no recibe tráfico.
  */
-export const HIDDEN_SECTIONS = ['archivos-imprimibles'];
+export const HIDDEN_SECTIONS = ['archivos-imprimibles', 'armar-pack'];
 
 /** true si la sección está despublicada. Acepta el slug ('personalizados') o el path ('/personalizados'). */
 export const isSectionHidden = (slugOrPath) =>

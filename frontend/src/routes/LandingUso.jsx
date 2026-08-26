@@ -10,6 +10,7 @@ import SocialProof from '../components/SocialProof.jsx';
 import TrustBadges from '../components/TrustBadges.jsx';
 import Reveal from '../components/Reveal.jsx';
 import { getLanding } from '../config/landings.js';
+import { isSectionHidden } from '../config/site.js';
 import { categoryName } from '../data/categories.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { formatPrice } from '../context/CartContext.jsx';
@@ -248,9 +249,15 @@ export default function LandingUso({ slug }) {
           <p className="text-white/80 mt-2 max-w-xl mx-auto">
             Desde una sola calco. {BULK_THRESHOLD} o más, 10% off pagando por transferencia bancaria.
           </p>
+          {/* El CTA a /armar-pack se esconde solo si la sección está despublicada.
+              HIDDEN_SECTIONS cierra el nav, el footer, el Home, el buscador y el
+              sitemap, pero NO llega hasta acá: sin esto, la landing de un anuncio
+              seguiría empujando a una página que redirige a /categorias. */}
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link to="/categorias" className="btn-primary">Ver todos los diseños</Link>
-            <Link to="/armar-pack" className="btn-secondary">Armá tu pack</Link>
+            {!isSectionHidden('armar-pack') && (
+              <Link to="/armar-pack" className="btn-secondary">Armá tu pack</Link>
+            )}
           </div>
         </section>
       </div>

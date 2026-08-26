@@ -81,7 +81,10 @@ export default function App() {
               path="/personalizados"
               element={isSectionHidden('personalizados') ? <Navigate to="/categorias" replace /> : <Personalizados />}
             />
-            <Route path="/armar-pack" element={<ArmaTuPack />} />
+            <Route
+              path="/armar-pack"
+              element={isSectionHidden('armar-pack') ? <Navigate to="/categorias" replace /> : <ArmaTuPack />}
+            />
             {/* Landings por caso de uso para el tráfico de anuncios. Las URLs
                 "bonitas" que apuntan a páginas que YA existen (/personalizados,
                 /negocio, /mayorista) son 301 en netlify.toml, no rutas de acá:
