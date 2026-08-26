@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
 import StickerField from '../components/StickerField.jsx';
-import { CATEGORIES, SPECIALS } from '../data/categories.js';
+import { CATEGORIES } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
 import { searchCatalog, esOrdenValido, ORDEN_POR_DEFECTO } from '../lib/searchCatalog.js';
 import { rotacionesSinRepetir } from '../lib/portadas.js';
@@ -140,31 +140,6 @@ export default function Categorias() {
             </p>
           </div>
         </header>
-
-        {/* Especiales */}
-        <section className="mb-10">
-          <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Destacados</h2>
-          {/* 3 columnas y no 5: las especiales son 6, y en 5 columnas quedaban
-              5 arriba y 1 huérfana abajo. Con 3 salen dos filas parejas (y en
-              mobile, 2 columnas → tres filas de 2). Si algún día se despublica
-              una sección (HIDDEN_SECTIONS) la última fila queda corta, no rota. */}
-          <div className="grid-rise grid gap-3 grid-cols-2 sm:grid-cols-3">
-            {SPECIALS.map((s) => (
-              <Link
-                key={s.slug}
-                to={s.to}
-                className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[140px] relative overflow-hidden"
-              >
-                <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
-                <div className="relative text-3xl">{s.emoji}</div>
-                <div className="relative">
-                  <div className="font-display font-extrabold leading-tight">{s.name}</div>
-                  <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
 
         {/* Buscador */}
         <div className="card-glass p-4 mb-6 flex items-center gap-3">
