@@ -404,6 +404,24 @@ export function trackLeadCapture(source = 'welcome_popup') {
   debug('generate_lead', source);
 }
 
+/**
+ * El formulario de contacto falló (spec 012). `motivo` es 'validacion',
+ * 'red' o 'servidor'.
+ *
+ * Va sin un solo dato del formulario: nombre, mail, teléfono y ciudad son PII
+ * y el dataLayer es público — cualquier extensión del navegador lo lee.
+ */
+export function trackContactoFormError(motivo) {
+  pushDataLayer({ event: 'contacto_form_error', motivo });
+  debug('contacto_form_error', motivo);
+}
+
+/** Click a Instagram, con el contexto de dónde salió (espeja trackWhatsappClick). */
+export function trackInstagramClick(contexto = 'contacto') {
+  pushDataLayer({ event: 'instagram_click', instagram_context: contexto });
+  debug('instagram_click', contexto);
+}
+
 // ─── Configurador de personalizados ───────────────────────────────────────────
 
 /** Primera interacción con el configurador (una vez por sesión de página). */

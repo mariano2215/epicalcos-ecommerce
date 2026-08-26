@@ -155,6 +155,7 @@ de las propiedades) no está en el repo.
 | Aviso de lead | alguien deja el mail en el popup | EPICALCOS |
 | Cupón de bienvenida | idem | cliente |
 | Recordatorio de carrito | cron, si está habilitado | cliente |
+| **Consulta de contacto** | el formulario de `/contacto` | EPICALCOS |
 
 ```
 RESEND_API_KEY      🟡 sin ella, no se manda nada (loguea y sigue)
@@ -164,6 +165,12 @@ NOTIFY_EMAIL_FROM   default: EPICALCOS <onboarding@resend.dev>
 
 ⚠️ El `from` por defecto es el sandbox de Resend. **Para escribirle a clientes
 hace falta un dominio verificado** y setear `NOTIFY_EMAIL_FROM`.
+
+⚠️ **La consulta de contacto es el único mail de esta lista que SÍ importa si
+falla.** El resto avisa sobre algo que ya pasó (un pedido ya pagado); ahí el
+mail ES la consulta, así que si Resend no responde, `/api/contacto` devuelve
+502 y la página le ofrece WhatsApp al cliente en vez de decirle "listo".
+Escribe a la casilla dueña de la cuenta, así que anda con el `from` default.
 
 El mail de carrito abandonado incluye `List-Unsubscribe-Post` (RFC 8058), por eso
 `/api/unsubscribe` acepta POST además de GET.

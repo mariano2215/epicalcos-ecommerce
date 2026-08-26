@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `012-contacto-formulario-y-canales` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` — implementada y validada el 25/08/2026 |
 | **Fecha** | 25/08/2026 |
 | **Autor** | Claude, a pedido de Mariano |
 
@@ -60,7 +60,7 @@ consulta se deja **en el sitio**, en menos de un minuto, o se deriva a WhatsApp
       pantalla que se envió.
 - [ ] Card de WhatsApp que abra el chat con el texto *"Hola! Quiero hacer una
       consulta sobre calcos"* ya escrito.
-- [ ] Card de Instagram con una **grilla de 6 posteos reales** de la cuenta,
+- [ ] Card de Instagram con una **grilla de 3 posteos reales** de la cuenta,
       servidos desde el propio sitio (decisión del 25/8/2026, ver §12).
 - [ ] Analytics de los tres caminos.
 - [ ] Protección anti-spam del formulario **sin** captcha ni fricción visible.
@@ -126,7 +126,7 @@ consulta se deja **en el sitio**, en menos de un minuto, o se deriva a WhatsApp
 | RF-9 | Si el envío falla, el cliente ve un error accionable **y el camino a WhatsApp**, para que la consulta no se pierda | 🔴 must |
 | RF-10 | La card de WhatsApp abre el chat del número publicado con el texto *"Hola! Quiero hacer una consulta sobre calcos"* pre-cargado | 🔴 must |
 | RF-11 | La consulta se registra además como lead en el CRM interno, si el CRM está configurado | 🔴 must |
-| RF-12 | La card de Instagram muestra una **grilla de 6 posteos reales** de la cuenta; cada uno abre su publicación | 🔴 must |
+| RF-12 | La card de Instagram muestra una **grilla de 3 posteos reales** de la cuenta; cada uno abre su publicación | 🔴 must |
 | RF-13 | El formulario descarta envíos automatizados sin pedirle nada al cliente | 🟡 should |
 | RF-14 | La página sigue aclarando que **la compra se termina en la tienda**, no por WhatsApp | 🟢 could |
 

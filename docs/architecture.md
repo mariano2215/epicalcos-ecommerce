@@ -75,6 +75,7 @@ Hay **tres** `package.json`:
 │   ├── create-order-transfer.js   POST — checkout transferencia
 │   ├── mercadopago-webhook.js     POST — confirmación de pago
 │   ├── capture-lead.js            POST — popup de bienvenida
+│   ├── contacto.js                POST — formulario de /contacto
 │   ├── track-cart.js              POST — registro de carrito abandonado
 │   ├── abandoned-cart.js          CRON @hourly — envío del recordatorio
 │   ├── unsubscribe.js             GET/POST — baja de recordatorios
@@ -117,6 +118,7 @@ Definidas como redirects `status = 200` en `netlify.toml`:
 | `/api/create-preference` | `create-preference.js` |
 | `/api/create-order-transfer` | `create-order-transfer.js` |
 | `/api/capture-lead` | `capture-lead.js` |
+| `/api/contacto` | `contacto.js` |
 | `/api/mercadopago-webhook` | `mercadopago-webhook.js` |
 | `/api/track-cart` | `track-cart.js` |
 | `/api/unsubscribe` | `unsubscribe.js` |
@@ -138,6 +140,27 @@ El `prebuild` corre `scripts/generate-sitemap.mjs`.
 `ignore = "exit 1"` está puesto a propósito: sin eso, un push que solo toca
 `netlify/functions/**` (fuera de `base`) quedaba *"Canceled — no content change"*
 y no se deployaba.
+
+### Scripts manuales que generan contenido del sitio
+
+No corren en el build: se ejecutan a mano y **commitean su salida**. Por eso el
+contenido que producen no depende de que ningún servicio externo esté vivo
+cuando alguien entra al sitio.
+
+| Script | Genera | Cuándo se corre |
+|---|---|---|
+| `scripts/build-marcas.mjs` | `public/images/marcas/*.webp` + `src/data/marcas.js` | al sumar una marca al ticker |
+| `scripts/build-instagram.mjs` | `public/images/instagram/*.webp` + `src/data/instagram.js` | al cambiar los posteos de la card de `/contacto` |
+| `scripts/build-meta-feed.mjs` | `public/data/meta-catalog.csv` | al cambiar el catálogo |
+
+**Para cambiar la grilla de Instagram de `/contacto`**: editá la tabla `POSTS`
+de `scripts/build-instagram.mjs` (permalink + un `alt` que describa la foto) y
+corré:
+```bash
+node scripts/build-instagram.mjs
+```
+Baja la miniatura de cada posteo —la misma que Instagram usa en la grilla del
+perfil— y reescribe `src/data/instagram.js`. Requiere `magick` y `cwebp`.
 
 ---
 
