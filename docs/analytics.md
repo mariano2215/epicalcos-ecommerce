@@ -63,10 +63,27 @@ contenedor presente, mandar por los dos caminos contaría cada compra dos veces.
 ### Eventos propios
 
 `search` · `search_no_results` · `catalogo_orden` · `generate_lead` ·
-`whatsapp_click` (con la ruta de origen) · `shipping_calculated` (zona + costo) ·
+`whatsapp_click` (con la ruta de origen) · `instagram_click` ·
+`contacto_form_error` · `shipping_calculated` (zona + costo) ·
 `pack_builder_start` · `pack_completed` (unidades + diseños distintos) ·
 `personalizado_inicio` · `personalizado_paso` · `personalizado_archivo_cargado` ·
 `personalizado_precio_calculado`
+
+#### Formulario de contacto (spec 012)
+
+| Evento | Cuándo | Parámetro |
+|---|---|---|
+| `generate_lead` | la consulta se envió con éxito | `lead_source: 'contacto_form'` |
+| `contacto_form_error` | el envío falló | `motivo`: `validacion` · `red` · `servidor` |
+| `whatsapp_click` | escape a WhatsApp desde `/contacto` | `whatsapp_context`: `contacto_card` · `contacto_form_error` · `contacto_form_ok` |
+| `instagram_click` | click a Instagram | `instagram_context`: `contacto_grilla` · `contacto_cta` |
+
+`contacto_form_error` con `motivo: 'red'` o `'servidor'` es la métrica que hay
+que mirar: cada uno es una consulta que casi se pierde. El
+`whatsapp_context: 'contacto_form_error'` dice cuántas de esas se rescataron.
+
+⚠️ **Ninguno lleva un dato del formulario.** Nombre, mail, teléfono y ciudad son
+PII y el `dataLayer` lo lee cualquier extensión del navegador.
 
 #### `catalogo_orden`
 

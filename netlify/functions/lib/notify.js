@@ -869,6 +869,104 @@ export async function sendLeadCouponEmail(email, code) {
 }
 
 /**
+ * Manda al mail de EPICALCOS una consulta del formulario de /contacto (spec 012).
+ *
+ * ⚠️ ES LA ÚNICA FUNCIÓN DE ESTE ARCHIVO QUE **SÍ** IMPORTA SI FALLA. El resto
+ * son avisos sobre algo que ya pasó (un pedido que ya se pagó): si el mail no
+ * sale, la venta existe igual. Acá el mail ES la consulta — si no sale, no
+ * quedó nada en ningún lado. Por eso devuelve el motivo y `contacto.js` lo
+ * traduce en un 502, en vez de tragárselo como hace capture-lead.
+ *
+ * Anda con el remitente default (onboarding@resend.dev) porque escribe A la
+ * casilla dueña de la cuenta de Resend. La restricción de dominio verificado
+ * aplica a los mails que salen a terceros (ver sendCustomerEmail).
+ *
+ * @param {{nombre:string,email:string,telefono:string,ciudad:string,provincia:string,consulta:string}} c
+ */
+export async function sendContactEmail(c) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log('[notify] RESEND_API_KEY no configurada — no se puede enviar la consulta.');
+    return { sent: false, reason: 'no_api_key' };
+  }
+
+  const to = (process.env.NOTIFY_EMAIL_TO || DEFAULT_TO)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+
+  const fila = (etiqueta, valor) =>
+    `<tr><td style="padding:6px 12px 6px 0;color:#666;white-space:nowrap">${etiqueta}</td>` +
+    `<td style="padding:6px 0"><strong>${esc(valor)}</strong></td></tr>`;
+
+  // El wa.me con el teléfono ya cargado: responder por WhatsApp es un click en
+  // vez de copiar el número a mano.
+  //
+  // Solo se arma cuando el número es INEQUÍVOCO: 10 dígitos (341 680 6675) o
+  // ya con el 54 adelante. Un "0341 15 680 6675" queda sin link a propósito —
+  // el 0 y el 15 no se pueden sacar sin adivinar, y un link a un número
+  // equivocado es peor que no tener link: el teléfono está ahí arriba igual.
+  const d = String(c.telefono || '').replace(/\D/g, '');
+  const waLink = d.startsWith('54')
+    ? `https://wa.me/${d}`
+    : d.length === 10
+    ? `https://wa.me/549${d}`
+    : null;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        // Responder desde Gmail le contesta AL CLIENTE, no a Resend.
+        reply_to: c.email,
+        subject: `💬 Consulta web de ${c.nombre} (${c.ciudad}, ${c.provincia})`,
+        html: `
+          <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:560px;margin:0 auto;color:#111">
+            <div style="background:#111;color:#fff;padding:16px 22px;border-radius:12px 12px 0 0">
+              <h1 style="margin:0;font-size:18px;letter-spacing:1px">EPICALCOS · consulta desde la web</h1>
+            </div>
+            <div style="padding:22px;border:1px solid #eee;border-top:0;border-radius:0 0 12px 12px">
+              <table style="font-size:14px;border-collapse:collapse">
+                ${fila('Nombre', c.nombre)}
+                ${fila('Email', c.email)}
+                ${fila('Teléfono', c.telefono)}
+                ${fila('Ciudad', c.ciudad)}
+                ${fila('Provincia', c.provincia)}
+              </table>
+              <p style="margin:18px 0 6px;color:#666;font-size:13px">Consulta</p>
+              <div style="white-space:pre-wrap;font-size:15px;line-height:1.5;background:#f7f7f7;padding:14px;border-radius:10px">${esc(c.consulta)}</div>
+              <p style="margin:18px 0 0;font-size:13px;color:#666">
+                Respondé este mail y le llega a ${esc(c.email)}${waLink ? ` · <a href="${waLink}" style="color:#111">abrir WhatsApp</a>` : ''}
+              </p>
+            </div>
+          </div>`,
+        text:
+          `Consulta desde la web\n\n` +
+          `Nombre: ${c.nombre}\nEmail: ${c.email}\nTeléfono: ${c.telefono}\n` +
+          `Ciudad: ${c.ciudad}\nProvincia: ${c.provincia}\n\n${c.consulta}\n`
+      })
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      console.error('[notify] Resend (contacto) respondió', res.status, detail);
+      return { sent: false, reason: `resend_${res.status}`, detail };
+    }
+    console.log('[notify] consulta de contacto enviada a', to.join(', '));
+    return { sent: true };
+  } catch (err) {
+    console.error('[notify] error enviando la consulta de contacto:', err?.message || err);
+    return { sent: false, reason: 'exception', detail: err?.message };
+  }
+}
+
+/**
  * Dispara todas las notificaciones configuradas. Nunca lanza.
  * @param {object} o vista de pedido (buildOrderView)
  */

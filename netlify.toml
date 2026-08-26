@@ -70,6 +70,11 @@
   status = 200
 
 [[redirects]]
+  from   = "/api/contacto"
+  to     = "/.netlify/functions/contacto"
+  status = 200
+
+[[redirects]]
   from   = "/api/mercadopago-webhook"
   to     = "/.netlify/functions/mercadopago-webhook"
   status = 200

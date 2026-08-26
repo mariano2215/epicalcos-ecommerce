@@ -5,6 +5,7 @@
 /api/create-preference      /.netlify/functions/create-preference      200
 /api/create-order-transfer  /.netlify/functions/create-order-transfer  200
 /api/capture-lead           /.netlify/functions/capture-lead           200
+/api/contacto               /.netlify/functions/contacto               200
 /api/mercadopago-webhook    /.netlify/functions/mercadopago-webhook    200
 /api/track-cart             /.netlify/functions/track-cart             200
 /api/unsubscribe            /.netlify/functions/unsubscribe            200

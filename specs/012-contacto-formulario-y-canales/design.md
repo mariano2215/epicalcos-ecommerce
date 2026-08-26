@@ -37,7 +37,7 @@
 │
 ├── CardWhatsapp ─────────────────────────────►  wa.me/<num>?text=Hola!%20Quiero%20hacer%20una%20consulta...
 │
-└── CardInstagram ────────────────────────────►  grilla local (6 .webp propios) → instagram.com/p/<id>
+└── CardInstagram ────────────────────────────►  grilla local (3 .webp propios) → instagram.com/p/<id>
                                                   (imágenes del repo: sin token, sin script de terceros)
 ```
 
@@ -90,9 +90,9 @@ mismo: hoy son tres cuadraditos iguales para tres canales que no valen igual.
 | `frontend/src/components/contacto/FormularioContacto.jsx` | Los 6 campos, estados (idle / enviando / ok / error), el POST |
 | `frontend/src/components/contacto/CardWhatsapp.jsx` | Card + link `wa.me` con texto pre-cargado + tracking |
 | `frontend/src/components/contacto/CardInstagram.jsx` | Card con la grilla de 6 posteos + CTA al perfil |
-| `frontend/src/data/instagram.js` | Los 6 posteos: `{ src, permalink, alt }`. **Lo escribe el script, no se edita a mano** |
-| `frontend/public/images/instagram/*.webp` | Las 6 imágenes optimizadas (salida del script) |
-| `scripts/build-instagram.mjs` | Toma las fotos de una carpeta fuera del repo, las recorta al cuadrado y las escribe en `webp` + regenera `data/instagram.js` |
+| `frontend/src/data/instagram.js` | Los 3 posteos: `{ src, permalink, alt }`. **Lo escribe el script, no se edita a mano** |
+| `frontend/public/images/instagram/*.webp` | Las 3 imágenes optimizadas (salida del script) |
+| `scripts/build-instagram.mjs` | Baja la miniatura de cada posteo desde su permalink, la escribe en `webp` y regenera `data/instagram.js` |
 | `frontend/src/lib/contacto.js` | `validarConsulta(form)` puro: recibe el form, devuelve `{ }` o `{ campo: mensaje }`. Sin React, sin fetch |
 | `frontend/src/lib/contacto.test.js` | Tests de `validarConsulta` |
 | `netlify/functions/contacto.js` | Endpoint: CORS, topes, validación, honeypot, Resend + CRM |
@@ -355,24 +355,32 @@ solo" con kilobytes, cookies de Meta o un token que hay que renovar; para seis
 fotos que cambian cuando Mariano quiera, no vale la pena.
 
 **Cómo se implementa** — mismo patrón que el ticker de marcas
-(`scripts/build-marcas.mjs`), que ya resolvió este problema exacto:
+(`scripts/build-marcas.mjs`), pero la fuente son los **permalinks**:
 
 ```
-carpeta fuera del repo            scripts/build-instagram.mjs         el sitio
-(capturas de los posteos          recorta al cuadrado, 640×640,  ──►  public/images/instagram/*.webp
- + posts.txt con los links)  ──►  convierte a webp                    src/data/instagram.js
+POSTS[] en el script          scripts/build-instagram.mjs          el sitio
+(3 links + su alt)      ──►   lee el og:image del posteo,     ──►  public/images/instagram/*.webp
+                              lo convierte a webp                  src/data/instagram.js
 ```
+
+⚠️ El `og:image` de Instagram **es el recorte cuadrado que la propia Instagram
+usa en la grilla del perfil** (`FEED.best_image_urlgen`), así que la card queda
+igual que el perfil real. La URL del CDN viene firmada: tocarle el parámetro
+`stp` para pedir el original sin recortar devuelve un 403 con el cuerpo vacío
+(probado). Si algún día se quiere un encuadre propio, el script acepta un
+archivo local con el mismo nombre y lo usa en lugar de bajarlo.
 
 - `frontend/src/data/instagram.js` exporta `[{ src, permalink, alt }, …]` —
   **generado, no se edita a mano** (igual que `src/data/marcas.js`).
-- La card renderiza una grilla 3×2: `aspect-square`, `object-cover`,
+- La card renderiza una grilla de 3 en fila: `aspect-square`, `object-cover`,
   `loading="lazy"`, cada imagen dentro de un `<a>` al posteo con
   `target="_blank" rel="noopener noreferrer"`.
 - Abajo, un CTA a `contact.instagramUrl` que dispara `instagram_click`.
 - **Degradación**: si una imagen falla (`onError`), esa celda se oculta; si
-  fallan las seis, queda la card con el CTA al perfil. Nunca rompe la página.
-- El `alt` de cada foto sale del `posts.txt`: sin `alt` útil son seis imágenes
-  mudas para un lector de pantalla (RNF-3).
+  fallan las tres, queda la card con el CTA al perfil. Nunca rompe la página.
+- El `alt` de cada foto está escrito a mano en el script: Instagram ya no sirve
+  `og:description` a un cliente sin sesión, y una bajada de posteo tampoco sería
+  un buen `alt`. Sin esto son tres imágenes mudas para un lector de pantalla (RNF-3).
 
 **Para actualizar la grilla** (se documenta en `docs/`):
 ```bash
