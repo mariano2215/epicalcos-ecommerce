@@ -215,6 +215,37 @@ Los dos salieron de esta validación, no de la revisión del código:
    celular lento le duplicaba la consulta a Mariano. Se cambió por un candado
    `useRef`, que es sincrónico. Reverificado: 5 clicks → **1 request**.
 
+### 🐞 Defecto reportado por Mariano después del deploy (corregido el 25/8/2026)
+
+**La grilla de Instagram se veía despareja en el iPhone**: una de las tres fotos
+más alta que las otras dos y con las esquinas cuadradas.
+
+No era el recorte de las imágenes —los tres `.webp` son 640×640 exactos— sino
+dos cosas de CSS que se sumaban, y **ninguna se ve en Chrome de escritorio**:
+
+1. **El `:hover` se queda pegado después de un tap.** En un teléfono no existe
+   el hover: iOS aplica el estado al tocar y lo deja puesto. El
+   `group-hover:scale-105` de la miniatura hacía que la foto tocada se quedara
+   al 105 %. Tailwind 3.4 no filtra `hover:` por capacidad del dispositivo salvo
+   que se prenda `hoverOnlyWhenSupported`, que es una decisión global; se
+   resolvió local, con `[@media(hover:hover)]:`.
+2. **WebKit no recorta un hijo transformado al `border-radius` del padre**,
+   aunque el padre tenga `overflow-hidden`. Por eso, además de crecer, perdía
+   las esquinas redondeadas.
+
+Con (1) corregido, (2) deja de poder ocurrir en touch: si la imagen nunca se
+transforma, no hay nada que recortar mal. **El primer intento de arreglo agregó
+un `translateZ(0)` para forzar el recorte, y eso rompía el pintado** — con cada
+celda en su propia capa GPU, dos de las tres quedaban en blanco. Se sacó: era un
+parche para un problema que el arreglo (1) ya elimina.
+
+De paso, y porque Mariano lo pidió, la grilla pasó a usar el ancho completo de
+la card: las miniaturas van de 90 a **103 px** a 375 px, y a 130 px en desktop.
+
+**Verificado**: con emulación táctil, `(hover: hover)` es `false` y la regla del
+zoom no existe; las tres celdas miden lo mismo, son cuadradas, comparten radio y
+las tres pintan.
+
 ### Notas
 
 - Se agregaron **dos contextos de `whatsapp_click` que no estaban en la spec**

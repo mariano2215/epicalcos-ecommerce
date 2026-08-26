@@ -45,7 +45,12 @@ export default function CardInstagram() {
       </div>
 
       {visibles.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 mt-5">
+                // La grilla sale del padding de la card (-mx) y se lo devuelve como
+        // padding propio, más chico: con tres fotos en fila, cada 8 px de
+        // margen que se recupera son ~3 px de lado en cada una. A 375 px pasan
+        // de 90 a ~104 px, que es la diferencia entre "se ve qué hay" y "hay
+        // que acercar el ojo". Es además cómo se ve la grilla del perfil.
+        <div className="grid grid-cols-3 gap-1.5 mt-5 -mx-6 md:-mx-7 px-1.5">
           {visibles.map((post) => (
             <a
               key={post.src}
@@ -63,11 +68,19 @@ export default function CardInstagram() {
                 width={640}
                 height={640}
                 onError={() => marcarRota(post.src)}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                // ⚠️ EL ZOOM SOLO DONDE HAY UN MOUSE DE VERDAD. En un teléfono no
+                // existe el hover: lo que hace iOS es dejar el estado PEGADO
+                // después de un tap, así que la foto que tocaste se quedaba al
+                // 105 % y la grilla dejaba de ser uniforme — justo el defecto que
+                // se ve en la foto que mandó Mariano. Tailwind 3.4 no filtra
+                // `hover:` por capacidad del dispositivo salvo que se prenda
+                // `hoverOnlyWhenSupported`, que es una decisión global: acá se
+                // resuelve local, con la media query puesta a mano.
+                className="h-full w-full object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-105"
               />
               <span
                 aria-hidden="true"
-                className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/25"
+                className="absolute inset-0 bg-black/0 transition-colors duration-300 [@media(hover:hover)]:group-hover:bg-black/25"
               />
             </a>
           ))}
