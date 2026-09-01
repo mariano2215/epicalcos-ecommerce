@@ -56,6 +56,32 @@ const esc = (s) =>
     .replace(/>/g, '&gt;');
 
 /**
+ * Detalle del pedido rearmado desde el pago de Mercado Pago.
+ *
+ * Es el plan B de `buildOrderView`: MP devuelve en `additional_info.items` los
+ * MISMOS items que se le mandaron al crear la preferencia (ver
+ * create-preference.js), línea de envío incluida, así que el aviso sale igual
+ * que si el pedido guardado hubiera estado.
+ *
+ * Existe porque Netlify Blobs se cayó en runtime sin hacer ruido —`getOrder`
+ * devuelve null y su catch lo tapa— y los pedidos pagados con Mercado Pago
+ * llegaron con "PEDIDO —": el mail no decía qué calcos había que imprimir. El
+ * detalle estuvo siempre en el mismo objeto `payment` que el webhook ya tenía
+ * en la mano.
+ *
+ * MP los manda como strings ("1", "1600"); se normalizan acá para no dejarle
+ * esa trampa al que los consuma.
+ */
+function itemsDelPago(payment) {
+  return (payment?.additional_info?.items || []).map((i) => ({
+    id: i.id,
+    title: i.title,
+    quantity: Number(i.quantity) || 1,
+    unit_price: Number(i.unit_price) || 0
+  }));
+}
+
+/**
  * Construye un objeto de pedido "plano" combinando lo guardado en Blobs con la
  * info del pago de Mercado Pago. Tolera que falte cualquiera de las dos fuentes.
  * @param {object|null} order  pedido guardado en create-preference
@@ -66,14 +92,29 @@ export function buildOrderView(order, payment) {
   const payer = order?.payer || {};
   const shipping = order?.shipping || {};
 
+  // El pedido guardado manda; si no está, el detalle se rearma con lo que trae
+  // el pago. Un aviso de venta sin decir qué se vendió no sirve para nada.
+  const items = order?.items?.length ? order.items : itemsDelPago(payment);
+  const itemsTotal =
+    order?.itemsTotal ??
+    (items.length
+      ? items
+          .filter((i) => i.id !== 'shipping')
+          .reduce((acc, i) => acc + Number(i.unit_price) * Number(i.quantity), 0)
+      : undefined);
+
   // La metadata de MP llega con las claves en minúscula → fallback.
   return {
     orderId:
       order?.orderId || payment?.external_reference || 'sin-referencia',
     createdAt: order?.createdAt,
     name: payer.name || meta.buyer_name || payment?.payer?.first_name || '—',
-    email:
-      payer.email || payment?.payer?.email || meta.buyer_email || '—',
+    // `meta.buyer_email` (el que escribió en el checkout) va ANTES que
+    // `payment.payer.email` (la cuenta con la que pagó): no son lo mismo. Con
+    // estos dos al revés, un pedido real se confirmó a la casilla del titular
+    // de la cuenta de Mercado Pago mientras el comprador esperaba en la suya un
+    // mail que nunca iba a ver. La confirmación va al mail que dejó él.
+    email: payer.email || meta.buyer_email || payment?.payer?.email || '—',
     phone: payer.phone || meta.buyer_phone || '—',
     address: payer.address || meta.shipping_address || '—',
     city: shipping.city || meta.shipping_city || '—',
@@ -85,9 +126,9 @@ export function buildOrderView(order, payment) {
         ? shipping.cost
         : Number(meta.shipping_cost) || 0,
     comments: shipping.comments || meta.comments || '',
-    items: order?.items || [],
-    itemsTotal: order?.itemsTotal,
-    total: order?.total,
+    items,
+    itemsTotal,
+    total: order?.total ?? payment?.transaction_amount,
     // Datos del pago confirmado (o, si es un pedido por transferencia sin
     // confirmar todavía, los datos que dejó create-order-transfer).
     paymentId: payment?.id,
