@@ -5,7 +5,6 @@ import {
   provinces,
   shippingZone,
   shippingMethodLabel,
-  bankTransfer,
   contact
 } from '../config/site.js';
 import { useCart } from '../context/CartContext.jsx';
@@ -301,14 +300,21 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
           ) : unitsToBulk > 0 ? (
             <div className="text-white/60">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off.</div>
           ) : null}
-          <p className="text-white/70">Transferí el total del pedido a:</p>
-          <dl className="space-y-1 text-white/80">
-            <div className="flex justify-between gap-3"><dt className="text-white/50">CVU</dt><dd className="font-mono">{bankTransfer.cvu}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-white/50">Alias</dt><dd className="font-mono">{bankTransfer.alias}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-white/50">Titular</dt><dd className="text-right">{bankTransfer.titular}</dd></div>
-          </dl>
+          {/* Acá estaban el CVU, el alias y el titular, con un "Transferí el total
+              del pedido a:" arriba. Es la fuga que dejó pedidos sin registrar:
+              el cliente leía la instrucción, se iba al homebanking, transfería y
+              NUNCA apretaba "Confirmar pedido". La plata entraba al CVU sin
+              pedido, sin mail y sin nombre — desde afuera, "pedí y no me
+              llegó nada". Los datos ahora se muestran en /pago-transferencia,
+              que es después de crear el pedido y de que salga el mail.
+              No mover de nuevo para arriba: el dato bancario es la recompensa
+              por confirmar, no un paso previo. */}
+          <p className="text-white/70">
+            Al confirmar el pedido te mostramos el <strong className="text-white">CVU y el alias</strong> para
+            transferir, y te llegan también por mail con el resumen.
+          </p>
           <p className="text-white/70 pt-1">
-            Después de confirmar el pedido, enviá el comprobante por WhatsApp al{' '}
+            Después enviá el comprobante por WhatsApp al{' '}
             <a href={contact.whatsappUrl} target="_blank" rel="noreferrer" className="text-brand-fuchsia font-semibold">
               {contact.whatsappDisplay}
             </a>{' '}

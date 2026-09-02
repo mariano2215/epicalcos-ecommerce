@@ -6,6 +6,13 @@
  * configurado, simplemente no notifica (y lo deja logueado). Ninguna de estas
  * funciones lanza: el webhook SIEMPRE tiene que responder 200 a Mercado Pago.
  *
+ * ⚠️ Los mails de PEDIDO no son best-effort como el resto: con Netlify Blobs
+ * caído en runtime son el único registro que queda de una venta. Por eso
+ * `sendOrderEmail` y `sendCustomerEmail` reintentan los fallos transitorios,
+ * cortan cada intento con timeout y viajan con Idempotency-Key para que el
+ * reintento no duplique nada (ver "Envío resiliente" más abajo). Los handlers
+ * los llaman ANTES que a cualquier otra integración.
+ *
  * Variables de entorno (Netlify dashboard → Environment variables):
  *
  *   --- Mail (Resend, https://resend.com — gratis hasta 3000 mails/mes) ---
@@ -609,68 +616,166 @@ ${pendingTransfer || esDigital ? '' : customerTimeline(o)}
 `;
 }
 
+// ─── Envío resiliente ─────────────────────────────────────────────────────────
+//
+// El mail del pedido es el ÚNICO registro que tiene EPICALCOS de una venta:
+// Blobs está caído en runtime, así que si el POST a Resend falla no queda nada
+// que consultar después. Un pedido que no avisa es un pedido perdido. Por eso
+// el envío no es "un fetch y si sale, sale":
+//
+//   - reintenta los fallos transitorios (timeout, 429 del rate limit de 2/s,
+//     5xx de Resend). Un 429 llegaba justo cuando salen los dos mails a la vez;
+//   - NO reintenta lo que no mejora reintentando (422 mail inválido, 403 key
+//     mala): repetirlo solo quema el presupuesto de tiempo;
+//   - corta cada intento con AbortController. Sin timeout, un Resend colgado se
+//     come los 10 s de la función y Netlify la mata ANTES de responder: el mail
+//     no sale y el cliente ve un error;
+//   - respeta un `deadline` global por el mismo motivo.
+
+const RESEND_TIMEOUT_MS = 2500;
+const RESEND_MAX_INTENTOS = 3;
+// Espera entre intentos. El primer reintento es casi inmediato porque el fallo
+// típico (429) se destraba en menos de un segundo.
+const RESEND_BACKOFF_MS = [300, 900];
+
+/** 4xx que no son 408/429: repetirlos da exactamente el mismo error. */
+const noVaAMejorar = (status) => status >= 400 && status < 500 && status !== 408 && status !== 429;
+
+/**
+ * POST a Resend con reintentos, timeout por intento y deadline global.
+ * Nunca lanza: devuelve { sent, reason?, detail?, intentos, id? }.
+ *
+ * `idempotencyKey` hace que un reintento NO duplique el mail: si el primer
+ * intento llegó a Resend y la respuesta se perdió, el segundo devuelve el mismo
+ * envío en vez de mandar otro. También cubre los reintentos del webhook de
+ * Mercado Pago, que hoy no tienen dedup propio porque vivía en Blobs.
+ *
+ * @param {object} payload cuerpo para POST https://api.resend.com/emails
+ * @param {string} etiqueta nombre para los logs (ej. 'interno EPI-…')
+ * @param {{ idempotencyKey?: string, deadline?: number }} opts
+ */
+async function enviarConResend(payload, etiqueta, { idempotencyKey, deadline } = {}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log(`[notify] RESEND_API_KEY no configurada — se omite ${etiqueta}.`);
+    return { sent: false, reason: 'no_api_key', intentos: 0 };
+  }
+
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+
+  let ultimo = { sent: false, reason: 'sin_intentos', intentos: 0 };
+
+  for (let intento = 1; intento <= RESEND_MAX_INTENTOS; intento++) {
+    if (deadline && Date.now() >= deadline) {
+      console.error(`[notify] sin tiempo para reintentar ${etiqueta} (intentos: ${intento - 1})`);
+      return { ...ultimo, reason: ultimo.reason === 'sin_intentos' ? 'sin_tiempo' : ultimo.reason };
+    }
+
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), RESEND_TIMEOUT_MS);
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: ctrl.signal
+      });
+
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.log(`[notify] ${etiqueta} enviado (intento ${intento}) id=${data?.id || '?'}`);
+        return { sent: true, id: data?.id, intentos: intento };
+      }
+
+      const detail = await res.text().catch(() => '');
+      ultimo = { sent: false, reason: `resend_${res.status}`, detail, intentos: intento };
+      console.error(`[notify] ${etiqueta}: Resend respondió ${res.status} (intento ${intento})`, detail);
+      if (noVaAMejorar(res.status)) return ultimo;
+    } catch (err) {
+      const timeout = err?.name === 'AbortError';
+      ultimo = {
+        sent: false,
+        reason: timeout ? 'timeout' : 'exception',
+        detail: err?.message,
+        intentos: intento
+      };
+      console.error(`[notify] ${etiqueta}: ${ultimo.reason} (intento ${intento})`, err?.message || err);
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const espera = RESEND_BACKOFF_MS[intento - 1];
+    if (intento < RESEND_MAX_INTENTOS && espera) {
+      if (deadline && Date.now() + espera >= deadline) break;
+      await new Promise((r) => setTimeout(r, espera));
+    }
+  }
+
+  return ultimo;
+}
+
 /**
  * Envía el mail del pedido vía Resend. No-op si falta RESEND_API_KEY.
  * @param {object} o vista de pedido (buildOrderView)
+ * @param {{ deadline?: number }} opts corte de tiempo para los reintentos
  */
-export async function sendOrderEmail(o) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.log('[notify] RESEND_API_KEY no configurada — se omite el mail.');
-    return { sent: false, reason: 'no_api_key' };
-  }
-
+export async function sendOrderEmail(o, { deadline } = {}) {
   const to = (process.env.NOTIFY_EMAIL_TO || DEFAULT_TO)
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
   const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
 
-  // El prefijo 📩 marca los pedidos con archivos pendientes de entrega: en la
-  // bandeja se ven de un vistazo. Son DOS casos distintos y conviene
-  // distinguirlos, porque piden acciones distintas:
-  //   - ENVIAR ARCHIVO      → ya está pagado, hay que mandarlo YA a mano
-  //     (falta el DIGITAL_LINK_*, así que el mail al cliente salió sin descarga)
-  //   - ENTREGAR AL CONFIRMAR → transferencia pendiente, se entrega recién
-  //     cuando llegue el comprobante (botón en el cuerpo del mail)
-  const prefijo =
-    o.paymentStatus === 'approved' && needsManualDelivery(o)
-      ? '📩 ENVIAR ARCHIVO · '
-      : esperaConfirmacionParaEntregar(o)
-        ? '📩 ENTREGAR AL CONFIRMAR · '
-        : '';
-  const subject = `${prefijo}🛒 Nuevo pedido ${o.orderId} — ${o.name} — ${money(
-    o.amountPaid ?? o.total
-  )}`;
-
+  // Armar el mail va DENTRO del try. Estaba afuera, y con eso alcanzaba para
+  // que un pedido con un item raro tirara una excepción antes del fetch: el
+  // aviso no salía y, encima, la excepción se propagaba hasta el handler y le
+  // devolvía un 500 al cliente. El contenido del mail nunca puede voltear al
+  // mail.
+  let payload;
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from,
-        to,
-        reply_to: o.email && o.email !== '—' ? o.email : undefined,
-        subject,
-        html: buildEmailHtml(o),
-        text: buildEmailText(o)
-      })
-    });
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      console.error('[notify] Resend respondió', res.status, detail);
-      return { sent: false, reason: `resend_${res.status}`, detail };
-    }
-    console.log('[notify] mail enviado a', to.join(', '));
-    return { sent: true };
+    // El prefijo 📩 marca los pedidos con archivos pendientes de entrega: en la
+    // bandeja se ven de un vistazo. Son DOS casos distintos y conviene
+    // distinguirlos, porque piden acciones distintas:
+    //   - ENVIAR ARCHIVO      → ya está pagado, hay que mandarlo YA a mano
+    //     (falta el DIGITAL_LINK_*, así que el mail al cliente salió sin descarga)
+    //   - ENTREGAR AL CONFIRMAR → transferencia pendiente, se entrega recién
+    //     cuando llegue el comprobante (botón en el cuerpo del mail)
+    const prefijo =
+      o.paymentStatus === 'approved' && needsManualDelivery(o)
+        ? '📩 ENVIAR ARCHIVO · '
+        : esperaConfirmacionParaEntregar(o)
+          ? '📩 ENTREGAR AL CONFIRMAR · '
+          : '';
+    payload = {
+      from,
+      to,
+      reply_to: o.email && o.email !== '—' ? o.email : undefined,
+      subject: `${prefijo}🛒 Nuevo pedido ${o.orderId} — ${o.name} — ${money(o.amountPaid ?? o.total)}`,
+      html: buildEmailHtml(o),
+      text: buildEmailText(o)
+    };
   } catch (err) {
-    console.error('[notify] error enviando mail:', err?.message || err);
-    return { sent: false, reason: 'exception', detail: err?.message };
+    // Plan B: mejor un aviso feo que ningún aviso. El pedido crudo va en el
+    // cuerpo para poder atenderlo igual.
+    console.error('[notify] no se pudo armar el aviso interno, se manda crudo:', err?.message || err);
+    payload = {
+      from,
+      to,
+      subject: `⚠️ Nuevo pedido ${o?.orderId || 'sin-referencia'} (aviso degradado)`,
+      text:
+        'No se pudo armar el mail normal del pedido. Datos crudos:\n\n' +
+        JSON.stringify(o, null, 2).slice(0, 20000)
+    };
   }
+
+  return enviarConResend(payload, `aviso interno ${o?.orderId || '?'}`, {
+    idempotencyKey: o?.orderId ? `interno-${o.orderId}` : undefined,
+    deadline
+  });
 }
 
 /**
@@ -681,13 +786,7 @@ export async function sendOrderEmail(o) {
  * propio y setear NOTIFY_EMAIL_FROM). Nunca lanza.
  * @param {object} o vista de pedido (buildOrderView)
  */
-export async function sendCustomerEmail(o) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.log('[notify] RESEND_API_KEY no configurada — se omite el mail al cliente.');
-    return { sent: false, reason: 'no_api_key' };
-  }
-
+export async function sendCustomerEmail(o, { deadline } = {}) {
   const email = String(o.email || '').trim();
   if (!email || !email.includes('@')) {
     console.log('[notify] pedido sin email de cliente — se omite el mail al cliente.');
@@ -703,36 +802,28 @@ export async function sendCustomerEmail(o) {
     return { sent: false, reason: 'unverified_sender' };
   }
 
-  const subject = `✅ Pedido confirmado ${o.orderId} — EPICALCOS`;
-
+  let payload;
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from,
-        to: [email],
-        reply_to: CONTACT.email,
-        subject,
-        html: buildCustomerEmailHtml(o),
-        text: buildCustomerEmailText(o)
-      })
-    });
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      console.error('[notify] Resend (cliente) respondió', res.status, detail);
-      return { sent: false, reason: `resend_${res.status}`, detail };
-    }
-    console.log('[notify] mail de confirmación enviado al cliente', email);
-    return { sent: true };
+    payload = {
+      from,
+      to: [email],
+      reply_to: CONTACT.email,
+      subject: `✅ Pedido confirmado ${o.orderId} — EPICALCOS`,
+      html: buildCustomerEmailHtml(o),
+      text: buildCustomerEmailText(o)
+    };
   } catch (err) {
-    console.error('[notify] error enviando mail al cliente:', err?.message || err);
-    return { sent: false, reason: 'exception', detail: err?.message };
+    // Al cliente NO se le manda un mail degradado: un "pedido confirmado" con
+    // JSON adentro es peor que no mandarlo. El que tiene que enterarse es
+    // EPICALCOS, y de eso se ocupa el aviso de notifyOrder().
+    console.error('[notify] no se pudo armar el mail al cliente:', err?.message || err);
+    return { sent: false, reason: 'build_failed', detail: err?.message };
   }
+
+  return enviarConResend(payload, `confirmación a ${email}`, {
+    idempotencyKey: o?.orderId ? `cliente-${o.orderId}` : undefined,
+    deadline
+  });
 }
 
 /**
@@ -1008,16 +1099,80 @@ export async function sendContactEmail(c) {
 }
 
 /**
- * Dispara todas las notificaciones configuradas. Nunca lanza.
- * @param {object} o vista de pedido (buildOrderView)
+ * Presupuesto por defecto para mandar los mails de un pedido.
+ *
+ * Netlify mata la función a los 10 s. Los mails van PRIMEROS y se quedan con la
+ * mayor parte del presupuesto; lo que sobra es para el CRM y Blobs, que son
+ * best-effort. Al revés (como estaba) el mail salía con los restos del tiempo,
+ * después de tres llamadas de red que podían colgarse.
  */
-export async function notifyOrder(o) {
-  const [email, customerEmail, notion] = await Promise.all([
-    sendOrderEmail(o),
-    sendCustomerEmail(o),
-    createNotionRow(o)
+const PRESUPUESTO_MAILS_MS = 6000;
+
+/**
+ * Dispara todas las notificaciones configuradas. Nunca lanza.
+ *
+ * Los dos mails van en paralelo y con reintentos propios: el aviso interno y la
+ * confirmación al cliente no se pisan, y que uno falle no cancela al otro.
+ * Notion queda para el final porque no tiene timeout propio y no puede
+ * quedarse con el tiempo de los mails.
+ *
+ * @param {object} o vista de pedido (buildOrderView)
+ * @param {{ deadline?: number }} opts
+ */
+export async function notifyOrder(o, { deadline } = {}) {
+  const corte = deadline || Date.now() + PRESUPUESTO_MAILS_MS;
+
+  const [email, customerEmail] = await Promise.all([
+    sendOrderEmail(o, { deadline: corte }),
+    sendCustomerEmail(o, { deadline: corte })
   ]);
+
+  // Si el aviso interno salió pero la confirmación al cliente no, EPICALCOS
+  // tiene que enterarse AHORA: el cliente está esperando un mail que no va a
+  // llegar y desde afuera parece que el pedido no entró. Antes esto solo
+  // quedaba en un console.error que nadie mira.
+  if (email.sent && !customerEmail.sent && customerEmail.reason !== 'no_customer_email') {
+    await avisarFalloConfirmacion(o, customerEmail, corte);
+  }
+
+  const notion = await createNotionRow(o).catch((err) => ({
+    created: false,
+    reason: 'exception',
+    detail: err?.message
+  }));
+
   return { email, customerEmail, notion };
+}
+
+/**
+ * Segundo mail a EPICALCOS avisando que la confirmación al cliente NO salió.
+ * Corto a propósito: es una alarma, no un informe. Nunca lanza.
+ */
+async function avisarFalloConfirmacion(o, resultado, deadline) {
+  const to = (process.env.NOTIFY_EMAIL_TO || DEFAULT_TO)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+  const email = o?.email || '—';
+
+  return enviarConResend(
+    {
+      from,
+      to,
+      subject: `⚠️ NO le llegó la confirmación a ${email} — pedido ${o?.orderId || '?'}`,
+      text:
+        `El pedido ${o?.orderId || '?'} entró bien, pero el mail de confirmación al ` +
+        `cliente NO se pudo enviar.\n\n` +
+        `Cliente: ${o?.name || '—'}\n` +
+        `Mail: ${email}\n` +
+        `Teléfono: ${o?.phone || '—'}\n` +
+        `Motivo: ${resultado?.reason || '?'} ${resultado?.detail || ''}\n\n` +
+        `Escribile vos por WhatsApp para confirmarle el pedido.`
+    },
+    `alerta confirmación ${o?.orderId || '?'}`,
+    { idempotencyKey: o?.orderId ? `alerta-cliente-${o.orderId}` : undefined, deadline }
+  );
 }
 
 // ─── Recordatorio de carrito abandonado ───────────────────────────────────────

@@ -96,6 +96,46 @@ la página, el detalle completo.
    `mercadopago-webhook` → Logs**. Vas a ver líneas `[mp-webhook]` y
    `[notify]` que indican qué pasó.
 
+Netlify no guarda logs históricos, así que para un pedido de ayer la única
+fuente de verdad es la API de Resend:
+
+```bash
+KEY=$(netlify env:get RESEND_API_KEY --context dev | grep -o 're_[A-Za-z0-9_]*')
+curl -s -H "Authorization: Bearer $KEY" "https://api.resend.com/emails?limit=100"
+```
+
+Si el pedido **no figura ahí**, el mail nunca se intentó: el problema está antes
+del envío (el pedido no se creó), no en Resend.
+
+---
+
+## Garantías del aviso de pedido
+
+Con Netlify Blobs caído en runtime, el mail es el **único** registro de una
+venta. Por eso el aviso de pedido no se trata como el resto de las
+notificaciones:
+
+- **Va primero.** Tanto `create-order-transfer.js` como `mercadopago-webhook.js`
+  mandan los mails ANTES del CRM, de Notion, de Blobs y de Meta CAPI. Antes iban
+  últimos y una integración lenta o rota se llevaba puesto el aviso.
+- **Reintenta.** Los fallos transitorios (timeout, 429 del rate limit de Resend,
+  5xx) se reintentan hasta 3 veces con backoff. Los permanentes (422 por mail
+  inválido) no: repetirlos no cambia nada.
+- **No duplica.** Cada mail viaja con `Idempotency-Key` (`interno-<orderId>` /
+  `cliente-<orderId>`), así los reintentos del webhook de Mercado Pago no le
+  mandan al cliente la misma confirmación tres veces.
+- **No se puede tapar.** Si el aviso interno sale pero la confirmación al cliente
+  falla, sale un segundo mail a EPICALCOS avisando a quién hay que escribirle
+  por WhatsApp.
+- **No miente.** Si por transferencia no salió el mail NI entró al CRM, la
+  función devuelve error y el cliente ve "escribinos por WhatsApp" en vez de una
+  pantalla de éxito por un pedido que nadie recibió.
+
+⚠️ **El CVU y el alias NO se muestran en el checkout**, solo en
+`/pago-transferencia`, que es después de crear el pedido. Mostrarlos antes hacía
+que el cliente transfiriera sin confirmar: la plata entraba sin pedido, sin mail
+y sin nombre. Ver el comentario en `components/CheckoutForm.jsx`.
+
 ---
 
 ## Qué datos se envían
