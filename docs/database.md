@@ -27,9 +27,29 @@ La persistencia se reparte en cuatro lugares:
 ## 1. Netlify Blobs
 
 Almacén clave-valor incluido en Netlify Functions. En Netlify las credenciales
-se inyectan solas; `abandonedStore.js` además admite configuración manual con
-`NETLIFY_BLOBS_SITE_ID` + `NETLIFY_BLOBS_TOKEN` (un PAT), porque hubo un caso en
-el que la inyección automática falló y todo el flujo se caía en silencio.
+se inyectan solas — salvo cuando no, que es lo que viene pasando en runtime
+desde julio de 2026: `getStore()` tira `MissingBlobsEnvironmentError`, los catch
+de cada store lo tapan y todo el flujo se cae en silencio (`getOrder` devuelve
+null y listo).
+
+Por eso los **dos** stores (`orderStore.js` y `abandonedStore.js`) admiten
+configuración manual con `NETLIFY_BLOBS_SITE_ID` + `NETLIFY_BLOBS_TOKEN` (un PAT
+con acceso al sitio). Tienen que tener el mismo fallback o se arregla la mitad:
+lo tenía solo `abandonedStore.js`, así que cargar las variables habría
+recuperado los carritos y dejado los pedidos igual de rotos. Lo cuida
+`src/lib/blobsFallback.test.js`.
+
+Comprobación en 5 segundos, sin efectos:
+
+```bash
+curl -s -X POST https://epicalcos.com/api/track-cart -H "Content-Type: application/json" \
+  -H "Origin: https://epicalcos.com" \
+  -d '{"email":"diag@example.com","items":[{"id":"x","name":"probe","quantity":1,"price":1}],"total":1}'
+```
+
+`store_error` = Blobs caído · `tracked:true` = anda · `disabled` = falta la env
+var. Ojo: `netlify blobs:list` NO sirve para descartarlo — el CLI usa su propio
+token y lee bien aunque el runtime falle.
 
 **Tres stores**, sin relaciones entre sí (no hay joins ni claves foráneas):
 

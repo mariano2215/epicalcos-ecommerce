@@ -13,8 +13,24 @@ import { getStore } from '@netlify/blobs';
 
 const STORE_NAME = 'orders';
 
+/**
+ * Abre el store de pedidos.
+ *
+ * Normalmente Netlify inyecta solas las credenciales y alcanza con el nombre.
+ * Cuando NO las inyecta —que es lo que viene pasando en runtime desde julio de
+ * 2026— `getStore()` tira `MissingBlobsEnvironmentError`, los catch de abajo lo
+ * tapan y desde afuera parece que todo anda: `getOrder` devuelve null y ya.
+ * Con NETLIFY_BLOBS_SITE_ID + NETLIFY_BLOBS_TOKEN (un PAT con acceso al sitio)
+ * se configura a mano.
+ *
+ * Espejo exacto del helper de `abandonedStore.js`: los dos stores tienen que
+ * caer en el mismo fallback o se arregla la mitad del problema. Estaba solo en
+ * abandonedStore y por eso los pedidos seguían sin persistir.
+ */
 function store() {
-  return getStore(STORE_NAME);
+  const siteID = process.env.NETLIFY_BLOBS_SITE_ID || process.env.SITE_ID;
+  const token = process.env.NETLIFY_BLOBS_TOKEN;
+  return siteID && token ? getStore({ name: STORE_NAME, siteID, token }) : getStore(STORE_NAME);
 }
 
 /**
