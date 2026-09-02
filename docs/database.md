@@ -51,6 +51,13 @@ curl -s -X POST https://epicalcos.com/api/track-cart -H "Content-Type: applicati
 var. Ojo: `netlify blobs:list` NO sirve para descartarlo — el CLI usa su propio
 token y lee bien aunque el runtime falle.
 
+Desde el 2/9/2026 hay un **canario** que hace este ida y vuelta solo, 1 vez por
+día (`netlify/functions/canario-blobs.js`): escribe una clave de prueba en
+`orders`, la lee, la compara y la borra. Si algo falla manda UNA alarma por día
+a la casilla interna con la etapa exacta y cómo arreglarlo. Cuando todo anda no
+manda nada. Alcanza con probar un store porque los dos comparten credenciales y
+helper.
+
 **Tres stores**, sin relaciones entre sí (no hay joins ni claves foráneas):
 
 ### 1.1 Store `orders`

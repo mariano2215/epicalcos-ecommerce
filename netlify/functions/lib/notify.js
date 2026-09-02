@@ -827,6 +827,29 @@ export async function sendCustomerEmail(o, { deadline } = {}) {
 }
 
 /**
+ * Mail de ALARMA a la casilla interna. Para avisos operativos que no son un
+ * pedido (ver canario-blobs.js). Nunca lanza.
+ *
+ * `clave` va como Idempotency-Key: con la misma clave, Resend manda UNO solo.
+ * Sirve para que una alarma que se repite —un cron que corre varias veces, o
+ * alguien que golpea el endpoint— no llene la casilla de copias del mismo
+ * problema. Una alarma repetida se deja de leer, y ahí deja de ser una alarma.
+ *
+ * @param {{subject: string, text: string, clave?: string}} aviso
+ */
+export async function sendAlertEmail({ subject, text, clave }) {
+  const to = (process.env.NOTIFY_EMAIL_TO || DEFAULT_TO)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+
+  return enviarConResend({ from, to, subject, text }, `alarma "${subject}"`, {
+    idempotencyKey: clave
+  });
+}
+
+/**
  * Crea una fila en una base de datos de Notion como CRM de pedidos.
  * No-op si faltan NOTION_TOKEN / NOTION_DATABASE_ID.
  *

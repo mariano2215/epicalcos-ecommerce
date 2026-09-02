@@ -15,13 +15,26 @@ Qué corre solo hoy, y qué falta. Escrito al cerrar P3 (8/8/2026).
 | **Purchase → Meta CAPI** | pago aprobado | `functions/lib/metaCapi.js` |
 | **Planilla PEDIDOS → CRM** | edición en la planilla | webhook `sheet-order` + Apps Script |
 | **Lead del popup → CRM** | mail dejado en el popup | `functions/capture-lead.js` |
-| **Recordatorio de carrito** | cada hora, carritos de +4 h sin compra | `functions/abandoned-cart.js` ⚠️ apagada |
+| **Recordatorio de carrito** | cada hora, carritos de +4 h sin compra | `functions/abandoned-cart.js` ⚠️ **modo prueba** |
+| **Canario de Blobs** | 1 vez por día; solo avisa si FALLA | `functions/canario-blobs.js` |
 | **Archivos imprimibles → cliente (MP)** | pago aprobado | `functions/lib/digital.js` + `notify.js` |
 | **Archivos imprimibles → cliente (transferencia)** | **semi**: un click en el aviso interno | `functions/entregar-digital.js` |
 | **Sitemap** | cada build | `scripts/generate-sitemap.mjs` |
 | **Feed de catálogo Meta** | manual (`build-meta-feed.mjs`) | pendiente de programar en Meta |
 | **Promos que se apagan solas** | por fecha, sin cron | `config/pricing.js` |
 | **Imágenes optimizadas** | manual, idempotente | `scripts/optimize-images.mjs` |
+
+> El **canario de Blobs** no manda nada cuando todo anda, a propósito: un "todo
+> ok" diario se archiva con un filtro y el día que llega el que importa se
+> archiva también. Si falla, manda UNA alarma por día (dedup por
+> `Idempotency-Key`) explicando qué se rompió y cómo arreglarlo. Existe porque
+> Blobs estuvo caído más de un mes sin que nadie se enterara — ver
+> `docs/database.md` §1.
+>
+> El **recordatorio de carrito** está prendido pero en **modo prueba**
+> (`ABANDONED_CART_TEST_EMAIL`): solo le escribe a esa dirección y saltea al
+> resto sin marcarlos, así que ningún cliente recibe nada. Quitar esa variable
+> es lo que lo pone en vivo — decisión de Mariano, no se hace de oficio.
 
 > Las promos que vencen por fecha (`PROMO_3X2`, `PROMO_MAYORISTA_100`, cupones)
 > **no necesitan que nadie las apague**: pasado `endsAt`, el precio, el banner y
