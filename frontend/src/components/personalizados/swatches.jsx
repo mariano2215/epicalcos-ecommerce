@@ -1,68 +1,143 @@
 /**
- * Swatches SVG diseñados a propósito para el configurador. Nada de placeholder gris:
- * cada opción se representa con el color/forma que la identifica.
+ * Swatches SVG del configurador. Nada de placeholder gris: cada opción se
+ * representa con la forma que la identifica.
+ *
+ * ─── TODOS DIBUJAN SOBRE EL MISMO LIENZO ──────────────────────────────────────
+ * `LIENZO` es el lado del viewBox Y el lado que ocupa el <svg> en pantalla, y
+ * coincide con la caja que le da PasoSelector (w-11 h-11 = 44 px).
+ *
+ * POR QUÉ IMPORTA: antes el SVG medía 56 px dentro de esa caja de 44, que tiene
+ * `overflow-hidden`. Los 6 px que sobraban de cada lado se recortaban, así que
+ * el swatch de 9 cm —el más grande— aparecía CORTADO, y las tres cards del paso
+ * 1 se veían desparejas sin que hubiera nada mal en la card. Cualquier swatch
+ * nuevo tiene que dibujarse dentro de `LIENZO` o vuelve a pasar lo mismo.
  */
 
-/** Tamaño: cuadrado proporcional al cm, para comparar visualmente. */
+const LIENZO = 44;
+const CENTRO = LIENZO / 2;
+/** Lado máximo de una figura: deja 3 px de aire contra el borde de la caja. */
+const MAX_FIGURA = LIENZO - 6;
+
+const TRAZO = '#FF1B8D';
+const RELLENO = 'rgba(255,27,141,0.14)';
+
+const lienzo = { width: LIENZO, height: LIENZO, viewBox: `0 0 ${LIENZO} ${LIENZO}`, 'aria-hidden': true };
+
+/** Centra una figura cuadrada de lado `lado` dentro del lienzo. */
+const centrar = (lado) => (LIENZO - lado) / 2;
+
+/**
+ * Tamaño: cuadrado PROPORCIONAL a los cm reales, para poder compararlos de un
+ * vistazo — es la misma idea que la guía de tamaños de la ficha de producto
+ * (`components/SizeGuide.jsx`), y por eso la escala se ancla al tamaño más
+ * grande de la lista y no a un máximo inventado: el de 9 cm ocupa todo el
+ * cuadro y los otros dos se leen contra él.
+ *
+ * NO lleva el número adentro. Lo tenía, con la tipografía fija en 11 px: en el
+ * cuadrado de 4 cm el dígito ocupaba casi todo el interior y en el de 9 cm
+ * nadaba, y encima estaba dibujado 3 px más abajo del centro real de la figura.
+ * El número ya está escrito al lado, en el título de la card ("4 cm").
+ */
+const CM_MAXIMO = 9;
+
 function TamanoSwatch({ id }) {
-  const cm = { '4cm': 4, '6cm': 6, '9cm': 9, '12cm': 12 }[id] || 6;
-  const s = 20 + (cm / 12) * 30; // 25 → 50 px aprox
-  const off = (56 - s) / 2;
+  const cm = parseFloat(id) || 6;
+  // Proporción REAL contra el tamaño más grande, igual que SizeGuide (4 : 6 : 9).
+  // El piso del 35 % es sólo una red por si algún día entra un tamaño diminuto:
+  // con la lista de hoy no se activa nunca (4/9 = 0,44). Estuvo en 55 % un rato
+  // y era peor el remedio — aplastaba justo la diferencia entre 4 y 6 cm, que es
+  // lo único que este dibujo tiene para decir.
+  const lado = MAX_FIGURA * Math.max(0.35, Math.min(1, cm / CM_MAXIMO));
+  const off = centrar(lado);
   return (
-    <svg width={56} height={56} viewBox="0 0 56 56" aria-hidden>
+    <svg {...lienzo}>
       <rect
         x={off}
         y={off}
-        width={s}
-        height={s}
-        rx={6}
-        fill="rgba(255,27,141,0.15)"
-        stroke="#FF1B8D"
+        width={lado}
+        height={lado}
+        rx={Math.max(3, lado * 0.16)}
+        fill={RELLENO}
+        stroke={TRAZO}
         strokeWidth="2"
       />
-      <text x="28" y="31" textAnchor="middle" fontSize="11" fill="#fff" fontWeight="700">
-        {cm}
-      </text>
     </svg>
   );
 }
 
-/** Corte: la forma del troquel. */
+/**
+ * Corte: la forma del troquel.
+ *
+ * Las tres figuras ocupan el MISMO cuadro (`MAX_FIGURA`), aunque sean un
+ * cuadrado, un círculo y una silueta libre: si cada una se dibujara con su
+ * propio tamaño, la fila de cards se ve despareja aunque las cards midan igual.
+ */
 function CorteSwatch({ id }) {
-  const stroke = '#FF1B8D';
-  const fill = 'rgba(255,27,141,0.12)';
-  const common = { width: 56, height: 56, viewBox: '0 0 56 56', 'aria-hidden': true };
   if (id === 'cuadrado') {
+    const off = centrar(MAX_FIGURA);
     return (
-      <svg {...common}>
-        <rect x="12" y="12" width="32" height="32" rx="3" fill={fill} stroke={stroke} strokeWidth="2" />
+      <svg {...lienzo}>
+        <rect
+          x={off}
+          y={off}
+          width={MAX_FIGURA}
+          height={MAX_FIGURA}
+          rx={4}
+          fill={RELLENO}
+          stroke={TRAZO}
+          strokeWidth="2"
+        />
       </svg>
     );
   }
+
   if (id === 'circulo') {
     return (
-      <svg {...common}>
-        <circle cx="28" cy="28" r="17" fill={fill} stroke={stroke} strokeWidth="2" />
+      <svg {...lienzo}>
+        <circle
+          cx={CENTRO}
+          cy={CENTRO}
+          r={MAX_FIGURA / 2}
+          fill={RELLENO}
+          stroke={TRAZO}
+          strokeWidth="2"
+        />
       </svg>
     );
   }
+
   if (id === 'kiss-cut') {
+    const off = centrar(MAX_FIGURA);
     return (
-      <svg {...common}>
-        <rect x="10" y="10" width="36" height="36" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.3)" strokeWidth="2" strokeDasharray="4 3" />
-        <circle cx="28" cy="28" r="11" fill={fill} stroke={stroke} strokeWidth="2" />
+      <svg {...lienzo}>
+        <rect
+          x={off}
+          y={off}
+          width={MAX_FIGURA}
+          height={MAX_FIGURA}
+          rx={4}
+          fill="rgba(255,255,255,0.06)"
+          stroke="rgba(255,255,255,0.3)"
+          strokeWidth="2"
+          strokeDasharray="4 3"
+        />
+        <circle cx={CENTRO} cy={CENTRO} r={MAX_FIGURA / 3.2} fill={RELLENO} stroke={TRAZO} strokeWidth="2" />
       </svg>
     );
   }
-  // silueta: contorno recortado siguiendo una forma libre (troquel punteado)
+
+  // Silueta: contorno libre con troquel punteado. El path está redibujado para
+  // llenar el mismo cuadro de 38 px que el cuadrado y el círculo (antes iba de
+  // 10 a 48 sobre un lienzo de 56, o sea que además se salía).
   return (
-    <svg {...common}>
+    <svg {...lienzo}>
       <path
-        d="M28 10 C 40 10, 46 22, 42 30 C 48 34, 44 46, 34 44 C 30 50, 20 48, 20 40 C 10 38, 12 24, 22 24 C 22 14, 24 10, 28 10 Z"
-        fill={fill}
-        stroke={stroke}
+        d="M22 3 C 32 3, 39 12, 37 20 C 42 24, 38 37, 29 36 C 26 41, 16 40, 15 33 C 6 31, 6 18, 15 17 C 15 8, 18 3, 22 3 Z"
+        fill={RELLENO}
+        stroke={TRAZO}
         strokeWidth="2"
         strokeDasharray="3 2.5"
+        strokeLinejoin="round"
       />
     </svg>
   );

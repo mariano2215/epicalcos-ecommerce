@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ARCHIVO, recomendacionPx } from '../../config/personalizados.js';
+import { ARCHIVO, recomendacionPx, formatosLegibles } from '../../config/personalizados.js';
 import { uploadDesign, uploadEnabled } from '../../services/uploadService.js';
 import { comprimirImagen } from '../../lib/comprimirImagen.js';
 
@@ -105,7 +105,9 @@ export default function SubidaArchivo({
   const procesarUno = async (file, cupo) => {
     const e = ext(file.name);
     if (!formatos.includes(e)) {
-      setErrorGlobal(`Formato .${e} no soportado. Usá ${formatos.join(', ').toUpperCase()}.`);
+      // Mismo helper que el texto de ayuda: el error tiene que nombrar los
+      // formatos igual que la línea de arriba, o el cliente lee dos listas.
+      setErrorGlobal(`Formato .${e} no soportado. Usá ${formatosLegibles(formatos)}.`);
       return false;
     }
     if (cupo <= 0) return false;
@@ -215,10 +217,16 @@ export default function SubidaArchivo({
         <span className="text-xs text-white/40 ml-auto">{archivos.length}/{max}</span>
       </div>
       <p className={`text-white/50 text-sm mb-3 ${paso != null ? 'ml-8' : ''}`}>
+        {/* La lista de formatos sale de `formatos` —la MISMA constante contra la
+            que valida `onFiles`— y no escrita a mano. Antes decía "PNG, JPG o
+            PDF" fijo: en /personalizados el validador aceptaba además SVG y AI
+            (el texto le negaba al cliente un formato que sí entraba), y en las
+            páginas que restringen `formatos`, como las fotos Polaroid, prometía
+            un PDF que se iba a rechazar. */}
         {descripcion ?? (
           <>
-            PNG, JPG o PDF, hasta {ARCHIVO.pesoMaximoMB} MB cada uno. Podés sumar hasta {max} {sustantivo}. Si tenés el
-            vectorial (AI, SVG, PDF), mejor: el corte sale más preciso.
+            {formatosLegibles(formatos)}, hasta {ARCHIVO.pesoMaximoMB} MB cada uno. Podés sumar hasta {max}{' '}
+            {sustantivo}.
           </>
         )}
       </p>

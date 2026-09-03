@@ -60,6 +60,25 @@ export const ARCHIVO = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Los formatos aceptados, escritos para que los lea una persona:
+ * `['png','jpg','jpeg','pdf','svg','ai']` → `"PNG, JPG, PDF, SVG o AI"`.
+ *
+ * POR QUÉ EXISTE: el texto de ayuda de la zona de subida estaba escrito a mano
+ * ("PNG, JPG o PDF") mientras el validador aceptaba seis extensiones. O sea que
+ * el sitio le decía al cliente que su .svg no servía y después se lo aceptaba
+ * igual. Ahora la lista SALE de `formatos`, así que agregar o sacar una
+ * extensión reescribe el texto solo y no pueden desincronizarse.
+ *
+ * `jpeg` no se lista aparte a propósito: es la misma extensión que `jpg` y en
+ * un texto de ayuda sólo agrega ruido. Se sigue aceptando.
+ */
+export function formatosLegibles(formatos = ARCHIVO.formatos) {
+  const nombres = formatos.filter((f) => f !== 'jpeg').map((f) => f.toUpperCase());
+  if (nombres.length <= 1) return nombres.join('');
+  return `${nombres.slice(0, -1).join(', ')} o ${nombres[nombres.length - 1]}`;
+}
+
 export const getTamano = (id) => TAMANOS.find((t) => t.id === id) || null;
 export const getCorte = (id) => CORTES.find((c) => c.id === id) || null;
 

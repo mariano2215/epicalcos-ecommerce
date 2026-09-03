@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../../context/CartContext.jsx';
-import { TAMANOS, CORTES, CANTIDAD, ARCHIVO, getTamano, getCorte, clampCantidad } from '../../config/personalizados.js';
+import {
+  TAMANOS,
+  CORTES,
+  CANTIDAD,
+  ARCHIVO,
+  getTamano,
+  getCorte,
+  clampCantidad,
+  formatosLegibles
+} from '../../config/personalizados.js';
 import { calcularPrecio } from '../../lib/precioPersonalizados.js';
 import {
   trackPersonalizadoInicio,
@@ -274,8 +283,8 @@ export default function Configurador() {
             descripcion={
               <>
                 Cada archivo que subas <strong className="text-white/70">se agrega solo al carrito</strong> como una
-                calco personalizada. PNG, JPG o PDF, hasta {ARCHIVO.pesoMaximoMB} MB cada uno (hasta{' '}
-                {ARCHIVO.maxArchivos} diseños). Si tenés el vectorial (AI, SVG, PDF), mejor: el corte sale más preciso.
+                calco personalizada. {formatosLegibles()}, hasta {ARCHIVO.pesoMaximoMB} MB cada uno (hasta{' '}
+                {ARCHIVO.maxArchivos} diseños).
               </>
             }
             onChange={onArchivosChange}

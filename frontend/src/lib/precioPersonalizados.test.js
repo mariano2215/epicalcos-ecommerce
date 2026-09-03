@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { calcularPrecio } from './precioPersonalizados.js';
-import { TAMANOS, CORTES, CANTIDAD, ARCHIVO, clampCantidad } from '../config/personalizados.js';
+import { TAMANOS, CORTES, CANTIDAD, ARCHIVO, clampCantidad, formatosLegibles } from '../config/personalizados.js';
 import { SIZES } from '../config/pricing.js';
 // Espejo del backend: la fuente de verdad del servidor que re-precia el checkout.
 import { SIZE_PRICES, validateAndPriceOrder } from '../../../netlify/functions/lib/pricing.js';
@@ -147,5 +147,42 @@ describe('paridad frontend ↔ backend (evita price_mismatch en el checkout)', (
     });
     expect(precioTrucho.ok).toBe(false);
     expect(precioTrucho.error).toBe('price_mismatch');
+  });
+});
+
+describe('formatosLegibles — el texto de ayuda no puede contradecir al validador', () => {
+  /**
+   * POR QUÉ ESTE TEST: la zona de subida anunciaba "PNG, JPG o PDF" escrito a
+   * mano mientras `ARCHIVO.formatos` aceptaba además SVG y AI. El sitio le
+   * negaba al cliente un formato que después le aceptaba igual. Ahora el texto
+   * se deriva de la lista, y esto lo mantiene atado.
+   */
+  it('nombra TODOS los formatos que el validador acepta', () => {
+    const texto = formatosLegibles();
+    for (const f of ARCHIVO.formatos) {
+      if (f === 'jpeg') continue; // se acepta, pero se lista como JPG
+      expect(texto, `falta ${f} en "${texto}"`).toContain(f.toUpperCase());
+    }
+  });
+
+  it('no nombra ningún formato que el validador rechace', () => {
+    const aceptados = ARCHIVO.formatos.map((f) => f.toUpperCase());
+    for (const nombre of formatosLegibles().split(/,\s*|\s+o\s+/)) {
+      expect(aceptados, `${nombre} no está en ARCHIVO.formatos`).toContain(nombre);
+    }
+  });
+
+  it('no lista JPEG aparte de JPG (es la misma extensión)', () => {
+    expect(formatosLegibles()).not.toContain('JPEG');
+    expect(ARCHIVO.formatos).toContain('jpeg'); // pero se sigue aceptando
+  });
+
+  it('respeta una lista restringida (ej. las fotos Polaroid: sin PDF ni vectoriales)', () => {
+    expect(formatosLegibles(['png', 'jpg', 'jpeg'])).toBe('PNG o JPG');
+  });
+
+  it('arma la enumeración en castellano, con "o" antes del último', () => {
+    expect(formatosLegibles(['png', 'jpg', 'pdf'])).toBe('PNG, JPG o PDF');
+    expect(formatosLegibles(['png'])).toBe('PNG');
   });
 });

@@ -43,18 +43,37 @@ export default function PasoSelector({
               type="button"
               onClick={() => onSelect(op.id)}
               aria-pressed={active}
-              className={`text-left rounded-2xl border p-3 transition-colors ${
+              // `h-full`: las cards de una fila ya miden igual por el grid, pero
+              // el <button> tiene que estirarse para que su borde llegue abajo.
+              //
+              // `flex flex-col justify-start`: el navegador CENTRA verticalmente
+              // el contenido de un <button> por estilo propio. Con las cards
+              // estiradas a la misma altura, eso bajaba el contenido de la card
+              // más corta 2 px respecto de las otras — poco, pero es exactamente
+              // la clase de desprolijidad que se nota en una fila de tres.
+              className={`h-full flex flex-col justify-start text-left rounded-2xl border p-3 transition-colors ${
                 active
                   ? 'border-brand-fuchsia bg-brand-fuchsia/15'
                   : 'border-white/10 bg-white/[0.03] hover:border-white/25'
               }`}
             >
-              <div className="flex items-center gap-3">
+              {/* `items-start` y NO `items-center`: con descripciones de largo
+                  distinto —"Recorte circular." entra en una línea y las otras dos
+                  ocupan dos— centrar verticalmente dejaba el título de Círculo
+                  varios píxeles más abajo que el de Silueta y Cuadrado. Las
+                  cards medían igual; lo que estaba desalineado era el contenido.
+                  Arriba, los tres títulos arrancan siempre a la misma altura. */}
+              <div className="flex items-start gap-3">
                 {kind && (
                   <span className="shrink-0 rounded-xl overflow-hidden bg-black/20 grid place-items-center w-11 h-11">
                     <Swatch kind={kind} id={op.id} />
                   </span>
                 )}
+                {/* Sin `justify-center`: centrar el bloque de texto contra el
+                    swatch vuelve a bajar el título de la card de descripción
+                    corta (Círculo quedaba 7 px por debajo de Silueta), que es
+                    justo lo que `items-start` viene a arreglar. El texto arranca
+                    arriba y, si sobra alto, sobra abajo — donde no se ve. */}
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-sm leading-tight">{op.label}</div>
                   {op.descripcion && (
