@@ -16,6 +16,21 @@
   --color-card-dark: #202020;
   --color-card-border: rgba(255, 255, 255, 0.12);
   --color-white-soft: #FAFAF5;
+
+  /* Toda la tipografía de la tienda sale de estas dos variables. Antes eran
+     Inter (texto) y Montserrat (títulos) escritas a mano en cuatro lugares
+     distintos; centralizarlas evita que un cambio de fuente quede a medias.
+
+     ⚠️ HELVETICA QUEDÓ DESCARTADA (decisión de Mariano, 3/9/2026). Se llegó a
+     probar con `'Helvetica Neue', Helvetica, Arial` en las dos variables y se
+     volvió atrás: la tienda sigue con Inter para el texto y Montserrat para los
+     títulos. No reproponerla.
+
+     Las dos se bajan de Google Fonts — NO son fuentes de sistema. Si algún día
+     se cambia este stack, hay que tocar también los <link> de `index.html`: sin
+     ellos el sitio cae a system-ui y nadie se entera hasta ver una captura. */
+  --fuente-base: 'Inter', system-ui, -apple-system, sans-serif;
+  --fuente-titulos: 'Montserrat', 'Poppins', system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -24,16 +39,32 @@ html, body, #root {
   min-height: 100%;
   background: var(--color-bg-dark);
   color: var(--color-text-main);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--fuente-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body { margin: 0; }
 
+/* Títulos en mayúscula (decisión de Mariano, 31/8/2026). La regla vive acá y no
+   en cada componente porque en este repo "título" es exactamente una de dos
+   cosas: un h1-h4, o algo que usa la fuente display —el titular rotante del
+   hero, los totales del carrito y el título del banner de promo no son headings
+   pero se leen como tales—. Los párrafos y descripciones quedan como estaban:
+   una tienda con los textos largos en caps se vuelve ilegible.
+   El tracking pasa de -0.02em a positivo. Ojo con "arreglarlo" volviendo al
+   negativo: ese -0.02em estaba calibrado para las MINÚSCULAS de Montserrat, y
+   en mayúsculas junta demasiado las letras. La regla es de las caps, no de la
+   fuente — sigue valiendo ahora que Helvetica quedó descartada y los títulos
+   volvieron a Montserrat. */
 h1, h2, h3, h4 {
-  font-family: 'Montserrat', system-ui, sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--fuente-titulos);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.font-display {
+  text-transform: uppercase;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -460,7 +491,8 @@ a { color: inherit; text-decoration: none; }
 }
 .promo-banner__title {
   display: block;
-  font-family: 'Montserrat', 'Poppins', system-ui, sans-serif;
+  font-family: var(--fuente-titulos);
+  text-transform: uppercase;
   font-weight: 900;
   font-size: 1.05rem;
   line-height: 1;
@@ -643,7 +675,7 @@ a { color: inherit; text-decoration: none; }
 .promo-timebox__num {
   position: relative;
   z-index: 1;
-  font-family: 'Montserrat', 'Poppins', system-ui, sans-serif;
+  font-family: var(--fuente-titulos);
   font-weight: 900;
   font-size: 1.05rem;
   color: #1A1000;

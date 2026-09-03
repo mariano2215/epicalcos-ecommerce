@@ -43,7 +43,7 @@ export default function LegalLayout({ title, intro, lastUpdated, children, bread
 
       <style>{`
         .prose-legal h2 {
-          font-family: 'Montserrat', system-ui, sans-serif;
+          font-family: var(--fuente-titulos);
           font-weight: 800;
           font-size: 1.25rem;
           margin-top: 1.5rem;

@@ -23,7 +23,11 @@
     <meta name="twitter:title" content="EPICALCOS · Calcos premium" />
     <meta name="twitter:description" content="Stickers personalizados resistentes al agua y al sol." />
 
-    <!-- Preconnects + fuentes (carga no-bloqueante: print → all on load) -->
+    <!-- Preconnects + fuentes (carga no-bloqueante: print → all on load).
+         Inter (texto) y Montserrat (títulos) son las de `--fuente-base` y
+         `--fuente-titulos` en styles/index.css, y NO están en el sistema: sin
+         estos <link> el sitio cae a system-ui en silencio. Se llegaron a sacar
+         cuando se probó Helvetica; esa prueba quedó descartada el 3/9/2026. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

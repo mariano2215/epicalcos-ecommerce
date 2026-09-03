@@ -19,8 +19,13 @@ export default {
         }
       },
       fontFamily: {
-        display: ['Montserrat', 'Poppins', 'system-ui', 'sans-serif'],
-        sans: ['Inter', 'Nunito Sans', 'system-ui', 'sans-serif']
+        // El stack real vive en :root (styles/index.css): hoy Montserrat para
+        // títulos e Inter para texto. Se mantiene la distinción display/sans
+        // —hay ~90 usos de font-display y font-sans en los componentes—, y
+        // apuntando a las variables un cambio de fuente se hace en un solo
+        // lugar en vez de quedar a medias entre el CSS y este archivo.
+        display: ['var(--fuente-titulos)'],
+        sans: ['var(--fuente-base)']
       },
       boxShadow: {
         glow: '0 12px 40px rgba(255, 27, 141, 0.35)',
