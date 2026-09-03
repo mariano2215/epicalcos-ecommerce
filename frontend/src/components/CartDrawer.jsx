@@ -1,13 +1,16 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
+import FreeShippingProgress from './FreeShippingProgress.jsx';
+import BulkProgress from './BulkProgress.jsx';
+import OrderBump from './OrderBump.jsx';
 
 // `custom`: cada línea es UN diseño personalizado y su cantidad son las copias.
 const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 
 export default function CartDrawer() {
   const {
-    drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, clear,
-    bulkEligible, unitsToBulk, digitalOnly,
+    drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, physicalSubtotal, clear,
+    digitalOnly,
     promoActive, promoFreeUnits, promoSavings, promoUnits, promoToNextFree
   } = useCart();
   const navigate = useNavigate();
@@ -92,6 +95,14 @@ export default function CartDrawer() {
               </div>
             </div>
           ))}
+
+          {/* Order bump: va al FINAL de la lista que scrollea, no en el pie.
+              En el pie competiría por el alto con el botón "Ir al checkout",
+              que a 375 px tiene que quedar visible sí o sí (ver el comentario
+              de `compacto` en FreeShippingProgress). Acá además cae donde
+              corresponde en la lectura: primero lo que ya elegiste, después
+              "y esto también". */}
+          {items.length > 0 && <OrderBump />}
         </div>
 
         {items.length > 0 && (
@@ -112,11 +123,18 @@ export default function CartDrawer() {
                     Sumá {promoToNextFree} calco{promoToNextFree === 1 ? '' : 's'} y llevás 1 gratis (promo 3x2).
                   </div>
                 )}
-                {bulkEligible ? (
-                  <div className="text-xs text-emerald-400">🎉 10% off pagando por transferencia bancaria.</div>
-                ) : unitsToBulk > 0 ? (
-                  <div className="text-xs text-white/50">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off por transferencia.</div>
-                ) : null}
+
+                {/* Las dos metas que suben el ticket, ahora con medidor y no como
+                    texto suelto. Hasta acá el drawer —la pantalla más vista de
+                    toda la compra, porque se abre en cada "+" de la grilla— era
+                    la ÚNICA que no decía cuánto faltaba para el envío gratis:
+                    esa barra sólo existía en /carrito.
+
+                    El progreso de envío va sobre el subtotal FÍSICO: los
+                    archivos digitales no viajan en la caja y no acercan a nadie
+                    al umbral (mismo criterio que Cart.jsx). */}
+                <FreeShippingProgress subtotal={physicalSubtotal} compacto />
+                <BulkProgress compacto />
               </>
             )}
             <div className="flex justify-between text-white/70 text-sm">

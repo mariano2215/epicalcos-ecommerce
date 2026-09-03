@@ -204,9 +204,28 @@ export default function Hero() {
                       setOpen(false);
                       navigate(s.to);
                     }}
-                    className="w-full min-h-[44px] px-3 flex items-center justify-between gap-2 rounded-xl text-sm text-white/90 hover:bg-white/5"
+                    className="w-full min-h-[44px] px-2 py-1 flex items-center gap-2.5 rounded-xl text-sm text-white/90 hover:bg-white/5"
                   >
-                    <span className="truncate">{s.label}</span>
+                    {/* Miniatura de la categoría. Acá se vende una IMAGEN: una
+                        lista de nombres en gris obliga a navegar para recién
+                        ahí ver si era eso lo que buscaba.
+                        `onError` la esconde y deja el emoji del label — un
+                        cover 404 no puede dejar el ícono de imagen rota en la
+                        primera interacción del home. */}
+                    {s.image && (
+                      <img
+                        src={s.image}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        decoding="async"
+                        width={32}
+                        height={32}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        className="w-8 h-8 shrink-0 rounded-lg object-contain bg-white/5 p-0.5"
+                      />
+                    )}
+                    <span className="truncate flex-1 text-left">{s.label}</span>
                     {typeof s.count === 'number' && (
                       <span className="shrink-0 text-xs text-white/40">{s.count} diseños</span>
                     )}

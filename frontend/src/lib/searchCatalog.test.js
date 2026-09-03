@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { searchCatalog, norm } from './searchCatalog.js';
+import { searchCatalog, suggest, norm } from './searchCatalog.js';
 import { CATEGORIES } from '../data/categories.js';
 import { isSectionHidden } from '../config/site.js';
 
@@ -57,6 +57,52 @@ describe('searchCatalog', () => {
     const out = run('xyzzy-no-existe-123');
     expect(out.kind).toBe('empty');
     expect(out.suggestions.length).toBeGreaterThan(0);
+  });
+});
+
+describe('suggest — autocomplete con miniatura', () => {
+  const sugerir = (q) => suggest(q, CATEGORIES, counts, aliases);
+
+  it('cada sugerencia de categoría trae la portada del catálogo', () => {
+    const [s] = sugerir('anime');
+    expect(s.type).toBe('category');
+    expect(s.image).toBe(counts.anime.cover);
+    expect(s.image).toMatch(/^\/stickers\//);
+  });
+
+  it('trae el emoji aparte, para poder caer a él si la imagen no carga', () => {
+    const [s] = sugerir('anime');
+    expect(s.emoji).toBeTruthy();
+    expect(s.label).toContain(s.emoji);
+  });
+
+  /**
+   * `image` sale de counts[slug].cover. Una categoría sin cover no puede hacer
+   * explotar el autocomplete: tiene que devolver undefined y que el Hero pinte
+   * el emoji.
+   */
+  it('una categoría sin cover devuelve image undefined en vez de romper', () => {
+    const sinCover = Object.fromEntries(
+      Object.entries(counts).map(([slug, v]) => [slug, { count: v.count }])
+    );
+    const [s] = suggest('anime', CATEGORIES, sinCover, aliases);
+    expect(s.image).toBeUndefined();
+    expect(s.label).toBeTruthy();
+  });
+
+  it('las sugerencias de ruta no traen miniatura (no son una categoría)', () => {
+    const [s] = sugerir('por mayor');
+    expect(s.type).toBe('route');
+    expect(s.image).toBeUndefined();
+  });
+
+  it('con menos de 2 caracteres no sugiere nada', () => {
+    expect(sugerir('a')).toEqual([]);
+  });
+
+  it('respeta el límite pedido', () => {
+    expect(suggest('a', CATEGORIES, counts, aliases, 3).length).toBeLessThanOrEqual(3);
+    expect(suggest('ar', CATEGORIES, counts, aliases, 2).length).toBeLessThanOrEqual(2);
   });
 });
 

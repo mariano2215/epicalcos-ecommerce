@@ -60,6 +60,29 @@ contenedor presente, mandar por los dos caminos contaría cada compra dos veces.
 | `add_payment_info` | `routes/Checkout.jsx` al **cambiar** el medio de pago | ✅ P0 |
 | `purchase` | `/pago-exitoso` y `/pago-transferencia` | ✅ P0 |
 
+### `item_list_name` — de qué superficie salió el `add_to_cart`
+
+`trackAddToCart(product, quantity, listName)` acepta un tercer parámetro
+opcional que viaja como `item_list_name` en el item de GA4. Lo propaga
+`addSticker(sticker, size, qty, { listName })`.
+
+| Valor | Superficie | Desde |
+|---|---|---|
+| *(sin valor)* | grilla, ficha, armador de packs, upsell de `/carrito` y `/checkout` | — |
+| `order_bump_drawer` | `components/OrderBump.jsx` — el calco sugerido dentro del carrito lateral | spec 013 |
+
+**Por qué existe**: un calco sumado desde el order bump y uno sumado desde la
+grilla producen la MISMA línea (`sticker:{id}:{size}`), así que sin esto no hay
+forma de saber si el bump aporta o sólo ocupa lugar en el drawer.
+
+**Cómo se mira**:
+```js
+window.dataLayer
+  .filter(e => e.event === 'add_to_cart')
+  .flatMap(e => e.ecommerce.items)
+  .filter(i => i.item_list_name === 'order_bump_drawer')
+```
+
 ### Eventos propios
 
 `search` · `search_no_results` · `catalogo_orden` · `generate_lead` ·

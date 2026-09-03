@@ -265,14 +265,27 @@ export function trackShippingCalculated({ zone, cost }) {
   debug('shipping_calculated', zone, cost);
 }
 
-export function trackAddToCart(product, quantity = 1) {
+/**
+ * `listName` (opcional) atribuye el agregado a la superficie que lo produjo.
+ *
+ * Sin él, en GA4 un calco sumado desde el order bump del carrito lateral es
+ * indistinguible de uno sumado desde la grilla: los dos son un `add_to_cart` de
+ * la misma línea `sticker:{id}:{size}`. O sea, no habría forma de saber si el
+ * bump sirve o si sólo está ocupando lugar en el drawer.
+ *
+ * Es el 3.er parámetro y tiene default a propósito: los seis llamadores que ya
+ * existen en CartContext siguen andando sin tocarlos.
+ */
+export function trackAddToCart(product, quantity = 1, listName) {
   pushDataLayer({ ecommerce: null });
   pushDataLayer({
     event: 'add_to_cart',
     ecommerce: {
       currency: 'ARS',
       value: product.price * quantity,
-      items: toItems([{ ...product, quantity }])
+      items: toItems([{ ...product, quantity }]).map((i) =>
+        listName ? { ...i, item_list_name: listName } : i
+      )
     }
   });
   pixel('AddToCart', {

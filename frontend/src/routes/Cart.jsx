@@ -5,6 +5,7 @@ import { trackViewCart } from '../lib/analytics.js';
 import { useSeo } from '../lib/seo.js';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import FreeShippingProgress from '../components/FreeShippingProgress.jsx';
+import BulkProgress from '../components/BulkProgress.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
 import SocialProof from '../components/SocialProof.jsx';
 import SuggestedStickers from '../components/SuggestedStickers.jsx';
@@ -16,7 +17,7 @@ const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 
 export default function Cart() {
   const {
-    items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkEligible, unitsToBulk, bulkSavings,
+    items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkSavings,
     promoActive, promoSavings, digitalOnly
   } = useCart();
   const navigate = useNavigate();
@@ -55,15 +56,14 @@ export default function Cart() {
           <div className="mt-4 rounded-xl p-3 text-sm border border-brand-fuchsia/30 bg-brand-fuchsia/10 text-white/85">
             🎉 <strong>Promo 3x2 en todas las calcos</strong> — cada 3 (catálogo o personalizados), la más barata gratis.
           </div>
-        ) : bulkEligible ? (
-          <div className="mt-4 rounded-xl p-3 text-sm border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
-            🎉 Ya llegaste a 10 calcos: pagando por <strong>transferencia bancaria</strong> ahorrás {formatPrice(bulkSavings)} (10% off).
-          </div>
-        ) : unitsToBulk > 0 ? (
-          <div className="mt-4 rounded-xl p-3 text-sm border border-white/10 bg-white/5 text-white/70">
-            Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más y obtené <strong className="text-white">10% off</strong> en los calcos sueltos pagando por transferencia.
-          </div>
-        ) : null}
+        ) : (
+          /* Los dos estados del 10 % (ya lo tiene / le faltan N) ahora los
+             cuenta BulkProgress, con medidor en vez de un párrafo: el mensaje
+             es el mismo, pero se ve cuán cerca está. El mismo componente va en
+             el carrito lateral, así las dos pantallas no pueden decir cosas
+             distintas. */
+          <BulkProgress className="mt-4" />
+        )}
 
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-4">

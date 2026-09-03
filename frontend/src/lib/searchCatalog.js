@@ -139,6 +139,20 @@ export function searchCatalog(query, categories, counts, aliases, orden = ORDEN_
 /**
  * Autocomplete para el buscador del hero.
  * Devuelve hasta `limit` sugerencias mientras el usuario tipea.
+ *
+ * Las sugerencias de categoría viajan con `image`: la portada que ya trae
+ * /data/catalog.json. En una tienda donde el producto ES la imagen, una lista
+ * de nombres en gris obliga a navegar para recién ahí ver si era eso lo que
+ * buscaba. Con la miniatura, la confirmación pasa a ser visual y anterior al
+ * click.
+ *
+ * OJO — la miniatura es la portada de la CATEGORÍA, no el diseño exacto: los
+ * 3.397 archivos del catálogo no tienen nombre ni tags (se llaman "Anime #12",
+ * compuesto en runtime), así que no hay forma de matchear un diseño suelto
+ * contra lo que se tipea. Por eso el motor matchea categorías y no diseños.
+ *
+ * `image` puede venir `undefined` si esa categoría no tiene `cover`: el
+ * llamador tiene que caer al emoji, no dejar una imagen rota.
  */
 export function suggest(query, categories, counts, aliases, limit = 6) {
   const q = norm(query);
@@ -165,6 +179,8 @@ export function suggest(query, categories, counts, aliases, limit = 6) {
     type: 'category',
     to: `/categoria/${c.slug}`,
     label: `${c.emoji || ''} ${c.name}`.trim(),
+    emoji: c.emoji || '',
     count: counts[c.slug]?.count || 0,
+    image: counts[c.slug]?.cover,
   }));
 }

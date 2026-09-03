@@ -131,6 +131,8 @@ export function CartProvider({ children }) {
    * `opts.silent` omite el toast: el armador de packs agrega una línea POR
    * DISEÑO, y con 20 diseños serían 20 toasts encima del mismo click (mismo
    * motivo por el que ya lo tiene `addCustom`).
+   * `opts.listName` atribuye el `add_to_cart` a la superficie que lo produjo
+   * (hoy: el order bump del drawer). Ver `trackAddToCart` en lib/analytics.js.
    */
   const addSticker = useCallback((sticker, size, quantity = 1, opts = {}) => {
     const line = {
@@ -147,7 +149,7 @@ export function CartProvider({ children }) {
     };
     dispatch({ type: 'ADD', line, openDrawer: opts.openDrawer });
     if (!opts.silent) notify(`${line.name} agregado`);
-    trackAddToCart({ ...line, price: precioVidrieraLinea(line) }, quantity);
+    trackAddToCart({ ...line, price: precioVidrieraLinea(line) }, quantity, opts.listName);
   }, [notify]);
 
   /**

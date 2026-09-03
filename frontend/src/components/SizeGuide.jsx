@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SIZES } from '../config/pricing.js';
 import { useExperiment } from '../lib/experiments.js';
+import { usoDe } from '../lib/usosPorTamano.js';
 
 /**
  * Resuelve la objeción "no sé qué tamaño elegir".
@@ -9,12 +10,11 @@ import { useExperiment } from '../lib/experiments.js';
  * de un objeto de referencia, y lista para qué sirve cada uno. No usa fotos
  * porque no las tenemos: una comparación proporcional es honesta y se entiende
  * igual, y no promete un render que después el producto no cumple.
+ *
+ * La tabla de usos salió de acá a lib/usosPorTamano.js: la misma información
+ * la necesita el SizePicker de la grilla, que es donde realmente se toca "+".
+ * Escrita dos veces, las dos pantallas terminan diciendo cosas distintas.
  */
-const USOS = {
-  '4cm': { tag: 'Chica', para: ['celular', 'llavero', 'detalles', 'objetos chicos'] },
-  '6cm': { tag: 'Mediana · la más elegida', para: ['termo', 'notebook', 'botella', 'mate'] },
-  '9cm': { tag: 'Grande', para: ['auto', 'casco', 'vidriera', 'objetos grandes'] }
-};
 
 /** Lado del cuadrado en px, proporcional a los cm reales (9 cm = 72 px). */
 const px = (sizeId) => (parseInt(sizeId, 10) / 9) * 72;
@@ -77,15 +77,23 @@ export default function SizeGuide({ selectedSize, onSelect, experimento = false,
 
           {/* Para qué sirve cada uno */}
           <ul className="mt-4 space-y-2.5">
-            {SIZES.map((s) => (
-              <li key={s.id} className="text-sm">
-                <span className="font-bold text-white">{s.label}</span>
-                <span className="text-white/40"> · {USOS[s.id].tag}</span>
-                <div className="text-white/60 text-xs mt-0.5">
-                  Ideal para: {USOS[s.id].para.join(', ')}.
-                </div>
-              </li>
-            ))}
+            {SIZES.map((s) => {
+              // `usoDe` devuelve null para un tamaño sin uso declarado: se
+              // muestra el tamaño igual, sin la línea de "ideal para". El test
+              // de usosPorTamano avisa si eso pasa, para que no quede así.
+              const uso = usoDe(s.id);
+              return (
+                <li key={s.id} className="text-sm">
+                  <span className="font-bold text-white">{s.label}</span>
+                  {uso && <span className="text-white/40"> · {uso.tag}</span>}
+                  {uso && (
+                    <div className="text-white/60 text-xs mt-0.5">
+                      Ideal para: {uso.para.join(', ')}.
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

@@ -14,9 +14,16 @@ import { shipping } from '../config/site.js';
  * barra sin condición que después el checkout desmiente. Es el mismo error que
  * tenía "10% off automático" en /categorias.
  *
- * @param {{ subtotal: number, className?: string }} props
+ * `compacto` es para el carrito LATERAL, que es la pantalla más vista de toda
+ * la compra (se abre en cada "+" de la grilla) y a la vez la que menos alto
+ * tiene: a 375 px el pie del drawer tiene que dejar visible el botón de
+ * checkout. En compacto se saca el párrafo de ayuda —que repite los dos
+ * umbrales— y se achica el padding. El mensaje principal, que es el que
+ * empuja, queda igual.
+ *
+ * @param {{ subtotal: number, className?: string, compacto?: boolean }} props
  */
-export default function FreeShippingProgress({ subtotal, className = '' }) {
+export default function FreeShippingProgress({ subtotal, className = '', compacto = false }) {
   const rosario = shipping.freeShippingThresholdRosario;
   const nacional = shipping.freeShippingThresholdNational;
 
@@ -27,8 +34,12 @@ export default function FreeShippingProgress({ subtotal, className = '' }) {
   const falta = Math.max(0, objetivo - subtotal);
 
   return (
-    <div className={`rounded-xl border border-white/10 bg-white/5 p-3.5 ${className}`}>
-      <div className="flex items-baseline justify-between gap-3 text-sm">
+    <div
+      className={`rounded-xl border border-white/10 bg-white/5 ${compacto ? 'p-2.5' : 'p-3.5'} ${className}`}
+    >
+      <div
+        className={`flex items-baseline justify-between gap-3 ${compacto ? 'text-xs' : 'text-sm'}`}
+      >
         {alcanzado ? (
           <span className="text-emerald-400 font-semibold">
             ✓ Tenés envío gratis a todo el país
@@ -48,7 +59,7 @@ export default function FreeShippingProgress({ subtotal, className = '' }) {
       </div>
 
       <div
-        className="mt-2.5 h-2 rounded-full bg-white/10 overflow-hidden"
+        className={`${compacto ? 'mt-2 h-1.5' : 'mt-2.5 h-2'} rounded-full bg-white/10 overflow-hidden`}
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -66,7 +77,7 @@ export default function FreeShippingProgress({ subtotal, className = '' }) {
         />
       </div>
 
-      {!alcanzado && (
+      {!alcanzado && !compacto && (
         <p className="text-xs text-white/45 mt-2">
           Envío gratis desde {formatPrice(rosario)} en Rosario y desde {formatPrice(nacional)} al resto
           del país. También podés retirar sin costo.

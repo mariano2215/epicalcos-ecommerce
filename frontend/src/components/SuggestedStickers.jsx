@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import { categoryName, CATEGORIES } from '../data/categories.js';
 import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
+import {
+  cargarManifest,
+  categoriasFuente,
+  elegirVarios,
+  MAX_CATEGORIAS_FUENTE
+} from '../lib/sugerencias.js';
 
 /**
  * Upsell del checkout: "Calcos sugeridas" al azar de las MISMAS categorías que
@@ -12,52 +17,17 @@ import { SIZES, DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
  * Las sugerencias rotan solas cada ROTATE_MS; la rotación se pausa mientras el
  * mouse/teclado está sobre la sección para que nadie clickee una card que se
  * cambió abajo del cursor.
+ *
+ * De dónde salen los calcos (qué categorías, qué diseño, y el cache de los
+ * manifests) vive en lib/sugerencias.js: lo comparte con el order bump del
+ * carrito lateral, así los mismos /data/{slug}.json se bajan UNA vez por visita
+ * y la lógica queda donde se puede testear (en este repo no hay tests de
+ * componentes).
  */
 
-/** Categorías de respaldo cuando en el carrito no hay calcos de catálogo. */
-const FALLBACK_CATEGORIES = [
-  'frases',
-  'memes',
-  'shaka-good-vibes',
-  'aesthetic',
-  'argentina',
-  'anime',
-  'flores',
-  'gamer'
-];
-
-const MAX_SOURCE_CATEGORIES = 4; // manifests que traemos por vez
-const VISIBLE = 4;               // cards en pantalla
+const VISIBLE = 4;        // cards en pantalla
 const ROTATE_MS = 7000;
-const ENGAGED_MS = 20000;        // pausa después de tocar una card (mobile)
-
-/** Manifests ya bajados (persisten entre rotaciones y montajes). */
-const manifestCache = new Map();
-
-const ALL_SLUGS = CATEGORIES.map((c) => c.slug);
-
-function loadManifest(slug) {
-  if (!manifestCache.has(slug)) {
-    manifestCache.set(
-      slug,
-      fetch(`/data/${slug}.json`)
-        .then((r) => (r.ok ? r.json() : []))
-        .then((items) => (Array.isArray(items) ? items : []))
-        .catch(() => [])
-    );
-  }
-  return manifestCache.get(slug);
-}
-
-/** n elementos al azar, sin repetir. */
-function sampleSize(arr, n) {
-  const pool = [...arr];
-  const out = [];
-  while (pool.length && out.length < n) {
-    out.push(...pool.splice(Math.floor(Math.random() * pool.length), 1));
-  }
-  return out;
-}
+const ENGAGED_MS = 20000; // pausa después de tocar una card (mobile)
 
 /**
  * Espera a que las imágenes de la próxima tanda estén en cache antes de
@@ -167,38 +137,16 @@ export default function SuggestedStickers() {
   const cartCategories = [...new Set(items.filter((i) => i.type === 'sticker' && i.category).map((i) => i.category))];
   const cartKey = cartCategories.join(',');
 
-  const sourceCategories = useMemo(() => {
-    const base = cartKey ? cartKey.split(',') : [];
-    const relleno = sampleSize(
-      (base.length ? FALLBACK_CATEGORIES : sampleSize(ALL_SLUGS, 12)).filter((s) => !base.includes(s)),
-      Math.max(0, MAX_SOURCE_CATEGORIES - base.length)
-    );
-    return [...sampleSize(base, MAX_SOURCE_CATEGORIES), ...relleno];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartKey]);
+  const sourceCategories = useMemo(
+    () => categoriasFuente(cartKey ? cartKey.split(',') : [], { max: MAX_CATEGORIAS_FUENTE }),
+    [cartKey]
+  );
 
   useEffect(() => {
     let cancelled = false;
     // No reseteamos `pool` a null: al agregar una sugerencia cambian las
     // categorías fuente y el skeleton parpadearía sobre las cards.
-    Promise.all(
-      sourceCategories.map((slug) =>
-        loadManifest(slug).then((list) =>
-          list.map((it) => {
-            const n = String(it.id).split('-').pop();
-            return {
-              id: it.id,
-              sku: it.sku,
-              image: it.file,
-              num: n,
-              name: `${categoryName(slug)} #${n}`,
-              category: slug,
-              categoryLabel: categoryName(slug)
-            };
-          })
-        )
-      )
-    ).then((listas) => {
+    Promise.all(sourceCategories.map(cargarManifest)).then((listas) => {
       // Una lista por categoría fuente (las del carrito primero): así cada
       // tanda mezcla categorías en vez de quedar dominada por la más grande.
       if (!cancelled) setPool(listas.filter((l) => l.length));
@@ -218,23 +166,8 @@ export default function SuggestedStickers() {
    * los ids de `excluir`.
    */
   const elegir = useCallback(
-    (cantidad = VISIBLE, excluir = []) => {
-      if (!pool) return [];
-      const disponibles = pool.map((lista) => lista.filter((s) => !enCarrito.has(s.id))).filter((l) => l.length);
-      const elegidas = [];
-      const usadas = new Set(excluir);
-      for (let vuelta = 0; elegidas.length < cantidad && vuelta < cantidad; vuelta++) {
-        for (const lista of disponibles) {
-          if (elegidas.length >= cantidad) break;
-          const libre = lista.filter((s) => !usadas.has(s.id));
-          if (!libre.length) continue;
-          const pick = libre[Math.floor(Math.random() * libre.length)];
-          usadas.add(pick.id);
-          elegidas.push(pick);
-        }
-      }
-      return elegidas;
-    },
+    (cantidad = VISIBLE, excluir = []) =>
+      pool ? elegirVarios(pool, cantidad, new Set([...enCarrito, ...excluir])) : [],
     [pool, enCarrito]
   );
 
