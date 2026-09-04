@@ -99,10 +99,29 @@ En desktop (1280×900) no hay problema: hero 762 px, campo en 412 px, CTA en
 > achicando el padding a propósito (ver `requirements.md` §11): separar las dos
 > cosas pide un tercer brazo con el hero compacto.
 
-> ⚠️ **Tres experimentos sobre el mismo hero, ocho celdas.** Los efectos
-> principales siguen sin sesgo, pero `en_hero` + CTA `encontra_calcos` deja un
-> botón que promete lo mismo que el campo que tiene arriba. Recomendación:
-> apagar `hero_cta` (`active: false`) mientras corra este.
+### Estado de los experimentos (04/09/2026)
+
+| Experimento | Estado | Por qué |
+|---|---|---|
+| `hero_titular` | **vivo** | — |
+| `hero_cta` | **pausado** | `en_hero` + `encontra_calcos` dejaba un botón que promete lo mismo que el campo de búsqueda que tiene arriba. Se apagó para poder leer `hero_buscador` |
+| `hero_buscador` | **vivo** | — |
+
+Quedan **cuatro celdas**, no ocho.
+
+**El kill switch, verificado en el peor caso**: con `encontra_calcos` guardado
+en `localStorage` **y** pedido por URL (`?exp_hero_cta=encontra_calcos`), el
+hero renderizó *"Ver todos los diseños"* y `experiment_view` reportó
+`hero_cta=ver_disenos`. El `active: false` se chequea antes que la variante
+guardada y antes que el override.
+
+La asignación previa **queda intacta en `epicalcos.exp.v1`**: al volver a
+`active: true` cada visitante recupera su variante en vez de rebarajarse, así
+que el test se reanuda donde estaba.
+
+Detalle menor de analítica: un experimento pausado **sigue emitiendo**
+`experiment_view`, con el 100 % en control. Es correcto —describe lo que la
+gente ve— pero conviene saberlo antes de mirar el informe.
 
 ## 6. Fuera de scope
 

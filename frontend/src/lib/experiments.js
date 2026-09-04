@@ -60,15 +60,23 @@ export const EXPERIMENTS = {
    * Hipótesis: "Encontrá tus calcos" convierte más que "Ver todos los diseños"
    * porque nombra lo que la persona se lleva, no lo que va a hacer.
    *
-   * ⚠️ CORRE EN PARALELO con `hero_titular`, y es a propósito: `getVariant`
-   * mezcla el id del experimento en el hash, así que las dos asignaciones son
-   * independientes y el efecto principal de cada test se estima sin sesgo. Lo
-   * que SÍ hay que mirar al leer los resultados es la interacción —titular y
-   * botón se leen juntos—: si los dos ganan por poco, revisar las cuatro
-   * celdas. Para aislar uno, apagar el otro acá; no hay que tocar el hero.
+   * ⚠️ PAUSADO el 4/9/2026, a pedido de Mariano, para poder leer
+   * `hero_buscador`. No es un problema estadístico —las asignaciones son
+   * independientes y los efectos principales no se sesgan— sino de copy: con el
+   * buscador dentro del hero, "Encontrá tus calcos" es un botón que promete
+   * exactamente lo mismo que el campo de búsqueda que tiene tres centímetros
+   * arriba. Esa celda ensuciaría las dos lecturas.
+   *
+   * Con `active: false` todo el mundo ve el control (`ver_disenos`), aunque
+   * tenga la otra variante guardada y aunque fuerce el override por URL: el
+   * kill switch se chequea ANTES que todo lo demás en `getVariant`.
+   *
+   * PARA REANUDARLO: `active: true`. Los que ya tenían variante asignada la
+   * recuperan tal cual —queda guardada en `epicalcos.exp.v1`—, así que el test
+   * sigue donde estaba en vez de rebarajar a la gente.
    */
   hero_cta: {
-    active: true,
+    active: false,
     variants: ['ver_disenos', 'encontra_calcos'],
     descripcion: 'Hero: CTA principal, describir la acción (control) vs el resultado'
   },
@@ -84,12 +92,11 @@ export const EXPERIMENTS = {
    * ⚠️ Control = `debajo`, que es la sección propia que salió con el rediseño
    * (spec 014) y es lo que hoy está publicado.
    *
-   * ⚠️ TERCER experimento vivo sobre el mismo hero. Los efectos principales
-   * siguen sin sesgo —las tres asignaciones son independientes—, pero las
-   * celdas ahora son ocho y hay una que se lee mal: `en_hero` + el CTA
-   * `encontra_calcos` deja un botón que promete lo mismo que el campo de
-   * búsqueda que tiene tres centímetros arriba. Si este test se toma en serio,
-   * conviene apagar `hero_cta` mientras corre.
+   * ⚠️ Convivía con `hero_titular` y `hero_cta` —ocho celdas—, y una se leía
+   * mal: `en_hero` + el CTA `encontra_calcos` dejaba un botón que promete lo
+   * mismo que el campo de búsqueda que tiene tres centímetros arriba. Por eso
+   * `hero_cta` quedó PAUSADO el 4/9/2026 mientras corre éste. Vivos hoy:
+   * `hero_titular` y `hero_buscador`, cuatro celdas.
    */
   hero_buscador: {
     active: true,
