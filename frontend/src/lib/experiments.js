@@ -43,6 +43,37 @@ export const EXPERIMENTS = {
   },
 
   /**
+   * Spec 015 — el titular del hero: ¿amplitud o resultado?
+   * Hipótesis: al tráfico frío de Instagram le mueve más ver el objeto
+   * terminado ("Tu termo. Pero más vos.") que la promesa de catálogo.
+   * KPI: search + view_item_list por variante. Secundario: add_to_cart, purchase.
+   * El copy de cada variante está en lib/heroVariantes.js.
+   */
+  hero_titular: {
+    active: true,
+    variants: ['catalogo', 'objeto'],
+    descripcion: 'Hero: titular de amplitud de catálogo (control) vs de objeto personalizado'
+  },
+
+  /**
+   * Spec 015 — el CTA principal del hero: ¿describir la acción o el resultado?
+   * Hipótesis: "Encontrá tus calcos" convierte más que "Ver todos los diseños"
+   * porque nombra lo que la persona se lleva, no lo que va a hacer.
+   *
+   * ⚠️ CORRE EN PARALELO con `hero_titular`, y es a propósito: `getVariant`
+   * mezcla el id del experimento en el hash, así que las dos asignaciones son
+   * independientes y el efecto principal de cada test se estima sin sesgo. Lo
+   * que SÍ hay que mirar al leer los resultados es la interacción —titular y
+   * botón se leen juntos—: si los dos ganan por poco, revisar las cuatro
+   * celdas. Para aislar uno, apagar el otro acá; no hay que tocar el hero.
+   */
+  hero_cta: {
+    active: true,
+    variants: ['ver_disenos', 'encontra_calcos'],
+    descripcion: 'Hero: CTA principal, describir la acción (control) vs el resultado'
+  },
+
+  /**
    * ¿Resolver la duda del tamaño sin que la pidan sube el add-to-cart?
    * Hipótesis: "no sé qué tamaño elegir" frena más de lo que molesta un bloque
    * abierto de más. KPI: add_to_cart / view_item.

@@ -42,10 +42,21 @@ export default function AntesDespues() {
           </Reveal>
 
           <Reveal delay={120}>
+            {/* ⚠️ ESTE TÍTULO ERA "Tu termo. Pero más vos." y se cambió en la
+                spec 015: esa frase pasó a ser una de las dos variantes del H1
+                del hero, y la mitad del tráfico la habría leído dos veces en la
+                misma página —arriba y acá— dejando a esta sección sin golpe
+                propio. Se cambió para TODO el mundo y no sólo para esa variante:
+                un texto que cambia según la celda del experimento es una segunda
+                variable y ensucia el resultado.
+
+                El {' '} antes del <br> tampoco sobra: sin él `textContent` da
+                "De lisoa inconfundible." —un <br> no aporta espacio— y eso es
+                exactamente lo que leen un lector de pantalla y un buscador. */}
             <h2 className="font-display font-extrabold text-3xl md:text-5xl leading-[1.05]">
-              Tu termo.
+              De liso{' '}
               <br />
-              Pero más vos.
+              a inconfundible.
             </h2>
             <p className="text-white/70 mt-4 text-base md:text-lg leading-snug max-w-md">
               Elegí entre miles de diseños y combiná todo lo que te gusta en el mismo objeto.
