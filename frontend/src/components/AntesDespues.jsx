@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import Reveal from './Reveal.jsx';
 import { isSectionHidden } from '../config/site.js';
+import { ANTES_DESPUES } from '../data/ugc.js';
 
 /**
  * "Tu termo, pero más vos" — la sección que explica el producto sin explicarlo.
@@ -9,16 +10,17 @@ import { isSectionHidden } from '../config/site.js';
  * fondo: recortes flotando en el hero, cuadraditos en la grilla, portadas en las
  * categorías. Un calco suelto no se entiende — un termo cubierto de calcos, sí.
  *
- * ⚠️ La foto es REAL, del Instagram de EPICALCOS (el mismo posteo que se ve en
- * /contacto). No hay pares antes/después en el repo y no se inventa uno: no se
- * arma un slider con un mockup, porque un antes/después falso es exactamente la
- * clase de prueba que destruye la confianza que viene a construir.
+ * LA IMAGEN es la pieza de marca de EPICALCOS: un mismo termo partido al medio,
+ * liso de un lado y cubierto de calcos del otro. Que sea EL MISMO objeto es todo
+ * el punto — dos termos distintos lado a lado se leen como dos productos, no
+ * como una transformación.
  *
- * ⚠️ EL ENCUADRE: el archivo trae "ANTES" y "DESPUÉS" impresos arriba, pero
- * cortados por el recorte cuadrado de Instagram (se lee "ANTES" / "DESPUÉ").
- * Por eso la franja de texto se recorta con `object-bottom` y los rótulos se
- * ponen en HTML: se leen enteros, escalan en mobile y los lee un lector de
- * pantalla. Si algún día se sube una foto sin texto quemado, sacar el recorte.
+ * ⚠️ SE MUESTRA ENTERA, sin recortar. La versión anterior (un posteo de
+ * Instagram) llegaba con el "ANTES"/"DESPUÉS" cortado por el encuadre cuadrado,
+ * así que había que recortar esa franja con `object-bottom` y volver a poner los
+ * rótulos en HTML. Esta los trae completos: recortarla les comería el logo o las
+ * letras, y agregarles rótulos encima los duplicaría. Los datos y el `alt`
+ * están en `data/ugc.js`.
  */
 export default function AntesDespues() {
   const personalizadosVisible = !isSectionHidden('personalizados');
@@ -27,18 +29,16 @@ export default function AntesDespues() {
     <section className="seccion">
       <div className="container-app">
         <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-          <Reveal className="relative rounded-3xl overflow-hidden border border-white/10">
+          <Reveal className="rounded-3xl overflow-hidden border border-white/10">
             <img
-              src="/images/instagram/DaTgGq3xNBQ.webp"
-              alt="El mismo termo dos veces: liso a la izquierda, cubierto de calcos de montañas, Messi, Bariloche y frases a la derecha"
+              src={ANTES_DESPUES.src}
+              alt={ANTES_DESPUES.alt}
               loading="lazy"
               decoding="async"
-              width={640}
-              height={640}
-              className="w-full aspect-[5/4] object-cover object-bottom"
+              width={ANTES_DESPUES.width}
+              height={ANTES_DESPUES.height}
+              className="w-full h-auto"
             />
-            <span className="antes-despues__rotulo antes-despues__rotulo--antes">Antes</span>
-            <span className="antes-despues__rotulo antes-despues__rotulo--despues">Después</span>
           </Reveal>
 
           <Reveal delay={120}>

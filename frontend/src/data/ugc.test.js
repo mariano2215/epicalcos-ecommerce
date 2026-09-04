@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { UGC } from './ugc.js';
+import { UGC, ANTES_DESPUES } from './ugc.js';
 import { TESTIMONIALS } from './testimonials.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -33,6 +33,20 @@ describe('UGC', () => {
   it('no repite la misma foto dos veces', () => {
     const srcs = UGC.map((f) => f.src);
     expect(new Set(srcs).size).toBe(srcs.length);
+  });
+
+  it('la pieza de Antes/Después existe y se describe', () => {
+    // Es la imagen más grande de la Home y la única que cuenta la propuesta
+    // entera de un vistazo. Si falta, la sección queda con un hueco.
+    expect(existsSync(join(PUBLIC, ANTES_DESPUES.src)), `falta ${ANTES_DESPUES.src}`).toBe(true);
+    // El alt tiene que decir "antes" y "después": esas dos palabras están
+    // DENTRO de la imagen, así que sin ellas acá un lector de pantalla se
+    // pierde justamente la comparación que la sección viene a hacer.
+    const alt = ANTES_DESPUES.alt.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+    expect(alt).toContain('antes');
+    expect(alt).toContain('despues');
+    expect(ANTES_DESPUES.width).toBeGreaterThan(0);
+    expect(ANTES_DESPUES.height).toBeGreaterThan(0);
   });
 
   it('las fotos de testimonios también existen', () => {

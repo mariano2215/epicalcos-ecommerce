@@ -1,5 +1,5 @@
 /**
- * Fotos REALES de calcos de EPICALCOS puestas en objetos.
+ * Las imágenes de producto de la Home.
  *
  * Todo lo que hay acá salió del Instagram de la marca o de un cliente. **No se
  * agregan mockups ni renders**: la sección existe para responder "¿cómo queda
@@ -40,3 +40,34 @@ export const UGC = [
  * quedan en la vida real"; una pieza de marketing ahí adentro desmiente al
  * resto. Siguen publicados en la card de /contacto, que es su lugar.
  */
+
+/**
+ * La pieza de Antes/Después.
+ *
+ * ⚠️ NO ES UGC, y por eso vive fuera del array de arriba: es una pieza de marca
+ * —un termo partido al medio, liso de un lado y cubierto de calcos del otro—,
+ * no la foto espontánea de un cliente. Mezclarla con el UGC sería presentar una
+ * composición como si fuera la foto de alguien, que es justo lo que el array de
+ * arriba no hace.
+ *
+ * Acá sí corresponde: la sección no promete "esto le pasó a un cliente", sino
+ * "esto es lo que hacen las calcos con tu termo". Y los calcos que se ven son
+ * los del catálogo, sobre un termo de verdad.
+ *
+ * Reemplazó al posteo de Instagram que se usaba antes, que era un recorte
+ * cuadrado con el "ANTES"/"DESPUÉS" cortado en los bordes ("ANTES" / "DESPUÉ").
+ * Esta trae los dos rótulos enteros y el corte al medio del MISMO objeto, que es
+ * lo que hace legible la comparación de un vistazo.
+ *
+ * ⚠️ Los rótulos están DENTRO de la imagen. No agregarles encima unos en HTML:
+ * la versión anterior los necesitaba porque el archivo los traía cortados, y
+ * duplicarlos ahora sería escribir "ANTES" dos veces. Por eso el `alt` los dice
+ * — es lo único que le llega a un lector de pantalla.
+ */
+export const ANTES_DESPUES = {
+  src: '/images/antes-despues-termo.webp',
+  alt:
+    'Un mismo termo negro partido al medio: la mitad "antes" lisa y la mitad "después" cubierta de calcos de NASA, Jurassic Park, Goku, Bart Simpson, Messi y la ola de Hokusai',
+  width: 1080,
+  height: 1080
+};

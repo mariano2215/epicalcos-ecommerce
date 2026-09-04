@@ -492,29 +492,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
-   Antes / Después — rótulos sobre la foto real
-   ============================================================ */
-.antes-despues__rotulo {
-  position: absolute;
-  bottom: 0.75rem;
-  padding: 0.35rem 0.85rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #fff;
-}
-.antes-despues__rotulo--antes { left: 0.75rem; }
-.antes-despues__rotulo--despues {
-  right: 0.75rem;
-  background: linear-gradient(135deg, #FF1B8D, #FF5A1F);
-  border-color: transparent;
-}
-
-/* ============================================================
    Carrusel horizontal con swipe (testimonios y UGC en mobile)
    ============================================================ */
 .carrusel-snap {

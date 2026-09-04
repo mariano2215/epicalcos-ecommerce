@@ -25,7 +25,7 @@
 | AC-7 *(RF-9)* | Las 3 cards de intención comparten estructura, padding, radio y lugar del CTA | Captura a 375 px: mismo `card-glass p-6`, mismo orden icono → título → texto → CTA. Sólo cambia el velo de color | ✅ |
 | AC-8 *(RF-10)* | Cada card de producto muestra imagen, nombre, tamaño, precio y CTA, con un badge como máximo | Captura de "Los más elegidos": imagen dominante + "ANIME #17 · 6 cm · $ 1.600 · +". Se eliminó el badge "🔥 Tendencia" del encabezado | ✅ |
 | AC-9 *(RF-11)* | Entre 6 y 10 categorías, con CTA a las 61 | 10 cards + botón "Ver las 61 categorías" (el número sale de `CATEGORY_COUNT`) | ✅ |
-| AC-10 *(RF-12)* | Antes/Después con foto real y un solo CTA principal | Foto real del Instagram de EPICALCOS; el texto quemado se recorta con `object-bottom` y los rótulos ANTES/DESPUÉS van en HTML. CTA principal "Ver diseños" + secundario "Subir el mío" | ✅ |
+| AC-10 *(RF-12)* | Antes/Después con imagen propia del negocio y un solo CTA principal | CTA principal "Ver diseños" + secundario "Subir el mío". **La imagen se reemplazó el mismo 4/9** a pedido de Mariano: ver la nota al pie | ✅ |
 | AC-11 *(RF-13)* | Métricas en su sección, números grandes, sin movimiento | 3 columnas en desktop: "+120.000 / calcos vendidas", "+5.000 / clientes", "2 a 3 días / de producción". Sin animación más allá del reveal de entrada | ✅ |
 | AC-12 *(RF-14)* | Exactamente 4 beneficios | `beneficios` en `config/brandStats.js` tiene 4; la grilla renderiza 4 columnas en desktop | ✅ |
 | AC-13 *(RF-15)* | Una sola promoción principal, y el 10% siempre con su condición | Captura: una card "Desde 100 calcos, 50% OFF" y debajo "Desde 10 calcos tenés **10% OFF pagando por transferencia**". El banner suelto y la grilla "Packs y servicios" desaparecieron | ✅ |
@@ -76,8 +76,16 @@
    (14 px; el objetivo real es la imagen, que mide más de 44) y los dos links
    dentro de la frase "También hacemos…" (17 y 37 px), que son links en línea
    dentro de un párrafo.
-4. **No hay slider antes/después**: no existen pares de fotos en el repo y no se
-   fabrica uno con un mockup.
+4. **No hay slider antes/después**: no se fabrica uno con un mockup.
+
+> **Nota del 4/9/2026, posterior a esta validación.** La sección Antes/Después
+> se validó con un posteo de Instagram (dos termos distintos, con el
+> "ANTES/DESPUÉS" cortado por el encuadre cuadrado, recortado con
+> `object-bottom` y con rótulos en HTML). Ese mismo día Mariano aportó la pieza
+> de marca definitiva —**el mismo** termo partido al medio, con los rótulos
+> completos— y se reemplazó: se muestra entera, sin recorte y sin rótulos en
+> HTML. El criterio no cambia (imagen propia del negocio, sin mockups
+> inventados); cambió el activo. Detalle en `data/ugc.js` (`ANTES_DESPUES`).
 
 ## 5. Fuera de scope (declarado en `requirements.md` §3)
 
