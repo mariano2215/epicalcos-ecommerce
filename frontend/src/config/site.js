@@ -3,6 +3,7 @@
  * Todos los datos comerciales viven acá — un solo lugar para editar.
  */
 import { formatPrice } from '../lib/formato.js';
+import { BULK_THRESHOLD } from './pricing.js';
 
 export const site = {
   name: 'EPICALCOS',
@@ -196,17 +197,31 @@ export const bankTransfer = {
   receiptWhatsapp: '3416806675'
 };
 
+/**
+ * Mensajes de la barra superior. **UNO POR VEZ** — no es una marquesina.
+ *
+ * Hasta el 4/9/2026 esto eran SIETE promesas girando juntas (los dos umbrales
+ * de envío, +5.000 clientes, +120.000 calcos, producción, personalizados y pago
+ * seguro). Encima, con una promo viva, arriba había además un banner dorado: dos
+ * tiras de colores compitiendo y ninguna ganando. Una barra que promete siete
+ * cosas no comunica ninguna.
+ *
+ * Ahora quedan sólo las DOS promesas COMERCIALES —lo que cambia la decisión de
+ * compra— y `AnnouncementBar` muestra una sola a la vez. Lo que se fue de acá no
+ * se perdió: las métricas de marca tienen su propia sección (MetricasConfianza)
+ * y los atributos del producto la suya (Beneficios), donde se leen de verdad.
+ *
+ * ⚠️ Los montos y el umbral SALEN DEL CONFIG. Escritos a mano, un cambio dejaba
+ * la barra prometiendo un número y el checkout cobrando otro.
+ *
+ * ⚠️ El 10 % NUNCA se anuncia a secas: siempre con sus dos condiciones (desde
+ * `BULK_THRESHOLD` calcos Y pagando por transferencia). Es el error que ya se
+ * cometió en /categorias con "10% off automático" y que el cliente descubría
+ * recién al elegir medio de pago.
+ */
 export const announcements = [
-  // El envío gratis a todo el país va primero: es lo que más pesa en la decisión.
-  // Los montos SALEN DEL CONFIG: escritos a mano, un cambio de umbral dejaba el
-  // ticker prometiendo un número y el checkout cobrando otro.
   `🇦🇷 Envío gratis a todo el país desde ${formatPrice(shipping.freeShippingThresholdNational)}`,
-  `🚚 Envío gratis en Rosario desde ${formatPrice(shipping.freeShippingThresholdRosario)}`,
-  '👥 +5.000 clientes',
-  '🎉 +120.000 calcos vendidas',
-  '⚡ Producción 2 a 3 días hábiles',
-  '✏️ Diseños personalizados',
-  '🔒 Pagá seguro con Mercado Pago'
+  `💸 10% OFF desde ${BULK_THRESHOLD} calcos pagando por transferencia`
 ];
 
 /**

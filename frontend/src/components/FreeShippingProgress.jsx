@@ -1,5 +1,6 @@
 import { formatPrice } from '../context/CartContext.jsx';
 import { shipping } from '../config/site.js';
+import { useAvisoDesbloqueo } from '../lib/promoUnlock.js';
 
 /**
  * Progreso hacia el envío gratis, en el carrito.
@@ -32,6 +33,11 @@ export default function FreeShippingProgress({ subtotal, className = '', compact
   const alcanzado = subtotal >= nacional;
   const pct = Math.min(100, Math.round((subtotal / objetivo) * 100));
   const falta = Math.max(0, objetivo - subtotal);
+
+  // Se avisa el umbral NACIONAL, que es el único que vale para cualquier
+  // destino. El de Rosario depende de a dónde va el pedido, y en el carrito eso
+  // todavía no se sabe: reportarlo sería contar desbloqueos que quizás no lo son.
+  useAvisoDesbloqueo('envio_gratis', nacional, alcanzado);
 
   return (
     <div

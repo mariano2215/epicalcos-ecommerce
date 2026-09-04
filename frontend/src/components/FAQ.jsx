@@ -49,6 +49,21 @@ const faqs = [
     a: 'Sí, es de los usos más comunes. El vinilo aguanta el agua y el sol, así que podés lavar el termo a mano sin problema. Lo único que no recomendamos es el lavavajillas. El tamaño que mejor le va es el de 6 cm.'
   },
   {
+    tag: 'general',
+    q: '¿Puedo elegir diseños distintos en el mismo pedido?',
+    a: 'Sí. Podés mezclar todos los diseños, categorías y tamaños que quieras en un mismo pedido, sin cantidad mínima por diseño. Todo suma para el descuento por volumen: lo que se cuenta son las calcos totales, no cuántas llevás de cada una.'
+  },
+  {
+    tag: 'general',
+    q: '¿Dónde puedo pegarlas?',
+    a: 'En cualquier superficie lisa y no porosa: termo, mate, botella, notebook, celular, casco, auto, moto, valija, cuaderno, heladera, vidriera. Sobre tela, madera sin sellar o paredes con textura no agarran bien. Para el auto y la moto conviene el tamaño de 9 cm.'
+  },
+  {
+    tag: 'general',
+    q: '¿Cómo aplico una calco para que quede bien?',
+    a: 'Limpiá y secá bien la superficie (si podés, pasale alcohol y esperá que evapore). Despegá la calco desde una esquina, apoyala primero de un lado y andá bajándola con el dedo hacia el otro para que no queden burbujas. Presioná unos segundos desde el centro hacia afuera. Dejala 24 horas antes de mojarla: el adhesivo termina de curar en ese tiempo.'
+  },
+  {
     tag: 'personalizados',
     q: '¿Cómo les envío mi diseño?',
     a: 'En Personalizados elegís tamaño y corte y subís el archivo ahí mismo: arrastrás o tocás para elegirlo, y se sube junto con tu pedido. Aceptamos PNG, JPG, PDF, SVG y AI. Si preferís, también podés mandarlo por WhatsApp después de pagar.'
@@ -127,20 +142,22 @@ export default function FAQ() {
   const visible = tab === 'all' ? faqs : faqs.filter((f) => f.tag === tab);
 
   return (
-    <section id="faq" className="py-20 scroll-mt-24">
+    <section id="faq" className="seccion scroll-mt-24">
       <div className="container-app">
-        <div className="text-center mb-10">
-          <span className="badge badge-soft mb-3">Preguntas frecuentes</span>
-          <h2 className="font-display font-extrabold text-3xl md:text-4xl">Lo que suelen preguntar</h2>
+        <div className="seccion-encabezado text-center">
+          <h2 className="font-display font-extrabold text-3xl md:text-5xl">Lo que suelen preguntar</h2>
         </div>
 
-        {/* Tabs de filtro */}
-        <div className="flex justify-center gap-2 mb-8">
+        {/* Tabs de filtro.
+            `flex-wrap`: los cuatro en una sola línea miden 396 px y desbordaban
+            la página a 375 px — la Home entera tenía scroll horizontal por estos
+            cuatro botones. */}
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => { setTab(t.key); setOpen(-1); }}
-              className={`px-4 py-1.5 rounded-full text-sm border transition-colors ${
+              className={`px-4 min-h-[44px] inline-flex items-center justify-center rounded-full text-sm border transition-colors ${
                 tab === t.key
                   ? 'border-brand-fuchsia bg-brand-fuchsia/15 text-white'
                   : 'border-white/10 text-white/60 hover:border-white/25'

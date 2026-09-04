@@ -465,4 +465,65 @@ export function trackPersonalizadoPrecio({ valor, material, cantidad }) {
   debug('personalizado_precio_calculado', valor, material, cantidad);
 }
 
+// ─── Home rediseñada (spec 014) ───────────────────────────────────────────────
+
+/**
+ * El autocomplete devolvió resultados mientras la persona tipeaba.
+ *
+ * Es distinto de `search`, que es el submit: acá se mide la búsqueda que
+ * NUNCA se envía porque la sugerencia ya resolvió la intención. Sin este
+ * evento, todo el tráfico que entra por el autocomplete aparece en GA4 como si
+ * hubiera llegado a la categoría por navegación.
+ */
+export function trackSearchResultsView(term, resultsCount, origen = 'home') {
+  pushDataLayer({
+    event: 'search_results_view',
+    search_term: term,
+    results_count: resultsCount,
+    origen
+  });
+  debug('search_results_view', term, resultsCount, origen);
+}
+
+/**
+ * Click en una card de categoría. `position` es 1-based y sirve para saber si
+ * la grilla se mira entera o sólo las dos primeras filas.
+ */
+export function trackCategoryClick(categoryName, position) {
+  pushDataLayer({ event: 'category_click', category_name: categoryName, position });
+  debug('category_click', categoryName, position);
+}
+
+/** Entrada al camino de personalizados, con el lugar de la página de donde salió. */
+export function trackCustomStickerClick(origen = 'home') {
+  pushDataLayer({ event: 'custom_sticker_click', origen });
+  pixelCustom('CustomStickerClick', { origen });
+  debug('custom_sticker_click', origen);
+}
+
+/** Entrada al camino mayorista / negocio (el de mayor ticket). */
+export function trackWholesaleClick(origen = 'home') {
+  pushDataLayer({ event: 'wholesale_click', origen });
+  pixelCustom('WholesaleClick', { origen });
+  debug('wholesale_click', origen);
+}
+
+/**
+ * El carrito cruzó un umbral y desbloqueó un beneficio.
+ *
+ * ⚠️ `promo` es SIEMPRE el nombre del beneficio real ('transferencia_10' /
+ * 'envio_gratis'), nunca un texto de marketing: el que lee el informe tiene que
+ * poder cruzarlo con la regla de `config/pricing.js` que lo produce.
+ */
+export function trackPromoUnlock(promo, umbral) {
+  pushDataLayer({ event: 'promo_unlock', promo, umbral });
+  debug('promo_unlock', promo, umbral);
+}
+
+/** Interacción con prueba social (testimonio o foto de UGC). */
+export function trackTestimonialInteraction(nombre, accion = 'click') {
+  pushDataLayer({ event: 'testimonial_interaction', testimonial: nombre, accion });
+  debug('testimonial_interaction', nombre, accion);
+}
+
 export const analyticsConfig = { GTM_ID, GA4_ID, PIXEL_ID };

@@ -320,19 +320,217 @@ a { color: inherit; text-decoration: none; }
   50%      { background-position: 100% 50%; }
 }
 
-/* Titular rotativo: frases apiladas en la misma celda (sin salto de layout) */
-.rotating-headline { display: grid; }
-.rotating-headline__item {
-  grid-area: 1 / 1;
-  opacity: 0;
-  transform: translateY(0.4em) rotateX(-35deg);
-  transform-origin: 50% 100%;
-  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-  pointer-events: none;
+/* ============================================================
+   Buscador (components/BuscadorCalcos.jsx)
+   ============================================================ */
+.buscador { position: relative; }
+/* La caja que ancla el desplegable: sólo el campo, sin los chips. */
+.buscador__caja { position: relative; }
+
+.buscador__campo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(32, 32, 32, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 0.35rem 0.35rem 0.35rem 0.9rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.rotating-headline__item.is-active {
-  opacity: 1;
-  transform: none;
+/* El foco se pinta sobre el CONTENEDOR y no sobre el input: el input no tiene
+   borde propio, así que un :focus-visible suyo no se vería. */
+.buscador__campo:focus-within {
+  border-color: rgba(255, 27, 141, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 27, 141, 0.15);
+}
+.buscador__campo--lg { padding: 0.5rem 0.5rem 0.5rem 1.15rem; }
+
+.buscador__lupa { color: rgba(255, 255, 255, 0.45); font-size: 0.95rem; }
+
+.buscador__input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: #fff;
+  font-size: 0.95rem;
+  /* 44 px de alto real: es el control más tocado de la Home en celular. */
+  padding: 0.7rem 0.25rem;
+}
+.buscador__campo--lg .buscador__input { font-size: 1.05rem; padding: 0.85rem 0.25rem; }
+.buscador__input::placeholder { color: rgba(255, 255, 255, 0.38); }
+/* La X nativa del type="search" se pinta oscura sobre fondo oscuro en WebKit. */
+.buscador__input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.buscador__submit {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0.6rem 1.15rem;
+  font-size: 0.85rem;
+}
+.buscador__campo--lg .buscador__submit { padding: 0.75rem 1.5rem; font-size: 0.95rem; }
+
+.buscador__lista {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 30;
+  background: rgba(24, 24, 24, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  padding: 0.3rem;
+  overflow: hidden;
+  text-align: left;
+}
+.buscador__opcion {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.buscador__opcion:hover,
+.buscador__opcion:focus-visible { background: rgba(255, 255, 255, 0.07); outline: none; }
+
+.buscador__rotulo {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.6rem;
+}
+.buscador__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+
+/* Chip de búsqueda sugerida. Los cuatro estados del brief §28 viven acá y no en
+   cada llamador: un chip que se ve distinto en dos secciones deja de leerse
+   como el mismo tipo de control (similitud). */
+.chip-busqueda {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+.chip-busqueda:hover { border-color: rgba(255, 27, 141, 0.55); background: rgba(255, 255, 255, 0.09); }
+.chip-busqueda:focus-visible {
+  outline: none;
+  border-color: rgba(255, 27, 141, 0.8);
+  box-shadow: 0 0 0 3px rgba(255, 27, 141, 0.22);
+}
+.chip-busqueda:active { transform: scale(0.97); }
+.chip-busqueda:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ============================================================
+   Modal de búsqueda a pantalla completa (mobile)
+   ============================================================ */
+.buscador-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(10, 10, 10, 0.97);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ============================================================
+   Ritmo vertical de las secciones de la Home
+   El espacio negativo ES jerarquía: sin un ritmo único, dos secciones
+   consecutivas se leen como una sola.
+   ============================================================ */
+.seccion { padding-top: 3.5rem; padding-bottom: 3.5rem; }
+@media (min-width: 768px) {
+  .seccion { padding-top: 5.5rem; padding-bottom: 5.5rem; }
+}
+.seccion-encabezado { margin-bottom: 2rem; }
+@media (min-width: 768px) {
+  .seccion-encabezado { margin-bottom: 2.75rem; }
+}
+
+/* ============================================================
+   Métricas de confianza — números grandes, sin movimiento
+   ============================================================ */
+.metrica__numero {
+  font-family: var(--fuente-titulos);
+  font-weight: 900;
+  font-size: clamp(2.25rem, 9vw, 3.75rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  background: linear-gradient(135deg, #FF1B8D 0%, #FF5A1F 60%, #FFD84D 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.metrica__label {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ============================================================
+   Antes / Después — rótulos sobre la foto real
+   ============================================================ */
+.antes-despues__rotulo {
+  position: absolute;
+  bottom: 0.75rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.antes-despues__rotulo--antes { left: 0.75rem; }
+.antes-despues__rotulo--despues {
+  right: 0.75rem;
+  background: linear-gradient(135deg, #FF1B8D, #FF5A1F);
+  border-color: transparent;
+}
+
+/* ============================================================
+   Carrusel horizontal con swipe (testimonios y UGC en mobile)
+   ============================================================ */
+.carrusel-snap {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 1.25rem;
+  padding-bottom: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.carrusel-snap::-webkit-scrollbar { display: none; }
+.carrusel-snap > * { scroll-snap-align: start; flex: 0 0 82%; }
+@media (min-width: 640px) {
+  .carrusel-snap { display: grid; gap: 1rem; overflow: visible; }
 }
 
 /* Reveal al hacer scroll */
@@ -361,25 +559,34 @@ a { color: inherit; text-decoration: none; }
 .grid-rise > *:nth-child(10) { animation-delay: 0.38s; }
 .grid-rise > *:nth-child(n+11) { animation-delay: 0.42s; }
 
-/* Announcement ticker marquee */
-@keyframes ticker-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+/* ============================================================
+   Barra superior — UN mensaje por vez (ver AnnouncementBar.jsx)
+   Reemplazó a la marquesina `.announcement-ticker`, que arrastraba las siete
+   promesas de `announcements` en movimiento permanente.
+   ============================================================ */
+.anuncio-barra {
+  background: linear-gradient(90deg, #FF1B8D 0%, #FF5A1F 50%, #FFD84D 100%);
+  color: #111;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.5rem 0;
+  text-align: center;
+}
+@media (min-width: 640px) {
+  .anuncio-barra { font-size: 0.875rem; }
 }
 
-.announcement-ticker {
-  display: flex;
-  width: max-content;
-  min-width: 200%;
-  animation: ticker-scroll 45s linear infinite;
-  white-space: nowrap;
-  will-change: transform;
+/* Las frases se apilan en la MISMA celda de grid: la barra no cambia de alto al
+   rotar y no hay CLS. Mismo truco que usaba el titular del hero. */
+.anuncio-barra__pista { display: grid; }
+.anuncio-barra__item {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(0.35em);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
 }
-
-.announcement-ticker span {
-  padding-right: 0;
-  flex-shrink: 0;
-}
+.anuncio-barra__item.is-active { opacity: 1; transform: none; }
 
 /* ============================================================
    Marcas que confiaron — pasarela de logos circulares
@@ -737,7 +944,9 @@ a { color: inherit; text-decoration: none; }
     animation: none !important;
   }
   .promo-timebox::after { display: none; }
-  .announcement-ticker { animation: none !important; }
+  .anuncio-barra__item { transition: none !important; }
+  .chip-busqueda:active { transform: none; }
+  .carrusel-snap { scroll-behavior: auto; }
   /* Sin animación la tira queda cortada al ancho de la pantalla, así que se
      entrega scrolleable a mano y se esconde la copia de relleno (si no, las
      marcas aparecen dos veces). */
@@ -747,5 +956,4 @@ a { color: inherit; text-decoration: none; }
   .marcas-ticker__item:hover img { transform: none; }
   .sticker-float { transition: none !important; transform: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-  .rotating-headline__item { transition: none !important; }
 }

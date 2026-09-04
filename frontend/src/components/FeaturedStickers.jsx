@@ -9,6 +9,21 @@ import { trackViewItemList } from '../lib/analytics.js';
 // Un sticker al azar de cada una de estas categorías en cada carga de la página.
 const FEATURED_CATEGORIES = ['anime', 'argentina', 'disney', 'frases'];
 
+/**
+ * Nombre de la lista en GA4. **No sigue al título visible.**
+ *
+ * El título de la sección cambió a "Los más elegidos" (rediseño, spec 014) pero
+ * el `item_list_name` se queda en el de siempre: es la clave con la que GA4
+ * agrupa el histórico de `view_item_list` → `select_item` desde que existe la
+ * sección. Cambiarlo parte la serie en dos y el informe deja de comparar.
+ *
+ * ⚠️ HALLAZGO (spec 014): ni "más vendidos" ni "más elegidos" salen de un dato
+ * de ventas — son cuatro diseños AL AZAR de cuatro categorías, uno por carga.
+ * Se mantuvo la promesa que ya estaba viva en producción, pero para sostenerla
+ * de verdad haría falta el ranking real de ventas.
+ */
+const LISTA_GA4 = 'Los más vendidos';
+
 const pickRandom = (items) => items[Math.floor(Math.random() * items.length)];
 
 export default function FeaturedStickers() {
@@ -45,7 +60,7 @@ export default function FeaturedStickers() {
       if (elegidos.length) {
         trackViewItemList(
           elegidos.map((s) => ({ ...s, price: priceForSize(DEFAULT_SIZE) })),
-          'Los más vendidos',
+          LISTA_GA4,
           'home_destacados'
         );
       }
@@ -54,15 +69,13 @@ export default function FeaturedStickers() {
   }, []);
 
   return (
-    <section className="py-10">
+    <section className="seccion">
       <div className="container-app">
-        {/* Header */}
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <span className="badge badge-hot mb-2">🔥 Tendencia</span>
-            <h2 className="font-display font-extrabold text-3xl md:text-4xl">Los más vendidos</h2>
-          </div>
-          <Link to="/categorias" className="btn-ghost hidden sm:inline-flex">
+        {/* Un solo elemento dominante: el título. El badge "🔥 Tendencia" que
+            había encima competía con él y no agregaba información. */}
+        <div className="seccion-encabezado flex items-end justify-between gap-4">
+          <h2 className="font-display font-extrabold text-3xl md:text-5xl">Los más elegidos</h2>
+          <Link to="/categorias" className="btn-ghost hidden sm:inline-flex shrink-0">
             Ver todos →
           </Link>
         </div>
@@ -79,15 +92,16 @@ export default function FeaturedStickers() {
             {stickers.map((s, i) => (
               <Reveal key={s.id} delay={i * 60} className="h-full">
                 {/* El Home no tiene SizePicker: la card tiene que decir de qué tamaño es ese precio. */}
-                <StickerCard sticker={s} listName="Los más vendidos" mostrarTamano />
+                <StickerCard sticker={s} listName={LISTA_GA4} mostrarTamano />
               </Reveal>
             ))}
           </div>
         )}
 
-        {/* Ver todos mobile */}
-        <div className="mt-6 text-center sm:hidden">
-          <Link to="/categorias" className="btn-ghost">
+        {/* Ver todos mobile. `min-h-[44px]`: el btn-ghost mide 40 px y en
+            celular este es el único "ver más" de la sección. */}
+        <div className="mt-8 text-center sm:hidden">
+          <Link to="/categorias" className="btn-ghost min-h-[44px]">
             Ver todas las categorías →
           </Link>
         </div>

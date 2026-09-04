@@ -1,22 +1,42 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Hero from '../components/Hero.jsx';
-import FeaturedStickers from '../components/FeaturedStickers.jsx';
-import Testimonials from '../components/Testimonials.jsx';
-import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
-import HowToBuy from '../components/HowToBuy.jsx';
+import BuscadorSeccion from '../components/BuscadorSeccion.jsx';
 import IntentSelector from '../components/IntentSelector.jsx';
 import RecentCategories from '../components/RecentCategories.jsx';
-import FAQ from '../components/FAQ.jsx';
+import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
+import AntesDespues from '../components/AntesDespues.jsx';
+import MetricasConfianza from '../components/MetricasConfianza.jsx';
+import Beneficios from '../components/Beneficios.jsx';
+import OfertaPrincipal from '../components/OfertaPrincipal.jsx';
+import Testimonials from '../components/Testimonials.jsx';
+import GaleriaUGC from '../components/GaleriaUGC.jsx';
+import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
+import HowToBuy from '../components/HowToBuy.jsx';
+import FAQ from '../components/FAQ.jsx';
+import CtaFinal from '../components/CtaFinal.jsx';
 import Reveal from '../components/Reveal.jsx';
-import { CATEGORIES, SPECIALS } from '../data/categories.js';
+import { CATEGORIES } from '../data/categories.js';
+import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { useSeo } from '../lib/seo.js';
 import { useReducedMotion } from '../lib/motion.js';
 
-const FEATURED_SLUGS = ['anime', 'disney', 'memes', 'frases', 'marvel', 'los-simpsons', 'argentina', 'flores', 'scaloneta', 'aesthetic'];
-const SERVICE_SLUGS = ['mayorista', 'archivos-imprimibles', 'tatuajes', 'polaroid'];
+const FEATURED_SLUGS = ['argentina', 'anime', 'disney', 'escudos-futbol', 'harry-potter', 'marvel', 'memes', 'los-simpsons', 'taylor-swift', 'frases'];
 
+/**
+ * La Home, en un recorrido descendente y con UNA idea por sección:
+ *
+ *   deseo → descubrimiento → producto → confianza → oferta → prueba → acción
+ *
+ * El orden no es decorativo. Hasta el 4/9/2026 la página abría con ocho
+ * elementos compitiendo arriba del fold y después alternaba catálogo, servicios,
+ * promos y prueba social sin un hilo: cada sección volvía a pedirle a la persona
+ * que decidiera de qué se trataba esto. Ahora cada bloque responde una sola
+ * pregunta y se la pasa al siguiente.
+ *
+ * Ver `specs/014-rediseno-home-gestalt/`.
+ */
 export default function Home() {
   const [catalog, setCatalog] = useState({});
   const [rotation, setRotation] = useState(0);
@@ -72,61 +92,37 @@ export default function Home() {
   }, [reducedMotion]);
 
   const featured = CATEGORIES.filter((c) => FEATURED_SLUGS.includes(c.slug) && catalog[c.slug]).slice(0, 10);
-  const services = SPECIALS.filter((s) => SERVICE_SLUGS.includes(s.slug));
-  // SPECIALS ya viene sin las secciones despublicadas: el grid se adapta para no dejar huecos.
-  const servicesCols = services.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4';
 
   return (
     <>
+      {/* ── DESEO ────────────────────────────────────────────────────────── */}
       <Hero />
 
-
-      {/* Bifurcación por intención antes del catálogo: el que venía a mandar su
-          logo o a comprar para su negocio tenía que deducir solo que existía
-          una página para eso. */}
-      <IntentSelector />
+      {/* ── DESCUBRIMIENTO ───────────────────────────────────────────────── */}
+      {/* El buscador va acá y no dentro del hero: con 61 categorías es el
+          mecanismo de navegación real del sitio, y como input chico al final
+          del hero pasaba desapercibido. */}
+      <BuscadorSeccion />
 
       {/* Solo para quien ya estuvo mirando: con 61 categorías, volver a la que
           estabas viendo cuesta. No se renderiza nada si no hay historial. */}
       <RecentCategories />
 
+      {/* Bifurcación por intención: el que venía a mandar su logo o a comprar
+          para su negocio tenía que deducir solo que existía una página. */}
+      <IntentSelector />
+
+      {/* ── PRODUCTO ─────────────────────────────────────────────────────── */}
       <FeaturedStickers />
 
-      {/* Servicios. `personalizados` y `negocio` ya tienen su entrada en el
-          IntentSelector de arriba, así que acá quedan solo los packs y los
-          productos especiales — nada duplicado en la misma página. */}
-      <section className="py-10">
+      {/* Categorías destacadas — el id lo usa WelcomePopup para dispararse al
+          llegar acá con el scroll. NO renombrar. */}
+      <section ref={featuredRef} id="categorias-destacadas" className="seccion scroll-mt-24">
         <div className="container-app">
-          <div className="mb-6">
-            <span className="badge badge-soft mb-2">Además del catálogo</span>
-            <h2 className="font-display font-extrabold text-3xl md:text-4xl">Packs y servicios</h2>
-          </div>
-          <div className={`grid gap-3 grid-cols-2 ${servicesCols}`}>
-            {services.map((s, i) => (
-              <Reveal key={s.slug} delay={i * 80} className="h-full">
-                <Link to={s.to} className="card-glass card-glass-hover p-5 flex flex-col justify-between min-h-[150px] h-full relative overflow-hidden">
-                  <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${s.accent}`} />
-                  <div className="relative text-5xl text-center">{s.emoji}</div>
-                  <div className="relative">
-                    <div className="font-display font-extrabold leading-tight">{s.name}</div>
-                    <div className="text-xs text-white/60 mt-1">{s.blurb}</div>
-                  </div>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Categorías destacadas — id usado por WelcomePopup para dispararse al llegar acá con el scroll */}
-      <section ref={featuredRef} id="categorias-destacadas" className="py-10 scroll-mt-24">
-        <div className="container-app">
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <span className="badge badge-soft mb-2">Explorá</span>
-              <h2 className="font-display font-extrabold text-3xl md:text-4xl">Categorías destacadas</h2>
-            </div>
-            <Link to="/categorias" className="btn-ghost hidden sm:inline-flex">Ver todas →</Link>
+          <div className="seccion-encabezado text-center">
+            <h2 className="font-display font-extrabold text-3xl md:text-5xl">
+              Encontrá lo que te representa
+            </h2>
           </div>
 
           {featured.length === 0 ? (
@@ -134,7 +130,7 @@ export default function Home() {
               {CATEGORIES.slice(0, 10).map((c, i) => (
                 <Reveal key={c.slug} delay={i * 60} className="h-full">
                   <Link to={`/categoria/${c.slug}`} className="card-glass card-glass-hover p-5 h-full block">
-                    <div className="text-4xl mb-2 text-center">{c.emoji}</div>
+                    <div className="text-4xl mb-2 text-center" aria-hidden>{c.emoji}</div>
                     <div className="font-semibold text-sm">{c.name}</div>
                   </Link>
                 </Reveal>
@@ -152,41 +148,39 @@ export default function Home() {
                     count={catalog[c.slug]?.count}
                     portadas={catalog[c.slug]?.portadas}
                     rotation={rotation}
+                    posicion={i + 1}
                   />
                 </Reveal>
               ))}
             </div>
           )}
-        </div>
-      </section>
 
-      <HowToBuy />
-
-      <Testimonials />
-
-      {/* Prueba social: los testimonios de clientes y, abajo, los logos de las
-          marcas. Mismo componente que usa /negocio. */}
-      <MarcasConfiaron />
-
-      {/* Banner descuento por volumen */}
-      <section className="py-10">
-        <div className="container-app">
-          <div className="card-glass p-8 md:p-10 text-center relative overflow-hidden"
-            style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(58,134,255,.35), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,27,141,.35), transparent 50%), rgba(32,32,32,.82)' }}>
-            <span className="badge badge-hot mb-3">Descuentos</span>
-            <h3 className="font-display font-extrabold text-2xl md:text-4xl">Desde 10 calcos, 10% off por transferencia</h3>
-            <p className="text-white/80 mt-3 max-w-xl mx-auto">
-              Mezclá los diseños y tamaños que quieras, y pagá por transferencia bancaria. Y si vas por volumen, el Pack Mayorista desde 100 calcos tiene 50% de descuento.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link to="/categorias" className="btn-primary">Ver categorías</Link>
-              <Link to="/mayorista" className="btn-secondary">Pack Mayorista x100</Link>
-            </div>
+          {/* Las 61 juntas no se miran: se saltean. Diez y una puerta. */}
+          <div className="mt-10 text-center">
+            <Link to="/categorias" className="btn-secondary">
+              Ver las {CATEGORY_COUNT} categorías
+            </Link>
           </div>
         </div>
       </section>
 
+      {/* ── CONFIANZA ────────────────────────────────────────────────────── */}
+      <AntesDespues />
+      <MetricasConfianza />
+      <Beneficios />
+
+      {/* ── OFERTA ───────────────────────────────────────────────────────── */}
+      <OfertaPrincipal />
+
+      {/* ── PRUEBA ───────────────────────────────────────────────────────── */}
+      <Testimonials />
+      <GaleriaUGC />
+      <MarcasConfiaron />
+
+      {/* ── ACCIÓN ───────────────────────────────────────────────────────── */}
+      <HowToBuy />
       <FAQ />
+      <CtaFinal />
     </>
   );
 }

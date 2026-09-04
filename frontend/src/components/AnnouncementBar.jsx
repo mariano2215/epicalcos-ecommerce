@@ -1,25 +1,57 @@
+import { useEffect, useState } from 'react';
 import { announcements } from '../config/site.js';
+import { useReducedMotion } from '../lib/motion.js';
 
-const SEP = '   ·   ';
-const ticker = announcements.join(SEP) + SEP;
-// 6 copias: la animación mueve -50% (3 copias), las otras 3 actúan de relleno invisible
-const COPIES = 6;
+/**
+ * Barra superior: **un solo mensaje comercial por vez**.
+ *
+ * Antes era una marquesina infinita con las siete promesas de `announcements`
+ * pegadas una atrás de otra, desplazándose sin parar. Tres problemas juntos:
+ * (1) siete promesas simultáneas no dejan ninguna en la cabeza, (2) el
+ * movimiento permanente compite con el producto, y (3) para leer la última
+ * había que esperar a que pasara toda la tira.
+ *
+ * Ahora `announcements` trae dos mensajes y acá se alterna entre ellos con un
+ * crossfade cada `interval`. Las dos frases se apilan en la misma celda de grid
+ * —igual que hacía el titular rotante del hero— así la altura no salta y no hay
+ * CLS.
+ *
+ * Con `prefers-reduced-motion` no rota: se queda con el primero, que es el que
+ * más pesa en la decisión (el envío gratis).
+ *
+ * ⚠️ El texto NO se escribe acá. Sale de `config/site.js`, que a su vez lee los
+ * umbrales de `shipping` y `BULK_THRESHOLD`.
+ */
+export default function AnnouncementBar({ interval = 5000 }) {
+  const reduced = useReducedMotion();
+  const [i, setI] = useState(0);
 
-export default function AnnouncementBar() {
+  useEffect(() => {
+    if (reduced || announcements.length < 2) return;
+    const id = setInterval(() => setI((v) => (v + 1) % announcements.length), interval);
+    return () => clearInterval(id);
+  }, [reduced, interval]);
+
   if (!announcements.length) return null;
 
   return (
     <div
-      className="overflow-hidden text-xs sm:text-sm font-medium py-2"
-      style={{
-        background: 'linear-gradient(90deg,#FF1B8D 0%,#FF5A1F 50%,#FFD84D 100%)',
-        color: '#111'
-      }}
-      aria-label={announcements.join(' · ')}
+      className="anuncio-barra"
+      /* aria-live="polite" y no un texto suelto: el que usa lector de pantalla
+         no tiene por qué enterarse de cada rotación, pero sí de lo que dice la
+         barra cuando llega a ella. */
+      role="status"
+      aria-live="polite"
     >
-      <div className="announcement-ticker">
-        {Array.from({ length: COPIES }, (_, i) => (
-          <span key={i} aria-hidden={i > 0 ? 'true' : undefined}>{ticker}</span>
+      <div className="container-app anuncio-barra__pista">
+        {announcements.map((texto, idx) => (
+          <span
+            key={texto}
+            className={`anuncio-barra__item ${idx === (reduced ? 0 : i) ? 'is-active' : ''}`}
+            aria-hidden={idx === (reduced ? 0 : i) ? undefined : 'true'}
+          >
+            {texto}
+          </span>
         ))}
       </div>
     </div>

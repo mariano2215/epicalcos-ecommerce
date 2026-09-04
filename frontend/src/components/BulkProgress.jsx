@@ -1,5 +1,6 @@
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { BULK_THRESHOLD } from '../config/pricing.js';
+import { useAvisoDesbloqueo } from '../lib/promoUnlock.js';
 
 /**
  * Progreso hacia el 10 % por volumen — el hermano de FreeShippingProgress, pero
@@ -26,6 +27,11 @@ import { BULK_THRESHOLD } from '../config/pricing.js';
  */
 export default function BulkProgress({ className = '', compacto = false }) {
   const { bulkUnits, bulkEligible, bulkSavings, digitalOnly } = useCart();
+
+  // `promo_unlock`: el momento exacto en que el carrito llega a los 10. Es el
+  // evento que dice si el medidor empuja de verdad o sólo decora. Va ANTES del
+  // early return de `digitalOnly` porque los hooks no pueden ser condicionales.
+  useAvisoDesbloqueo('transferencia_10', BULK_THRESHOLD, bulkEligible && !digitalOnly);
 
   // Un carrito 100 % digital son archivos de precio fijo: el descuento por
   // volumen no los toca, y anunciarlo ahí se lee como que sí. Mismo criterio

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { portadaDe, PORTADA_BG } from '../lib/portadas.js';
+import { trackCategoryClick } from '../lib/analytics.js';
 
 // La portada es determinística por (slug + rotation): con la misma rotación,
 // la misma categoría muestra siempre la misma imagen. Quién elige la rotación
@@ -10,7 +11,14 @@ import { portadaDe, PORTADA_BG } from '../lib/portadas.js';
 // `portadas` restringe la elección a los diseños con fondo gris uniforme. Las
 // categorías que no tienen ninguno vienen sin lista y eligen entre todos: el
 // gris se los pone igual el recuadro de acá abajo.
-export default function CategoryCard({ slug, name, emoji, cover, count, rotation = 0, portadas }) {
+//
+// `posicion` (1-based) es opcional y sólo la pasa la grilla de destacadas del
+// Home: dispara `category_click` con el lugar que ocupaba la card. Sirve para
+// saber si la grilla se mira entera o se corta en la primera fila — el dato que
+// decide cuántas categorías conviene mostrar antes del "ver las 61". La grilla
+// de /categorias no la pasa: ahí el orden lo elige el usuario y la posición no
+// significa lo mismo.
+export default function CategoryCard({ slug, name, emoji, cover, count, rotation = 0, portadas, posicion }) {
   // Arranca ya en la rotación pedida: si arrancara en 0 y después saltara a la
   // rotación real, cada card pediría DOS imágenes en vez de una.
   const [src, setSrc] = useState(() => portadaDe(slug, count, rotation, cover, portadas));
@@ -46,6 +54,7 @@ export default function CategoryCard({ slug, name, emoji, cover, count, rotation
   return (
     <Link
       to={`/categoria/${slug}`}
+      onClick={posicion ? () => trackCategoryClick(name, posicion) : undefined}
       className="card-glass card-glass-hover overflow-hidden flex flex-col group"
     >
       {/* El recuadro va del gris del catálogo y no del glass oscuro: los diseños
