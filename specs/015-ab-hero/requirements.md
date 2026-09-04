@@ -1,10 +1,11 @@
-# Requirements — A/B del hero: titular y CTA principal
+# Requirements — A/B del hero: titular, CTA y ubicación del buscador
 
 | | |
 |---|---|
 | **Spec** | `015-ab-hero` |
 | **Estado** | `EN IMPLEMENTACIÓN` |
 | **Fecha** | 04/09/2026 |
+| **Ampliada** | 04/09/2026 — se suma el test de ubicación del buscador (§11) |
 | **Autor** | Mariano (brief §34) + Claude (redacción) |
 
 ---
@@ -59,10 +60,9 @@ Sí entra:
 
 No entra:
 
-- [ ] **Test del buscador** (brief §34, "dentro del hero" vs "debajo"). Es un
-      cambio estructural, no de copy: mueve una sección entera, arriesga CLS
-      arriba del fold y contradice una decisión que se acaba de tomar en la
-      spec 014. Se propone aparte.
+- [x] ~~Test del buscador~~ — **entró por ampliación**, ver §11. Se había
+      dejado afuera por ser estructural y no de copy; Mariano lo pidió
+      explícitamente después de ver los otros dos andando.
 - [ ] **Test de social proof** (brief §34). No es del hero.
 - [ ] Cambiar precios, promos o cupones — **prohibido en un experimento**
 - [ ] Tocar `title`, meta description o JSON-LD
@@ -153,3 +153,49 @@ del funnel por variante sin instrumentar nada más.
 
 KPI primario: `search` + `view_item_list` por variante (el hero manda al
 catálogo). Secundario: `add_to_cart` y `purchase`.
+
+
+---
+
+## 11. Ampliación — ubicación del buscador (brief §34, "TEST BUSCADOR")
+
+### Problema
+
+El rediseño puso el buscador en su propia sección **debajo** del hero. La
+alternativa —**dentro** del hero, arriba de los CTA— también es defendible: con
+61 categorías, buscar es la navegación real del sitio, y cuanto antes aparezca,
+antes se usa. Cuál rinde más no se sabe.
+
+### Requisitos funcionales
+
+| ID | Requisito |
+|---|---|
+| RF-11 | El buscador aparece en **exactamente un** lugar: dentro del hero o en su sección. Nunca en los dos, nunca en ninguno. |
+| RF-12 | En la variante `en_hero` el buscador va **arriba** de los CTA del hero. |
+| RF-13 | En la variante `en_hero` la sección `¿Qué te gusta?` no se renderiza. |
+| RF-14 | El bloque de búsqueda lleva el **mismo** contenido en las dos variantes (campo, chips sugeridos y búsquedas recientes). |
+| RF-15 | Los chips y el campo son legibles sobre el degradado del hero. |
+| RF-16 | El control es `debajo`: la sección propia, que es lo publicado hoy. |
+
+### Requisitos no funcionales
+
+| ID | Requisito |
+|---|---|
+| ANF-7 | Sin CLS: la ubicación se decide antes del primer pintado. |
+| ANF-8 | A 375 px no aparece scroll horizontal en ninguna de las dos variantes. |
+
+### Lo que este test acepta a cambio
+
+Meter el buscador con sus chips dentro del hero lo agranda de **517 px a
+774 px** (visitante nuevo, sin búsquedas recientes). El CTA principal se corre
+de ~330 px a **643 px**: sigue entrando en un iPhone de 812 px de alto, pero en
+uno de 667 px queda al borde, y con búsquedas recientes guardadas el hero suma
+~90 px más y el CTA cae abajo del fold.
+
+**No se compensa achicando el padding del hero en esa variante.** Correr los
+CTA es una consecuencia real de poner el buscador arriba, no un efecto colateral
+a disimular: la pregunta de negocio es "¿conviene el buscador arriba, aunque los
+CTA bajen?", y compensarlo respondería otra pregunta, sobre un hero que no
+existe. Lo que sí queda anotado: **si `en_hero` pierde, puede ser por el
+desplazamiento de los CTA y no por la ubicación del buscador** — separarlo pide
+un tercer brazo con el hero más compacto.

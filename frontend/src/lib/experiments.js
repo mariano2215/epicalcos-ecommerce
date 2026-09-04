@@ -74,6 +74,30 @@ export const EXPERIMENTS = {
   },
 
   /**
+   * Spec 015 (ampliación) — ¿dónde rinde más el buscador?
+   * Hipótesis: con 61 categorías, meter el buscador ARRIBA de los CTA del hero
+   * hace que más gente busque en vez de irse por el camino genérico del
+   * catálogo. Cuesta altura del hero: los dos CTA bajan.
+   * KPI: search + search_results_view sobre visitas al Home. Secundario:
+   * view_item_list y add_to_cart (buscar más no sirve si no termina en compra).
+   *
+   * ⚠️ Control = `debajo`, que es la sección propia que salió con el rediseño
+   * (spec 014) y es lo que hoy está publicado.
+   *
+   * ⚠️ TERCER experimento vivo sobre el mismo hero. Los efectos principales
+   * siguen sin sesgo —las tres asignaciones son independientes—, pero las
+   * celdas ahora son ocho y hay una que se lee mal: `en_hero` + el CTA
+   * `encontra_calcos` deja un botón que promete lo mismo que el campo de
+   * búsqueda que tiene tres centímetros arriba. Si este test se toma en serio,
+   * conviene apagar `hero_cta` mientras corre.
+   */
+  hero_buscador: {
+    active: true,
+    variants: ['debajo', 'en_hero'],
+    descripcion: 'Buscador: sección propia debajo del hero (control) vs dentro del hero'
+  },
+
+  /**
    * ¿Resolver la duda del tamaño sin que la pidan sube el add-to-cart?
    * Hipótesis: "no sé qué tamaño elegir" frena más de lo que molesta un bloque
    * abierto de más. KPI: add_to_cart / view_item.

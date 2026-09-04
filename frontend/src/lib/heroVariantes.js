@@ -55,3 +55,26 @@ export const CTA_PRINCIPAL = {
 /** Variante que se muestra si el experimento está apagado o no existe. */
 export const TITULAR_POR_DEFECTO = 'catalogo';
 export const CTA_POR_DEFECTO = 'ver_disenos';
+
+// ─── Dónde va el buscador (spec 015, ampliación) ──────────────────────────────
+
+/**
+ * El buscador tiene DOS lugares posibles y **exactamente uno** a la vez.
+ *
+ * Esta función existe para que esa exclusividad sea una regla testeable y no
+ * un `? :` repetido en dos componentes. El bug que evita es concreto y feo: si
+ * el hero renderiza el buscador y la sección no se apaga, quedan DOS buscadores
+ * con chips uno arriba del otro. Con `ubicacionBuscador` no hay forma de que
+ * los dos lados digan que sí — ni de que los dos digan que no y la Home se
+ * quede sin buscador.
+ *
+ * ⚠️ El control es `debajo` porque es lo que HOY está publicado (la sección
+ * propia que salió con el rediseño). `variants[0]` siempre tiene que ser el
+ * statu quo, o el test compara dos cosas nuevas y no hay contra qué medir.
+ */
+export const BUSCADOR_POR_DEFECTO = 'debajo';
+
+export function ubicacionBuscador(variante) {
+  const enHero = variante === 'en_hero';
+  return { enHero, enSeccion: !enHero };
+}

@@ -439,6 +439,29 @@ a { color: inherit; text-decoration: none; }
 .chip-busqueda:active { transform: scale(0.97); }
 .chip-busqueda:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Buscador dentro del hero (variante `en_hero` de `hero_buscador`).
+   Sobre el degradado y el campo de calcos, el `bg-white/5` de los chips y el
+   `rgba(32,32,32,.82)` del campo se transparentan y el texto queda ilegible —
+   es EXACTAMENTE el problema que ya tuvo TrustBadges en este mismo hero, y se
+   resuelve igual: fondo opaco y blur.
+   Ojo, esto NO es una diferencia de contenido entre las dos variantes del
+   experimento: la legibilidad no es lo que se está midiendo, la POSICIÓN sí. */
+.buscador--sobre-hero .buscador__campo {
+  background: rgba(12, 12, 12, 0.72);
+  border-color: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(10px);
+}
+.buscador--sobre-hero .buscador__rotulo { color: rgba(255, 255, 255, 0.65); }
+.buscador--sobre-hero .chip-busqueda {
+  background: rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(6px);
+}
+.buscador--sobre-hero .chip-busqueda:hover {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: rgba(255, 27, 141, 0.65);
+}
+
 /* ============================================================
    Modal de búsqueda a pantalla completa (mobile)
    ============================================================ */

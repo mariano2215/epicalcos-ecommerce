@@ -21,6 +21,8 @@ import { CATEGORIES } from '../data/categories.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { useSeo } from '../lib/seo.js';
 import { useReducedMotion } from '../lib/motion.js';
+import { useExperiment } from '../lib/experiments.js';
+import { ubicacionBuscador } from '../lib/heroVariantes.js';
 
 const FEATURED_SLUGS = ['argentina', 'anime', 'disney', 'escudos-futbol', 'harry-potter', 'marvel', 'memes', 'los-simpsons', 'taylor-swift', 'frases'];
 
@@ -42,6 +44,11 @@ export default function Home() {
   const [rotation, setRotation] = useState(0);
   const featuredRef = useRef(null);
   const reducedMotion = useReducedMotion();
+
+  // El buscador va en UN lugar o en el otro, nunca en los dos. La decisión se
+  // toma acá —y no dentro de cada componente— porque es la Home la que tiene
+  // que apagar la sección en el mismo movimiento en que el hero lo enciende.
+  const buscador = ubicacionBuscador(useExperiment('hero_buscador'));
 
   useSeo({ title: undefined, description: undefined });
 
@@ -96,13 +103,13 @@ export default function Home() {
   return (
     <>
       {/* ── DESEO ────────────────────────────────────────────────────────── */}
-      <Hero />
+      <Hero conBuscador={buscador.enHero} />
 
       {/* ── DESCUBRIMIENTO ───────────────────────────────────────────────── */}
-      {/* El buscador va acá y no dentro del hero: con 61 categorías es el
-          mecanismo de navegación real del sitio, y como input chico al final
-          del hero pasaba desapercibido. */}
-      <BuscadorSeccion />
+      {/* Con 61 categorías el buscador es el mecanismo de navegación real del
+          sitio. Dónde rinde más —sección propia acá abajo, o adentro del hero
+          arriba de los CTA— lo está midiendo `hero_buscador` (spec 015). */}
+      {buscador.enSeccion && <BuscadorSeccion />}
 
       {/* Solo para quien ya estuvo mirando: con 61 categorías, volver a la que
           estabas viendo cuesta. No se renderiza nada si no hay historial. */}

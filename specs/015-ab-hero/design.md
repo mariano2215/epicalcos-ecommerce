@@ -1,4 +1,4 @@
-# Design — A/B del hero: titular y CTA principal
+# Design — A/B del hero: titular, CTA y ubicación del buscador
 
 | | |
 |---|---|
@@ -169,3 +169,72 @@ Ninguna. Los visitantes que ya tienen `epicalcos.exp.v1` guardado conservan su
 | Ningún H1 ni CTA está vacío | Un botón sin texto arriba del fold |
 | El H1 de cada variante entra en 2 líneas a 375 px (tope de caracteres) | El hero es lo único arriba del fold; un titular de 4 líneas lo rompe |
 | El titular del hero no repite el de Antes/Después | La colisión de §3, con guardarraíl |
+
+
+---
+
+## 10. Ampliación — ubicación del buscador
+
+### El experimento
+
+```js
+hero_buscador: {
+  active: true,
+  variants: ['debajo', 'en_hero'],   // [0] = control = la sección que ya está publicada
+  descripcion: 'Buscador: sección propia debajo del hero (control) vs dentro del hero'
+}
+```
+
+### Quién decide, y por qué no cada componente
+
+La decisión se toma **una sola vez, en `routes/Home.jsx`**, y baja al hero como
+prop (`conBuscador`). No la lee cada componente por su cuenta: si `Hero` y
+`BuscadorSeccion` consultaran la variante por separado, nada impediría que los
+dos dijeran que sí y quedaran **dos buscadores con chips apilados**, ni que un
+día los dos dijeran que no y la Home se quedara sin buscador.
+
+La exclusividad vive en una función pura, `ubicacionBuscador(variante)` en
+`lib/heroVariantes.js`, que devuelve `{ enHero, enSeccion }` con la garantía de
+que exactamente uno es `true`. Eso la vuelve testeable sin jsdom — que es la
+única forma de testear algo de render en este repo (`environment: node`).
+
+Una variante desconocida (`null`, porque alguien borró el experimento; o basura
+en `localStorage`) cae en `enSeccion`: ante la duda, la Home conserva el
+buscador.
+
+### Dónde exactamente dentro del hero
+
+`H1 → subtítulo → buscador + chips → 2 CTA`.
+
+**Arriba de los CTA y no abajo.** Abajo quedaría a un par de píxeles de donde ya
+está hoy —la sección que sigue— y las dos variantes serían casi la misma
+pantalla: el test no mediría nada. Arriba sí cambia la jerarquía.
+
+### Legibilidad sobre el degradado
+
+Los chips (`bg-white/5`) y el campo (`rgba(32,32,32,.82)`) se transparentan
+sobre el degradado y el campo de calcos del hero. **Es el mismo problema que ya
+tuvo `TrustBadges` en este mismo hero** y se resuelve igual: fondo opaco más
+blur, en el modificador `.buscador--sobre-hero`.
+
+Esto **no** es una diferencia de contenido entre las variantes: la legibilidad
+no es lo que se mide, la posición sí. Un chip ilegible no sería una variante,
+sería un bug con forma de variante.
+
+### Tercer experimento sobre el mismo hero
+
+Ahora hay tres vivos y ocho celdas. Los efectos principales siguen sin sesgo
+(las tres asignaciones son independientes), pero **una celda se lee mal**:
+`en_hero` + el CTA `encontra_calcos` deja un botón que promete lo mismo que el
+campo de búsqueda que tiene tres centímetros arriba. Si este test se toma en
+serio, conviene apagar `hero_cta` mientras corre — `active: false`, sin deploy
+de lógica.
+
+### Tests
+
+| Qué verifica | Por qué |
+|---|---|
+| En toda variante hay **exactamente un** buscador | El bug de los dos apilados, y el de quedarse sin ninguno |
+| `en_hero` prende el hero y apaga la sección | La otra mitad del contrato |
+| Una variante desconocida cae en el control | `useExperiment` devuelve `null` si el experimento no existe |
+| `variants[0]` es `debajo` | El control tiene que ser el statu quo |

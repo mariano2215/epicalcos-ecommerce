@@ -7,7 +7,9 @@ import {
   TITULARES,
   CTA_PRINCIPAL,
   TITULAR_POR_DEFECTO,
-  CTA_POR_DEFECTO
+  CTA_POR_DEFECTO,
+  BUSCADOR_POR_DEFECTO,
+  ubicacionBuscador
 } from './heroVariantes.js';
 
 /**
@@ -26,8 +28,8 @@ const norm = (s) =>
 const claves = (obj) => Object.keys(obj).sort();
 
 describe('experimentos del hero', () => {
-  it('los dos están declarados y son A/B, no A/B/n', () => {
-    for (const id of ['hero_titular', 'hero_cta']) {
+  it('los tres están declarados y son A/B, no A/B/n', () => {
+    for (const id of ['hero_titular', 'hero_cta', 'hero_buscador']) {
       expect(EXPERIMENTS[id], `falta el experimento ${id}`).toBeTruthy();
       expect(EXPERIMENTS[id].variants).toHaveLength(2);
     }
@@ -45,6 +47,34 @@ describe('experimentos del hero', () => {
     expect(EXPERIMENTS.hero_cta.variants[0]).toBe(CTA_POR_DEFECTO);
     expect(TITULARES[TITULAR_POR_DEFECTO].h1.join(' ')).toBe('Calcos para todo lo que te gusta');
     expect(CTA_PRINCIPAL[CTA_POR_DEFECTO]).toBe('Ver todos los diseños');
+
+    // El control del buscador es la sección propia, que es lo que salió con el
+    // rediseño (spec 014) y es lo que hoy ve todo el mundo.
+    expect(EXPERIMENTS.hero_buscador.variants[0]).toBe(BUSCADOR_POR_DEFECTO);
+    expect(ubicacionBuscador(BUSCADOR_POR_DEFECTO).enSeccion).toBe(true);
+  });
+});
+
+describe('ubicación del buscador', () => {
+  it('en TODA variante hay exactamente un buscador: ni dos ni ninguno', () => {
+    // El bug que esto evita: si el hero enciende el buscador y la sección no se
+    // apaga, quedan dos buscadores con chips apilados. Y al revés, la Home se
+    // queda sin buscador — que con 61 categorías es quedarse sin navegación.
+    for (const v of EXPERIMENTS.hero_buscador.variants) {
+      const u = ubicacionBuscador(v);
+      expect(Number(u.enHero) + Number(u.enSeccion), `la variante "${v}" no ubica exactamente un buscador`).toBe(1);
+    }
+  });
+
+  it('`en_hero` lo pone en el hero y apaga la sección', () => {
+    expect(ubicacionBuscador('en_hero')).toEqual({ enHero: true, enSeccion: false });
+  });
+
+  it('una variante desconocida cae en el control, no deja la Home sin buscador', () => {
+    // `useExperiment` devuelve null si el experimento se borra de EXPERIMENTS.
+    for (const raro of [null, undefined, 'inventada', '']) {
+      expect(ubicacionBuscador(raro).enSeccion, `"${raro}" dejó la Home sin buscador`).toBe(true);
+    }
   });
 });
 

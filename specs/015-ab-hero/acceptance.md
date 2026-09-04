@@ -1,4 +1,4 @@
-# Acceptance — A/B del hero: titular y CTA principal
+# Acceptance — A/B del hero: titular, CTA y ubicación del buscador
 
 | | |
 |---|---|
@@ -67,15 +67,50 @@
    las cuatro celdas antes de concluir. Para aislar uno, `active: false` en el
    otro — sin deploy de lógica.
 
-## 5. Fuera de scope (declarado en `requirements.md` §3)
+## 5. Ampliación — ubicación del buscador (validada el 04/09/2026)
 
-- **Test del buscador** (brief §34): "dentro del hero" vs "debajo". Es
-  estructural, no de copy — mueve una sección entera arriba del fold.
+| ID | Criterio | Cómo se verificó | Resultado |
+|---|---|---|---|
+| AC-11 *(RF-11)* | Exactamente un buscador, nunca dos ni ninguno | `en_hero`: buscador en el hero, sin sección `¿Qué te gusta?`, **1** bloque con chips. `debajo`: sin buscador en el hero, sección presente, **1** bloque con chips. (El tercer `.buscador` de la página es el del CTA final, que no lleva chips y no entra en el experimento) | ✅ |
+| AC-12 *(RF-12)* | En `en_hero` el buscador va arriba de los CTA | A 375 px: campo en 346 px, CTA principal en 643 px | ✅ |
+| AC-13 *(RF-13)* | En `en_hero` la sección no se renderiza | `seccionQueTeGusta: false` | ✅ |
+| AC-14 *(RF-14)* | Mismo contenido en las dos variantes | El mismo `BuscadorCalcos` con `chips`: 8 chips sugeridos + búsquedas recientes en ambas | ✅ |
+| AC-15 *(RF-15)* | Chips y campo legibles sobre el degradado | `.buscador--sobre-hero` con fondo opaco y blur; verificado en captura a 375 px | ✅ |
+| AC-16 *(RF-16)* | El control es `debajo` | `EXPERIMENTS.hero_buscador.variants[0] === 'debajo'`, con test | ✅ |
+| ANF-7 | Sin CLS | La ubicación sale de `useExperiment`, sincrónico: el primer render ya trae la variante | ✅ |
+| ANF-8 | Sin scroll horizontal a 375 px | `scrollWidth === clientWidth === 375` en las dos variantes | ✅ |
+
+### El costo medido de `en_hero`
+
+| | `debajo` (control) | `en_hero` |
+|---|---|---|
+| Alto del hero (375 px, visitante nuevo) | 517 px | **774 px** |
+| Campo de búsqueda | — (en la sección de abajo) | 346 px |
+| CTA principal | ~330 px | **643 px** |
+| CTA visible en un iPhone de 812 px | sí | sí, con ~170 px de aire |
+| CTA visible en uno de 667 px | sí | **al borde** (643 de 667) |
+| Con búsquedas recientes guardadas | — | el hero suma ~90 px y el CTA cae abajo del fold |
+
+En desktop (1280×900) no hay problema: hero 762 px, campo en 412 px, CTA en
+657 px, chips en 2 filas.
+
+> ⚠️ **Al leer los resultados.** Si `en_hero` pierde, puede ser por el
+> desplazamiento de los CTA y no por la ubicación del buscador. No se compensó
+> achicando el padding a propósito (ver `requirements.md` §11): separar las dos
+> cosas pide un tercer brazo con el hero compacto.
+
+> ⚠️ **Tres experimentos sobre el mismo hero, ocho celdas.** Los efectos
+> principales siguen sin sesgo, pero `en_hero` + CTA `encontra_calcos` deja un
+> botón que promete lo mismo que el campo que tiene arriba. Recomendación:
+> apagar `hero_cta` (`active: false`) mientras corra este.
+
+## 6. Fuera de scope
+
 - **Test de social proof** (brief §34): no es del hero.
 
-## 6. Definition of Done
+## 7. Definition of Done
 
-- [x] Los 10 criterios funcionales verificados en el navegador
-- [x] Los 6 no funcionales verificados
-- [x] `npm test` en verde desde la raíz (407/407)
+- [x] Los 16 criterios funcionales verificados en el navegador
+- [x] Los 8 no funcionales verificados
+- [x] `npm test` en verde desde la raíz (411/411)
 - [x] Lo que quedó fuera de scope, declarado

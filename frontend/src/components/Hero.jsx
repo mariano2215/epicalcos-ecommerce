@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import StickerField from './StickerField.jsx';
+import BuscadorCalcos from './BuscadorCalcos.jsx';
 import { isSectionHidden } from '../config/site.js';
 import { trackCustomStickerClick } from '../lib/analytics.js';
 import { useExperiment } from '../lib/experiments.js';
@@ -53,8 +54,16 @@ import {
  * La asignación de `useExperiment` es sincrónica (localStorage + hash), así que
  * la variante ya está en el primer render: no hay parpadeo que tapar y no hace
  * falta ningún script anti-flicker en el <head>.
+ *
+ * `conBuscador` es el tercer experimento y NO se resuelve acá: lo decide `Home`,
+ * que es quien tiene que apagar la sección `BuscadorSeccion` en el mismo
+ * movimiento. Si cada componente leyera la variante por su cuenta, nada
+ * impediría que los dos dijeran que sí y quedaran dos buscadores apilados.
+ * Ver `ubicacionBuscador` en lib/heroVariantes.js.
+ *
+ * @param {{ conBuscador?: boolean }} props
  */
-export default function Hero() {
+export default function Hero({ conBuscador = false }) {
   const personalizadosVisible = !isSectionHidden('personalizados');
 
   const varianteTitular = useExperiment('hero_titular');
@@ -80,6 +89,20 @@ export default function Hero() {
         <p className="mt-5 max-w-xl mx-auto text-white/75 text-base md:text-lg leading-snug">
           {titular.subtitulo}
         </p>
+
+        {/* Variante `en_hero`: el buscador va ARRIBA de los CTA, no abajo.
+            Abajo quedaría a un par de píxeles de donde ya está hoy (la sección
+            que sigue) y el test no mediría nada. Acá sí cambia la jerarquía:
+            buscar pasa a ser lo primero que se puede hacer, y los dos CTA bajan
+            — que es exactamente el costo que este experimento viene a pesar. */}
+        {conBuscador && (
+          <BuscadorCalcos
+            className="mt-8 max-w-2xl mx-auto buscador--sobre-hero"
+            size="lg"
+            chips
+            origen="hero"
+          />
+        )}
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link to="/categorias" className="btn-primary w-full sm:w-auto">

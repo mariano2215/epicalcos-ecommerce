@@ -20,3 +20,18 @@
 - [x] 7. Verificar las 4 celdas en el navegador con el override de URL
 - [x] 8. Verificar `experiment_view` (uno por experimento, una vez por carga)
 - [x] 9. Recorrer `acceptance.md`
+
+
+---
+
+## Ampliación — ubicación del buscador (04/09/2026)
+
+> Autorización: *"dale, hacé también el test A/B del buscador"*.
+
+- [x] 10. `lib/heroVariantes.js`: `ubicacionBuscador()` + `BUSCADOR_POR_DEFECTO`
+- [x] 11. `lib/experiments.js`: declarar `hero_buscador`
+- [x] 12. `components/Hero.jsx`: prop `conBuscador`, buscador arriba de los CTA
+- [x] 13. `routes/Home.jsx`: dueña de la decisión; apaga `BuscadorSeccion`
+- [x] 14. `styles/index.css`: `.buscador--sobre-hero` (legibilidad sobre el degradado)
+- [x] 15. Tests de exclusividad de la ubicación
+- [x] 16. Verificar las dos ramas en el navegador y medir el costo en altura
