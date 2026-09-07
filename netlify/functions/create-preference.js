@@ -78,8 +78,13 @@ export const handler = async (event) => {
     return json(400, { error: 'invalid_json' });
   }
 
-  const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon } = body;
+  const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon, couponIssuedAt: rawIssuedAt } = body;
   const couponCode = clip(rawCoupon, 30) || undefined;
+  // Instante de emisión del cupón (spec 017). Se coacciona a número y se
+  // descarta cualquier cosa que no lo sea: viene del cliente, así que no puede
+  // entrar como string ni como objeto al cálculo de la ventana.
+  const emitido = Number(rawIssuedAt);
+  const couponIssuedAt = Number.isFinite(emitido) ? emitido : undefined;
 
   // Señales para la API de conversiones de Meta: cookies del píxel que manda el
   // frontend + IP y user-agent de ESTE request (el del comprador, no el de MP).
@@ -117,7 +122,7 @@ export const handler = async (event) => {
   // Precios y envío: SIEMPRE recalculados en el servidor a partir del id de
   // cada item (lib/pricing.js). Si el precio recibido no coincide con las
   // reglas vigentes, se rechaza el pedido (precio adulterado o frontend viejo).
-  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'mercadopago', couponCode });
+  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'mercadopago', couponCode, couponIssuedAt });
   if (!order.ok) {
     console.warn('[create-preference] pedido rechazado:', order.error, order.detail || '');
     return json(400, { error: order.error, message: order.detail });

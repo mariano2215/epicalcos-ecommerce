@@ -6,9 +6,7 @@ import { useCart } from '../context/CartContext.jsx';
 import PromoBanner, { endLabel } from './PromoBanner.jsx';
 import { usePromoActive, useMayoristaPromoActive, useArgentinaPromoActive } from '../lib/promo.js';
 import {
-  PROMO_END_MS,
   PROMO_MAYORISTA_100,
-  PROMO_MAYORISTA_END_MS,
   PROMO_ARGENTINA,
   PROMO_ARGENTINA_END_MS
 } from '../config/pricing.js';
@@ -56,10 +54,15 @@ export default function Header() {
        lo parte al abrirlo. */}
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
       {promoActive ? (
+        /* ⚠️ P-1 de la spec 017: con las TRES promos vivas este if/else muestra
+           una sola, y es el 3x2 — el de mayor alcance, porque toca todo el
+           catálogo. El 2x1 se anuncia en sus cuatro categorías y el mayorista en
+           `OfertaPrincipal` del Home, así cada oferta habla donde significa algo
+           en vez de tres carteles peleando arriba (spec 014). Cambiar cuál gana
+           es reordenar este if/else. */
         <PromoBanner
           title="3×2 EN TODAS LAS CALCOS"
-          subtitle={`Cada 3, la más barata gratis · hasta ${endLabel(PROMO_END_MS, 'el viernes')}`}
-          endMs={PROMO_END_MS}
+          subtitle="Cada 3 calcos, la más barata gratis"
           to="/categorias"
           ariaLabel="Promoción 3x2 en todas las calcos"
         />
@@ -68,8 +71,7 @@ export default function Header() {
         // su `endsAt`. Acá no se escribe ni un dato de la promo a mano.
         <PromoBanner
           title={PROMO_MAYORISTA_100.titulo}
-          subtitle={`${PROMO_MAYORISTA_100.subtitulo} · hasta ${endLabel(PROMO_MAYORISTA_END_MS, 'que se agote')}`}
-          endMs={PROMO_MAYORISTA_END_MS}
+          subtitle={PROMO_MAYORISTA_100.subtitulo}
           to="/mayorista"
           ariaLabel={`Promoción mayorista: ${PROMO_MAYORISTA_100.titulo}`}
         />

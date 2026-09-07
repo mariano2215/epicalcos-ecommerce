@@ -3,11 +3,19 @@ import { Link } from 'react-router-dom';
 import StickerCard from './StickerCard.jsx';
 import Reveal from './Reveal.jsx';
 import { categoryName } from '../data/categories.js';
-import { DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
+import { DEFAULT_SIZE, priceForSize, CATEGORIAS_2X1 } from '../config/pricing.js';
 import { trackViewItemList } from '../lib/analytics.js';
 
-// Un sticker al azar de cada una de estas categorías en cada carga de la página.
-const FEATURED_CATEGORIES = ['anime', 'argentina', 'disney', 'frases'];
+/**
+ * Un sticker al azar de cada una de estas categorías en cada carga de la página.
+ *
+ * ⚠️ NO SE ESCRIBE ACÁ: sale de `CATEGORIAS_2X1` en config/pricing.js, que es la
+ * MISMA lista sobre la que corre la promo 2x1 (spec 017). Tener dos listas era
+ * la trampa: cambiar la de esta sección movía qué se muestra como "más elegido"
+ * sin mover qué está en promo, y el servidor —que solo lee la del config— ni se
+ * enteraba. Con una sola fuente no se pueden desincronizar.
+ */
+const FEATURED_CATEGORIES = CATEGORIAS_2X1;
 
 /**
  * Nombre de la lista en GA4. **No sigue al título visible.**

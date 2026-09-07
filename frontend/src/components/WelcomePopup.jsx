@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { captureLead } from '../services/leadService.js';
-import { trackLeadCapture } from '../lib/analytics.js';
-import { WELCOME_COUPON_STORAGE_KEY } from '../config/pricing.js';
+import { trackLeadCapture, trackCuponEmitido, trackCuponVencido } from '../lib/analytics.js';
+import { CUPON_VENTANA_MS } from '../config/pricing.js';
+import { emitirCupon } from '../lib/cuponVentana.js';
+import CuponCountdown from './CuponCountdown.jsx';
 
 const SEEN_KEY = 'epicalcos.welcomePopup.seen';
 // El popup se dispara cuando, scrolleando, se llega a la sección de categorías
@@ -29,6 +31,10 @@ export default function WelcomePopup() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle | submitting | done | error
   const [code, setCode] = useState('');
+  // El instante de emisión arranca la ventana de 10 minutos (spec 017). Se
+  // guarda en estado además de en localStorage para que el contador de este
+  // popup no dependa de volver a leer el storage.
+  const [emitidoEn, setEmitidoEn] = useState(null);
 
   useEffect(() => {
     let seen = true;
@@ -131,11 +137,11 @@ export default function WelcomePopup() {
       setStatus('done');
       markSeen();
       trackLeadCapture('welcome_popup');
-      try {
-        localStorage.setItem(WELCOME_COUPON_STORAGE_KEY, promoCode);
-      } catch {
-        /* ignore */
-      }
+      // Emitir ARRANCA la ventana: de acá salen los 10 minutos que cuenta el
+      // contador de abajo y los que va a revalidar el servidor.
+      const ts = emitirCupon(promoCode);
+      setEmitidoEn(ts);
+      trackCuponEmitido(promoCode, CUPON_VENTANA_MS);
     } catch (err) {
       console.error(err);
       setStatus('error');
@@ -167,12 +173,22 @@ export default function WelcomePopup() {
               <div className="text-5xl mb-3">🎁</div>
               <h3 className="font-display font-extrabold text-2xl">¡Listo, gracias!</h3>
               <p className="text-white/70 text-sm mt-2">
-                Guardá este código, ya te lo dejamos aplicado en tu carrito:
+                Ya te lo dejamos aplicado en tu carrito. Tenés{' '}
+                <strong className="text-white">10 minutos</strong> para usarlo:
               </p>
               <div className="mt-4 font-display font-black text-3xl tracking-widest bg-white/5 border border-white/10 rounded-xl py-4">
                 {code}
               </div>
-              <button onClick={close} className="btn-primary w-full mt-5">Seguir comprando</button>
+              {/* El contador va acá y también en el checkout: uno que la persona
+                  no ve mientras completa el formulario no cambia ninguna
+                  conducta. `donde: 'popup'` distingue al que nunca avanzó del
+                  que se le venció comprando — ese segundo es el caso caro. */}
+              <CuponCountdown
+                cupon={{ code, emitidoEn }}
+                onVencido={() => trackCuponVencido(code, 'popup')}
+                className="mt-4 justify-center"
+              />
+              <button onClick={close} className="btn-primary w-full mt-5">Comprar ahora</button>
             </>
           ) : (
             <>

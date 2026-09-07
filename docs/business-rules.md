@@ -98,8 +98,14 @@ siempre el de vidriera.
   secreto criptográfico — viaja en el bundle JS.
 - **Acumulable** con el 10 % por transferencia: los porcentajes **se suman**
   (transferencia 10 % + EPICA10 10 % = 20 % off). Salvo los `exclusivo`, abajo.
-- ⚠️ **Durante una promo N×M por fecha (la 3x2), un cupón de % NO descuenta
-  nada.** La promo se combina con el 10 % por transferencia y con nada más.
+- ✅ **Durante una promo N×M el cupón de % SÍ descuenta** (spec 017, 7/9/2026).
+  Esto **revirtió** la decisión del 20/8/2026, que era la contraria. El motivo:
+  el popup ahora entrega `EPICA10` con un contador de 10 minutos, y un contador
+  sobre un cupón que descuenta $0 es una promesa rota a la vista del cliente.
+  El tope de lo que corre encima de la promo pasó de 10 % a **20 %**
+  (`percentCap`), para que entren transferencia + cupón.
+- ⏱️ **`EPICA10` vence 10 minutos después de que el popup lo entrega** — por
+  usuario, no por fecha global. Ver §3.4.
 - Tope de seguridad: `MAX_STICKER_DISCOUNT = 0.9` (90 %).
 - `EMOJI50` (2×1 por mensaje privado) venció el 4/8/2026 y se eliminó del código.
 
@@ -138,32 +144,67 @@ Argentina, y pisa a la promo 3x2 si estuviera vigente.
 
 ## 3. Promociones
 
-### 3.1 Promo 3x2 — ✅ VIVA (jue 20/8 23:00 → lun 24/8 23:59 de 2026)
-`PROMO_3X2` · `startsAt: 2026-08-20T23:00:00-03:00` · `endsAt: 2026-08-24T23:59:59-03:00`
+> ### ⚠️ CÓMO SE APAGA UNA PROMO
+> Las tres promos de abajo **arrancan el 7/9/2026 y NO tienen fecha de fin**
+> (decisión de Mariano, spec 017). Se apagan a mano poniendo `activa: false`
+> **en los DOS lados del espejo**:
+>
+> | Promo | Frontend `config/pricing.js` | Server `netlify/functions/lib/pricing.js` |
+> |---|---|---|
+> | 3x2 | `PROMO_3X2.activa` | `PROMO_ACTIVA` |
+> | 2x1 por categoría | `PROMO_2X1.activa` | `PROMO_2X1_ACTIVA` |
+> | Mayorista | `PROMO_MAYORISTA_100.activa` | `MAYORISTA100_ACTIVA` |
+>
+> Apagarla en un solo lado deja al otro aceptando el precio con descuento.
+>
+> **Sin `endsAt` no hay cuenta regresiva** en el banner, y una promo sin fecha
+> **se olvida prendida** — ya pasó con `EPICA10`, que no venció durante meses.
+
+### 3.1 Promo 3x2 — ✅ VIVA (desde el 7/9/2026, sin fecha de fin)
+`PROMO_3X2` · `startsAt: 2026-09-07T00:00:00-03:00` · `endsAt: null`
 
 Cada 3 calcos elegibles (**catálogo + personalizados**, o sea todo lo
 minorista), la **más barata gratis**. No entran packs, mayorista, Negocio,
 precio fijo ni digitales: ya traen su precio final.
 
-**Ventana con inicio y fin.** Es la segunda promo con `startsAt` (después de
-Argentina): arranca 23:00 de un jueves y el deploy es antes, así que
-`isPromoActive()` mira las dos puntas y la promo se enciende y se apaga sola.
-El banner, el contador y los precios del carrito cambian **sin recargar**.
+**Convive con el 2x1 por categoría** (§3.4): un calco de las cuatro categorías
+en promo es elegible para las dos, y el reparto lo decide `repartoPromos()`.
 
-**Qué se combina y qué no** (decisión de Mariano, 20/8/2026):
+**Qué se combina y qué no** (spec 017, 7/9/2026):
 
 | Con la promo corriendo | ¿Se suma? |
 |---|---|
-| 10 % por transferencia (desde 10 calcos de catálogo) | **sí**, topeado por `percentCap = 0.10` |
-| Cupones de % (`EPICA10`) | **no** — durante la promo el cupón no descuenta nada |
+| 10 % por transferencia (desde 10 calcos de catálogo) | **sí** |
+| Cupones de % (`EPICA10`) | **sí** — cambió el 7/9/2026, antes no sumaba |
+| Tope de los dos juntos | `percentCap = 0.20` (era 0.10) |
 | `EPI50` | **no se suma: la reemplaza.** Es `exclusivo`, anula la agrupación N×M y corre su 50 % |
 
-El cliente que llega con un cupón de % ve el aviso de que no se combina, para
-no quedarse esperando un descuento que no va a llegar.
+Ver `specs/010-reactivar-3x2/` y `specs/017-todas-las-ofertas/`.
 
-Ver `specs/010-reactivar-3x2/`.
+### 3.1-bis Promo 2x1 por categoría — ✅ VIVA (desde el 7/9/2026, sin fecha de fin)
+`PROMO_2X1` · `CATEGORIAS_2X1 = ['anime', 'argentina', 'disney', 'frases']`
 
-### 3.2 Promo mayorista — 100 calcos a $39.999
+Cada 2 calcos de esas cuatro categorías, la **más barata gratis**. Solo calcos
+de catálogo: un personalizado no tiene categoría y nunca entra.
+
+⚠️ **La lista de categorías es la MISMA que usa "Los más elegidos" del Home** —
+`FeaturedStickers` la importa de `config/pricing.js`. Si hubiera dos listas,
+cambiar la del Home movería qué está en promo sin que el servidor se enterara.
+
+**El reparto entre las dos promos N×M** (`repartoPromos`) elige la combinación
+que **más le conviene al cliente**. No es "2x1 primero y el sobrante al 3x2":
+esa regla —aprobada primero y descartada al verificarla— permite que **agregar
+un calco baje el total** hasta $800. Ejemplo real:
+
+```
+1 Disney 4cm + 3 calcos 9cm  → $6.000
++ 1 Disney 4cm más           → $5.200   ← un calco MÁS, $800 MENOS
+```
+
+La regla vigente tiene 0 anomalías en 60.480 transiciones verificadas y coincide
+con el óptimo real. Los tests están en `src/lib/reparto.test.js`.
+
+### 3.2 Promo mayorista — 100 calcos a $39.999 — ✅ VIVA (desde el 7/9/2026, sin fecha de fin)
 `PROMO_MAYORISTA_100` · `activa: true` · vence **14/8/2026 23:59** (ART)
 
 - Pack de **exactamente 100 calcos** a precio fijo $39.999.
@@ -175,15 +216,42 @@ Ver `specs/010-reactivar-3x2/`.
 - **No participa** de cupones, del 10 % por transferencia ni de promos N×M.
 - **Paga envío como cualquier pedido**: $39.999 no llega a ningún umbral, así
   que suma $4.500 en Rosario y $8.500 al interior (ver §5).
-- Interruptor manual `activa`, además del vencimiento por fecha.
+- ✅ **Reactivada el 7/9/2026 (spec 017), sin fecha de fin.** Antes vencía el
+  14/8/2026. Se apaga con `activa: false` en los dos lados (ver el recuadro
+  arriba de §3.1).
 
 Mientras esté activa, los escalones x20 y x50 de `/armar-pack` **se ocultan**
 (`ocultarDurantePromo`): con 100 calcos a $39.999, un pack de 50 al precio de
 lista sale más y trae menos producto — dejaría la escalera dada vuelta. Se
-ocultan, no se borran: al vencer la promo vuelven solos, y `?n=20` / `?n=50`
+ocultan, no se borran: al apagar la promo vuelven solos, y `?n=20` / `?n=50`
 siguen funcionando.
 
 ⚠️ **No confundir con la Promo Negocio.**
+
+### 3.4 Ventana del cupón de bienvenida (spec 017)
+
+`EPICA10` vence **10 minutos después de que el popup lo entrega**. Es un
+vencimiento **por usuario**, no una fecha global: dos personas que dejan el mail
+con una hora de diferencia tienen ventanas distintas.
+
+| | |
+|---|---|
+| Duración | `CUPON_VENTANA_MS` = 10 min |
+| Tolerancia del servidor | `CUPON_TOLERANCIA_MS` = 60 s (relojes corridos) |
+| Dónde se guarda | `localStorage` → `epicalcos.welcomeCoupon` = `{ code, emitidoEn }` |
+| Qué viaja al servidor | `couponIssuedAt` en el payload del checkout |
+| Vencido a mitad del checkout | Se saca el cupón, se recalcula el total y se avisa — **sin borrar nada de lo tipeado** |
+| Vencido al confirmar | El servidor **ignora el cupón y cobra sin él**. NO rechaza el pedido |
+
+⚠️ **El instante de emisión lo manda el cliente y es falsificable.** Está
+aceptado explícitamente (decisión de Mariano, 7/9/2026): antes de esto `EPICA10`
+no vencía nunca, así que quien edite `localStorage` no queda mejor de lo que ya
+estaba. **La validación del servidor no es un control de seguridad** — ataja el
+caso honesto y nada más.
+
+El contador se muestra en **las dos** pantallas: el popup (donde se entrega) y
+el checkout (donde se usa). Uno que la persona no ve mientras completa el
+formulario no cambia ninguna conducta.
 
 ### 3.3 Promo Argentina — 50 % off por categoría
 `PROMO_ARGENTINA` · `activa: true`

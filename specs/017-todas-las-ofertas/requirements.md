@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `017-todas-las-ofertas` |
-| **Estado** | `DRAFT` |
+| **Estado** | ✅ `IMPLEMENTADA` — 07/09/2026 |
 | **Fecha** | 07/09/2026 |
 | **Autor** | Mariano (request) · Claude (redacción) |
 
@@ -166,12 +166,26 @@ la promo"), que está documentada en `config/pricing.js`. El comentario tiene qu
 quedar actualizado, no borrado: dice qué se decidió y cuándo, y ahora dice que
 cambió y por qué.
 
-Efecto concreto, 3 calcos de 6 cm pagando por transferencia con `EPICA10`:
+Efecto concreto — ⚠️ **los números de la pregunta original estaban mal** y se
+corrigieron al verificarlos contra el motor real: el 10 % por transferencia
+exige **10 calcos**, así que en un carrito de 3 no corre.
+
+Con **3 calcos** de una categoría del 2x1, transferencia + `EPICA10`:
 
 | | Cálculo | Total |
 |---|---|---|
-| Antes (cap 10 %) | 1 gratis + 10 % | $2.880 |
-| Ahora (cap 20 %) | 1 gratis + 20 % | $2.560 |
+| Antes | 1 gratis, cupón **anulado** por la promo | $3.200 |
+| Ahora | 1 gratis + 10 % del cupón | **$2.880** |
+
+Con **12 calcos** (que sí cruzan el umbral), transferencia + `EPICA10`:
+
+| | Cálculo | Total |
+|---|---|---|
+| Antes | 4 gratis + 10 % (solo transferencia) | $11.520 |
+| Ahora | 4 gratis + 20 % (transferencia + cupón) | **$10.240** |
+
+La decisión no cambia —el cupón ahora acumula y el tope es 20 %—, pero el costo
+real por carrito chico es menor de lo estimado.
 
 ### RF-8 — Sin fecha de fin *(decisión de Mariano, 07/09/2026)*
 Las tres promos arrancan al deployar y **no tienen `endsAt`**. Se apagan con su

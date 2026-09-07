@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `017-todas-las-ofertas` |
-| **Estado** | `DRAFT` |
+| **Estado** | ✅ `IMPLEMENTADA` — 07/09/2026 |
 | **Fecha** | 07/09/2026 |
 | **Requirements** | [`requirements.md`](requirements.md) |
 

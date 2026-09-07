@@ -18,7 +18,7 @@ const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 export default function Cart() {
   const {
     items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkSavings,
-    promoActive, promoSavings, digitalOnly
+    promoActive, promo2x1Active, algunaPromoNxM, promoSavings, digitalOnly
   } = useCart();
   const navigate = useNavigate();
 
@@ -52,9 +52,18 @@ export default function Cart() {
             Con un carrito 100 % digital no va ninguno: la línea es de precio fijo
             y "sumá 10 calcos y tenés 10% off" ahí se lee como que el descuento
             le aplicaría al archivo, que es justo lo que no pasa. */}
-        {digitalOnly ? null : promoActive ? (
-          <div className="mt-4 rounded-xl p-3 text-sm border border-brand-fuchsia/30 bg-brand-fuchsia/10 text-white/85">
-            🎉 <strong>Promo 3x2 en todas las calcos</strong> — cada 3 (catálogo o personalizados), la más barata gratis.
+        {digitalOnly ? null : algunaPromoNxM ? (
+          <div className="mt-4 rounded-xl p-3 text-sm border border-brand-fuchsia/30 bg-brand-fuchsia/10 text-white/85 space-y-1">
+            {promoActive && (
+              <div>
+                🎉 <strong>3x2 en todas las calcos</strong> — cada 3 (catálogo o personalizados), la más barata gratis.
+              </div>
+            )}
+            {promo2x1Active && (
+              <div>
+                🎉 <strong>2x1 en anime, Argentina, Disney y frases</strong> — cada 2, la más barata gratis.
+              </div>
+            )}
           </div>
         ) : (
           /* Los dos estados del 10 % (ya lo tiene / le faltan N) ahora los
@@ -169,9 +178,9 @@ export default function Cart() {
                 mostrarlo como una resta arriba de un total que no lo restaba
                 daba un resumen que no cerraba. Ahora el Total es lo que se paga
                 con Mercado Pago y la alternativa va abajo, con su condición. */}
-            {promoActive && promoSavings > 0 && (
+            {algunaPromoNxM && promoSavings > 0 && (
               <div className="flex justify-between text-emerald-400 text-sm mb-2">
-                <span>🎉 Promo 3x2</span><span>-{formatPrice(promoSavings)}</span>
+                <span>🎉 Calcos gratis</span><span>-{formatPrice(promoSavings)}</span>
               </div>
             )}
             <div className="flex justify-between text-white/70 mb-2">
@@ -184,7 +193,7 @@ export default function Cart() {
             </div>
             <div className="border-t border-white/10 my-3" />
             <div className="flex justify-between font-display font-extrabold text-lg">
-              <span>Total</span><span>{formatPrice(promoActive ? subtotal - promoSavings : subtotal)}</span>
+              <span>Total</span><span>{formatPrice(algunaPromoNxM ? subtotal - promoSavings : subtotal)}</span>
             </div>
             {bulkSavings > 0 && (
               <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2">
@@ -197,9 +206,9 @@ export default function Cart() {
                 </p>
               </div>
             )}
-            {promoActive && (
+            {algunaPromoNxM && (
               <p className="text-xs text-white/50 mt-2">
-                El 10% por transferencia y tu cupón (si tenés uno) se suman en el checkout (tope 10%).
+                El 10% por transferencia y tu cupón (si tenés uno) se suman en el checkout (tope 20%).
               </p>
             )}
 

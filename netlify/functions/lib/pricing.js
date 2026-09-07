@@ -68,32 +68,38 @@ export function isCouponActive(code, now = Date.now()) {
 
 // --- Espejo de la PROMO 3x2 de frontend/src/config/pricing.js ---
 // "3x2 en TODAS las calcos": cada 3 calcos elegibles (sticker + custom), la más
-// barata gratis. Viva del jue 20/8 23:00 al vie 28/8 23:59 de 2026 (extendida
-// el 24/8: cerraba ese lunes).
+// barata gratis.
 //
-// Tiene fecha de INICIO además de fin: arranca a las 23:00 y el deploy es
-// antes, así que se mira la ventana completa. Antes de PROMO_START_MS el
-// precio válido sigue siendo el de lista — si esto mirara solo el fin, el
-// servidor aceptaría precios de 3x2 desde el momento del deploy.
+// ⚠️ SIN FECHA DE FIN desde la spec 017 (7/9/2026). `null` en las dos puntas =
+// arranca al deployar y no vence; se apaga con PROMO_ACTIVA. `Date.parse(null)`
+// da NaN, y por eso el predicado pasó a `promoVigente()`: el viejo exigía
+// Number.isFinite en las dos puntas y habría dejado la promo apagada para
+// siempre.
 //
-// ACUMULA con el 10 % por transferencia y con NADA MÁS: los cupones de % no se
-// combinan con la promo (ver couponRate en validateAndPriceOrder).
-// PROMO_PERCENT_CAP (10 %) topea lo que corre encima del 3x2.
+// ⚠️ ACUMULA con el 10 % por transferencia Y con los cupones de %. Esto CAMBIÓ
+// el 7/9/2026: hasta la spec 017 un cupón no sumaba nada mientras la promo
+// corría. Por eso PROMO_PERCENT_CAP pasó de 0.1 a 0.2 — tiene que entrar el
+// 10 % de transferencia más el 10 % de EPICA10.
 // ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend. El test
-// src/lib/promoPricing.test.js verifica la paridad en los cuatro bordes.
-export const PROMO_START_MS = Date.parse('2026-08-20T23:00:00-03:00');
-export const PROMO_END_MS = Date.parse('2026-08-28T23:59:59-03:00');
+// src/lib/promoPricing.test.js verifica la paridad.
+export const PROMO_ACTIVA = true;
+export const PROMO_START_MS = Date.parse('2026-09-07T00:00:00-03:00');
+export const PROMO_END_MS = Date.parse(null);
 const PROMO_BUY = 3;
 const PROMO_PAY = 2;
-export const PROMO_PERCENT_CAP = 0.1;
+export const PROMO_PERCENT_CAP = 0.2;
+
+// Espejo de promoVigente() del frontend: una punta ausente (NaN) significa "sin
+// límite de ese lado".
+export function promoVigente({ activa = true, startMs, endMs }, now = Date.now()) {
+  if (!activa) return false;
+  if (Number.isFinite(startMs) && now < startMs) return false;
+  if (Number.isFinite(endMs) && now > endMs) return false;
+  return true;
+}
 
 export function isPromoActive(now = Date.now()) {
-  return (
-    Number.isFinite(PROMO_START_MS) &&
-    Number.isFinite(PROMO_END_MS) &&
-    now >= PROMO_START_MS &&
-    now <= PROMO_END_MS
-  );
+  return promoVigente({ activa: PROMO_ACTIVA, startMs: PROMO_START_MS, endMs: PROMO_END_MS }, now);
 }
 
 // 3x2 sobre una bolsa de unidades elegibles: se regalan las (buy-pay) más
@@ -112,6 +118,117 @@ export function promo3x2(unitBasePrices, buy = PROMO_BUY, pay = PROMO_PAY) {
   for (let k = 0; k < freeUnits; k++) discount += sorted[k];
   return { freeUnits, discount, keepFraction: (eligibleBase - discount) / eligibleBase };
 }
+// --- Espejo de la PROMO 2x1 POR CATEGORÍA de frontend/src/config/pricing.js ---
+// Cada 2 calcos de estas categorías, la más barata gratis. Convive con el 3x2
+// general: `repartoPromos` decide en qué bolsa conviene poner cada unidad.
+//
+// ⚠️ Si agregás o sacás una categoría acá y no en el frontend, TODO checkout
+// con un calco de esa categoría se rechaza con price_mismatch.
+export const CATEGORIAS_2X1 = ['anime', 'argentina', 'disney', 'frases'];
+export const PROMO_2X1_ACTIVA = true;
+export const PROMO_2X1_START_MS = Date.parse('2026-09-07T00:00:00-03:00');
+export const PROMO_2X1_END_MS = Date.parse(null);
+const PROMO_2X1_BUY = 2;
+const PROMO_2X1_PAY = 1;
+
+export function is2x1Active(now = Date.now()) {
+  return promoVigente(
+    { activa: PROMO_2X1_ACTIVA, startMs: PROMO_2X1_START_MS, endMs: PROMO_2X1_END_MS },
+    now
+  );
+}
+
+/** ¿Esta línea entra en el 2x1 por categoría? Se decide por el id, como Argentina. */
+export function esPromo2x1(lineId, now = Date.now()) {
+  if (!is2x1Active(now)) return false;
+  const parts = String(lineId || '').split(':');
+  if (parts[0] !== 'sticker') return false;
+  return CATEGORIAS_2X1.includes(categoriaDeStickerId(parts[1]));
+}
+
+/**
+ * Reparte las unidades elegibles entre el 2x1 por categoría y el 3x2 general,
+ * quedándose con el reparto que MÁS le conviene al cliente.
+ *
+ * ⚠️ ESPEJO LITERAL de repartoPromos() en frontend/src/config/pricing.js. Mismo
+ * orden de recorrido de `k`, mismos dos candidatos por `k`, y el desempate es
+ * `>` (gana el primero encontrado) — con `>=` de un lado y `>` del otro, dos
+ * repartos empatados podrían devolver `freeUnits` distintos.
+ *
+ * POR QUÉ NO ES "2x1 primero y el sobrante al 3x2": esa regla deja que agregar
+ * un calco BAJE el total hasta $800. Ver el comentario largo del frontend y
+ * specs/017-todas-las-ofertas/design.md §11.
+ *
+ * `g2x1` / `g3x2` en null = esa promo no corre. Se pasan desde afuera para que
+ * los dos lados puedan decidir la vigencia con su propio reloj y esta función
+ * quede pura.
+ */
+export function repartoPromos({ unidadesCategoria = [], unidadesResto = [], g2x1, g3x2 }) {
+  const base = [...unidadesCategoria, ...unidadesResto].reduce((a, c) => a + c, 0);
+  const vacio = { freeUnits: 0, discount: 0, keepFraction: 1 };
+
+  if (!g2x1) {
+    if (!g3x2) return vacio;
+    const r = promo3x2([...unidadesCategoria, ...unidadesResto], g3x2.buy, g3x2.pay);
+    return { ...r, keepFraction: base > 0 ? (base - r.discount) / base : 1 };
+  }
+
+  const b = unidadesCategoria.slice().sort((x, y) => x - y);
+  let mejor = { freeUnits: 0, discount: 0 };
+
+  for (let k = 0; k <= b.length; k++) {
+    for (const pick of [b.slice(0, k), b.slice(b.length - k)]) {
+      const rest = [...b];
+      for (const v of pick) {
+        const i = rest.indexOf(v);
+        if (i >= 0) rest.splice(i, 1);
+      }
+      const r1 = promo3x2(pick, g2x1.buy, g2x1.pay);
+      const r2 = g3x2
+        ? promo3x2([...unidadesResto, ...rest], g3x2.buy, g3x2.pay)
+        : { freeUnits: 0, discount: 0 };
+      const discount = r1.discount + r2.discount;
+      if (discount > mejor.discount) {
+        mejor = { freeUnits: r1.freeUnits + r2.freeUnits, discount };
+      }
+    }
+  }
+
+  return { ...mejor, keepFraction: base > 0 ? (base - mejor.discount) / base : 1 };
+}
+
+// --- Ventana del cupón de bienvenida (espejo de la spec 017) ---
+// EPICA10 vence 10 minutos después de que el popup lo entrega. Es POR USUARIO,
+// así que el instante de emisión viaja en el payload (`couponIssuedAt`).
+//
+// ⚠️ ESE DATO LO MANDA EL CLIENTE Y ES FALSIFICABLE. Está aceptado
+// explícitamente (decisión de Mariano, 7/9/2026): hoy EPICA10 no vence nunca,
+// así que quien edite localStorage no queda mejor de lo que ya está. ESTA
+// VALIDACIÓN NO ES UN CONTROL DE SEGURIDAD — ataja el caso honesto y nada más.
+//
+// La tolerancia es para no rechazarle la compra a alguien con el reloj corrido,
+// que en celulares es común. El frontend valida SIN tolerancia, así la pantalla
+// nunca promete un descuento que acá se caiga.
+export const CUPON_VENTANA_MS = 10 * 60 * 1000;
+export const CUPON_TOLERANCIA_MS = 60 * 1000;
+export const CUPONES_CON_VENTANA = ['EPICA10'];
+
+export function cuponTieneVentana(code) {
+  return CUPONES_CON_VENTANA.includes(String(code || '').trim().toUpperCase());
+}
+
+/**
+ * ¿La ventana de este cupón sigue abierta?
+ * `emitidoEn` ausente = no vino del popup (lo tipearon a mano o vino por URL):
+ * no hay ventana que controlar y el cupón vale.
+ */
+export function ventanaCuponAbierta(emitidoEn, now = Date.now(), tolerancia = CUPON_TOLERANCIA_MS) {
+  const ts = Number(emitidoEn);
+  if (!Number.isFinite(ts)) return true;
+  if (ts > now + tolerancia) return false; // emisión en el futuro: no se cree
+  return now - ts <= CUPON_VENTANA_MS + tolerancia;
+}
+
 const WHOLESALE_QTY = 100; // pack mayorista: MÍNIMO 100 calcos (sin tope), 50 % off
 const WHOLESALE_DISCOUNT = 0.5;
 
@@ -121,7 +238,10 @@ const WHOLESALE_DISCOUNT = 0.5;
 // La línea es `pack:mayorista100:{size}:{ts}` con quantity = 1 (1 línea = 1 pack).
 // No confundir con la promo NEGOCIO (100u de un solo diseño en 6 cm).
 // ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend (lo verifica promoPricing.test.js).
-export const MAYORISTA100_END_MS = Date.parse('2026-08-14T23:59:59-03:00');
+// ⚠️ Sin fecha de fin desde la spec 017 (antes: 14/8/2026). Se apaga con
+// MAYORISTA100_ACTIVA. Espejo de PROMO_MAYORISTA_100 del frontend.
+export const MAYORISTA100_START_MS = Date.parse('2026-09-07T00:00:00-03:00');
+export const MAYORISTA100_END_MS = Date.parse(null);
 export const MAYORISTA100_PRICE = 39999;
 export const MAYORISTA100_QTY = 100;
 export const MAYORISTA100_SIZES = ['4cm', '6cm'];
@@ -130,7 +250,10 @@ export const MAYORISTA100_SIZES = ['4cm', '6cm'];
 export const MAYORISTA100_ACTIVA = true;
 
 export function isMayorista100Active(now = Date.now()) {
-  return MAYORISTA100_ACTIVA && Number.isFinite(MAYORISTA100_END_MS) && now <= MAYORISTA100_END_MS;
+  return promoVigente(
+    { activa: MAYORISTA100_ACTIVA, startMs: MAYORISTA100_START_MS, endMs: MAYORISTA100_END_MS },
+    now
+  );
 }
 
 // --- Espejo de la PROMO ARGENTINA 50 % de frontend/src/config/pricing.js ---
@@ -369,12 +492,12 @@ function lineBase(id, quantity) {
  * Valida y re-precia un pedido completo con las reglas del servidor.
  * Nunca confía en unit_price ni en shipping.cost del cliente.
  *
- * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object, paymentMethod?: string, couponCode?: string }} payload
+ * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object, paymentMethod?: string, couponCode?: string, couponIssuedAt?: number }} payload
  * @returns {{ ok: true, items: Array, itemsTotal: number, shippingCost: number,
  *             shippingMethod: string, methodValue: string, couponApplied: string|null }
  *          | { ok: false, error: string, detail?: string }}
  */
-export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCode }) {
+export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCode, couponIssuedAt }) {
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: 'items_empty' };
   }
@@ -404,15 +527,20 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   // `exclusivo` (EPI50) NO se acumulan con nada: anulan todos los %.
   // Un cupón vencido o apagado (`activa: false`) es como si no existiera.
   const rawCoupon = String(couponCode || '').trim().toUpperCase();
-  const normalizedCoupon = isCouponActive(rawCoupon) ? rawCoupon : '';
+  // Ventana por usuario (spec 017): pasados los 10 min desde que el popup lo
+  // entregó, EPICA10 deja de descontar. Un cupón vencido NO rechaza el pedido:
+  // se ignora y se cobra sin él. Rechazar dejaría a alguien sin poder comprar
+  // por un descuento, que es exactamente lo contrario de lo que se busca.
+  const ventanaOk = !cuponTieneVentana(rawCoupon) || ventanaCuponAbierta(couponIssuedAt);
+  const normalizedCoupon = isCouponActive(rawCoupon) && ventanaOk ? rawCoupon : '';
   const coupon = COUPONS[normalizedCoupon] || null;
   const bundle = COUPON_BUNDLES[normalizedCoupon] || null;
-  // Durante la promo 3x2 un cupón de % NO suma: la promo se combina con el 10 %
-  // por transferencia y con nada más. Un cupón `exclusivo` (EPI50) no cae acá
-  // porque anula la promo entera y corre por su cuenta.
+  // ⚠️ DESDE LA SPEC 017 el cupón de % SÍ se acumula con la promo N x M (antes
+  // quedaba anulado). Ver el aviso en el bloque de PROMO_ACTIVA.
   const promoActive = isPromoActive();
-  const cuponAnuladoPorPromo = promoActive && !coupon?.exclusivo;
-  const couponDiscount = bundle || cuponAnuladoPorPromo ? 0 : coupon?.discount || 0;
+  const promo2x1Active = is2x1Active();
+  const algunaPromoNxM = promoActive || promo2x1Active;
+  const couponDiscount = bundle ? 0 : coupon?.discount || 0;
   const couponApplied = bundle || couponDiscount > 0 ? normalizedCoupon : null;
   // `anulaTodo` = este cupón es el ÚNICO descuento que corre. Espejo de
   // couponAnulaTodo() del frontend. Los tres usos de abajo (volumen, agrupación
@@ -438,7 +566,7 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   // este `!anulaTodo`, EPI50 caído en una ventana de 3x2 daría 10 % en vez del
   // 50 % prometido — y el cliente vería el descuento derretirse por una promo
   // que ni siquiera se le está aplicando.
-  const cap = promoActive && !anulaTodo ? PROMO_PERCENT_CAP : MAX_STICKER_DISCOUNT;
+  const cap = algunaPromoNxM && !anulaTodo ? PROMO_PERCENT_CAP : MAX_STICKER_DISCOUNT;
   const percentRate = Math.min(bulkDiscount + couponDiscount, cap);
 
   // Pre-pass: base de lista + validaciones de forma de cada línea.
@@ -451,19 +579,36 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     bases.push(lb);
   }
 
-  // N x M: bolsa común de unidades elegibles (sticker + custom), se regalan las
-  // más baratas de cada `buy` → keepFraction uniforme por línea. Vale el bundle
-  // del cupón (2x1) y, si no hay, la promo 3x2 por fecha.
-  const grouping = bundle || (!anulaTodo && promoActive ? { buy: PROMO_BUY, pay: PROMO_PAY } : null);
+  // N x M: DOS bolsas desde la spec 017 — las unidades de las categorías del
+  // 2x1 y el resto. `repartoPromos` elige el reparto que más le conviene al
+  // cliente y devuelve un keepFraction ÚNICO y uniforme por línea, igual que
+  // antes. Un cupón de bundle pisa las dos promos y vuelve a la bolsa única.
+  //
+  // ⚠️ Espejo de `derived` + `pricedItems` del CartContext: si acá se arman las
+  // bolsas con otro criterio que allá, el keepFraction difiere y TODO checkout
+  // con calcos se rechaza.
+  const grouping = bundle || (!anulaTodo && algunaPromoNxM ? { buy: PROMO_BUY, pay: PROMO_PAY } : null);
   let keepFraction = 1;
   if (grouping) {
-    const unitBasePrices = [];
+    const unidadesCategoria = [];
+    const unidadesResto = [];
+    const todas = [];
     clean.forEach((item, idx) => {
-      if (bases[idx].discountable) {
-        for (let k = 0; k < item.quantity; k++) unitBasePrices.push(bases[idx].base);
+      if (!bases[idx].discountable) return;
+      const bolsa = esPromo2x1(item.id) ? unidadesCategoria : unidadesResto;
+      for (let k = 0; k < item.quantity; k++) {
+        todas.push(bases[idx].base);
+        bolsa.push(bases[idx].base);
       }
     });
-    keepFraction = promo3x2(unitBasePrices, grouping.buy, grouping.pay).keepFraction;
+    keepFraction = bundle
+      ? promo3x2(todas, bundle.buy, bundle.pay).keepFraction
+      : repartoPromos({
+          unidadesCategoria,
+          unidadesResto,
+          g2x1: promo2x1Active ? { buy: PROMO_2X1_BUY, pay: PROMO_2X1_PAY } : null,
+          g3x2: promoActive ? { buy: PROMO_BUY, pay: PROMO_PAY } : null
+        }).keepFraction;
   }
 
   // El 50 % de Argentina es POR LÍNEA (solo esa categoría), así que no entra en

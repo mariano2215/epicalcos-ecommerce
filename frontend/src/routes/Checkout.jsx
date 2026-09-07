@@ -13,10 +13,17 @@ import {
   couponAnulaTodo,
   esPromoArgentina,
   PROMO_ARGENTINA,
-  WELCOME_COUPON_STORAGE_KEY,
   CUSTOM_SPEC_STORAGE_KEY
 } from '../config/pricing.js';
-import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo } from '../lib/analytics.js';
+import {
+  trackBeginCheckout,
+  trackAddShippingInfo,
+  trackAddPaymentInfo,
+  trackCuponVencido,
+  trackCuponAplicadoEnPromo
+} from '../lib/analytics.js';
+import { leerCupon, olvidarCupon } from '../lib/cuponVentana.js';
+import CuponCountdown from '../components/CuponCountdown.jsx';
 import { stashPurchase } from '../lib/purchaseTracking.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
@@ -66,7 +73,7 @@ function stashDesignSpec(items, payerName) {
 }
 
 export default function Checkout() {
-  const { pricedItems, clear, promoActive, digitalOnly } = useCart();
+  const { pricedItems, clear, promoActive, promo2x1Active, algunaPromoNxM, digitalOnly } = useCart();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -80,6 +87,14 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('mercadopago');
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState('');
+  /**
+   * Instante en que el popup entregó el cupón (spec 017). Es lo que define la
+   * ventana de 10 minutos: viaja en el payload y lo revalida el servidor.
+   * `null` = el código no vino del popup (lo tipeó, o vino por URL) y entonces
+   * no tiene ventana.
+   */
+  const [couponIssuedAt, setCouponIssuedAt] = useState(null);
+  const [cuponVencidoAviso, setCuponVencidoAviso] = useState(false);
   const [couponError, setCouponError] = useState('');
   /**
    * El campo de cupón arranca COLAPSADO detrás de un link.
@@ -104,14 +119,14 @@ export default function Checkout() {
   // si no el del popup de bienvenida. Los dos se aplican solos.
   useEffect(() => {
     const fromUrl = (searchParams.get('cupon') || searchParams.get('coupon') || '').trim();
-    let stored = '';
-    try {
-      stored = (localStorage.getItem(WELCOME_COUPON_STORAGE_KEY) || '').trim();
-    } catch {
-      /* ignore */
-    }
-    const code = fromUrl || stored;
+    // El guardado ahora es `{ code, emitidoEn }` — `leerCupon` entiende también el
+    // formato viejo (string suelto) para no romperle el cupón a quien ya lo tenía.
+    const guardado = leerCupon();
+    const code = fromUrl || guardado?.code || '';
     if (!code) return;
+    // La ventana solo corre para el que vino del popup: un código de la URL no
+    // tiene emisión y por lo tanto no vence a los 10 minutos.
+    if (!fromUrl && guardado?.emitidoEn) setCouponIssuedAt(guardado.emitidoEn);
 
     const coupon = findCoupon(code);
     // El de localStorage solo se muestra si sigue vivo: un código vencido ahí
@@ -148,15 +163,39 @@ export default function Checkout() {
     setAppliedCoupon('');
     setCouponInput('');
     setCouponError('');
+    setCouponIssuedAt(null);
     // Vuelve a colapsarse: quien saca su cupón no está por escribir otro, y un
     // input vacío ahí es justo lo que este bloque evita.
     setCouponOpen(false);
   };
 
+  /**
+   * Se cerró la ventana de 10 minutos con el checkout abierto (spec 017).
+   *
+   * ⚠️ NO se toca NADA del formulario. El nombre, el mail, el teléfono y la
+   * dirección que la persona ya tipeó quedan donde están: es el riesgo declarado
+   * en requirements §12 — el total sube solo a mitad del formulario, y lo único
+   * que hace tolerable ese momento es que no le borremos el trabajo encima.
+   *
+   * Tampoco se cierra el bloque del cupón de golpe: se deja un aviso explícito
+   * en su lugar, así el cambio de total tiene una explicación a la vista.
+   */
+  const vencerCupon = useCallback(() => {
+    trackCuponVencido(appliedCoupon, 'checkout');
+    setAppliedCoupon('');
+    setCouponInput('');
+    setCouponIssuedAt(null);
+    setCuponVencidoAviso(true);
+    setCouponOpen(false);
+    // Se olvida del storage para que no se reofrezca en la próxima pantalla ya
+    // vencido: el servidor tampoco lo aceptaría.
+    olvidarCupon();
+  }, [appliedCoupon]);
+
   // Precios reales según el medio de pago y el cupón aplicado. Un cupón de %
   // normal (EPICA10) se SUMA al 10% por transferencia; uno de bundle o uno
   // `exclusivo` (EPI50) no se acumula con nada. Ver CartContext.pricedItems.
-  const items = pricedItems(paymentMethod, appliedCoupon);
+  const items = pricedItems(paymentMethod, appliedCoupon, couponIssuedAt);
   // Cupón de bundle (2x1): no se acumula con ningún % — ni transferencia, ni volumen.
   const appliedBundle = couponBundle(appliedCoupon);
   // Cupón exclusivo (EPI50): su % es el descuento final y tampoco se acumula.
@@ -226,8 +265,8 @@ export default function Checkout() {
    * recordatorio. El backend es no-op salvo que la recuperación esté prendida.
    */
   const onEmailValid = useCallback(
-    (email, name) => trackCart({ email, name, items: pricedItems(paymentMethod, appliedCoupon) }),
-    [pricedItems, paymentMethod, appliedCoupon]
+    (email, name) => trackCart({ email, name, items: pricedItems(paymentMethod, appliedCoupon, couponIssuedAt) }),
+    [pricedItems, paymentMethod, appliedCoupon, couponIssuedAt]
   );
 
   // `add_shipping_info` y `add_payment_info` solo cuando el cliente ELIGE algo.
@@ -246,6 +285,23 @@ export default function Checkout() {
     trackAddShippingInfo(items, ship.method);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ship.method]);
+
+  /**
+   * El cupón se está usando ENCIMA de una promo N x M — que es lo que la spec
+   * 017 habilitó y lo que hay que poder costear después.
+   *
+   * Se dispara una sola vez por combinación cupón+promo: sin el ref, cada
+   * re-render del checkout (y hay uno por cada tecla del formulario) mandaría
+   * un evento.
+   */
+  const cuponEnPromoReportado = useRef('');
+  useEffect(() => {
+    if (!appliedCoupon || !algunaPromoNxM) return;
+    const clave = `${appliedCoupon}:${promoActive ? '3x2' : ''}${promo2x1Active ? '2x1' : ''}`;
+    if (cuponEnPromoReportado.current === clave) return;
+    cuponEnPromoReportado.current = clave;
+    trackCuponAplicadoEnPromo(appliedCoupon, promoActive && promo2x1Active ? '3x2+2x1' : promoActive ? '3x2' : '2x1');
+  }, [appliedCoupon, algunaPromoNxM, promoActive, promo2x1Active]);
 
   const ultimoPago = useRef(paymentMethod);
   useEffect(() => {
@@ -300,7 +356,7 @@ export default function Checkout() {
         });
 
       if (method === 'transferencia') {
-        const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
+        const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon, couponIssuedAt });
         if (!orderId) throw new Error('Respuesta inválida del backend');
         stash(orderId);
         clear();
@@ -308,7 +364,7 @@ export default function Checkout() {
         return;
       }
 
-      const { init_point, external_reference } = await createPreference({ items, payer, shipping: fullShipping, couponCode: appliedCoupon });
+      const { init_point, external_reference } = await createPreference({ items, payer, shipping: fullShipping, couponCode: appliedCoupon, couponIssuedAt });
       if (!init_point) throw new Error('Respuesta inválida del backend');
       stash(external_reference);
       window.location.href = init_point;
@@ -379,9 +435,27 @@ export default function Checkout() {
                 probar códigos que no van a hacer nada. */}
             <div className={`mb-3 ${digitalOnly ? 'hidden' : ''}`}>
               {appliedCoupon ? (
-                <div className="flex items-center justify-between gap-2 text-sm rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2">
-                  <span className="text-emerald-400">🎟️ Cupón <strong>{appliedCoupon}</strong> aplicado</span>
-                  <button type="button" onClick={removeCoupon} className="text-white/50 hover:text-white text-xs">Quitar</button>
+                <>
+                  <div className="flex items-center justify-between gap-2 text-sm rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2">
+                    <span className="text-emerald-400">🎟️ Cupón <strong>{appliedCoupon}</strong> aplicado</span>
+                    <button type="button" onClick={removeCoupon} className="text-white/50 hover:text-white text-xs">Quitar</button>
+                  </div>
+                  {/* El contador se ve DESDE QUE ENTRA al checkout, no aparece
+                      recién al vencer: una ventana que se cierra de sorpresa,
+                      con el formulario a medio llenar, se lee como un error del
+                      sitio. Sólo renderiza si el cupón tiene ventana. */}
+                  <CuponCountdown
+                    cupon={{ code: appliedCoupon, emitidoEn: couponIssuedAt }}
+                    onVencido={vencerCupon}
+                    className="mt-2"
+                  />
+                </>
+              ) : cuponVencidoAviso ? (
+                <div className="text-sm rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-white/70">
+                  ⌛ Se cerró la ventana de tu 10% OFF y lo sacamos del total.
+                  <span className="block text-white/45 text-xs mt-0.5">
+                    Tus datos quedaron como estaban — podés seguir con la compra.
+                  </span>
                 </div>
               ) : couponOpen ? (
                 <div>
@@ -474,18 +548,17 @@ export default function Checkout() {
                   {promoActive && !appliedBundle && !cuponExclusivo && (
                     <div className="text-emerald-400">
                       🎉 Promo 3x2 en calcos y personalizados: cada 3, la más barata gratis.
-                      Se combina con el 10% por transferencia.
+                      Se combina con el 10% por transferencia y con tu cupón.
                     </div>
                   )}
-                  {/* Con la promo corriendo, un cupón de % no suma nada. Sin este
-                      aviso el cliente ve "Cupón aplicado" arriba y ningún
-                      descuento abajo, que es la peor pantalla justo antes de pagar. */}
-                  {promoActive && appliedCoupon && !appliedBundle && !cuponExclusivo && (
-                    <div className="text-white/60">
-                      🎟️ El cupón {appliedCoupon} no se combina con la promo 3x2 — durante la promo
-                      manda el 3x2.
+                  {promo2x1Active && !appliedBundle && !cuponExclusivo && (
+                    <div className="text-emerald-400">
+                      🎉 2x1 en anime, Argentina, Disney y frases: cada 2, la más barata gratis.
                     </div>
                   )}
+                  {/* ⚠️ Acá había el aviso contrario ("el cupón no se combina con
+                      la promo 3x2"). La spec 017 revirtió esa regla: ahora SÍ se
+                      acumula, con tope del 20 %. */}
                   {appliedBundle ? (
                     <div className="text-emerald-400">
                       🎟️ Cupón {appliedBundle.buy}x{appliedBundle.pay} en calcos y personalizados: cada {appliedBundle.buy},

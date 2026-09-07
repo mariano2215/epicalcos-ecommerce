@@ -24,7 +24,13 @@ const pedido = () => ({
   httpMethod: 'POST',
   headers: { origin: 'https://epicalcos.com' },
   body: JSON.stringify({
-    items: [{ id: 'sticker:disney-3:6cm', title: 'Disney #3 · 6 cm', quantity: 2, unit_price: 1600 }],
+    // ⚠️ `marvel` y NO `disney`, y 2 unidades y no 3: este test es sobre los
+    // AVISOS, no sobre precios, así que el carrito tiene que ser uno al que no
+    // le corra ninguna promo. Con la spec 017, 2 calcos de disney son un 2x1
+    // (el server esperaría $800) y 3 de cualquier categoría son un 3x2 — el
+    // pedido se caía con price_mismatch y el test fallaba por el motivo
+    // equivocado, tapando lo que de verdad mira.
+    items: [{ id: 'sticker:marvel-3:6cm', title: 'Marvel #3 · 6 cm', quantity: 2, unit_price: 1600 }],
     payer: {
       name: 'Manuel Vallejos',
       email: 'manuelvjos20@gmail.com',
@@ -118,7 +124,7 @@ describe('un pedido por transferencia avisa siempre', () => {
     const adulterado = {
       ...pedido(),
       body: JSON.stringify({
-        items: [{ id: 'sticker:disney-3:6cm', title: 'Disney', quantity: 2, unit_price: 1 }],
+        items: [{ id: 'sticker:marvel-3:6cm', title: 'Marvel', quantity: 2, unit_price: 1 }],
         payer: { name: 'Test', email: 'test@test.com', phone: '1', address: 'x' },
         shipping: { methodValue: 'retiro' }
       })

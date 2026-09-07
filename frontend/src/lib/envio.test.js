@@ -72,10 +72,15 @@ describe('costo de envío — paridad frontend ↔ backend', () => {
 describe('ninguna promo regala el envío: manda el umbral', () => {
   afterEach(() => vi.useRealTimers());
 
-  /** El pack x100 de la promo solo existe mientras la promo esté viva. */
+  /**
+   * El pack x100 de la promo solo existe mientras la promo esté viva.
+   * ⚠️ Spec 017: la mayorista arranca el 7/9/2026 y ya no vence, así que la
+   * fecha se movió de agosto a septiembre. Antes del 7/9 la promo no existe y
+   * el pack se rechaza por línea inválida, no por envío.
+   */
   const conLaPromoViva = () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-08-10T12:00:00-03:00'));
+    vi.setSystemTime(new Date('2026-09-10T12:00:00-03:00'));
   };
   const datos = (dest) => ({ name: 'A', address: 'B', zip: '1000', ...dest });
 

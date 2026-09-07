@@ -85,6 +85,33 @@ window.dataLayer
 
 ### Eventos propios
 
+## La ventana del cupón de bienvenida (spec 017)
+
+Tres eventos de la MISMA ventana de 10 minutos. **Hay que leerlos juntos**: por
+separado no dicen nada.
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `cupon_emitido` | el popup entrega el código | `cupon`, `ventana_ms` |
+| `cupon_vencido` | la ventana llega a cero sin usarlo | `cupon`, `donde`: `popup` · `checkout` |
+| `cupon_aplicado_en_promo` | se usa el cupón con una promo N×M corriendo | `cupon`, `promo` |
+
+**Cómo se leen**:
+
+- `cupon_vencido / cupon_emitido` = qué proporción de los leads pierde la
+  ventana. Si es alta, 10 minutos es poco.
+- `donde: 'checkout'` es el caso **caro**: alguien que estaba comprando y se le
+  venció encima. Es el riesgo declarado en `specs/017` §12 — mirarlo primero.
+- `cupon_aplicado_en_promo` mide **lo que cuesta** la acumulación que habilitó la
+  spec 017 (el cupón corriendo encima del 3x2 / 2x1). Es el número contra el que
+  se decide si el `percentCap = 0.20` se sostiene.
+
+⚠️ Ninguno lleva el mail ni ningún dato del lead: el `dataLayer` es público y
+cualquier extensión del navegador lo lee (mismo criterio que
+`contacto_form_error`).
+
+---
+
 `search` · `search_no_results` · `catalogo_orden` · `generate_lead` ·
 `whatsapp_click` (con la ruta de origen) · `instagram_click` ·
 `contacto_form_error` · `shipping_calculated` (zona + costo) ·

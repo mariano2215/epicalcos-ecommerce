@@ -63,10 +63,16 @@ export function PromoCountdown({ endMs, label = 'Termina en' }) {
 
 /**
  * Banner de promo pensado para vivir dentro del <header>: fondo de calcos
- * flotantes + titular + cuenta regresiva. El Header decide QUÉ promo mostrar
- * (solo con la promo vigente) y le pasa el texto y el link.
+ * flotantes + titular + (si la promo tiene fecha de fin) cuenta regresiva. El
+ * Header decide QUÉ promo mostrar y le pasa el texto y el link.
+ *
+ * ⚠️ `endMs` es OPCIONAL desde la spec 017. Las tres promos vivas hoy no vencen,
+ * así que no hay nada que contar y el contador no se renderiza. Sin esta guarda
+ * `useCountdown(NaN)` deja `remaining` en NaN y el banner muestra "NaN:NaN".
+ * Cuando vuelva a haber una promo con fecha, pasarle `endMs` la reactiva sola.
  */
 export default function PromoBanner({ title, subtitle, endMs, to, ariaLabel }) {
+  const conCountdown = Number.isFinite(endMs);
   return (
     <div className="promo-banner" role="region" aria-label={ariaLabel || title}>
       {/* Fondo: calcos flotantes + scrim para legibilidad */}
@@ -84,7 +90,7 @@ export default function PromoBanner({ title, subtitle, endMs, to, ariaLabel }) {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            <PromoCountdown endMs={endMs} />
+            {conCountdown && <PromoCountdown endMs={endMs} />}
             <Link to={to} className="promo-banner__cta shrink-0 hidden md:inline-flex">
               Comprar
             </Link>

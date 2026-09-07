@@ -28,7 +28,7 @@ function metaTracking() {
   return Object.keys(tracking).length ? tracking : undefined;
 }
 
-export async function createPreference({ items, payer, shipping, couponCode }) {
+export async function createPreference({ items, payer, shipping, couponCode, couponIssuedAt }) {
   const payload = {
     items: items.map((i) => ({
       id: i.id,
@@ -39,6 +39,10 @@ export async function createPreference({ items, payer, shipping, couponCode }) {
     payer,
     shipping,
     couponCode: couponCode || undefined,
+    // Instante en que el popup entregó el cupón: el servidor lo usa para saber
+    // si la ventana de 10 minutos sigue abierta (spec 017). `undefined` = ese
+    // código no vino del popup y no tiene ventana.
+    couponIssuedAt: couponIssuedAt || undefined,
     tracking: metaTracking()
   };
 
@@ -75,7 +79,7 @@ export async function createPreference({ items, payer, shipping, couponCode }) {
 }
 
 /** Registra un pedido a pagar por transferencia bancaria (sin pasar por Mercado Pago). */
-export async function createTransferOrder({ items, payer, shipping, couponCode }) {
+export async function createTransferOrder({ items, payer, shipping, couponCode, couponIssuedAt }) {
   const payload = {
     items: items.map((i) => ({
       id: i.id,
@@ -85,7 +89,8 @@ export async function createTransferOrder({ items, payer, shipping, couponCode }
     })),
     payer,
     shipping,
-    couponCode: couponCode || undefined
+    couponCode: couponCode || undefined,
+    couponIssuedAt: couponIssuedAt || undefined
   };
 
   let res;

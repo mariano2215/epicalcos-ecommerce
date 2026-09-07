@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState, useCallback } from 'react';
 import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
-import { usePromoActive } from '../lib/promo.js';
+import { usePromoActive, use2x1PromoActive } from '../lib/promo.js';
+import { useAvisoDesbloqueo } from '../lib/promoUnlock.js';
 import { META_LINE_SKU, FIXED_SKU, DIGITAL_SKU } from '../config/metaCatalog.js';
 import {
   priceForSize,
@@ -15,10 +16,15 @@ import {
   couponIncluyeCustom,
   MAX_STICKER_DISCOUNT,
   PROMO_3X2,
+  PROMO_2X1,
   PROMO_ARGENTINA,
   esPromoArgentina,
+  esPromo2x1,
   precioVidrieraLinea,
-  promo3x2
+  promo3x2,
+  repartoPromos,
+  cuponTieneVentana,
+  ventanaCuponAbierta
 } from '../config/pricing.js';
 
 /**
@@ -277,6 +283,7 @@ export function CartProvider({ children }) {
    * re-renderiza el provider y el memo se recalcula solo.
    */
   const promoActive = usePromoActive();
+  const promo2x1Active = use2x1PromoActive();
 
   /**
    * Precios derivados. Hay que distinguir DOS tipos de descuento, porque se
@@ -322,10 +329,22 @@ export function CartProvider({ children }) {
     // servidor arma esta misma bolsa con SIZE_PRICES (ver `unitBasePrices` en
     // netlify/functions/lib/pricing.js). Usar acá el precio con la promo por
     // categoría desincronizaría el N x M y el checkout se rechazaría.
+    // Dos bolsas, porque hay dos promos N x M corriendo a la vez (spec 017):
+    // las unidades de las categorías del 2x1 y el resto. `repartoPromos` decide
+    // cuáles conviene mandar a cada una — no es "las de categoría al 2x1 y
+    // listo", ver su comentario.
+    //
+    // Un personalizado (`custom`) nunca tiene categoría de catálogo, así que
+    // cae siempre en el resto: participa del 3x2 y nunca del 2x1.
     const eligibleUnitBasePrices = [];
+    const unidadesCategoria = [];
+    const unidadesResto = [];
     for (const i of state.items) {
-      if (PROMO_ELIGIBLE_TYPES.has(i.type)) {
-        for (let k = 0; k < i.quantity; k++) eligibleUnitBasePrices.push(i.basePrice);
+      if (!PROMO_ELIGIBLE_TYPES.has(i.type)) continue;
+      const bolsa = esPromo2x1(i.id) ? unidadesCategoria : unidadesResto;
+      for (let k = 0; k < i.quantity; k++) {
+        eligibleUnitBasePrices.push(i.basePrice);
+        bolsa.push(i.basePrice);
       }
     }
 
@@ -333,11 +352,29 @@ export function CartProvider({ children }) {
     // cupón, así ya se puede mostrar en el carrito. El % por transferencia se
     // suma recién en el checkout, en pricedItems. `promoActive` viene del hook
     // de arriba — ver el comentario de por qué no se decide acá adentro.
-    const promo = promo3x2({ unitBasePrices: promoActive ? eligibleUnitBasePrices : [] });
-    const promoUnits = promoActive ? eligibleUnitBasePrices.length : 0;
-    const promoToNextFree = promoActive
-      ? (PROMO_3X2.buy - (promoUnits % PROMO_3X2.buy)) % PROMO_3X2.buy
-      : 0;
+    // El reparto corre si está viva CUALQUIERA de las dos promos N x M. Con el
+    // 2x1 apagado, `unidadesCategoria` va vacía y el reparto degrada exactamente
+    // al 3x2 de siempre; con el 3x2 apagado, pasa al revés.
+    const algunaPromoNxM = promoActive || promo2x1Active;
+    const promo = repartoPromos({
+      unidadesCategoria,
+      unidadesResto,
+      g2x1: promo2x1Active ? PROMO_2X1 : null,
+      g3x2: promoActive ? PROMO_3X2 : null
+    });
+    const promoUnits = algunaPromoNxM ? eligibleUnitBasePrices.length : 0;
+
+    // Cuánto falta para la próxima gratis. Con las dos promos vivas, el que
+    // manda es el 2x1 SI la persona ya tiene calcos de esas categorías: le
+    // faltan menos. Sin ninguno, el nudge es el del 3x2.
+    const faltaPara = (bolsa, buy) => (buy - (bolsa.length % buy)) % buy;
+    const promoToNextFree = !algunaPromoNxM
+      ? 0
+      : promo2x1Active && unidadesCategoria.length > 0
+        ? faltaPara(unidadesCategoria, PROMO_2X1.buy)
+        : promoActive
+          ? faltaPara(unidadesResto.length ? unidadesResto : eligibleUnitBasePrices, PROMO_3X2.buy)
+          : faltaPara(unidadesCategoria, PROMO_2X1.buy);
 
     // Archivos imprimibles: no se producen ni se despachan. `physicalSubtotal`
     // es lo único que cuenta para el envío gratis y `digitalOnly` apaga toda la
@@ -362,14 +399,24 @@ export function CartProvider({ children }) {
       bulkSavings,
       unitsToBulk,
       eligibleUnitBasePrices,
+      unidadesCategoria,
+      unidadesResto,
       promoActive,
+      promo2x1Active,
+      algunaPromoNxM,
       promoUnits,
       promoFreeUnits: promo.freeUnits,
       promoSavings: promo.discount,
       promoKeepFraction: promo.keepFraction,
-      promoToNextFree
+      promoToNextFree,
+      /**
+       * Qué promo es la que le está por dar la próxima gratis. Lo usa el copy
+       * del carrito para no decir "3x2" cuando lo que falta es un par de 2x1.
+       */
+      promoProxima:
+        promo2x1Active && unidadesCategoria.length > 0 ? '2x1' : promoActive ? '3x2' : null
     };
-  }, [state.items, promoActive]);
+  }, [state.items, promoActive, promo2x1Active]);
 
   /**
    * Recalcula los items con el precio real según el medio de pago y el cupón
@@ -378,11 +425,17 @@ export function CartProvider({ children }) {
    * FUERA de la promo: a los calcos sueltos se les SUMA el 10 % por volumen
    * (solo transferencia y desde el umbral) MÁS el cupón (acumulables, tope 90 %).
    *
-   * DURANTE la promo 3x2: a los calcos elegibles (catálogo + personalizados) se
-   * les aplica primero el 3x2 (uniforme vía keepFraction) y después el 10 % por
-   * transferencia, topeado en PROMO_3X2.percentCap. Los cupones de % NO se
-   * combinan con la promo: mientras corre, `couponRate` es 0. Espejado en
-   * netlify/functions/lib/pricing.js.
+   * DURANTE las promos N x M (3x2 general y 2x1 por categoría): a los calcos
+   * elegibles se les aplica primero el reparto (uniforme vía keepFraction) y
+   * después los %, topeados en PROMO_3X2.percentCap.
+   *
+   * ⚠️ DESDE LA SPEC 017 (7/9/2026) LOS CUPONES DE % SÍ SE ACUMULAN con la
+   * promo. Hasta entonces `couponRate` quedaba en 0 mientras la promo corría
+   * (decisión del 20/8/2026). Cambió porque el popup ahora entrega EPICA10 con
+   * un contador de 10 minutos, y un contador sobre un cupón que descuenta $0 es
+   * una promesa rota. Por eso `percentCap` pasó de 0.10 a 0.20: tiene que
+   * entrar el 10 % de transferencia MÁS el 10 % del cupón.
+   * Espejado en netlify/functions/lib/pricing.js.
    *
    * Con un CUPÓN DE BUNDLE (N x M): manda el bundle del cupón — cada N,
    * la más barata gratis y NINGÚN % (ni transferencia, ni volumen, ni otro
@@ -397,28 +450,67 @@ export function CartProvider({ children }) {
    * si tocás una de estas reglas acá y no allá, el checkout se rechaza con
    * `price_mismatch`. La paridad la verifica src/lib/promoPricing.test.js.
    */
+  /**
+   * Desbloqueo de las promos N x M (spec 017).
+   *
+   * ⚠️ VA ACÁ Y NO EN EL CARRITO NI EN EL DRAWER: los dos pueden estar montados
+   * a la vez (estando en /carrito con el drawer abierto) y contarían el mismo
+   * desbloqueo dos veces. El provider se monta UNA sola vez, así que no depende
+   * del registro anti-duplicados de `promoUnlock`.
+   *
+   * Se reusa `promo_unlock` en vez de inventar un evento nuevo: el informe ya
+   * cruza ese evento con la regla que lo produce. Los nombres siguen la misma
+   * convención que `transferencia_10` / `envio_gratis` — el beneficio real, no
+   * un texto de marketing.
+   */
+  useAvisoDesbloqueo(
+    'nxm_2x1',
+    PROMO_2X1.buy,
+    derived.promo2x1Active && derived.unidadesCategoria.length >= PROMO_2X1.buy
+  );
+  useAvisoDesbloqueo(
+    'nxm_3x2',
+    PROMO_3X2.buy,
+    derived.promoActive && derived.unidadesResto.length >= PROMO_3X2.buy
+  );
+
   const pricedItems = useCallback(
-    (paymentMethod, couponCode) => {
-      const bundle = couponBundle(couponCode); // 2x1 del cupón oculto, si aplica
+    (paymentMethod, couponCode, couponIssuedAt) => {
+      // Ventana del cupón de bienvenida (spec 017): pasados los 10 minutos desde
+      // que el popup lo entregó, el código deja de descontar. Se chequea ACÁ y
+      // no en `findCoupon` porque la ventana no es del cupón, es de la ENTREGA:
+      // el mismo código tipeado a mano no tiene ventana (`emitidoEn` ausente).
+      //
+      // Sin tolerancia de este lado: el que decide con manga ancha es el
+      // servidor, para no rechazarle la compra a un reloj corrido. Acá conviene
+      // lo estricto, así la pantalla nunca promete un descuento que el server
+      // después no va a dar.
+      const ventanaOk =
+        !cuponTieneVentana(couponCode) || ventanaCuponAbierta(couponIssuedAt);
+      const codigo = ventanaOk ? couponCode : null;
+
+      const bundle = couponBundle(codigo); // 2x1 del cupón oculto, si aplica
       // ¿El cupón es el único descuento que corre? (bundle o `exclusivo`).
-      const anulaTodo = couponAnulaTodo(couponCode);
-      const incluyeCustom = couponIncluyeCustom(couponCode);
+      const anulaTodo = couponAnulaTodo(codigo);
+      const incluyeCustom = couponIncluyeCustom(codigo);
       const bulkRate =
         !anulaTodo && derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
-      // Durante la promo 3x2 un cupón de % NO suma: la promo se combina con el
-      // 10 % por transferencia y con nada más. EPI50 no cae acá — es `exclusivo`,
-      // así que ya anuló la promo (anulaTodo) y corre solo su 50 %.
-      const cuponAnuladoPorPromo = derived.promoActive && !anulaTodo;
-      const couponRate =
-        bundle || cuponAnuladoPorPromo ? 0 : findCoupon(couponCode)?.discount || 0;
-      // El tope de la promo sigue a la promo REAL, no a la fecha: un cupón que
-      // la anula deja al pedido sin 3x2, así que tampoco corre su tope de 10 %.
-      const cap = derived.promoActive && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
+      // El cupón de % ahora SÍ suma con la promo (ver el aviso del bloque de
+      // arriba). Solo lo anula un cupón de bundle, que no es de %.
+      // EPI50 no cae acá — es `exclusivo`, así que ya anuló la promo entera
+      // (anulaTodo) y corre solo su 50 %.
+      const couponRate = bundle ? 0 : findCoupon(codigo)?.discount || 0;
+      // El tope sigue a la promo REAL, no a la fecha: un cupón que la anula deja
+      // al pedido sin agrupación, así que tampoco corre su tope.
+      const cap =
+        derived.algunaPromoNxM && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
       const percentRate = Math.min(bulkRate + couponRate, cap);
 
-      // Agrupación N x M vigente: el cupón de bundle pisa a la promo por fecha,
-      // y un cupón exclusivo la anula (su % es el descuento final).
-      const grouping = bundle || (!anulaTodo && derived.promoActive ? PROMO_3X2 : null);
+      // Agrupación N x M vigente: el cupón de bundle pisa a las promos por
+      // fecha, y un cupón exclusivo las anula (su % es el descuento final).
+      const grouping = bundle || (!anulaTodo && derived.algunaPromoNxM ? PROMO_3X2 : null);
+      // Con bundle, el cupón reemplaza AL REPARTO ENTERO: una sola bolsa con
+      // todas las elegibles, que es como se comportaba antes de la spec 017.
       const keep = bundle
         ? promo3x2({ unitBasePrices: derived.eligibleUnitBasePrices, buy: bundle.buy, pay: bundle.pay }).keepFraction
         : derived.promoKeepFraction;

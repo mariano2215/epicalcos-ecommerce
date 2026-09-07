@@ -11,7 +11,8 @@ export default function CartDrawer() {
   const {
     drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, physicalSubtotal, clear,
     digitalOnly,
-    promoActive, promoFreeUnits, promoSavings, promoUnits, promoToNextFree
+    algunaPromoNxM, promoProxima,
+    promoFreeUnits, promoSavings, promoUnits, promoToNextFree
   } = useCart();
   const navigate = useNavigate();
 
@@ -113,14 +114,20 @@ export default function CartDrawer() {
               <div className="text-xs text-emerald-400">📩 Te llega por mail — sin envío.</div>
             ) : (
               <>
-                {promoActive && promoFreeUnits > 0 && (
+                {/* Con DOS promos N x M corriendo (spec 017) el mensaje no puede
+                    decir "3x2" a secas: el que juntó dos calcos de Disney no
+                    llegó a ningún trío y no entendería de dónde salió el gratis.
+                    `promoProxima` dice cuál es la que le está por dar la
+                    siguiente — el reparto real puede mezclar las dos. */}
+                {algunaPromoNxM && promoFreeUnits > 0 && (
                   <div className="text-xs text-emerald-400">
-                    🎉 Promo 3x2: {promoFreeUnits} calco{promoFreeUnits === 1 ? '' : 's'} gratis — ahorrás {formatPrice(promoSavings)}.
+                    🎉 {promoFreeUnits} calco{promoFreeUnits === 1 ? '' : 's'} gratis — ahorrás {formatPrice(promoSavings)}.
                   </div>
                 )}
-                {promoActive && promoFreeUnits === 0 && promoUnits > 0 && promoToNextFree > 0 && (
+                {algunaPromoNxM && promoFreeUnits === 0 && promoUnits > 0 && promoToNextFree > 0 && (
                   <div className="text-xs text-white/50">
-                    Sumá {promoToNextFree} calco{promoToNextFree === 1 ? '' : 's'} y llevás 1 gratis (promo 3x2).
+                    Sumá {promoToNextFree} calco{promoToNextFree === 1 ? '' : 's'} y llevás 1 gratis
+                    {promoProxima === '2x1' ? ' (2x1 en esta categoría).' : ' (3x2).'}
                   </div>
                 )}
 
@@ -141,17 +148,17 @@ export default function CartDrawer() {
               <span>Subtotal</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
-            {promoActive && promoSavings > 0 && (
+            {algunaPromoNxM && promoSavings > 0 && (
               <div className="flex justify-between text-emerald-400 text-sm">
-                <span>Promo 3x2</span>
+                <span>Calcos gratis</span>
                 <span>−{formatPrice(promoSavings)}</span>
               </div>
             )}
             <div className="flex justify-between font-display font-extrabold text-lg">
               <span>Total</span>
-              <span>{formatPrice(promoActive ? subtotal - promoSavings : subtotal)}</span>
+              <span>{formatPrice(algunaPromoNxM ? subtotal - promoSavings : subtotal)}</span>
             </div>
-            {promoActive && (
+            {algunaPromoNxM && (
               <p className="text-[11px] text-white/40 leading-snug">
                 El medio de pago y tu cupón (si tenés uno) se aplican en el checkout.
               </p>

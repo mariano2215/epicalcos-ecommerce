@@ -145,49 +145,72 @@ export function couponIncluyeCustom(code, now = Date.now()) {
 }
 
 /**
- * ─── PROMO 3x2 — VIVA del jue 20/8 23:00 al vie 28/8 23:59 de 2026 ───────────
+ * ─── PROMO 3x2 — VIVA desde el deploy, SIN FECHA DE FIN (spec 017) ───────────
  *
  * "3x2 en TODAS las calcos": cada 3 calcos elegibles, la MÁS BARATA gratis.
  * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom')
  * — o sea, todo lo minorista. NO incluye packs, mayorista, Negocio, productos
  * de precio fijo ni digitales: esas líneas ya traen su precio final.
  *
- * TIENE FECHA DE INICIO, no solo de fin. La promo arranca a las 23:00 de un
- * jueves y nadie va a estar deployando a esa hora: `isPromoActive()` mira las
- * DOS puntas, así que alcanza con deployar antes y la promo se enciende y se
- * apaga sola. Antes de `startsAt` el precio válido sigue siendo el de lista —
- * si mirara solo el fin, deployar hoy la prendería en el acto.
+ * ⚠️ YA NO TIENE FECHA DE FIN (decisión de Mariano, 7/9/2026). Corre desde que
+ * se deploya y se apaga con `activa: false`, que es un cambio de una línea de
+ * cada lado del espejo. Dos consecuencias que hay que tener presentes:
  *
- * EXTENDIDA el 24/8/2026: cerraba ese mismo lunes y Mariano la estiró al
- * viernes 28. Solo se movió `endsAt`: el banner, su contador y la fecha que
- * muestra salen todos de ahí, no hay ninguna fecha escrita a mano en la UI.
+ *   1. SIN `endsAt` NO HAY CUENTA REGRESIVA. El banner del header y el de
+ *      /mayorista mostraban un countdown que salía de esta fecha; sin fecha, no
+ *      hay nada que contar y el banner va sin contador. La única urgencia que
+ *      le queda al sitio es la ventana de 10 minutos del cupón (ver
+ *      CUPON_VENTANA_MS más abajo).
+ *   2. UNA PROMO SIN FIN SE OLVIDA PRENDIDA. Ya pasó con EPICA10, que no vence
+ *      desde que existe. El interruptor es `activa` y está documentado en
+ *      docs/business-rules.md.
  *
- * ACUMULA con el 10 % por transferencia y con NADA MÁS. Los cupones de % NO se
- * combinan con la promo (decisión de Mariano, 20/8/2026): mientras la promo
- * corre, un cupón como EPICA10 no suma nada — ver `couponRate` en
- * CartContext.pricedItems y en validateAndPriceOrder. `percentCap` (10 %) es el
- * techo del % que puede correr encima del 3x2, y hoy el único que llega ahí es
- * el de transferencia.
+ * `startsAt: null` = arranca al deployar. Se mantiene el campo (en vez de
+ * borrarlo) porque el predicado sigue soportando fecha de inicio: la próxima
+ * promo programada solo tiene que llenarlo.
+ *
+ * ACUMULA con el 10 % por transferencia Y con los cupones de %.
+ *
+ * ⚠️ ESTO CAMBIÓ EL 7/9/2026 y revierte la decisión del 20/8/2026, que era la
+ * contraria: hasta esta spec, mientras la promo corría un cupón como EPICA10
+ * NO sumaba nada (`couponRate` quedaba en 0). El motivo del cambio: el popup de
+ * bienvenida ahora entrega EPICA10 con un contador de 10 minutos, y un contador
+ * sobre un cupón que descuenta $0 es una promesa rota a la vista del cliente.
+ * Por eso `percentCap` pasó de 0.10 a 0.20 — el techo tiene que dar lugar al
+ * 10 % por transferencia MÁS el 10 % del cupón.
  *
  * EPI50 es la excepción, y no por un caso especial: es `exclusivo`, así que
  * anula la agrupación N x M entera y corre solo su 50 %. Quien tiene ese código
  * no ve 3x2; ve mitad de precio.
  *
- * ⚠️ ESPEJO OBLIGATORIO: `PROMO_START_MS`, `PROMO_END_MS`, `percentCap` y la
- * función `promo3x2` están espejados en `netlify/functions/lib/pricing.js`. Si
- * cambiás algo acá, cambialo TAMBIÉN allá o el checkout se rechaza con
- * `price_mismatch`. El test `src/lib/promoPricing.test.js` verifica que ambos
- * lados coincidan, en los cuatro bordes de la ventana.
+ * ⚠️ ESPEJO OBLIGATORIO: `PROMO_START_MS`, `activa`, `percentCap` y las
+ * funciones `promo3x2` y `repartoPromos` están espejados en
+ * `netlify/functions/lib/pricing.js`. Si cambiás algo acá, cambialo TAMBIÉN
+ * allá o el checkout se rechaza con `price_mismatch`. El test
+ * `src/lib/promoPricing.test.js` verifica que ambos lados coincidan.
  */
 export const PROMO_3X2 = {
-  /** Arranca el jueves 20/8 a las 23:00, hora Argentina (UTC−03:00). */
-  startsAt: '2026-08-20T23:00:00-03:00',
-  /** Fin de la promo, hora Argentina. Inclusive: termina al cerrar el viernes. */
-  endsAt: '2026-08-28T23:59:59-03:00',
+  /** Interruptor manual. Con `false`, la promo desaparece del sitio y del server. */
+  activa: true,
+  /**
+   * Fecha del deploy de la spec 017. NO es `null` a propósito: dejarlo abierto
+   * de las dos puntas hace que la promo esté "viva" también en el pasado, y con
+   * eso deja de existir un instante sin promo — que es contra lo que testean
+   * media docena de casos de promoPricing.test.js, y contra lo que se compara
+   * cualquier análisis histórico. Con la fecha de inicio la promo arranca al
+   * deployar igual, pero el antes sigue siendo el antes.
+   */
+  startsAt: '2026-09-07T00:00:00-03:00',
+  /** `null` = no vence. Ver el aviso de arriba antes de dejarlo así. */
+  endsAt: null,
   buy: 3,
   pay: 2,
-  /** Tope del descuento en % que corre ENCIMA del 3x2 (hoy: solo transferencia). */
-  percentCap: 0.10
+  /**
+   * Tope del descuento en % que corre ENCIMA de la agrupación N x M.
+   * 0.20 = el 10 % por transferencia + el 10 % de EPICA10, que es el máximo
+   * que se puede acumular hoy. Era 0.10 hasta el 7/9/2026 (ver arriba).
+   */
+  percentCap: 0.20
   // Ojo: NO agregar acá el código de un cupón para mostrarlo en el banner —
   // los cupones son ocultos (ver COUPONS arriba).
 };
@@ -195,13 +218,29 @@ export const PROMO_3X2 = {
 export const PROMO_START_MS = Date.parse(PROMO_3X2.startsAt);
 export const PROMO_END_MS = Date.parse(PROMO_3X2.endsAt);
 
-/** ¿La promo 3x2 está vigente en este instante? Mira las dos puntas. */
+/**
+ * ¿Una promo con ventana abierta de los dos lados está vigente?
+ *
+ * Genérica para las tres promos de la spec 017, que arrancan al deployar y no
+ * vencen. La trampa que resuelve: `Date.parse(null)` devuelve NaN, y el
+ * predicado viejo exigía `Number.isFinite()` en las dos puntas — con `endsAt:
+ * null` la promo NUNCA se hubiera encendido. Ahora una punta ausente significa
+ * "sin límite de ese lado", que es lo que se quiso decir al sacar la fecha.
+ *
+ * @param {{ activa?: boolean, startMs?: number, endMs?: number }} args
+ */
+export function promoVigente({ activa = true, startMs, endMs }, now = Date.now()) {
+  if (!activa) return false;
+  if (Number.isFinite(startMs) && now < startMs) return false;
+  if (Number.isFinite(endMs) && now > endMs) return false;
+  return true;
+}
+
+/** ¿La promo 3x2 está vigente en este instante? */
 export function isPromoActive(now = Date.now()) {
-  return (
-    Number.isFinite(PROMO_START_MS) &&
-    Number.isFinite(PROMO_END_MS) &&
-    now >= PROMO_START_MS &&
-    now <= PROMO_END_MS
+  return promoVigente(
+    { activa: PROMO_3X2.activa, startMs: PROMO_START_MS, endMs: PROMO_END_MS },
+    now
   );
 }
 
@@ -230,6 +269,211 @@ export function promo3x2({ unitBasePrices, buy = PROMO_3X2.buy, pay = PROMO_3X2.
   let discount = 0;
   for (let k = 0; k < freeUnits; k++) discount += sorted[k];
   return { freeUnits, discount, keepFraction: (eligibleBase - discount) / eligibleBase };
+}
+
+/**
+ * ─── PROMO 2x1 POR CATEGORÍA — las cuatro de "Los más elegidos" (spec 017) ────
+ *
+ * Cada 2 calcos de estas categorías, la más barata gratis. Convive con el 3x2
+ * general: un calco de Disney es elegible para las DOS promos, y `repartoPromos`
+ * decide en cuál conviene ponerlo.
+ *
+ * ⚠️ ESTA LISTA ES LA MISMA que usa `FeaturedStickers` para la sección "Los más
+ * elegidos" del Home, y vive acá —en el config de PRECIOS— justo por eso: si
+ * hubiera dos listas, cambiar la del Home cambiaría silenciosamente qué está en
+ * promo y el servidor no se enteraría. El componente la importa de este archivo.
+ *
+ * ⚠️ HALLAZGO HEREDADO (ya declarado en FeaturedStickers.jsx): "los más
+ * elegidos" NO sale de un dato de ventas, son cuatro categorías elegidas a
+ * mano. Con esta promo esa promesa pasa a tener plata atrás. No se arregla acá
+ * (regla 8), está anotado en specs/017 tasks.md.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (CATEGORIAS_2X1 /
+ * PROMO_2X1). Si agregás o sacás una categoría acá y no allá, TODO checkout con
+ * un calco de esa categoría se rechaza con `price_mismatch`.
+ */
+export const CATEGORIAS_2X1 = ['anime', 'argentina', 'disney', 'frases'];
+
+export const PROMO_2X1 = {
+  id: 'cat2x1',
+  /** Interruptor manual, mismo criterio que las otras dos. */
+  activa: true,
+  /** Mismo criterio que PROMO_3X2.startsAt — ver el comentario de allá. */
+  startsAt: '2026-09-07T00:00:00-03:00',
+  endsAt: null,
+  buy: 2,
+  pay: 1,
+  titulo: '2x1 EN LAS MÁS ELEGIDAS',
+  subtitulo: 'Cada 2 calcos de anime, Argentina, Disney o frases, una gratis'
+};
+
+export const PROMO_2X1_START_MS = Date.parse(PROMO_2X1.startsAt);
+export const PROMO_2X1_END_MS = Date.parse(PROMO_2X1.endsAt);
+
+/** ¿La promo 2x1 por categoría está vigente en este instante? */
+export function is2x1PromoActive(now = Date.now()) {
+  return promoVigente(
+    { activa: PROMO_2X1.activa, startMs: PROMO_2X1_START_MS, endMs: PROMO_2X1_END_MS },
+    now
+  );
+}
+
+/** ¿Esta CATEGORÍA entra en el 2x1? (`disney` → sí). */
+export function esCategoriaEn2x1(slug, now = Date.now()) {
+  return is2x1PromoActive(now) && CATEGORIAS_2X1.includes(slug);
+}
+
+/**
+ * ¿Esta LÍNEA del carrito entra en el 2x1 ahora mismo?
+ *
+ * Se decide por el ID de la línea y no por el campo `category` que guarda el
+ * carrito: el servidor solo recibe el id, así que mirando lo mismo de los dos
+ * lados el espejo no se puede desincronizar. Mismo criterio que
+ * `esPromoArgentina` — ver su comentario.
+ *
+ * Los personalizados (`custom:`) NO tienen categoría de catálogo, así que
+ * participan del 3x2 general pero nunca del 2x1.
+ */
+export function esPromo2x1(lineId, now = Date.now()) {
+  const parts = String(lineId || '').split(':');
+  if (parts[0] !== 'sticker') return false;
+  return esCategoriaEn2x1(categoriaDeStickerId(parts[1]), now);
+}
+
+/**
+ * Reparte las unidades elegibles entre el 2x1 por categoría y el 3x2 general,
+ * quedándose con el reparto que MÁS le conviene al cliente.
+ *
+ * Devuelve un `keepFraction` ÚNICO y uniforme sobre todas las elegibles, igual
+ * que hacía `promo3x2` sola: eso es lo que mantiene el precio por unidad
+ * positivo (Mercado Pago no admite líneas ≤ 0) y verificable idéntico en el
+ * servidor. Lo único que cambió es cómo se calcula el descuento, no cómo se
+ * aplica.
+ *
+ * ⚠️ POR QUÉ NO ES "2x1 primero y el sobrante al 3x2", que es lo obvio y fue lo
+ * primero que se aprobó: esa regla deja que AGREGAR un calco BAJE el total
+ * hasta $800 (pasa en el 1,2 % de los carritos). El motivo es que el sobrante,
+ * al irse de la bolsa del 3x2, le saca su unidad más barata: esa bolsa pasa a
+ * regalar una más cara, y encima el 2x1 suma la suya. El descuento total sube
+ * más de lo que sube el carrito. Caso real:
+ *
+ *     1 Disney 4cm + 3 calcos 9cm  → $6.000
+ *     + 1 Disney 4cm más           → $5.200   ← un calco MÁS, $800 MENOS
+ *
+ * Se barrieron las cinco reglas candidatas sobre 18.816 carritos; ésta es la
+ * única con 0 anomalías (verificado en 60.480 transiciones) Y el óptimo real.
+ *
+ * ⚠️ POR QUÉ ALCANZA CON DOS CANDIDATOS POR `k` Y NO TODOS LOS SUBCONJUNTOS:
+ * comparado contra la enumeración completa de 2^n en 6.720 carritos, quedarse
+ * con las `k` más baratas o las `k` más caras da el óptimo en TODOS. Enumerar
+ * los subconjuntos sería exponencial sobre un carrito de 100 calcos.
+ *
+ * ⚠️ EL DESEMPATE ES `>` Y NO `>=`: con dos repartos que dan el mismo descuento
+ * gana el primero que se encontró. Tiene que ser el mismo criterio de los dos
+ * lados del espejo — si un lado usara `>=` elegiría el último y, aunque el
+ * descuento sea idéntico, `freeUnits` podría diferir y el copy del carrito
+ * diría una cosa distinta de la del checkout.
+ *
+ * ⚠️ `g2x1` Y `g3x2` SON LAS AGRUPACIONES VIGENTES, o `null` si esa promo no
+ * corre. No se leen los interruptores acá adentro a propósito: el servidor tiene
+ * que poder pasar exactamente lo mismo que el carrito, y una función que decide
+ * sola qué promo está viva es una función que los dos lados pueden responder
+ * distinto. Con `g2x1: null` las unidades de categoría caen al 3x2 como
+ * cualquier otra —siguen siendo "todas las calcos"—; con `g3x2: null` solo
+ * cuentan los pares completos del 2x1 y los sobrantes no reciben nada.
+ *
+ * @param {{ unidadesCategoria?: number[], unidadesResto?: number[],
+ *           g2x1?: {buy:number,pay:number}|null, g3x2?: {buy:number,pay:number}|null }} args
+ * @returns {{ freeUnits: number, discount: number, keepFraction: number }}
+ */
+export function repartoPromos({
+  unidadesCategoria = [],
+  unidadesResto = [],
+  g2x1 = PROMO_2X1,
+  g3x2 = PROMO_3X2
+}) {
+  const base = [...unidadesCategoria, ...unidadesResto].reduce((a, c) => a + c, 0);
+  const vacio = { freeUnits: 0, discount: 0, keepFraction: 1 };
+
+  // Sin 2x1, no hay nada que repartir: todo va a la bolsa del 3x2.
+  if (!g2x1) {
+    if (!g3x2) return vacio;
+    const r = promo3x2({
+      unitBasePrices: [...unidadesCategoria, ...unidadesResto],
+      buy: g3x2.buy,
+      pay: g3x2.pay
+    });
+    return { ...r, keepFraction: base > 0 ? (base - r.discount) / base : 1 };
+  }
+
+  const b = unidadesCategoria.slice().sort((x, y) => x - y);
+  let mejor = { freeUnits: 0, discount: 0 };
+
+  for (let k = 0; k <= b.length; k++) {
+    for (const pick of [b.slice(0, k), b.slice(b.length - k)]) {
+      const rest = [...b];
+      for (const v of pick) {
+        const i = rest.indexOf(v);
+        if (i >= 0) rest.splice(i, 1);
+      }
+      // Las dos bolsas usan la primitiva que YA existe y ya está espejada.
+      const r1 = promo3x2({ unitBasePrices: pick, buy: g2x1.buy, pay: g2x1.pay });
+      // Sin 3x2 vivo, los sobrantes y el resto del carrito no reciben nada.
+      const r2 = g3x2
+        ? promo3x2({ unitBasePrices: [...unidadesResto, ...rest], buy: g3x2.buy, pay: g3x2.pay })
+        : { freeUnits: 0, discount: 0 };
+      const discount = r1.discount + r2.discount;
+      if (discount > mejor.discount) {
+        mejor = { freeUnits: r1.freeUnits + r2.freeUnits, discount };
+      }
+    }
+  }
+
+  return { ...mejor, keepFraction: base > 0 ? (base - mejor.discount) / base : 1 };
+}
+
+/**
+ * ─── VENTANA DEL CUPÓN DE BIENVENIDA (spec 017) ───────────────────────────────
+ *
+ * EPICA10 vence 10 minutos después de que la persona deja el mail en el popup.
+ * Es un vencimiento POR USUARIO, no global: dos personas que lo piden con una
+ * hora de diferencia tienen ventanas distintas. Por eso no puede ser un `endsAt`
+ * en COUPONS, que es una fecha para todo el mundo.
+ *
+ * ⚠️ EL INSTANTE DE EMISIÓN LO GUARDA EL NAVEGADOR Y VIAJA EN EL PAYLOAD.
+ * Es FALSIFICABLE: cualquiera edita localStorage y se queda con el 10 %. Está
+ * aceptado explícitamente (decisión de Mariano, 7/9/2026) porque hoy EPICA10 no
+ * vence NUNCA — el que sabe abrir devtools ya tiene el 10 % para siempre, así
+ * que la ventana no empeora nada y mejora el caso de todo el mundo.
+ *
+ * NO LEER LA VALIDACIÓN DEL SERVIDOR COMO UN CONTROL DE SEGURIDAD: ataja el
+ * caso honesto (el cupón venció de verdad) y nada más.
+ *
+ * La tolerancia existe para no rechazarle la compra a alguien con el reloj
+ * corrido un minuto, que es común en celulares.
+ */
+export const CUPON_VENTANA_MS = 10 * 60 * 1000;
+export const CUPON_TOLERANCIA_MS = 60 * 1000;
+
+/** Códigos cuyo descuento depende de una ventana por usuario. */
+export const CUPONES_CON_VENTANA = ['EPICA10'];
+
+/** ¿Este código vence por ventana en vez de por fecha global? */
+export function cuponTieneVentana(code) {
+  return CUPONES_CON_VENTANA.includes(String(code || '').trim().toUpperCase());
+}
+
+/**
+ * ¿La ventana de este cupón sigue abierta?
+ *
+ * `emitidoEn` ausente = el cupón no se entregó por el popup (lo tipeó a mano, o
+ * viene de una URL). En ese caso NO hay ventana que controlar y el cupón vale:
+ * la ventana es una promesa del popup, no una restricción del código.
+ */
+export function ventanaCuponAbierta(emitidoEn, now = Date.now(), tolerancia = 0) {
+  if (!Number.isFinite(emitidoEn)) return true;
+  if (emitidoEn > now + tolerancia) return false; // emisión en el futuro: no se cree
+  return now - emitidoEn <= CUPON_VENTANA_MS + tolerancia;
 }
 
 /** Clave de localStorage donde el popup de bienvenida guarda el código para prellenarlo en el checkout. */
@@ -286,8 +530,14 @@ export const PROMO_MAYORISTA_100 = {
    * queda en false y allá no, el servidor sigue aceptando la línea del pack.
    */
   activa: true,
-  /** Fin de la promo, hora Argentina (UTC−03:00). Inclusive: termina al cerrar ese día. */
-  endsAt: '2026-08-14T23:59:59-03:00',
+  /**
+   * `null` = sin fecha de fin (spec 017, 7/9/2026). Antes cerraba el 14/8/2026.
+   * Se apaga con `activa: false`. Sin `endsAt` el banner de /mayorista va SIN
+   * cuenta regresiva — ver el aviso en PROMO_3X2.
+   */
+  endsAt: null,
+  /** Mismo criterio que PROMO_3X2.startsAt — ver el comentario de allá. */
+  startsAt: '2026-09-07T00:00:00-03:00',
   qty: MAYORISTA100_QTY,
   price: MAYORISTA100_PRICE,
   /** Tamaños habilitados. El 9 cm queda afuera a propósito. */
@@ -297,14 +547,18 @@ export const PROMO_MAYORISTA_100 = {
   subtitulo: `Elegís los ${MAYORISTA100_QTY} diseños · 4 y 6 cm`
 };
 
+export const PROMO_MAYORISTA_START_MS = Date.parse(PROMO_MAYORISTA_100.startsAt);
 export const PROMO_MAYORISTA_END_MS = Date.parse(PROMO_MAYORISTA_100.endsAt);
 
 /** ¿La promo de 100 calcos a precio fijo está vigente en este instante? */
 export function isMayoristaPromoActive(now = Date.now()) {
-  return (
-    PROMO_MAYORISTA_100.activa &&
-    Number.isFinite(PROMO_MAYORISTA_END_MS) &&
-    now <= PROMO_MAYORISTA_END_MS
+  return promoVigente(
+    {
+      activa: PROMO_MAYORISTA_100.activa,
+      startMs: PROMO_MAYORISTA_START_MS,
+      endMs: PROMO_MAYORISTA_END_MS
+    },
+    now
   );
 }
 

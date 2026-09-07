@@ -61,6 +61,24 @@ variante guardada. Es el freno de mano: no hace falta tocar los componentes.
 
 ---
 
+## ⚠️ 7/9/2026 — corte en la serie: cambió el precio de fondo
+
+La spec 017 prendió **tres promos a la vez** (3x2 general, 2x1 en anime /
+argentina / disney / frases, mayorista a $39.999) y subió el tope de descuento
+acumulable de **10 % a 20 %**.
+
+**Qué significa para los tests en curso** (`hero_titular`, `hero_buscador`): las
+conversiones de antes y las de después del 7/9 **no son comparables**. No es que
+el experimento se rompa —la asignación es estable y las variantes siguen
+repartidas parejo— pero el `purchase` y el AOV se movieron por una razón ajena
+al test.
+
+**Qué hacer**: cortar la lectura el 7/9 y contar los días de después como una
+serie nueva. Si un test venía con pocos días acumulados, conviene reiniciarlo
+directamente antes que promediar dos mundos distintos.
+
+---
+
 ## ⚠️ Regla dura: nunca testear un PRECIO
 
 Los experimentos son **solo de presentación**.

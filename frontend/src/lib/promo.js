@@ -3,8 +3,12 @@ import {
   PROMO_START_MS,
   PROMO_END_MS,
   isPromoActive,
+  PROMO_MAYORISTA_START_MS,
   PROMO_MAYORISTA_END_MS,
-  PROMO_MAYORISTA_100,
+  isMayoristaPromoActive,
+  PROMO_2X1_START_MS,
+  PROMO_2X1_END_MS,
+  is2x1PromoActive,
   PROMO_ARGENTINA_START_MS,
   PROMO_ARGENTINA_END_MS,
   isArgentinaPromoActive
@@ -77,6 +81,12 @@ export function useActiveUntil(endMs) {
  * El timeout se limita a un día por vuelta: `setTimeout` desborda pasados ~24,8
  * días y dispararía al instante, así que una promo agendada con meses de
  * anticipación se revisa por tramos.
+ *
+ * ⚠️ LAS DOS PUNTAS PUEDEN SER NaN (spec 017): las promos sin fecha guardan
+ * `startsAt: null` / `endsAt: null` y `Date.parse(null)` da NaN. Sin las guardas
+ * de `Number.isFinite` de acá abajo, `proximoHito` daba NaN y `setTimeout(…,
+ * NaN)` se comporta como `setTimeout(…, 0)`: un bucle de re-render a 0 ms que
+ * traba la pestaña. Una punta ausente = no hay hito que esperar de ese lado.
  */
 function useVentanaActiva(esActiva, startMs, endMs) {
   const [active, setActive] = useState(esActiva);
@@ -87,9 +97,16 @@ function useVentanaActiva(esActiva, startMs, endMs) {
     const revisar = () => {
       setActive(esActiva());
       const ahora = Date.now();
-      if (ahora > endMs) return; // ya pasó: nada que esperar
+      if (Number.isFinite(endMs) && ahora > endMs) return; // ya pasó: nada que esperar
       // +1s de colchón para caer del lado correcto del borde.
-      const proximoHito = ahora < startMs ? startMs - ahora : endMs - ahora;
+      const proximoHito =
+        Number.isFinite(startMs) && ahora < startMs
+          ? startMs - ahora
+          : Number.isFinite(endMs)
+            ? endMs - ahora
+            : null;
+      // Sin ninguna punta futura la promo no cambia sola: no hace falta timer.
+      if (proximoHito === null) return;
       id = setTimeout(revisar, Math.min(proximoHito + 1000, UN_DIA));
     };
     revisar();
@@ -102,13 +119,17 @@ function useVentanaActiva(esActiva, startMs, endMs) {
 /**
  * ¿Está vigente la promo 3x2 ahora mismo?
  *
- * Desde el 20/8/2026 tiene ventana: arranca un jueves a las 23:00 y el deploy
- * es antes, así que el banner, el contador y los precios se encienden solos a
- * esa hora sin recargar. Antes usaba `useActiveUntil` (solo el fin), que la
- * habría mostrado prendida desde el momento del deploy.
+ * Desde la spec 017 no tiene fecha de fin: el hook igual pasa por
+ * `useVentanaActiva` para no duplicar la lógica y para que volver a ponerle una
+ * fecha sea cambiar solo el config.
  */
 export function usePromoActive() {
   return useVentanaActiva(isPromoActive, PROMO_START_MS, PROMO_END_MS);
+}
+
+/** ¿Está vigente el 2x1 en las categorías más elegidas? (spec 017). */
+export function use2x1PromoActive() {
+  return useVentanaActiva(is2x1PromoActive, PROMO_2X1_START_MS, PROMO_2X1_END_MS);
 }
 
 /** ¿Está vigente la promo de Argentina 50 %? (lun 17 a mié 19 de agosto). */
@@ -117,13 +138,19 @@ export function useArgentinaPromoActive() {
 }
 
 /**
- * ¿Está vigente la promo mayorista ahora mismo? Mismo criterio que
- * `isMayoristaPromoActive()`: la fecha Y el interruptor manual `activa`. El
- * hook tiene que mirar los dos — si solo mirara la fecha, apagar la promo con
- * `activa: false` la sacaría del precio pero dejaría el banner y la card del
- * hero anunciándola.
+ * ¿Está vigente la promo mayorista ahora mismo?
+ *
+ * ⚠️ Antes era `useActiveUntil(PROMO_MAYORISTA_END_MS) && activa`, y con la
+ * spec 017 esa versión dejaba la promo APAGADA para siempre: sin `endsAt`,
+ * `Number.isFinite(NaN)` es false y `useActiveUntil` arrancaba en `false`.
+ * Ahora pasa por el mismo `useVentanaActiva` que las otras dos, que es el único
+ * que sabe leer una ventana abierta, y el interruptor `activa` ya lo mira
+ * `isMayoristaPromoActive()` — así el hook y el precio no pueden discrepar.
  */
 export function useMayoristaPromoActive() {
-  const enFecha = useActiveUntil(PROMO_MAYORISTA_END_MS);
-  return PROMO_MAYORISTA_100.activa && enFecha;
+  return useVentanaActiva(
+    isMayoristaPromoActive,
+    PROMO_MAYORISTA_START_MS,
+    PROMO_MAYORISTA_END_MS
+  );
 }

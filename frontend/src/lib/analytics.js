@@ -520,6 +520,38 @@ export function trackPromoUnlock(promo, umbral) {
   debug('promo_unlock', promo, umbral);
 }
 
+/**
+ * ─── Ventana del cupón de bienvenida (spec 017) ───────────────────────────────
+ *
+ * Los tres eventos son de la MISMA ventana de 10 minutos y hay que leerlos
+ * juntos: `cupon_emitido` es el denominador, `cupon_vencido` mide cuánta gente
+ * la pierde, y `cupon_aplicado_en_promo` mide lo que cuesta la acumulación que
+ * se habilitó en la spec 017 (el cupón corriendo ENCIMA del 3x2 / 2x1).
+ *
+ * ⚠️ Sin `email` ni ningún dato del lead: el dataLayer es público y cualquier
+ * extensión del navegador lo lee (mismo criterio que trackContactoFormError).
+ */
+export function trackCuponEmitido(code, ventanaMs) {
+  pushDataLayer({ event: 'cupon_emitido', cupon: code, ventana_ms: ventanaMs });
+  debug('cupon_emitido', code, ventanaMs);
+}
+
+/**
+ * La ventana se cerró con el cupón sin usar. `donde` dice en qué pantalla lo
+ * perdió: 'popup' es alguien que nunca avanzó, 'checkout' es alguien que estaba
+ * comprando y se le venció encima — que es el caso caro y el que hay que mirar.
+ */
+export function trackCuponVencido(code, donde = 'checkout') {
+  pushDataLayer({ event: 'cupon_vencido', cupon: code, donde });
+  debug('cupon_vencido', code, donde);
+}
+
+/** Se usó el cupón con una promo N x M corriendo: es el costo de acumular. */
+export function trackCuponAplicadoEnPromo(code, promo) {
+  pushDataLayer({ event: 'cupon_aplicado_en_promo', cupon: code, promo });
+  debug('cupon_aplicado_en_promo', code, promo);
+}
+
 /** Interacción con prueba social (testimonio o foto de UGC). */
 export function trackTestimonialInteraction(nombre, accion = 'click') {
   pushDataLayer({ event: 'testimonial_interaction', testimonial: nombre, accion });

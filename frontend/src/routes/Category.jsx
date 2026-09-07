@@ -6,7 +6,7 @@ import SizePicker from '../components/SizePicker.jsx';
 import CategoryMenu from '../components/CategoryMenu.jsx';
 import DiscountNote from '../components/DiscountNote.jsx';
 import { CATEGORIES, getCategory } from '../data/categories.js';
-import { DEFAULT_SIZE, priceForSize } from '../config/pricing.js';
+import { DEFAULT_SIZE, priceForSize, esCategoriaEn2x1 } from '../config/pricing.js';
 import { useSeo, breadcrumbJsonLd } from '../lib/seo.js';
 import { trackViewItemList } from '../lib/analytics.js';
 import { registrarVista } from '../lib/recientes.js';
@@ -116,6 +116,16 @@ export default function Category() {
               ? 'Cargando diseños…'
               : `${stickers.length} ${stickers.length === 1 ? 'diseño' : 'diseños'}. Elegí el tamaño una vez y tocá + en los que quieras.`}
           </p>
+          {/* El 2x1 se anuncia ACÁ y no en el banner del header (P-1 de la
+              spec 017): arriba entra una sola promo y esa es el 3x2, que toca
+              todo el catálogo. En estas cuatro categorías el 2x1 es lo que de
+              verdad le conviene a quien está mirando, y decirlo justo sobre la
+              grilla es decirlo donde se decide. */}
+          {esCategoriaEn2x1(slug) && (
+            <p className="mt-4 inline-flex items-center gap-2 rounded-xl border border-brand-fuchsia/40 bg-brand-fuchsia/10 px-3 py-2 text-sm font-semibold text-white">
+              🎉 2x1 en {category.name}: cada 2 calcos, la más barata gratis.
+            </p>
+          )}
         </header>
 
         {/* Ficha técnica */}
