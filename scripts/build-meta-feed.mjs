@@ -43,6 +43,27 @@ const BRAND = 'EPICALCOS';
 const SITE = site.url.replace(/\/$/, ''); // https://epicalcos.com
 const CURRENCY = 'ARS';
 const SKU_PAD = 6; // 000001
+
+/**
+ * Categorías que NO van al catálogo de Meta.
+ *
+ * `weed` (spec 016): la política de comercio de Meta prohíbe drogas y
+ * parafernalia. Una categoría en infracción no se rechaza sola — puede tumbar
+ * el catálogo entero o marcar la cuenta publicitaria, que es de donde viene
+ * casi todo el tráfico de la tienda.
+ *
+ * Las categorías de acá:
+ *   · NO consumen SKU del registro append-only, y
+ *   · NO salen en meta-catalog.csv.
+ *
+ * Sus diseños quedan sin `sku` en data/<slug>.json, y eso el front ya lo
+ * contempla: `contentId()` de lib/analytics.js cae al id interno cuando no hay
+ * `catalogSku`. El Píxel manda un id que Meta no conoce, que es exactamente lo
+ * correcto para un producto que no está en el catálogo.
+ *
+ * ⚠️ Se venden igual en la web. Esto es sólo el feed.
+ */
+const SIN_FEED = new Set(['weed']);
 const REGISTRY = join(DATA, 'skus.json');
 const FEED_CSV = join(DATA, 'meta-catalog.csv');
 
@@ -103,6 +124,14 @@ for (const { slug } of catalog) {
   }
   const items = JSON.parse(readFileSync(file, 'utf8'));
   const name = categoryName(slug);
+
+  // Fuera del feed: se reescribe el manifest sin tocar nada (sin sku, sin
+  // stock) y no se consume ni un SKU del registro.
+  if (SIN_FEED.has(slug)) {
+    console.log(`   ${slug}: fuera del feed de Meta (${items.length} diseños)`);
+    writeFileSync(file, JSON.stringify(items.map(({ sku, stock, ...resto }) => resto)));
+    continue;
+  }
 
   const annotated = items.map((it) => {
     const num = String(it.id).split('-').pop();

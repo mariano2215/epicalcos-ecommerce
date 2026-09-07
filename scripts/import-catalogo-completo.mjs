@@ -63,6 +63,19 @@ const EXT_RANK = { png: 4, jpeg: 3, jpg: 3, jfif: 2, webp: 2, gif: 1 };
 /**
  * Carpeta de origen → slug + nombre de vidriera.
  *
+ * ⚠️⚠️ ESTE MAPA YA NO DESCRIBE EL CATÁLOGO COMPLETO. Desde la spec 016
+ * (4/9/2026) hay un SEGUNDO lote —11 categorías más: arte, aura, bad-bunny,
+ * lord-of-the-rings, moda, pixar, rey-leon, shrek, tarot, verano, weed— que
+ * entró por scripts/import-lote.mjs desde OTRA carpeta de origen.
+ *
+ * Correr este script de nuevo BORRA ESE LOTE: hace `rmSync(DEST_BASE)` sobre
+ * public/stickers y después `escribirCategories()` reescribe el array entero
+ * desde este mapa, que no conoce esas 11. Se perderían ~3.000 diseños y sus
+ * SKUs de Meta quedarían apuntando a otro dibujo.
+ *
+ * Si algún día hay que reconstruir TODO desde cero, primero hay que unificar
+ * las dos fuentes en un solo origen y en un solo mapa.
+ *
  * Está escrito a mano y no derivado con un slugify a propósito: la carpeta se
  * llama "Harry ST" pero la categoría es Harry Styles, "Nikei" es Nike y
  * "Breaking BAd" tiene una mayúscula de más. El slug es la URL pública
@@ -203,8 +216,13 @@ function convertir(src, target) {
 }
 
 // ── 3. Huellas: md5 exacto + dHash perceptual ───────────────────────────────
+//
+// Estas funciones y sus umbrales se EXPORTAN: los usa scripts/import-lote.mjs
+// (spec 016) para decidir "¿es el mismo diseño?" con exactamente el mismo
+// criterio que este importador. Los números de más abajo están medidos sobre el
+// catálogo real; si se tocan, se tocan para los dos.
 
-const md5 = (buf) => createHash('md5').update(buf).digest('hex');
+export const md5 = (buf) => createHash('md5').update(buf).digest('hex');
 
 /**
  * Normalización previa a cualquier huella: aplanar sobre blanco y RECORTAR el
@@ -223,7 +241,7 @@ const NORMALIZAR = [
  * que es justo lo que necesitamos: el mismo dibujo guardado como png y como jpg
  * da la misma huella (re-encodearlo da distancia 0, medido).
  */
-async function dHash(file) {
+export async function dHash(file) {
   const { code, out } = await correr('magick', [
     file, ...NORMALIZAR, '-colorspace', 'Gray', '-resize', '9x8!', '-depth', '8', 'gray:-'
   ]);
@@ -245,7 +263,7 @@ async function dHash(file) {
  * varios duplicados de verdad. Sin este segundo chequeo, deduplicar por
  * parecido borraría media paleta de varias categorías.
  */
-async function firmaColor(file) {
+export async function firmaColor(file) {
   const { code, out } = await correr('magick', [
     file, ...NORMALIZAR, '-resize', '4x4!', '-depth', '8', 'rgb:-'
   ]);
@@ -253,7 +271,7 @@ async function firmaColor(file) {
 }
 
 /** Diferencia media por canal entre dos firmas de color (0-255). */
-function distColor(a, b) {
+export function distColor(a, b) {
   if (!a || !b) return 255;
   let suma = 0;
   for (let i = 0; i < 48; i++) suma += Math.abs(a[i] - b[i]);
@@ -261,7 +279,7 @@ function distColor(a, b) {
 }
 
 /** Bits distintos entre dos dHash. */
-function hamming(a, b) {
+export function hamming(a, b) {
   let x = a ^ b, n = 0;
   while (x) { x &= x - 1n; n++; }
   return n;
@@ -271,11 +289,11 @@ function hamming(a, b) {
 // verdadero da dHash 2 / color 3, y el par distinto más parecido que se
 // encontró da dHash 3 / color 26. Dos diseños se consideran el mismo sólo si
 // pasan LOS DOS filtros.
-const UMBRAL_DHASH = 2;
-const UMBRAL_COLOR = 8;
+export const UMBRAL_DHASH = 2;
+export const UMBRAL_COLOR = 8;
 
 // ── Pool de concurrencia mínimo (no hay dependencias en este repo) ──────────
-async function enParalelo(items, n, fn) {
+export async function enParalelo(items, n, fn) {
   const it = items[Symbol.iterator]();
   let hechos = 0;
   const worker = async () => {
