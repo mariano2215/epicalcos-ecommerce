@@ -12,7 +12,18 @@ import { useMayoristaPromoActive } from '../lib/promo.js';
 import { useSeo } from '../lib/seo.js';
 
 /** Cierre de la promo, derivado de `endsAt` (ej. "viernes 14/8"). */
-const PROMO_END_LABEL = endLabel(PROMO_MAYORISTA_END_MS, 'que se agote');
+/**
+ * ⚠️ Sin `endsAt` (spec 017) no hay fecha ni contador que mostrar.
+ * `Number.isFinite` decide las dos cosas de una: el bloque de la derecha
+ * desaparece y el copy deja de prometer un día que no existe.
+ *
+ * Este archivo se escapó del arreglo de `PromoBanner` cuando la promo se quedó
+ * sin fecha: `PromoBanner` guarda el countdown, pero acá se usa `PromoCountdown`
+ * DIRECTO, así que la guarda de allá no lo cubría y la página salió a
+ * producción mostrando "NaN DÍAS NaN HS NaN MIN NaN SEG".
+ */
+const CON_FECHA = Number.isFinite(PROMO_MAYORISTA_END_MS);
+const PROMO_END_LABEL = CON_FECHA ? endLabel(PROMO_MAYORISTA_END_MS, 'que se agote') : null;
 
 export default function Mayorista() {
   const promoActive = useMayoristaPromoActive();
@@ -45,15 +56,18 @@ export default function Mayorista() {
                   Podés elegir{' '}
                   <strong className="text-white">{PROMO_MAYORISTA_100.qty} diseños distintos</strong> del catálogo,
                   subir los tuyos, o mezclar. Solo en <strong className="text-white">4 y 6 cm</strong> —
-                  el 9 cm queda fuera de la promo. Hasta el {PROMO_END_LABEL} a las 23:59.
+                  el 9 cm queda fuera de la promo.
+                  {CON_FECHA && ` Hasta el ${PROMO_END_LABEL} a las 23:59.`}
                 </p>
               </div>
-              <div className="shrink-0">
-                <div className="text-[11px] uppercase tracking-wider text-white/50 mb-1.5 text-center">
-                  Termina en
+              {CON_FECHA && (
+                <div className="shrink-0">
+                  <div className="text-[11px] uppercase tracking-wider text-white/50 mb-1.5 text-center">
+                    Termina en
+                  </div>
+                  <PromoCountdown endMs={PROMO_MAYORISTA_END_MS} />
                 </div>
-                <PromoCountdown endMs={PROMO_MAYORISTA_END_MS} />
-              </div>
+              )}
             </div>
           </div>
         )}
