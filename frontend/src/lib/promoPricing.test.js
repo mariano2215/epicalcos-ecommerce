@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { DIGITAL_SKU } from '../config/metaCatalog.js';
+import { DIGITAL_SKU, FIXED_SKU } from '../config/metaCatalog.js';
 // Frontend (fuente de verdad del cliente)
 import {
   PROMO_START_MS as FE_START,
@@ -48,7 +48,19 @@ import {
   categoriaDeStickerId,
   esPromoArgentina as feEsPromoArgentina,
   precioVidriera,
-  precioVidrieraLinea
+  precioVidrieraLinea,
+  POLAROID,
+  POLAROID_SIZES,
+  POLAROID_FOTOS_POR_PACK,
+  POLAROID_IMAN_POR_FOTO,
+  POLAROID_VOLUMEN_MIN_PACKS,
+  POLAROID_VOLUMEN_OFF_POR_FOTO,
+  POLAROID_VOLUMEN_OFF_PACK,
+  polaroidProductId,
+  precioPolaroidLista,
+  precioPolaroidPack,
+  descuentoPolaroidVolumen,
+  esPolaroid
 } from '../config/pricing.js';
 // Backend: el que re-precia el checkout (rechaza si no coincide).
 import {
@@ -87,7 +99,10 @@ import {
   CUPON_VENTANA_MS as BE_CUPON_VENTANA_MS,
   CUPON_TOLERANCIA_MS as BE_CUPON_TOLERANCIA_MS,
   CUPONES_CON_VENTANA as BE_CUPONES_CON_VENTANA,
-  ventanaCuponAbierta as beVentanaAbierta
+  ventanaCuponAbierta as beVentanaAbierta,
+  FIXED_PRICES,
+  POLAROID_VOLUMEN_MIN_PACKS as BE_POLAROID_MIN_PACKS,
+  POLAROID_VOLUMEN_OFF_PACK as BE_POLAROID_OFF_PACK
 } from '../../../netlify/functions/lib/pricing.js';
 
 const PROMO_ELIGIBLE = new Set(['sticker', 'custom']);
@@ -1391,5 +1406,170 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
     expect(res.itemsTotal).toBe(4800); // $8.000 − $3.200
+  });
+});
+
+/**
+ * ─── SPEC 019 · FOTOS POLAROID: IMANTADAS Y VOLUMEN ───────────────────────────
+ *
+ * POR QUÉ ESTE BLOQUE EXISTE: hasta acá, los precios de las Polaroid no los
+ * verificaba NADIE. Los `fixed:` solo se testeaban con `tatuajes-hoja`, y para
+ * comprobar que no reciben descuentos — no que el precio coincida con el del
+ * servidor. Un dedo mal puesto en cualquiera de los dos `pricing.js` rechazaba
+ * todos los checkouts de Polaroid con la suite en verde.
+ *
+ * Las Polaroid son además el ÚNICO producto de precio fijo cuyo precio depende
+ * de la cantidad (desde 20 fotos baja $200 por foto), así que el escalón se
+ * prueba en los dos lados y en su borde exacto.
+ */
+describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
+  /** Los seis ids de producto que existen hoy, con su precio de lista esperado. */
+  const variantes = POLAROID_SIZES.flatMap((s) => [
+    { productId: polaroidProductId(s.id, false), lista: s.price, sizeId: s.id, imantada: false },
+    { productId: polaroidProductId(s.id, true), lista: s.priceIman, sizeId: s.id, imantada: true }
+  ]);
+
+  it('P-1 · paridad frontend ↔ servidor, en los DOS sentidos', () => {
+    // Ida: todo lo que el frontend sabe vender, el servidor lo sabe cobrar.
+    for (const v of variantes) {
+      expect(FIXED_PRICES[v.productId]).toBe(v.lista);
+    }
+    // Vuelta: el servidor no conoce ninguna Polaroid que el frontend no muestre.
+    // Sin esto, un id que quedó solo en el servidor pasa desapercibido para
+    // siempre — y es precio vivo que nadie revisa.
+    const delServidor = Object.keys(FIXED_PRICES).filter((id) => id.startsWith(`${POLAROID.id}-`));
+    expect(delServidor.sort()).toEqual(variantes.map((v) => v.productId).sort());
+    // Y el escalón del volumen también está espejado.
+    expect(BE_POLAROID_MIN_PACKS).toBe(POLAROID_VOLUMEN_MIN_PACKS);
+    expect(BE_POLAROID_OFF_PACK).toBe(POLAROID_VOLUMEN_OFF_PACK);
+  });
+
+  it('P-2 · el imán cuesta $600 por foto en los tres tamaños', () => {
+    for (const s of POLAROID_SIZES) {
+      expect(s.priceIman - s.price).toBe(POLAROID_IMAN_POR_FOTO * POLAROID_FOTOS_POR_PACK);
+    }
+    expect(POLAROID_VOLUMEN_OFF_PACK).toBe(POLAROID_VOLUMEN_OFF_POR_FOTO * POLAROID_FOTOS_POR_PACK);
+  });
+
+  it('P-3 · el volumen arranca en 2 packs y NO se corta ahí', () => {
+    expect(descuentoPolaroidVolumen(1)).toBe(0);
+    expect(descuentoPolaroidVolumen(2)).toBe(POLAROID_VOLUMEN_OFF_PACK);
+    expect(descuentoPolaroidVolumen(3)).toBe(POLAROID_VOLUMEN_OFF_PACK);
+    expect(descuentoPolaroidVolumen(10)).toBe(POLAROID_VOLUMEN_OFF_PACK);
+
+    // El mismo escalón, en las seis variantes y en los dos lados del espejo.
+    for (const v of variantes) {
+      for (const packs of [1, 2, 3]) {
+        const esperado = v.lista - (packs >= 2 ? POLAROID_VOLUMEN_OFF_PACK : 0);
+        expect(precioPolaroidPack(v.sizeId, v.imantada, packs)).toBe(esperado);
+
+        const res = validateAndPriceOrder({
+          items: [{ id: `fixed:${v.productId}`, title: 'Polaroid', quantity: packs, unit_price: esperado }],
+          shipping: retiro,
+          paymentMethod: 'mercadopago'
+        });
+        expect(res.ok).toBe(true);
+        expect(res.itemsTotal).toBe(esperado * packs);
+      }
+    }
+  });
+
+  it('P-4 · el caso que pidió Mariano: 20 de 7×10 imantadas = $32.000', () => {
+    const precio = precioPolaroidPack('7x10', true, 2);
+    expect(precio).toBe(16000); // 18.000 de lista − 2.000 de volumen
+
+    const res = validateAndPriceOrder({
+      items: [
+        { id: 'fixed:polaroid-x10-7x10-iman', title: 'Fotos Polaroid · x10 · 7 × 10 cm · Imantadas', quantity: 2, unit_price: precio }
+      ],
+      shipping: retiro,
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(32000);
+
+    // Las comunes del mismo tamaño, por las dudas: el volumen las alcanza también.
+    expect(precioPolaroidPack('7x10', false, 2) * 2).toBe(20000);
+    // Y 30 imantadas siguen con el descuento: $48.000, no $54.000.
+    expect(precioPolaroidPack('7x10', true, 3) * 3).toBe(48000);
+  });
+
+  it('P-5 · las Polaroid siguen FUERA de cupones, transferencia y promos N x M', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO); // 3x2 y 2x1 vivas
+    const lista = precioPolaroidLista('polaroid-x10-7x10-iman');
+    const res = validateAndPriceOrder({
+      items: [{ id: 'fixed:polaroid-x10-7x10-iman', title: 'Polaroid', quantity: 1, unit_price: lista }],
+      shipping: retiro,
+      paymentMethod: 'transferencia',
+      couponCode: 'EPI50'
+    });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(lista); // ni el 50 %, ni el 10 %, ni el N x M
+  });
+
+  it('P-6 · precioVidrieraLinea muestra el volumen y no toca a los demás', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(SIN_PROMOS);
+
+    // Con archivos adjuntos el id lleva `:{ts}` al final — la forma que arma
+    // `addFixed` en el caso normal de Polaroid. Tiene que reconocerse igual.
+    const conArchivos = { id: 'fixed:polaroid-x10-7x10-iman:1757800000000', basePrice: 18000, quantity: 2 };
+    expect(esPolaroid(conArchivos.id)).toBe(true);
+    expect(precioVidrieraLinea(conArchivos)).toBe(16000);
+
+    const unPack = { id: 'fixed:polaroid-x10-7x10-iman', basePrice: 18000, quantity: 1 };
+    expect(precioVidrieraLinea(unPack)).toBe(18000);
+
+    // Un carrito guardado ANTES de la spec: la línea existe, el precio baja y
+    // el servidor espera exactamente ese número (nunca sube: nadie se encuentra
+    // con un precio más caro que el que dejó en el carrito).
+    const guardada = { id: 'fixed:polaroid-x10-7x10', basePrice: 12000, quantity: 2 };
+    const visto = precioVidrieraLinea(guardada);
+    expect(visto).toBe(10000);
+    const res = validateAndPriceOrder({
+      items: [{ id: guardada.id, title: 'Polaroid', quantity: 2, unit_price: visto }],
+      shipping: retiro,
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(true);
+
+    // Y nada que no sea Polaroid cambia de precio por tener cantidad.
+    for (const l of [
+      { id: 'fixed:tatuajes-hoja', basePrice: 12000, quantity: 5 },
+      { id: 'negocio:1', basePrice: 39999, quantity: 2 },
+      { id: 'digital:pack-stickers', basePrice: IMPRIMIBLE_PRINCIPAL.price, quantity: 1 }
+    ]) {
+      expect(esPolaroid(l.id)).toBe(false);
+      expect(precioVidrieraLinea(l)).toBe(l.basePrice);
+    }
+  });
+
+  it('P-7 · los tatuajes NO heredan el descuento por cantidad', () => {
+    const res = validateAndPriceOrder({
+      items: [{ id: 'fixed:tatuajes-hoja', title: 'Tatuajes', quantity: 5, unit_price: 12000 }],
+      shipping: retiro,
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(60000);
+  });
+
+  it('P-8 · cada variante tiene SKU de catálogo o sus eventos matchean mal en Meta', () => {
+    for (const v of variantes) {
+      expect(FIXED_SKU[v.productId]).toBe(FIXED_SKU[polaroidProductId('7x10', false)]);
+      expect(FIXED_SKU[v.productId]).toBeTruthy();
+    }
+  });
+
+  it('P-9 · un precio adulterado se rechaza con price_mismatch', () => {
+    const res = validateAndPriceOrder({
+      // El precio de las comunes para un pedido de imantadas: el intento obvio.
+      items: [{ id: 'fixed:polaroid-x10-7x10-iman', title: 'Polaroid', quantity: 2, unit_price: 12000 }],
+      shipping: retiro,
+      paymentMethod: 'mercadopago'
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('price_mismatch');
   });
 });

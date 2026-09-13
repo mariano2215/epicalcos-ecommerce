@@ -465,6 +465,25 @@ export function trackPersonalizadoPrecio({ valor, material, cantidad }) {
   debug('personalizado_precio_calculado', valor, material, cantidad);
 }
 
+// ─── Fotos Polaroid (spec 019) ────────────────────────────────────────────────
+
+/**
+ * El cliente eligió el material de las Polaroid en la ficha.
+ *
+ * Contesta la única pregunta comercial que hoy no se puede contestar: qué
+ * proporción elige imantadas, y si cambia por tamaño. El descuento por volumen
+ * no necesita evento propio — se lee de la cantidad de los `add_to_cart` y los
+ * `purchase` que ya existen.
+ *
+ * `material` es SIEMPRE el id interno ('comunes' / 'imantadas'), nunca el texto
+ * que se ve en pantalla: el que lee el informe tiene que poder cruzarlo con la
+ * regla de config/pricing.js que lo produce (mismo criterio que trackPromoUnlock).
+ */
+export function trackPolaroidMaterial(material, tamano) {
+  pushDataLayer({ event: 'polaroid_material', material, tamano });
+  debug('polaroid_material', material, tamano);
+}
+
 // ─── Home rediseñada (spec 014) ───────────────────────────────────────────────
 
 /**

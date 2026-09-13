@@ -310,13 +310,31 @@ export function esPromoArgentina(lineId, now = Date.now()) {
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
 const PERSONALIZADOS_DISCOUNT = 0.1;
 const NEGOCIO_PRICE = 39999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
-const FIXED_PRICES = {
+export const FIXED_PRICES = {
   'tatuajes-hoja': 12000,
-  // Fotos Polaroid x10 por tamaño — espejo de POLAROID_SIZES del frontend.
+  // Fotos Polaroid x10 por tamaño Y material — espejo de POLAROID_SIZES del
+  // frontend (`price` y `priceIman`). Imantadas = +$600 por foto = +$6.000 por
+  // pack, igual en los tres tamaños.
+  // ⚠️ Si agregás o cambiás uno, cambialo TAMBIÉN en frontend/src/config/pricing.js:
+  // lo verifica frontend/src/lib/promoPricing.test.js en los dos sentidos.
   'polaroid-x10-5x8': 9000,
   'polaroid-x10-7x10': 12000,
-  'polaroid-x10-9x13': 15000
+  'polaroid-x10-9x13': 15000,
+  'polaroid-x10-5x8-iman': 15000,
+  'polaroid-x10-7x10-iman': 18000,
+  'polaroid-x10-9x13-iman': 21000
 };
+
+// --- Descuento por volumen de las Polaroid (spec 019) ---
+// Desde 2 packs (20 fotos) el precio POR PACK baja $2.000, o sea $200 por foto.
+// Corre en comunes e imantadas por igual y ESCALA: 3 packs pagan 3 × el precio
+// ya descontado, no vuelven al precio pleno.
+// Es el único producto de precio fijo cuyo precio depende de la cantidad, y por
+// eso se decide acá adentro y no en la tabla: la tabla guarda precios de lista.
+// ⚠️ Espejo de descuentoPolaroidVolumen() en frontend/src/config/pricing.js.
+export const POLAROID_VOLUMEN_MIN_PACKS = 2;
+export const POLAROID_VOLUMEN_OFF_PACK = 2000;
+const POLAROID_PREFIX = 'polaroid-x10-';
 
 // --- Espejo de IMPRIMIBLES en frontend/src/config/pricing.js (producto DIGITAL) ---
 // Packs de archivos que se entregan POR MAIL. Precio FIJO siempre: la línea
@@ -464,7 +482,15 @@ function lineBase(id, quantity) {
   if (kind === 'fixed') {
     const price = FIXED_PRICES[parts[1]];
     if (!price) return { error: `producto desconocido "${id}"` };
-    return { base: price, kind, discountable: false };
+    // Las Polaroid son el único producto fijo con precio por cantidad: desde 2
+    // packs (20 fotos) el pack baja $2.000. `discountable` sigue en false —esto
+    // NO es un descuento del carrito, no lo tocan cupones ni transferencia ni
+    // las promos N x M—: es el precio de lista de esa cantidad.
+    const off =
+      String(parts[1]).startsWith(POLAROID_PREFIX) && quantity >= POLAROID_VOLUMEN_MIN_PACKS
+        ? POLAROID_VOLUMEN_OFF_PACK
+        : 0;
+    return { base: price - off, kind, discountable: false };
   }
 
   // digital:{packId} — pack de archivos imprimibles. Precio fijo, sin descuentos

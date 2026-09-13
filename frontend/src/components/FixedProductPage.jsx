@@ -12,33 +12,65 @@ import { FIXED_SKU } from '../config/metaCatalog.js';
  * Si se pasa `sizes`, muestra un selector de tamaño: el precio sale de la opción
  * elegida y el id del carrito pasa a ser `{product.id}-{size.id}` (el backend
  * valida cada variante por su id en FIXED_PRICES).
+ *
+ * `variants` + `pricing` (spec 019) agregan un SEGUNDO eje de variante —el
+ * material de las Polaroid— y un precio que puede depender de la cantidad.
+ * Los dos son OPCIONALES y van juntos: sin ellos el componente se comporta
+ * exactamente como antes, que es lo que necesita /tatuajes. El componente no
+ * sabe nada de imanes ni de escalones: delega en `pricing`, porque la regla de
+ * precio vive en config/pricing.js y ahí está espejada contra el servidor.
+ *
  * @param {{ product:{id,name,price}, emoji:string, photo?:string, badge:string, title:string,
  *           sizes?:{id:string,label:string,tag?:string,price:number}[],
+ *           variants?:{ label:string, options:{id:string,label:string,hint?:string}[] },
+ *           pricing?:{ listPrice:(sizeId:string,variantId:string)=>number,
+ *                      unitPrice:(sizeId:string,variantId:string,packs:number)=>number,
+ *                      productId:(sizeId:string,variantId:string)=>string,
+ *                      lineName:(sel:{size:object,variant:object})=>string,
+ *                      aviso?:(packs:number)=>string|null },
+ *           nota?:string, onVariantChange?:(variantId:string,sizeId:string)=>void,
  *           subtitle:string, bullets:string[], specs?:{label:string,value:string}[], breadcrumb:string,
  *           upload?:{ titulo?:string, sustantivo?:string, formatos?:string[], descripcion?:import('react').ReactNode,
  *                     tamanoCm?:number|null, preset?:string, perUnit?:number, max?:number } }} props
  */
-export default function FixedProductPage({ product, emoji, photo, badge, title, subtitle, bullets, specs, breadcrumb, upload, sizes }) {
+export default function FixedProductPage({ product, emoji, photo, badge, title, subtitle, bullets, specs, breadcrumb, upload, sizes, variants, pricing, nota, onVariantChange }) {
   const { addFixed } = useCart();
   const [qty, setQty] = useState(1);
   const [archivos, setArchivos] = useState([]);
   const [sizeId, setSizeId] = useState(sizes?.[0]?.id ?? null);
+  const [variantId, setVariantId] = useState(variants?.options?.[0]?.id ?? null);
   const onArchivosChange = useCallback((items) => setArchivos(items), []);
 
   const selectedSize = sizes?.find((s) => s.id === sizeId) ?? null;
-  const unitPrice = selectedSize?.price ?? product.price;
+  const selectedVariant = variants?.options?.find((v) => v.id === variantId) ?? null;
+
+  // Precio por unidad. Sin `pricing` es el de siempre (el del tamaño, o el del
+  // producto); con `pricing` lo decide el producto, que es el único que sabe de
+  // materiales y de escalones por cantidad.
+  const precioUnitario = (sId, vId, packs) =>
+    pricing
+      ? pricing.unitPrice(sId, vId, packs)
+      : sizes?.find((s) => s.id === sId)?.price ?? product.price;
+
+  const unitPrice = precioUnitario(sizeId, variantId, qty);
+  const avisoVolumen = pricing?.aviso ? pricing.aviso(qty) : null;
 
   // Meta Pixel / GA4: ViewContent al abrir la página, con el SKU del catálogo.
+  // Se repite al cambiar de tamaño o de material: es otra variante y otro
+  // precio, y reportar siempre el de la primera dejaba a Meta optimizando
+  // contra un valor que el cliente nunca vio. El precio es el de UN pack —no
+  // el del stepper— para que mover la cantidad no dispare eventos.
+  const variantProductId = pricing ? pricing.productId(sizeId, variantId) : product.id;
   useEffect(() => {
     trackViewItem({
-      id: `fixed:${product.id}`,
-      catalogSku: FIXED_SKU[product.id],
+      id: `fixed:${variantProductId}`,
+      catalogSku: FIXED_SKU[variantProductId],
       name: product.name,
       categoryLabel: badge || 'Especial',
-      price: unitPrice
+      price: precioUnitario(sizeId, variantId, 1)
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [product.id]);
+  }, [product.id, sizeId, variantId]);
 
   // Cupo de archivos: por unidad (perUnit × cantidad) o un máximo fijo.
   const uploadMax = upload ? (upload.perUnit ? upload.perUnit * qty : upload.max ?? 10) : 0;
@@ -52,9 +84,20 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
 
   const onAdd = () => {
     const meta = upload && archivos.length ? { archivos } : null;
-    const cartProduct = selectedSize
-      ? { id: `${product.id}-${selectedSize.id}`, name: `${product.name} · ${selectedSize.label}`, price: selectedSize.price }
-      : product;
+    // ⚠️ `price` es el de LISTA de la variante, NO el que muestra el botón: es
+    // el que se guarda como `basePrice` de la línea. El descuento por cantidad
+    // lo deriva `precioVidrieraLinea()` en cada render — guardarlo acá es la
+    // trampa que ese comentario documenta (un carrito guardado mandaría después
+    // un precio que ya no es el vigente y trabaría TODO el checkout).
+    const cartProduct = pricing
+      ? {
+          id: pricing.productId(sizeId, variantId),
+          name: pricing.lineName({ size: selectedSize, variant: selectedVariant }),
+          price: pricing.listPrice(sizeId, variantId)
+        }
+      : selectedSize
+        ? { id: `${product.id}-${selectedSize.id}`, name: `${product.name} · ${selectedSize.label}`, price: selectedSize.price }
+        : product;
     addFixed({ ...cartProduct, image, meta }, qty);
   };
 
@@ -104,11 +147,47 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
                         <span className="text-sm font-semibold text-white">{s.label}</span>
                         {s.tag && <span className="ml-2 text-xs text-white/50">{s.tag}</span>}
                       </span>
-                      <span className="text-sm font-semibold text-white">{formatPrice(s.price)}</span>
+                      <span className="text-sm font-semibold text-white">
+                        {formatPrice(precioUnitario(s.id, variantId, qty))}
+                      </span>
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-white/50">El precio es por el pack de 10 fotos.</p>
+                <p className="mt-2 text-xs text-white/50">{nota ?? 'El precio es por el pack de 10 fotos.'}</p>
+              </div>
+            )}
+
+            {variants?.options?.length > 0 && (
+              <div className="mt-5">
+                <div className="text-[10px] uppercase tracking-widest text-white/40 mb-2">{variants.label}</div>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={variants.label}>
+                  {variants.options.map((v) => {
+                    const elegida = variantId === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={elegida}
+                        onClick={() => {
+                          setVariantId(v.id);
+                          onVariantChange?.(v.id, sizeId);
+                        }}
+                        className={`min-h-[44px] rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                          elegida
+                            ? 'border-brand-fuchsia bg-brand-fuchsia/10'
+                            : 'border-white/10 bg-white/[0.04] hover:border-white/25'
+                        }`}
+                      >
+                        <span className="block text-sm font-semibold text-white">
+                          {/* El ✓ es lo que distingue la opción elegida sin depender del color */}
+                          {elegida ? '✓ ' : ''}{v.label}
+                        </span>
+                        {v.hint && <span className="block text-xs text-white/50 mt-0.5">{v.hint}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -133,6 +212,8 @@ export default function FixedProductPage({ product, emoji, photo, badge, title, 
                 Agregar · {formatPrice(unitPrice * qty)}
               </button>
             </div>
+
+            {avisoVolumen && <p className="mt-3 text-xs text-brand-fuchsia">{avisoVolumen}</p>}
 
             {upload && (
               <p className="mt-3 text-xs text-white/50">

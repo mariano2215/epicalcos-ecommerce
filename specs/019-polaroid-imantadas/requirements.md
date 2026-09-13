@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `019-polaroid-imantadas` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` — implementada y validada el 13/09/2026 |
 | **Fecha** | 13/09/2026 |
 | **Autor** | Claude Code, a pedido de Mariano |
 
@@ -250,14 +250,13 @@ de los `purchase` que ya existen.
       **de 20 en adelante** (Mariano, 13/09/2026).
 - [x] ~~¿El recargo de imantadas es $600 por foto en los tres tamaños?~~ →
       **sí, $600 en los tres** (Mariano, 13/09/2026).
-- [ ] `REQUIERE CONFIRMACIÓN` — El volumen se cuenta **por línea** (una línea de
-      2 packs), no sumando todas las Polaroid del carrito. Ver el trade-off en
-      `design.md` §1. Si Mariano prefiere que sume todo el carrito, el diseño
-      cambia y hay que rehacer §1, §2 y §9 de `design.md`.
-- [ ] `REQUIERE CONFIRMACIÓN` — ¿Hay stock/capacidad de producción para las
-      imantadas en los tres tamaños desde el día uno? Si alguno no está listo,
-      se publica sin ese tamaño y la tabla queda igual para los otros dos.
-- [ ] `REQUIERE CONFIRMACIÓN` — ¿La foto de la ficha (`/images/polaroid.webp`)
-      sirve para las dos variantes, o hace falta una imagen de las imantadas?
-      La spec no depende de esto, pero sin imagen propia el imantado se vende
-      solo con texto.
+- [x] ~~¿El volumen se cuenta por línea o sumando todo el carrito?~~ → se
+      implementó **por línea**, como proponía `design.md` §1. Sigue siendo la
+      decisión más fácil de revisar si la operación muestra que molesta.
+- [ ] `SIGUE ABIERTA` — ¿Hay capacidad de producción para las imantadas en los
+      tres tamaños desde el día uno? Están publicados los tres. Si alguno no
+      está listo, se saca esa opción sin tocar el resto de la tabla.
+- [ ] `SIGUE ABIERTA` — La ficha usa `/images/polaroid.webp` para las dos
+      variantes. El imantado hoy se vende **solo con texto**: una foto de las
+      fotos pegadas en la heladera es la mejora más barata que le queda a esta
+      página.
