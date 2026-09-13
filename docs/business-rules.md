@@ -45,6 +45,31 @@ carrito completo.
 | Fotos Polaroid x10 · 5×8 cm | $9.000 | `fixed:polaroid-x10-5x8` |
 | Fotos Polaroid x10 · 7×10 cm | $12.000 | `fixed:polaroid-x10-7x10` |
 | Fotos Polaroid x10 · 9×13 cm | $15.000 | `fixed:polaroid-x10-9x13` |
+| Fotos Polaroid x10 · 5×8 cm · **imantadas** | $15.000 | `fixed:polaroid-x10-5x8-iman` |
+| Fotos Polaroid x10 · 7×10 cm · **imantadas** | $18.000 | `fixed:polaroid-x10-7x10-iman` |
+| Fotos Polaroid x10 · 9×13 cm · **imantadas** | $21.000 | `fixed:polaroid-x10-9x13-iman` |
+
+#### Fotos Polaroid: material y volumen (spec 019)
+
+`config/pricing.js → POLAROID_SIZES` · espejo en `FIXED_PRICES` del servidor.
+
+- **Imantadas**: +$600 por foto, o sea **+$6.000 por pack de 10**, igual en los
+  tres tamaños. El material va en el **id de la línea** (sufijo `-iman`), no en
+  un campo aparte: el servidor deriva el precio solo del id.
+- **Volumen**: desde **2 packs (20 fotos)**, el pack baja **$2.000** ($200 por
+  foto). Corre en comunes **y** en imantadas, y **escala** — 3 packs también lo
+  cobran, no vuelven al precio pleno.
+- Se cuenta **por línea**, no sumando todas las Polaroid del carrito: dos líneas
+  de 10 fotos no llegan al descuento.
+- Es el **único** producto de precio fijo cuyo precio depende de la cantidad.
+  Sigue estando fuera de todo lo demás: cupones, 10 % por transferencia, 10 % por
+  volumen de calcos y promos N×M no lo tocan.
+
+| Tamaño | 10 comunes | 10 imantadas | 20 comunes | 20 imantadas |
+|---|---|---|---|---|
+| 5×8 cm | $9.000 | $15.000 | $14.000 | $26.000 |
+| 7×10 cm | $12.000 | $18.000 | $20.000 | $32.000 |
+| 9×13 cm | $15.000 | $21.000 | $26.000 | $38.000 |
 
 ### Archivos imprimibles (producto DIGITAL)
 `config/pricing.js → IMPRIMIBLES`

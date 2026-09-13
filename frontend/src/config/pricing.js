@@ -726,6 +726,17 @@ export function precioVidriera(stickerId, sizeId, now = Date.now()) {
  */
 export function precioVidrieraLinea(line, now = Date.now()) {
   const base = Number(line?.basePrice) || 0;
+  // Fotos Polaroid (spec 019): el precio depende de la CANTIDAD —desde 20 fotos
+  // baja $200 por foto—, así que no puede salir de `basePrice` a secas. Se
+  // reconstruye desde el ID y la cantidad, que son exactamente los dos datos
+  // que tiene el servidor: si acá saliera de otro lado, el espejo se rompería.
+  // De yapa, un carrito guardado se re-precia solo en vez de mandar un número
+  // viejo — ver el ⚠️ de arriba sobre no persistir nunca este resultado.
+  const polaroid = polaroidProductIdDeLinea(line?.id);
+  if (polaroid) {
+    const lista = precioPolaroidLista(polaroid) ?? base;
+    return Math.max(0, lista - descuentoPolaroidVolumen(line?.quantity));
+  }
   return esPromoArgentina(line?.id, now)
     ? round(base * (1 - PROMO_ARGENTINA.discount))
     : base;
@@ -814,16 +825,97 @@ export const NEGOCIO = { qty: 100, size: '6cm', price: 39999, listPrice: 96999 }
 /** Productos de precio fijo. */
 export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 12000 };
 /**
- * Fotos Polaroid: pack de 10 fotos en 3 tamaños. El id que viaja al carrito es
- * `polaroid-x10-{size.id}` (espejado en netlify/functions/lib/pricing.js).
- * `POLAROID.price` queda como precio de referencia para el feed de Meta (mediana).
+ * ─── FOTOS POLAROID (spec 019) ────────────────────────────────────────────────
+ * Pack de 10 fotos, en 3 tamaños × 2 materiales. El id que viaja al carrito es
+ * `polaroid-x10-{size.id}` (comunes) o `polaroid-x10-{size.id}-iman`
+ * (imantadas). `POLAROID.price` queda como precio de referencia para el feed de
+ * Meta (mediana de las comunes).
+ *
+ * `priceIman` es el MISMO pack imantado: $600 por foto, o sea $6.000 por pack,
+ * igual en los tres tamaños — el imán cuesta lo mismo atrás de una foto chica
+ * que de una grande.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO: los SEIS precios están escritos otra vez en
+ * `FIXED_PRICES` de netlify/functions/lib/pricing.js. Si agregás un tamaño o
+ * cambiás un precio de un solo lado, TODO checkout de Polaroid se rechaza con
+ * `price_mismatch`. `src/lib/promoPricing.test.js` lo verifica en los DOS
+ * sentidos: ningún id de un lado que le falte al otro.
  */
 export const POLAROID_SIZES = [
-  { id: '5x8',  label: '5 × 8 cm',  tag: 'Mini',                        price: 9000 },
-  { id: '7x10', label: '7 × 10 cm', tag: 'Medianas',                    price: 12000 },
-  { id: '9x13', label: '9 × 13 cm', tag: 'Grandes · Polaroid original', price: 15000 }
+  { id: '5x8',  label: '5 × 8 cm',  tag: 'Mini',                        price: 9000,  priceIman: 15000 },
+  { id: '7x10', label: '7 × 10 cm', tag: 'Medianas',                    price: 12000, priceIman: 18000 },
+  { id: '9x13', label: '9 × 13 cm', tag: 'Grandes · Polaroid original', price: 15000, priceIman: 21000 }
 ];
 export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 12000 };
+
+/** Fotos por pack. El precio se cobra POR PACK; el "por foto" es solo para contarlo. */
+export const POLAROID_FOTOS_POR_PACK = 10;
+/** Recargo del imantado por foto. Es display: el precio que se cobra sale de `priceIman`. */
+export const POLAROID_IMAN_POR_FOTO = 600;
+/** Desde 2 packs (20 fotos) corre el descuento por volumen. */
+export const POLAROID_VOLUMEN_MIN_PACKS = 2;
+/** Cuánto baja el precio de cada foto a partir de ese mínimo. */
+export const POLAROID_VOLUMEN_OFF_POR_FOTO = 200;
+/**
+ * Lo mismo, por pack — que es la unidad que se cobra. Escrito como producto y no
+ * como 2000 a mano para que cambiar el "por foto" no deje los dos números
+ * peleados. ⚠️ Este es el número que el servidor resta: está espejado.
+ */
+export const POLAROID_VOLUMEN_OFF_PACK = POLAROID_VOLUMEN_OFF_POR_FOTO * POLAROID_FOTOS_POR_PACK;
+
+/** El id de producto de una variante: `polaroid-x10-7x10` | `polaroid-x10-7x10-iman`. */
+export function polaroidProductId(sizeId, imantada = false) {
+  return `${POLAROID.id}-${sizeId}${imantada ? '-iman' : ''}`;
+}
+
+/**
+ * El id de PRODUCTO de una línea del carrito, o null si no es una Polaroid.
+ *
+ * Contempla las dos formas que arma `addFixed`: `fixed:{productId}` y
+ * `fixed:{productId}:{ts}` (esta última cuando la línea lleva archivos
+ * adjuntos, que en Polaroid es el caso normal). Decide por el ID, igual que
+ * `esPromoArgentina` y que el servidor, así los dos lados miran el mismo dato.
+ */
+function polaroidProductIdDeLinea(lineId) {
+  const parts = String(lineId || '').split(':');
+  const productId = parts[0] === 'fixed' ? parts[1] : parts[0];
+  return String(productId || '').startsWith(`${POLAROID.id}-`) ? productId : null;
+}
+
+/** ¿Esta línea (o este id de producto) es de fotos Polaroid? */
+export function esPolaroid(lineId) {
+  return polaroidProductIdDeLinea(lineId) !== null;
+}
+
+/** Precio de LISTA de un id de producto de Polaroid, sin volumen. null si no existe. */
+export function precioPolaroidLista(productId) {
+  for (const s of POLAROID_SIZES) {
+    if (productId === polaroidProductId(s.id, false)) return s.price;
+    if (productId === polaroidProductId(s.id, true)) return s.priceIman;
+  }
+  return null;
+}
+
+/**
+ * Descuento POR PACK según cuántos packs lleva la línea: $0 abajo de 20 fotos,
+ * $2.000 desde ahí.
+ *
+ * NO es un escalón único de 20: 3 packs también lo cobran, y así hacia arriba
+ * (decisión de Mariano, 13/09/2026). Corre igual en comunes y en imantadas.
+ */
+export function descuentoPolaroidVolumen(packs) {
+  return Number(packs) >= POLAROID_VOLUMEN_MIN_PACKS ? POLAROID_VOLUMEN_OFF_PACK : 0;
+}
+
+/**
+ * Precio FINAL de UN pack: el de lista del tamaño y material, menos el volumen.
+ * Es el número que muestra la ficha y el que termina viajando como `unit_price`.
+ */
+export function precioPolaroidPack(sizeId, imantada = false, packs = 1) {
+  const lista = precioPolaroidLista(polaroidProductId(sizeId, imantada));
+  if (lista === null) return 0;
+  return lista - descuentoPolaroidVolumen(packs);
+}
 
 /**
  * ─── ARCHIVOS IMPRIMIBLES (producto DIGITAL) ─────────────────────────────────

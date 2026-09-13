@@ -24,10 +24,16 @@ export const META_LINE_SKU = {
 export const FIXED_SKU = {
   'tatuajes-hoja': META_LINE_SKU.tatuajes,
   'polaroid-x10': META_LINE_SKU.polaroid,
-  // Variantes por tamaño del pack Polaroid: mismo producto en el catálogo de Meta.
+  // Variantes por tamaño y material del pack Polaroid: mismo producto en el
+  // catálogo de Meta. Las imantadas NO llevan SKU propio a propósito — partirlas
+  // en dos productos partiría también el historial de aprendizaje de las
+  // campañas, que hoy corre sobre este SKU (ver spec 019 § integraciones).
   'polaroid-x10-5x8': META_LINE_SKU.polaroid,
   'polaroid-x10-7x10': META_LINE_SKU.polaroid,
-  'polaroid-x10-9x13': META_LINE_SKU.polaroid
+  'polaroid-x10-9x13': META_LINE_SKU.polaroid,
+  'polaroid-x10-5x8-iman': META_LINE_SKU.polaroid,
+  'polaroid-x10-7x10-iman': META_LINE_SKU.polaroid,
+  'polaroid-x10-9x13-iman': META_LINE_SKU.polaroid
 };
 
 /**

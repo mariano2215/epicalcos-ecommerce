@@ -117,7 +117,22 @@ cualquier extensión del navegador lo lee (mismo criterio que
 `contacto_form_error` · `shipping_calculated` (zona + costo) ·
 `pack_builder_start` · `pack_completed` (unidades + diseños distintos) ·
 `personalizado_inicio` · `personalizado_paso` · `personalizado_archivo_cargado` ·
-`personalizado_precio_calculado`
+`personalizado_precio_calculado` · `polaroid_material`
+
+#### Fotos Polaroid (spec 019)
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `polaroid_material` | el cliente cambia el material en `/polaroid` | `material`: `comunes` · `imantadas` — `tamano`: `5x8` · `7x10` · `9x13` |
+
+Contesta qué proporción elige imantadas y si cambia por tamaño. `material` es
+siempre el id interno y no el texto de la pantalla, para poder cruzarlo con la
+regla de `config/pricing.js` que lo produce.
+
+El descuento por volumen **no tiene evento propio**: se lee de la cantidad de
+los `add_to_cart` y `purchase` que ya existen. `view_item` y `add_to_cart` de
+`/polaroid` reportan el precio de la variante elegida, con el volumen ya
+aplicado en el `add_to_cart`.
 
 #### Formulario de contacto (spec 012)
 
