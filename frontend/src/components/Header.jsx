@@ -11,6 +11,7 @@ import {
   PROMO_ARGENTINA_END_MS
 } from '../config/pricing.js';
 import { navLinks, site } from '../config/site.js';
+import { usePulseOnChange, varStagger } from '../lib/motion.js';
 
 /** Píxeles de scroll desde los que el header se compacta. */
 const UMBRAL_COMPACTO = 80;
@@ -23,6 +24,13 @@ export default function Header() {
   const promoActive = usePromoActive();
   const mayoristaPromoActive = useMayoristaPromoActive();
   const argentinaPromoActive = useArgentinaPromoActive();
+  // El contador pulsa cuando cambia. Hasta la spec 024 el número pasaba de 2 a 3
+  // en silencio: agregar desde la grilla no tenía ninguna devolución arriba, que
+  // es donde la persona mira para saber cuánto lleva.
+  // `usePulseOnChange` NO pulsa en el primer render a propósito — el carrito se
+  // restaura de localStorage al montar, y avisarle a alguien que "agregó algo"
+  // apenas abre el sitio es un aviso que no corresponde a ninguna acción suya.
+  const pulsoCarrito = usePulseOnChange(totalItems);
 
   // Header reducido al scrollear: en celular, después del primer scroll lo único
   // que hace falta arriba es volver al inicio, buscar y ver el carrito. Todo lo
@@ -47,7 +55,11 @@ export default function Header() {
        anuncios. La barra va ÚLTIMA y no entre el nav y el menú: el menú
        desplegable cuelga pegado al nav, y meterle una tira de color en el medio
        lo parte al abrirlo. */}
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
+    <header
+      className={`header-sombra sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10 ${
+        compacto ? 'header-sombra--compacto' : ''
+      }`}
+    >
       {promoActive ? (
         /* ⚠️ P-1 de la spec 017: con las TRES promos vivas este if/else muestra
            una sola, y es el 3x2 — el de mayor alcance, porque toca todo el
@@ -145,7 +157,16 @@ export default function Header() {
             <span aria-hidden>🛒</span>
             <span className="hidden lg:inline">Carrito</span>
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 grid place-items-center min-w-[20px] h-5 px-1 text-xs font-bold rounded-full"
+              /* `key={totalItems}` reinicia la animación de entrada en cada
+                 cambio: sin la key React reusa el nodo, el `animation` no vuelve
+                 a correr y el número cambiaría sin que nada lo señale.
+                 `motion-pop` es un solo latido, no un loop — un badge que late
+                 para siempre deja de leerse a los diez segundos. */
+              <span
+                key={totalItems}
+                className={`absolute -top-1 -right-1 grid place-items-center min-w-[20px] h-5 px-1 text-xs font-bold rounded-full ${
+                  pulsoCarrito ? 'motion-pop' : ''
+                }`}
                 style={{ background: 'linear-gradient(135deg,#FF1B8D,#FF5A1F)' }}>
                 {totalItems}
               </span>
@@ -163,13 +184,22 @@ export default function Header() {
       </div>
 
       {open && (
-        <div className="lg:hidden border-t border-white/10 bg-black/80">
+        /* El menú abre con fade + subida, y sus ítems entran escalonados 30 ms.
+           El escalonado es corto a propósito: navegar es una acción funcional,
+           no un momento narrativo. Cualquier cosa más lenta le pondría un peaje
+           de animación a quien solo quiere llegar a una categoría.
+
+           No lleva animación de CIERRE: a diferencia del drawer, el menú se
+           cierra navegando —el `onClick` de cada link—, así que la página de
+           destino ya está entrando. Dos salidas encimadas se pisan. */
+        <div className="motion-menu lg:hidden border-t border-white/10 bg-black/80">
           <div className="container-app py-3 flex flex-col gap-1">
-            {navLinks.map((l) =>
+            {navLinks.map((l, i) =>
               l.hash ? (
                 <Link
                   key={l.to}
                   to={l.to}
+                  style={varStagger(i)}
                   onClick={() => setOpen(false)}
                   className="block px-3 py-2 rounded-lg text-white font-semibold"
                 >
@@ -179,6 +209,7 @@ export default function Header() {
                 <NavLink
                   key={l.to}
                   to={l.to}
+                  style={varStagger(i)}
                   onClick={() => setOpen(false)}
                   end={l.to === '/'}
                   className={({ isActive }) =>

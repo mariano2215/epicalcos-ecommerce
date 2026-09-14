@@ -148,7 +148,7 @@ export default function LandingUso({ slug }) {
         {/* 4. Beneficios */}
         <section className="grid gap-3 sm:grid-cols-3 mb-8">
           {landing.beneficios.map((b, i) => (
-            <Reveal key={b.t} delay={i * 80} className="h-full">
+            <Reveal key={b.t} indice={i} className="h-full">
               <div className="card-glass p-5 h-full">
                 <div className="text-3xl mb-2">{b.icon}</div>
                 <div className="font-semibold">{b.t}</div>

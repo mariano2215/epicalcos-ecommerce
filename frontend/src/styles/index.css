@@ -31,6 +31,47 @@
      ellos el sitio cae a system-ui y nadie se entera hasta ver una captura. */
   --fuente-base: 'Inter', system-ui, -apple-system, sans-serif;
   --fuente-titulos: 'Montserrat', 'Poppins', system-ui, sans-serif;
+
+  /* ── MOTION ──────────────────────────────────────────────────────────────
+     Toda duración, curva y distancia de animación del sitio sale de acá.
+
+     POR QUÉ EXISTE ESTE BLOQUE: hasta el 14/9/2026 el movimiento de EPICALCOS
+     creció una spec por vez —el reveal de la 014, los tickers de la 007 y la
+     020, el relámpago de la 017— y cada uno eligió su número a mano. Convivían
+     0.15s, 0.2s, 0.25s, 0.4s, 0.5s, 0.55s y 0.7s con cuatro curvas distintas,
+     sin que ninguna de esas diferencias significara nada. Un token no es
+     prolijidad: es lo que hace que dos elementos que hacen lo mismo se sientan
+     igual.
+
+     La escala sigue el principio del brief: rápido para interacción, suave para
+     storytelling, mínimo para lo funcional.
+
+     ⚠️ ESTOS NÚMEROS ESTÁN ESPEJADOS EN `src/lib/motion.js` (MOTION), porque el
+     JS necesita saber cuánto dura una salida para desmontar DESPUÉS (el drawer)
+     y cuánto dura una confirmación para volver sola (el "✓" del botón "+").
+     Leerlos con getComputedStyle sería un reflow por interacción.
+     `lib/motion.test.js` lee ESTE archivo y falla si los dos lados se separan —
+     mismo criterio que el espejo de precios (CLAUDE.md regla 11). */
+  --motion-fast: 140ms;    /* presión de un botón: tiene que sentirse instantáneo */
+  --motion-quick: 200ms;   /* hover, cambio de color, sombra */
+  --motion-normal: 320ms;  /* entrada de un panel, un modal, el drawer */
+  --motion-slow: 520ms;    /* reveal al scrollear, entradas de sección */
+  --motion-lento: 800ms;   /* el techo. Nada del sitio debería pasar de acá */
+
+  /* Salida sin rebote: el elemento arranca rápido y frena. Es la curva de casi
+     todo — lo que entra tiene que estar listo antes de que se lo note entrar. */
+  --motion-ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* La curva con la que ya venía el reveal del repo. Se conserva tal cual: es
+     la que le da el carácter a las entradas de sección. */
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Sobrepaso MUY leve (llega a 1.02 y vuelve). Solo para confirmaciones: el
+     "✓" del carrito y el pulso del contador. Un spring de verdad acá haría
+     parecer barata la marca. */
+  --motion-spring: cubic-bezier(0.34, 1.32, 0.64, 1);
+
+  --motion-stagger: 60ms;  /* separación entre hermanos de una grilla */
+  --motion-distance: 20px; /* el translateY de las entradas */
+  --motion-reveal: 420ms;  /* duración del scroll reveal (era 700ms: pesaba) */
 }
 
 * { box-sizing: border-box; }
@@ -97,13 +138,21 @@ a { color: inherit; text-decoration: none; }
   }
 
   .card-glass-hover {
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    transition:
+      transform var(--motion-quick) var(--motion-ease-out),
+      box-shadow var(--motion-quick) var(--motion-ease-out),
+      border-color var(--motion-quick) var(--motion-ease-out);
   }
   .card-glass-hover:hover {
     transform: translateY(-4px);
     border-color: rgba(255, 27, 141, 0.4);
     box-shadow: 0 32px 90px rgba(255, 27, 141, 0.18);
   }
+  /* La card también responde al TOQUE, no solo al mouse. En celular —de donde
+     viene la mayoría del tráfico— `:hover` no existe: sin esto, tocar una card
+     de la grilla no devolvía absolutamente nada hasta que la ficha terminaba de
+     montar. `:active` es lo único que un dedo puede disparar. */
+  .card-glass-hover:active { transform: translateY(-1px) scale(0.995); }
 
   .btn-primary {
     display: inline-flex;
@@ -118,10 +167,24 @@ a { color: inherit; text-decoration: none; }
     border: none;
     cursor: pointer;
     box-shadow: 0 12px 40px rgba(255, 27, 141, 0.35);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    transition:
+      transform var(--motion-fast) var(--motion-ease-out),
+      box-shadow var(--motion-quick) var(--motion-ease-out),
+      filter var(--motion-quick) var(--motion-ease-out);
   }
-  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 16px 48px rgba(255, 27, 141, 0.45); }
+  /* ⚠️ EL ESTADO QUE FALTABA. Hasta el 14/9/2026 los CTA del camino de compra
+     solo reaccionaban al `:hover`, que en un celular NO EXISTE. Tocar "Comprar",
+     "Ir al checkout" o "Agregar al carrito" no devolvía nada hasta que la
+     pantalla siguiente terminaba de montar — y en 4G eso puede ser medio
+     segundo en el que la persona no sabe si el toque entró, y vuelve a tocar.
+     `:active` sí lo dispara un dedo. Es la microinteracción más barata del sitio
+     y la que más veces se ve. */
+  .btn-primary:active { transform: scale(0.97); filter: brightness(0.98); box-shadow: 0 6px 18px rgba(255, 27, 141, 0.3); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  /* Un botón deshabilitado no se comprime: fingir que respondió a un toque que
+     no hizo nada es peor que no responder. */
+  .btn-primary:disabled:active { transform: none; }
 
   .btn-secondary {
     display: inline-flex;
@@ -136,9 +199,14 @@ a { color: inherit; text-decoration: none; }
     border: 1px solid rgba(255, 255, 255, 0.18);
     cursor: pointer;
     backdrop-filter: blur(10px);
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition:
+      border-color var(--motion-quick) var(--motion-ease-out),
+      background var(--motion-quick) var(--motion-ease-out),
+      transform var(--motion-fast) var(--motion-ease-out);
   }
   .btn-secondary:hover { border-color: rgba(255, 27, 141, 0.6); background: rgba(32, 32, 32, 0.85); }
+  .btn-secondary:active { transform: scale(0.97); }
+  .btn-secondary:disabled:active { transform: none; }
 
   .btn-ghost {
     display: inline-flex;
@@ -148,9 +216,13 @@ a { color: inherit; text-decoration: none; }
     font-weight: 500;
     padding: 0.5rem 0.9rem;
     border-radius: 999px;
-    transition: color 0.2s ease, background 0.2s ease;
+    transition:
+      color var(--motion-quick) var(--motion-ease-out),
+      background var(--motion-quick) var(--motion-ease-out),
+      transform var(--motion-fast) var(--motion-ease-out);
   }
   .btn-ghost:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .btn-ghost:active { transform: scale(0.97); }
 
   .badge {
     display: inline-flex;
@@ -177,7 +249,7 @@ a { color: inherit; text-decoration: none; }
     border-radius: 14px;
     font-size: 0.95rem;
     outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color var(--motion-quick) var(--motion-ease-out), box-shadow var(--motion-quick) var(--motion-ease-out);
   }
   .input-dark::placeholder { color: #6b6b6b; }
   .input-dark:focus {
@@ -536,10 +608,253 @@ a { color: inherit; text-decoration: none; }
 /* Reveal al hacer scroll */
 .reveal {
   opacity: 0;
-  transform: translateY(26px);
-  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: translateY(var(--motion-distance));
+  transition:
+    opacity var(--motion-reveal) var(--motion-ease-out),
+    transform var(--motion-reveal) var(--motion-ease);
 }
 .reveal--in { opacity: 1; transform: none; }
+
+/* ============================================================
+   SISTEMA DE MOTION (spec 024)
+   ============================================================
+   Clases reutilizables. Todas las duraciones y curvas salen de los tokens de
+   :root — acá no hay un solo número escrito a mano.
+
+   TRES REGLAS QUE VALEN PARA TODO ESTE BLOQUE:
+
+   1. Solo se anima `transform`, `opacity` y `filter`. Son las tres propiedades
+      que el compositor resuelve sin recalcular layout. Animar `width`, `height`,
+      `top` o `left` obliga al navegador a rehacer el layout en CADA frame, y en
+      un celular de gama media eso se ve.
+
+   2. Ninguna animación de ENTRADA cambia el espacio que ocupa el elemento. Todo
+      es `translate` + `opacity` sobre una caja que ya midió lo que mide: sin
+      esto cada entrada sumaría CLS, que es exactamente la métrica que un sitio
+      con tráfico de anuncios no puede permitirse.
+
+   3. El estado por defecto del HTML entregado es VISIBLE. Ninguna de estas
+      clases deja algo en `opacity: 0` esperando que un JS lo prenda — son
+      `animation` con `both`, que terminan en el estado final y se quedan ahí.
+      Si el JS de la página se cae, el contenido igual está. La única excepción
+      es `.reveal`, que necesita el observer sí o sí y por eso tiene su propio
+      fallback (sin IntersectionObserver muestra el contenido de una, y el
+      bloque de reduced-motion le fuerza `opacity: 1`).
+   ============================================================ */
+
+/* ── Entradas ─────────────────────────────────────────────────────────────── */
+@keyframes motion-fade-up {
+  from { opacity: 0; transform: translateY(var(--motion-distance)); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes motion-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes motion-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+/* Entrada del drawer. `translateX(100%)` y no `right: -420px`: el segundo
+   animaría una propiedad de layout sobre un panel con `backdrop-filter`. */
+@keyframes motion-slide-right {
+  from { transform: translateX(100%); }
+  to   { transform: none; }
+}
+@keyframes motion-slide-right-out {
+  from { transform: none; }
+  to   { transform: translateX(100%); }
+}
+@keyframes motion-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.motion-fade-up  { animation: motion-fade-up var(--motion-slow) var(--motion-ease) both; }
+.motion-fade     { animation: motion-fade var(--motion-normal) var(--motion-ease-out) both; }
+.motion-scale-in { animation: motion-scale-in var(--motion-normal) var(--motion-spring) both; }
+
+/* ── Stagger ──────────────────────────────────────────────────────────────── */
+/* El índice lo pone el `map()` que ya existe en el componente, como
+   `style={{ '--i': i }}`. Ver `varStagger()` en lib/motion.js.
+
+   POR QUÉ NO ALCANZA `.grid-rise`: esa clase resuelve el escalonado con once
+   reglas `nth-child` escritas a mano y a partir del ítem 11 los aplana a todos
+   en el mismo delay. Sirve para una fila de cards; no para una grilla de 61
+   categorías. `.grid-rise` se deja intacta —la usan cuatro archivos y anda—,
+   pero lo nuevo sale de acá.
+
+   El `min()` topea el delay: con 61 elementos, un escalonado lineal dejaría al
+   último entrando 3,6 s después del primero. Nadie espera eso; se ve como que
+   la página se cuelga. A partir de ~8 elementos el ritmo ya se percibió. */
+.motion-stagger > * {
+  animation: motion-fade-up var(--motion-slow) var(--motion-ease) both;
+  animation-delay: min(calc(var(--i, 0) * var(--motion-stagger)), 480ms);
+}
+
+/* ── Stagger AL SCROLLEAR ─────────────────────────────────────────────────── */
+/* `.motion-stagger` escalona al MONTAR, que sirve para lo que ya está en
+   pantalla. Para una sección que vive abajo de todo no sirve: la animación
+   termina mucho antes de que nadie scrollee hasta ahí y se llega a una sección
+   ya quieta. Esto escalona cuando el bloque ENTRA en viewport: los hijos esperan
+   a que su `<Reveal>` padre se prenda.
+
+   Por qué existe además de envolver cada hijo en su propio `<Reveal>`: adentro
+   de un carrusel horizontal (`.carrusel-snap`) eso no funciona. Las cards 2 y 3
+   arrancan FUERA del viewport hacia la derecha, así que su IntersectionObserver
+   no dispara nunca y se quedan invisibles hasta que alguien desliza. Medido en
+   los testimonios del Home: las tres cards en `opacity: 0` con la sección a la
+   vista. Un observer por card también le mete un wrapper a cada una y les rompe
+   el alto parejo del flex.
+
+   Acá el observer es UNO solo, sobre el contenedor, y los hijos se escalonan con
+   `transition-delay`. */
+.reveal-hijo {
+  opacity: 0;
+  transform: translateY(var(--motion-distance));
+  transition:
+    opacity var(--motion-reveal) var(--motion-ease-out),
+    transform var(--motion-reveal) var(--motion-ease);
+  transition-delay: min(calc(var(--i, 0) * var(--motion-stagger)), 480ms);
+}
+.reveal--in .reveal-hijo { opacity: 1; transform: none; }
+
+/* ── Presión ──────────────────────────────────────────────────────────────── */
+/* Para controles que NO usan .btn-*: el "+" de la grilla, los pasos del
+   configurador, las cards clickeables. Da el mismo feedback táctil sin arrastrar
+   el aspecto de un botón. */
+.motion-press {
+  transition: transform var(--motion-fast) var(--motion-ease-out);
+}
+.motion-press:active { transform: scale(0.95); }
+
+/* ── Confirmación ─────────────────────────────────────────────────────────── */
+/* Un solo latido y se queda quieto. NO es un loop: una pulsación permanente
+   deja de leerse como aviso a los diez segundos y pasa a ser ruido — es lo que
+   el brief §12 pide evitar y lo que la spec 014 ya había sacado del hero. */
+@keyframes motion-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+.motion-pop { animation: motion-pop var(--motion-normal) var(--motion-spring); }
+
+/* Entrada de algo que aparece de la nada (el contador sobre la card, el check
+   de un paso): arranca chico y llega a su tamaño con el sobrepaso mínimo. */
+@keyframes motion-check-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.motion-check-in { animation: motion-check-in var(--motion-quick) var(--motion-spring) both; }
+
+/* ── Llamada de atención, UNA vez ─────────────────────────────────────────── */
+/* Para el CTA principal: 1 → 1.02 → 1 y listo (brief §12). Corre una sola vez,
+   después de que la secuencia del hero terminó, para que el ojo aterrice en el
+   botón sin que nada siga moviéndose. */
+@keyframes motion-nudge {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.02); }
+}
+
+/* ── Zoom de imagen ───────────────────────────────────────────────────────── */
+/* Contenedor con overflow-hidden + imagen que escala. El valor vive acá para
+   que no se le vaya la mano en un componente suelto: el `p-2` de StickerCard
+   está calculado para que el scale no desborde el recorte (ver el comentario de
+   la clase de la <img> en StickerCard.jsx). */
+.motion-zoom { overflow: hidden; }
+.motion-zoom img {
+  transition: transform var(--motion-slow) var(--motion-ease-out);
+}
+.motion-zoom:hover img { transform: scale(1.035); }
+
+/* ── Capas: drawer y modales ──────────────────────────────────────────────── */
+.motion-overlay-in  { animation: motion-fade var(--motion-normal) var(--motion-ease-out) both; }
+.motion-overlay-out { animation: motion-fade-out var(--motion-normal) var(--motion-ease-out) both; }
+.motion-panel-in    { animation: motion-slide-right var(--motion-normal) var(--motion-ease-out) both; }
+.motion-panel-out   { animation: motion-slide-right-out var(--motion-normal) var(--motion-ease-out) both; }
+
+/* ── Transición de página ─────────────────────────────────────────────────── */
+/* Solo fade, y corto. Un `translate` acá pelearía con el scroll restaurado al
+   navegar, y cualquier cosa por encima de ~200 ms se siente como un loader —
+   que es justo lo que el brief §20 prohíbe inventar. */
+.motion-page {
+  animation: motion-fade 180ms var(--motion-ease-out) both;
+}
+
+/* ── Menú mobile ──────────────────────────────────────────────────────────── */
+.motion-menu { animation: motion-fade-up var(--motion-quick) var(--motion-ease-out) both; }
+/* Stagger MUY corto: navegar es funcional, no narrativo. 30 ms alcanza para que
+   se lea como una lista que entra y no retrasa el toque de nadie. */
+.motion-menu > * {
+  animation: motion-fade-up var(--motion-quick) var(--motion-ease-out) both;
+  animation-delay: min(calc(var(--i, 0) * 30ms), 180ms);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+/* La secuencia completa: título (0) → subtítulo (120) → CTA (240) → fin a los
+   ~760 ms. Menos de los 800 del brief.
+
+   ⚠️ `both` en el fill-mode es lo que hace que esto NO bloquee la interacción:
+   el elemento existe y es clickeable desde el frame 0; lo único que corre es su
+   opacidad y su posición. Nadie tiene que esperar a que termine para tocar el
+   CTA. Tampoco hay `pointer-events: none` en ninguna parte de la secuencia.
+
+   ⚠️ Y corre UNA sola vez, al montar. El hero YA TUVO un titular que rotaba
+   entre cinco frases con animación permanente y se sacó a propósito en la spec
+   014 ("ocho elementos compitiendo: ninguno ganaba"). Esto es una entrada, no
+   un loop: termina y se queda quieto. */
+.hero-entra {
+  animation: motion-fade-up var(--motion-slow) var(--motion-ease) both;
+}
+.hero-entra--1 { animation-delay: 0ms; }
+.hero-entra--2 { animation-delay: 120ms; }
+.hero-entra--3 { animation-delay: 240ms; }
+
+/* El nudge va SOBRE EL BOTÓN PRINCIPAL, no sobre el contenedor de los dos CTA:
+   escalar la fila entera movería también el botón secundario, y el punto es
+   justamente distinguir uno del otro. Como el contenedor ya corre su fade-up,
+   el botón queda libre para su propia animación sin que se pisen.
+
+   Arranca a los 900 ms —cuando la entrada del contenedor (240 + 520 = 760) ya
+   terminó— y es UN latido de 1 → 1.02 → 1. Después se queda quieto para
+   siempre: una pulsación permanente deja de leerse como llamado a los diez
+   segundos y pasa a ser ruido (brief §12). Este hero YA TUVO movimiento
+   permanente —un titular que rotaba entre cinco frases— y la spec 014 lo sacó
+   por exactamente este motivo. */
+.hero-cta-nudge {
+  animation: motion-nudge var(--motion-normal) var(--motion-ease-out) 900ms 1 both;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+/* Se anima la SOMBRA y el fondo, no el alto. El alto ya lo maneja el
+   `transition-[padding]` que el header traía de antes; duplicarlo acá lo haría
+   pelear consigo mismo. */
+.header-sombra {
+  transition:
+    box-shadow var(--motion-quick) var(--motion-ease-out),
+    background-color var(--motion-quick) var(--motion-ease-out);
+}
+.header-sombra--compacto {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  background-color: rgba(0, 0, 0, 0.62);
+}
+
+/* ── Zona de subida de archivos ───────────────────────────────────────────── */
+/* El borde discontinuo y el fondo cambian juntos, y el ícono sube apenas cuando
+   hay un archivo encima: el objetivo es que se lea "soltá acá" sin una sola
+   palabra más. */
+.motion-dropzone {
+  transition:
+    border-color var(--motion-quick) var(--motion-ease-out),
+    background-color var(--motion-quick) var(--motion-ease-out),
+    transform var(--motion-quick) var(--motion-ease-out);
+}
+.motion-dropzone--activa { transform: scale(1.01); }
+.motion-dropzone__icono {
+  transition: transform var(--motion-normal) var(--motion-spring);
+}
+.motion-dropzone--activa .motion-dropzone__icono { transform: translateY(-4px) scale(1.12); }
+
 
 /* Entrada escalonada de las cards dentro de una grilla */
 @keyframes rise {
@@ -1031,6 +1346,69 @@ a { color: inherit; text-decoration: none; }
   }
   .anuncio-ticker__item::after { display: none; }
   .chip-busqueda:active { transform: none; }
+
+  /* ── SISTEMA DE MOTION (spec 024) ───────────────────────────────────────
+     Criterio de qué se apaga y qué NO.
+
+     SE APAGA todo lo que es narrativo: las entradas, el stagger, el reveal, la
+     secuencia del hero, el nudge del CTA, el zoom de las imágenes, la
+     transición entre páginas. Nada de eso lleva información — lo único que
+     hacen es decidir en qué orden se mira algo que ya está.
+
+     SE CONSERVA el feedback de acción, pero SIN movimiento. Y esto no es una
+     grieta en la regla: `prefers-reduced-motion` pide reducir MOVIMIENTO, no
+     dejar a la persona sin saber si su toque entró. Por eso el botón "+" sigue
+     pasando a "✓" (cambia el símbolo, no se mueve nada), el contador sigue
+     cambiando de número, y el drawer sigue abriendo y cerrando — de golpe, como
+     hacía hasta esta spec. Apagar el feedback también sería romper el sitio
+     para quien activó la preferencia, que es exactamente lo que no se quiere.
+
+     Las capas (drawer, modales) se apagan con `animation: none`, y el JS que
+     las monta ya sabe desmontarlas de inmediato en vez de esperar una salida
+     que nunca corre (ver `useMontajeAnimado` en lib/motion.js). */
+  .motion-fade-up,
+  .motion-fade,
+  .motion-scale-in,
+  .motion-pop,
+  .motion-check-in,
+  .motion-stagger > *,
+  .motion-menu,
+  .motion-menu > *,
+  .motion-page,
+  .motion-overlay-in,
+  .motion-overlay-out,
+  .motion-panel-in,
+  .motion-panel-out,
+  .hero-entra,
+  .hero-cta-nudge {
+    animation: none !important;
+  }
+  /* `transition: none` y no solo `animation: none`: varias de estas clases dan
+     su efecto por transición (la presión, el zoom, la dropzone), que es otra
+     propiedad y no la apaga la regla de arriba. */
+  .motion-press,
+  .motion-zoom img,
+  .motion-dropzone,
+  .motion-dropzone__icono,
+  .header-sombra,
+  .card-glass-hover {
+    transition: none !important;
+  }
+  .motion-press:active,
+  .motion-dropzone--activa,
+  .motion-dropzone--activa .motion-dropzone__icono,
+  .motion-zoom:hover img,
+  .card-glass-hover:hover,
+  .card-glass-hover:active,
+  .btn-primary:hover,
+  .btn-primary:active,
+  .btn-secondary:active,
+  .btn-ghost:active {
+    transform: none !important;
+  }
+  /* La dropzone y el header pierden el movimiento pero NO el color: el borde
+     que se prende al arrastrar y la sombra del header compacto son información
+     de estado, y se leen igual quietos. */
   .carrusel-snap { scroll-behavior: auto; }
   /* Sin animación la tira queda cortada al ancho de la pantalla, así que se
      entrega scrolleable a mano y se esconde la copia de relleno (si no, las
@@ -1040,5 +1418,10 @@ a { color: inherit; text-decoration: none; }
   .marcas-ticker__grupo[aria-hidden='true'] { display: none; }
   .marcas-ticker__item:hover img { transform: none; }
   .sticker-float { transition: none !important; transform: none !important; }
-  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .reveal,
+  .reveal-hijo {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }

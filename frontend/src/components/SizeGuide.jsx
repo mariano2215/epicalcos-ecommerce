@@ -41,7 +41,11 @@ export default function SizeGuide({ selectedSize, onSelect, experimento = false,
       </button>
 
       {open && (
-        <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+        /* Fade + subida, NO una animación de altura. Animar `height` o
+           `max-height` haría que el contenido de abajo se empuje frame a frame:
+           layout recalculado en cada uno y CLS asegurado. Con `transform` el
+           lugar se reserva de una y solo se mueve el panel. */
+        <div className="motion-fade-up mt-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
           {/* Comparación a escala */}
           <div className="flex items-end justify-center gap-5 pb-4 border-b border-white/10">
             {SIZES.map((s) => {

@@ -152,8 +152,12 @@ export default function WelcomePopup() {
 
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={close} />
-      <div className="relative card-glass w-full max-w-md p-7 text-center overflow-hidden">
+      <div className="motion-overlay-in absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={close} />
+      {/* `motion-scale-in` (0.96 → 1) y no una subida: el popup ya está centrado
+          en la pantalla y aparece SIN que nadie lo haya pedido. Una escala corta
+          se lee como "esto se abrió"; un deslizamiento de 20 px se lee como una
+          notificación que invade. */}
+      <div className="motion-scale-in relative card-glass w-full max-w-md p-7 text-center overflow-hidden">
         <div
           className="absolute inset-0 opacity-25"
           style={{ backgroundImage: 'radial-gradient(circle at 20% 0%, rgba(255,27,141,.6), transparent 55%), radial-gradient(circle at 90% 90%, rgba(58,134,255,.5), transparent 50%)' }}

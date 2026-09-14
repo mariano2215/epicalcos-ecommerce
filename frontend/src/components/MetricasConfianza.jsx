@@ -31,7 +31,7 @@ export default function MetricasConfianza() {
       <div className="container-app">
         <div className="grid gap-8 sm:gap-6 sm:grid-cols-3 text-center">
           {METRICAS.map((m, i) => (
-            <Reveal key={m.label} delay={i * 90}>
+            <Reveal key={m.label} indice={i}>
               <div className="metrica__numero">{m.valor}</div>
               <div className="metrica__label">{m.label}</div>
             </Reveal>

@@ -98,7 +98,7 @@ export default function FeaturedStickers() {
         ) : (
           <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
             {stickers.map((s, i) => (
-              <Reveal key={s.id} delay={i * 60} className="h-full">
+              <Reveal key={s.id} indice={i} className="h-full">
                 {/* El Home no tiene SizePicker: la card tiene que decir de qué tamaño es ese precio. */}
                 <StickerCard sticker={s} listName={LISTA_GA4} mostrarTamano />
               </Reveal>

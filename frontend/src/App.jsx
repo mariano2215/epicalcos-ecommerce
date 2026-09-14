@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
@@ -61,6 +61,57 @@ function ScrollToHash() {
   return null;
 }
 
+/**
+ * Fade corto entre páginas (spec 024).
+ *
+ * ⚠️ POR QUÉ NO ES UN `<div key={pathname}>`, que sería lo obvio: keyear el
+ * contenedor obliga a React a DESMONTAR y volver a montar el árbol entero de la
+ * ruta en cada navegación. Entre dos categorías eso tira el estado del
+ * componente y vuelve a correr todos sus efectos —incluida la carga del
+ * catálogo— para conseguir un fade de 180 ms. Acá se reinicia la animación del
+ * contenedor a mano y los hijos ni se enteran: el `void offsetWidth` fuerza el
+ * reflow que el navegador necesita para volver a arrancar un `animation` que ya
+ * corrió (sin eso, quitar y poner la clase en el mismo tick no hace nada).
+ *
+ * ⚠️⚠️ ESTE FADE ES **SOLO OPACIDAD**, Y NO SE PUEDE CONVERTIR EN UN
+ * DESLIZAMIENTO. Adentro de las rutas hay barras `position: fixed` que son CTA
+ * de compra: `StickyMobileBar` (ficha de producto, /tatuajes, /polaroid) y la
+ * barra mobile de `ResumenPedido` (/personalizados).
+ *
+ * Un elemento con `transform` o `filter` se convierte en el bloque contenedor de
+ * sus descendientes `position: fixed` — `opacity` NO. La diferencia está medida
+ * sobre esta misma app (Chromium, ficha de producto a 375 px, barra anclada a
+ * `bottom: 0` con el viewport en 812 px):
+ *
+ *     sin nada                    → la barra queda en bottom 812 px ✅
+ *     opacity: 0.5                → la barra queda en bottom 812 px ✅
+ *     transform: translateY(10px) → la barra se va a bottom 2972 px ❌
+ *     filter: blur(1px)           → la barra se va a bottom 2962 px ❌
+ *
+ * O sea: agregarle un `translateY` de 20 px a este fade —que es lo que uno
+ * "mejoraría" sin pensarlo— despegaría el botón de comprar del viewport durante
+ * los 180 ms de cada navegación, en las pantallas de más intención de compra del
+ * sitio. Es la misma familia de trampa que ya está documentada en `Header.jsx`
+ * con el `backdrop-filter` y el modal de búsqueda.
+ *
+ * Si algún día hace falta que la transición se mueva, el movimiento va en los
+ * hijos que NO son fixed, nunca en este contenedor.
+ */
+function PageFade({ children }) {
+  const { pathname } = useLocation();
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.classList.remove('motion-page');
+    void el.offsetWidth; // fuerza el reflow que reinicia la animación
+    el.classList.add('motion-page');
+  }, [pathname]);
+
+  return <div ref={ref}>{children}</div>;
+}
+
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -70,6 +121,7 @@ export default function App() {
       <WelcomePopup />
       <main className="flex-1">
         <Suspense fallback={<RouteFallback />}>
+        <PageFade>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/categorias" element={<Categorias />} />
@@ -116,6 +168,7 @@ export default function App() {
             <Route path="/producto/:id" element={<Navigate to="/categorias" replace />} />
             <Route path="*" element={<Home />} />
           </Routes>
+        </PageFade>
         </Suspense>
       </main>
       <Footer />

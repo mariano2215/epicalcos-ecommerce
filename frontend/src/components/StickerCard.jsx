@@ -3,6 +3,7 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { precioVidriera, sizeLabel } from '../config/pricing.js';
 import { useTamanoElegido } from '../lib/tamanoElegido.js';
 import { trackSelectItem } from '../lib/analytics.js';
+import { useFlash } from '../lib/motion.js';
 
 /**
  * Card de un calco en la grilla. Compacta a propósito.
@@ -21,6 +22,11 @@ import { trackSelectItem } from '../lib/analytics.js';
 export default function StickerCard({ sticker, listName = 'catalog', mostrarTamano = false }) {
   const { addSticker, items } = useCart();
   const [size] = useTamanoElegido();
+  // Confirmación en el propio botón. Hasta la spec 024 el único aviso de
+  // "agregado" era el toast, que aparece abajo y al centro: a ~600 px del "+"
+  // que se acababa de tocar en la grilla. El ojo estaba en el botón, y el
+  // botón no decía nada.
+  const [recienAgregado, confirmar] = useFlash();
 
   // Precio de vidriera: durante la promo de Argentina, la mitad. Sin esto la
   // grilla anunciaría $1.600 mientras el carrito cobra $800.
@@ -64,8 +70,14 @@ export default function StickerCard({ sticker, listName = 'catalog', mostrarTama
           className="w-full h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
         />
         {enCarrito > 0 && (
+          /* `key={enCarrito}`: React remonta el nodo en cada cambio de número y
+             la animación de entrada vuelve a correr. Sin la key, el span se
+             reusa, el `animation` no se reinicia y el contador pasaría de 2 a 3
+             sin que nada delate el cambio — que es el problema que esto viene a
+             resolver. */
           <span
-            className="absolute top-1.5 left-1.5 min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full bg-brand-fuchsia text-white text-[11px] font-bold tabular-nums shadow-lg"
+            key={enCarrito}
+            className="motion-check-in absolute top-1.5 left-1.5 min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full bg-brand-fuchsia text-white text-[11px] font-bold tabular-nums shadow-lg"
             aria-hidden
           >
             {enCarrito}
@@ -108,19 +120,40 @@ export default function StickerCard({ sticker, listName = 'catalog', mostrarTama
               y el contador sobre la imagen alcanzan como devolución. */}
           <button
             type="button"
-            onClick={() => addSticker(sticker, size, 1, { openDrawer: false })}
+            onClick={() => {
+              // ⚠️ EL ORDEN IMPORTA. `addSticker()` corre PRIMERO —y adentro
+              // suyo, `trackAddToCart`—; el feedback visual va después. Si el
+              // estado del "✓" tirara una excepción, el calco ya está en el
+              // carrito y el evento ya se disparó. Una animación no puede
+              // interponerse entre un click y la venta que ese click produce.
+              addSticker(sticker, size, 1, { openDrawer: false });
+              confirmar();
+            }}
             aria-label={
               enCarrito > 0
                 ? `Agregar otro ${sticker.name} de ${sizeLabel(size)} (llevás ${enCarrito})`
                 : `Agregar ${sticker.name} de ${sizeLabel(size)} al carrito`
             }
-            className="shrink-0 -my-1.5 -mr-1 w-11 h-11 grid place-items-center text-white/80 hover:text-white active:scale-95 transition"
+            className="motion-press shrink-0 -my-1.5 -mr-1 w-11 h-11 grid place-items-center text-white/80 hover:text-white"
           >
+            {/* El "+" pasa a "✓" ~1,1 s y vuelve solo. No cambia de tamaño ni de
+                posición —mismo `w-8 h-8`, mismo grid— así que la fila del precio
+                no se mueve ni un píxel: la confirmación no puede costar CLS.
+                El verde es el mismo que ya usa el sitio para "subido ✓" y para
+                los avisos de promo cumplida. */}
             <span
-              className="w-8 h-8 grid place-items-center rounded-lg bg-brand-fuchsia/15 border border-brand-fuchsia/40 text-base leading-none font-bold"
+              className={`w-8 h-8 grid place-items-center rounded-lg border text-base leading-none font-bold transition-colors ${
+                recienAgregado
+                  ? 'bg-emerald-400/20 border-emerald-400/60 text-emerald-300'
+                  : 'bg-brand-fuchsia/15 border-brand-fuchsia/40'
+              }`}
               aria-hidden
             >
-              +
+              {/* `key`: igual que el contador, remontar es lo que reinicia la
+                  animación cuando se toca "+" dos veces seguidas. */}
+              <span key={recienAgregado ? 'ok' : 'mas'} className="motion-check-in">
+                {recienAgregado ? '✓' : '+'}
+              </span>
             </span>
           </button>
         </div>

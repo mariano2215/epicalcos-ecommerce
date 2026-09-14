@@ -3,6 +3,7 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 import FreeShippingProgress from './FreeShippingProgress.jsx';
 import BulkProgress from './BulkProgress.jsx';
 import OrderBump from './OrderBump.jsx';
+import { useMontajeAnimado } from '../lib/motion.js';
 
 // `custom`: cada línea es UN diseño personalizado y su cantidad son las copias.
 const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
@@ -16,7 +17,22 @@ export default function CartDrawer() {
   } = useCart();
   const navigate = useNavigate();
 
-  if (!drawerOpen) return null;
+  /* Hasta la spec 024 acá había un `if (!drawerOpen) return null`: el carrito
+     —la pantalla más vista de toda la compra, porque se abre en cada "+" de la
+     grilla— aparecía y desaparecía de un frame al otro, ocupando media pantalla
+     sin decir de dónde había salido.
+
+     `useMontajeAnimado` mantiene el contenido montado mientras corre la salida y
+     recién después lo suelta. Un `return null` no puede animar un cierre: cuando
+     React llega a esa línea el nodo ya no existe.
+
+     ⚠️ El desmontaje es REAL, no un `visibility: hidden`. Dejar el drawer en el
+     DOM dejaría sus botones en el orden de tabulación y su contenido en el árbol
+     de accesibilidad: alguien navegando con teclado se encontraría tabulando por
+     un carrito cerrado. */
+  const { montado, saliendo } = useMontajeAnimado(drawerOpen);
+
+  if (!montado) return null;
 
   const goCheckout = () => {
     closeDrawer();
@@ -24,9 +40,21 @@ export default function CartDrawer() {
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeDrawer} />
-      <aside className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-bg-deep border-l border-white/10 flex flex-col">
+    /* `pointer-events-none` mientras sale: durante los 320 ms del cierre el
+       overlay sigue en pantalla, y sin esto un toque ahí volvería a llamar a
+       `closeDrawer()` sobre un drawer que ya se está cerrando. */
+    <div className={`fixed inset-0 z-50 ${saliendo ? 'pointer-events-none' : ''}`}>
+      <div
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm ${
+          saliendo ? 'motion-overlay-out' : 'motion-overlay-in'
+        }`}
+        onClick={closeDrawer}
+      />
+      <aside
+        className={`absolute right-0 top-0 h-full w-full sm:w-[420px] bg-bg-deep border-l border-white/10 flex flex-col ${
+          saliendo ? 'motion-panel-out' : 'motion-panel-in'
+        }`}
+      >
         <div className="p-5 border-b border-white/10 flex items-center justify-between">
           <h3 className="font-display font-extrabold text-xl">Tu carrito</h3>
           <button onClick={closeDrawer} className="btn-ghost text-2xl">✕</button>

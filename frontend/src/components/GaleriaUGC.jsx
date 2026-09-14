@@ -29,7 +29,7 @@ export default function GaleriaUGC() {
 
         <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-4">
           {UGC.map((f, i) => (
-            <Reveal key={f.src} delay={i * 60}>
+            <Reveal key={f.src} indice={i}>
               <img
                 src={f.src}
                 alt={f.alt}

@@ -81,12 +81,32 @@ export default function Hero({ conBuscador = false }) {
       <div className="hero-aurora" aria-hidden="true" />
       <StickerField count={8} opacity={0.22} eagerFirst />
 
+      {/* ⚠️ LA ENTRADA DEL HERO (spec 024) — leer antes de tocar las clases.
+          H1 (0 ms) → subtítulo (120) → buscador/CTA (240), cada uno 520 ms:
+          la secuencia completa cierra a los ~760 ms. Es el orden en que hay que
+          leer esto, y el movimiento no hace más que decirlo.
+
+          Tres cosas que NO se pueden perder:
+
+          1. Corre UNA vez y termina. Este hero ya tuvo un titular que rotaba
+             entre cinco frases con animación permanente; la spec 014 lo sacó
+             porque competía con todo lo demás. Esto es una entrada, no un loop.
+
+          2. NO bloquea nada. El `animation-fill-mode: both` de `.hero-entra`
+             deja los elementos en el DOM y clickeables desde el primer frame —
+             lo único que corre es su opacidad y su posición. No hay
+             `pointer-events: none` en ninguna parte de la secuencia: quien llega
+             de un anuncio y toca el CTA en el primer medio segundo, entra.
+
+          3. NO toca el LCP. El elemento LCP del Home es la primera calco del
+             `StickerField`, que queda fuera de la secuencia: se sigue pidiendo
+             `eager` + `fetchpriority=high` y no espera ningún delay. */}
       <div className="container-app pt-16 pb-14 md:pt-28 md:pb-24 text-center relative z-10">
-        <h1 className="font-display font-black text-[2rem] leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl max-w-4xl mx-auto">
+        <h1 className="hero-entra hero-entra--1 font-display font-black text-[2rem] leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl max-w-4xl mx-auto">
           {inicioH1} <span className="gradient-text">{resaltadoH1}</span>
         </h1>
 
-        <p className="mt-5 max-w-xl mx-auto text-white/75 text-base md:text-lg leading-snug">
+        <p className="hero-entra hero-entra--2 mt-5 max-w-xl mx-auto text-white/75 text-base md:text-lg leading-snug">
           {titular.subtitulo}
         </p>
 
@@ -97,15 +117,19 @@ export default function Hero({ conBuscador = false }) {
             — que es exactamente el costo que este experimento viene a pesar. */}
         {conBuscador && (
           <BuscadorCalcos
-            className="mt-8 max-w-2xl mx-auto buscador--sobre-hero"
+            className="hero-entra hero-entra--3 mt-8 max-w-2xl mx-auto buscador--sobre-hero"
             size="lg"
             chips
             origen="hero"
           />
         )}
 
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link to="/categorias" className="btn-primary w-full sm:w-auto">
+        <div className="hero-entra hero-entra--3 mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* El nudge va solo en el botón principal: escalar el contenedor
+              movería también "Hacer mis propias calcos", y lo que se busca acá
+              es exactamente distinguir uno del otro. Un latido, a los 900 ms,
+              cuando la secuencia ya terminó. */}
+          <Link to="/categorias" className="hero-cta-nudge btn-primary w-full sm:w-auto">
             {textoCta}
           </Link>
           {personalizadosVisible && (

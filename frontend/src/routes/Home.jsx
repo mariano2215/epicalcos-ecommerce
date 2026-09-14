@@ -135,7 +135,7 @@ export default function Home() {
           {featured.length === 0 ? (
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               {CATEGORIES.slice(0, 10).map((c, i) => (
-                <Reveal key={c.slug} delay={i * 60} className="h-full">
+                <Reveal key={c.slug} indice={i} className="h-full">
                   <Link to={`/categoria/${c.slug}`} className="card-glass card-glass-hover p-5 h-full block">
                     <div className="text-4xl mb-2 text-center" aria-hidden>{c.emoji}</div>
                     <div className="font-semibold text-sm">{c.name}</div>
@@ -146,7 +146,7 @@ export default function Home() {
           ) : (
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {featured.map((c, i) => (
-                <Reveal key={c.slug} delay={i * 60} className="h-full">
+                <Reveal key={c.slug} indice={i} className="h-full">
                   <CategoryCard
                     slug={c.slug}
                     name={c.name}

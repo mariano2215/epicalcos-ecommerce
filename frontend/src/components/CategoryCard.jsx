@@ -98,8 +98,15 @@ export default function CategoryCard({ slug, name, emoji, cover, count, rotation
           </span>
         )}
       </div>
-      <div className="px-4 py-3 flex items-center gap-2">
-        <span aria-hidden>{emoji}</span>
+      {/* El pie sube 2 px en hover y el emoji escala: la imagen ya reaccionaba
+          (scale-110), pero el texto se quedaba quieto y la card se leía como una
+          foto con una etiqueta debajo en vez de como UN elemento clickeable.
+          Dos píxeles alcanzan — el objetivo es que la card se sienta una sola
+          pieza, no que se mueva.
+          `transform` y no `margin`/`padding`: mover el pie con espaciado
+          recalcularía el layout de toda la grilla en cada hover. */}
+      <div className="px-4 py-3 flex items-center gap-2 transition-transform duration-200 group-hover:-translate-y-0.5">
+        <span aria-hidden className="transition-transform duration-200 group-hover:scale-110">{emoji}</span>
         <h3 className="font-semibold text-sm leading-tight">{name}</h3>
       </div>
     </Link>

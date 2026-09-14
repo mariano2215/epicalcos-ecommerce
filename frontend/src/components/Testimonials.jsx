@@ -1,4 +1,6 @@
 import { useRef } from 'react';
+import Reveal from './Reveal.jsx';
+import { varStagger } from '../lib/motion.js';
 import { TESTIMONIALS as testimonios } from '../data/testimonials.js';
 import { trackTestimonialInteraction } from '../lib/analytics.js';
 
@@ -41,11 +43,27 @@ export default function Testimonials() {
           <h2 className="font-display font-extrabold text-3xl md:text-5xl">Clientes que ya personalizaron</h2>
         </div>
 
+        {/* UN Reveal sobre el carrusel entero, y el escalonado con `.reveal-hijo`
+            en cada card.
+
+            ⚠️ NO envolver cada card en su propio `<Reveal>`. Se probó: las cards
+            2 y 3 arrancan FUERA del viewport hacia la derecha (esto es un
+            carrusel horizontal a 375 px), su IntersectionObserver no dispara
+            nunca y las tres quedaban en `opacity: 0` con la sección a la vista —
+            la prueba social, invisible. Además el wrapper por card le rompía el
+            alto parejo a la fila (437 / 457 / 437 px medidos). */}
+        {/* ⚠️ El `onScroll` se queda en el div del carrusel y NO se le pasa al
+            `<Reveal>`: Reveal no reenvía props sueltas, así que ahí se perdería
+            en silencio — y con él `trackTestimonialInteraction`, que es cómo se
+            mide si esta sección se mira. Una animación no puede llevarse puesto
+            un evento de analytics (CLAUDE.md regla 13). */}
+        <Reveal>
         <div className="carrusel-snap sm:grid-cols-3" onScroll={onScroll}>
-          {testimonios.map((t) => (
+          {testimonios.map((t, i) => (
             <figure
               key={t.name}
-              className="card-glass overflow-hidden flex flex-col p-0"
+              style={varStagger(i)}
+              className="reveal-hijo card-glass overflow-hidden flex flex-col p-0"
             >
               {t.image ? (
                 <img
@@ -71,6 +89,7 @@ export default function Testimonials() {
             </figure>
           ))}
         </div>
+        </Reveal>
       </div>
     </section>
   );

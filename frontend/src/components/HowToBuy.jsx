@@ -54,7 +54,7 @@ export default function HowToBuy() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PASOS.map((s, i) => (
-            <Reveal key={s.n} delay={i * 90} className="card-glass p-6 relative h-full">
+            <Reveal key={s.n} indice={i} className="card-glass p-6 relative h-full">
               <div className="absolute top-3 right-4 font-display font-extrabold text-4xl text-white/10" aria-hidden>
                 {s.n}
               </div>

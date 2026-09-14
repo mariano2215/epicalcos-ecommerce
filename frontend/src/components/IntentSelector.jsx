@@ -64,7 +64,7 @@ export default function IntentSelector() {
 
         <div className={`grid gap-3 ${opciones.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           {opciones.map((o, i) => (
-            <Reveal key={o.slug} delay={i * 80} className="h-full">
+            <Reveal key={o.slug} indice={i} className="h-full">
               <Link
                 to={o.to}
                 onClick={o.track}

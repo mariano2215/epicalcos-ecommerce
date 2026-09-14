@@ -245,11 +245,18 @@ export default function SubidaArchivo({
           }}
           onDragLeave={() => setDrag(false)}
           onDrop={onDrop}
-          className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer px-4 py-6 text-center transition-colors ${
-            drag ? 'border-brand-fuchsia bg-brand-fuchsia/10' : 'border-white/15 hover:border-white/30 bg-white/[0.02]'
+          /* `motion-dropzone` anima el borde, el fondo y una escala mínima
+             (1.01) al arrastrar encima. Antes el único cambio era el color del
+             borde, y de golpe: con el archivo tapando el cursor, ese salto se
+             perdía. El movimiento acá no decora — es lo que dice "soltá acá"
+             sin escribirlo. */
+          className={`motion-dropzone flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed cursor-pointer px-4 py-6 text-center ${
+            drag
+              ? 'motion-dropzone--activa border-brand-fuchsia bg-brand-fuchsia/10'
+              : 'border-white/15 hover:border-white/30 bg-white/[0.02]'
           }`}
         >
-          <div className="text-3xl">🖼️</div>
+          <div className="motion-dropzone__icono text-3xl">🖼️</div>
           <div className="text-sm font-semibold">Arrastrá tus archivos o tocá para elegirlos</div>
           <div className="text-xs text-white/40">
             {uploadEnabled
@@ -272,7 +279,9 @@ export default function SubidaArchivo({
           className={`mt-3 space-y-2 ${archivos.length > 8 ? 'max-h-[26rem] overflow-y-auto pr-1' : ''}`}
         >
           {archivos.map((a) => (
-            <li key={a.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+            /* Cada archivo entra animado: subir 20 diseños de una era una lista
+               que crecía de golpe sin que nada dijera cuál acababa de sumarse. */
+            <li key={a.id} className="motion-fade-up rounded-2xl border border-white/10 bg-white/[0.03] p-3">
               <div className="flex items-center gap-3">
                 {a.preview ? (
                   <img src={a.preview} alt={a.nombre} loading="lazy" className="w-12 h-12 rounded-xl object-contain bg-black/20 shrink-0" />
@@ -284,7 +293,11 @@ export default function SubidaArchivo({
                   <div className="text-xs text-white/45">
                     {a.pesoMB} MB{a.width ? ` · ${a.width}×${a.height} px` : ''}
                     {a.optimizado && <span className="text-white/40"> · optimizado de {a.pesoOriginalMB} MB</span>}
-                    {a.url && <span className="text-emerald-400"> · subido ✓</span>}
+                    {/* El "subido ✓" late una vez al aparecer. Es la confirmación
+                        de que el archivo llegó al servidor —no solo de que se
+                        eligió— y es lo que separa "lo mandé" de "creí que lo
+                        mandé" cuando la subida tarda en 4G. */}
+                    {a.url && <span className="motion-check-in inline-block text-emerald-400"> · subido ✓</span>}
                     {a.uploading && <span className="text-white/50"> · subiendo {a.progress}%</span>}
                     {uploadEnabled && !a.uploading && !a.url && !a.error && (
                       <span className="text-white/40"> · en cola</span>

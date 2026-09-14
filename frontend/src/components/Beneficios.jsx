@@ -23,7 +23,7 @@ export default function Beneficios() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {beneficios.map((b, i) => (
-            <Reveal key={b.titulo} delay={i * 80} className="h-full">
+            <Reveal key={b.titulo} indice={i} className="h-full">
               <div className="card-glass p-6 h-full">
                 <div className="text-4xl mb-4" aria-hidden>{b.icon}</div>
                 <h3 className="font-display font-extrabold text-lg leading-tight">{b.titulo}</h3>

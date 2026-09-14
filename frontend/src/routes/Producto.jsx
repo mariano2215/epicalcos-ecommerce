@@ -204,7 +204,15 @@ export default function Producto() {
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
           {/* Galería */}
           <div>
-            <div className="rounded-3xl bg-white p-6 sm:p-10 grid place-items-center aspect-square shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+            {/* `motion-zoom`: la imagen escala a 1.035 en hover, con el recorte
+                del contenedor. Es la foto más grande del sitio y la única razón
+                por la que alguien entra a esta página — que responda al mouse la
+                hace mirar un segundo más.
+                El zoom es de 3,5 % y el contenedor tiene `p-6`/`p-10`: el calco
+                nunca llega al borde, así que el `overflow: hidden` no le corta
+                nada. En celular no hay hover y esto no hace nada: el costo es
+                cero donde está la mayoría del tráfico. */}
+            <div className="motion-zoom rounded-3xl bg-white p-6 sm:p-10 grid place-items-center aspect-square shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
               <img
                 src={sticker.images[activeImg] || sticker.image}
                 alt={sticker.name}

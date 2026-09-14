@@ -45,8 +45,14 @@ export default function BuscadorModal({ abierto, onCerrar }) {
   if (!abierto) return null;
 
   return (
-    <div className="buscador-modal" role="dialog" aria-modal="true" aria-labelledby="buscador-modal-titulo">
-      <div className="container-app py-4">
+    /* `motion-fade` sobre el fondo del diálogo y `motion-fade-up` sobre su
+       contenido: el panel entra en 320 ms en vez de aparecer de golpe tapando la
+       pantalla entera. No lleva animación de SALIDA — el modal se cierra con
+       Escape o con la X, y las dos devuelven el foco al botón que lo abrió
+       (ver el useEffect de arriba): retrasar el desmontaje 320 ms retrasaría
+       también esa devolución, y el foco es más importante que el fundido. */
+    <div className="buscador-modal motion-fade" role="dialog" aria-modal="true" aria-labelledby="buscador-modal-titulo">
+      <div className="container-app py-4 motion-fade-up">
         <div className="flex items-center justify-between gap-3">
           <h2 id="buscador-modal-titulo" className="font-display font-extrabold text-lg">
             ¿Qué te gusta?

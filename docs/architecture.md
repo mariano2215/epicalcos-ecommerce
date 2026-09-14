@@ -196,6 +196,34 @@ Un solo contexto: `CartContext`.
 - Expone `derived` (subtotales, promos) y `pricedItems(método, cupón)` — el
   cálculo final que se manda al servidor.
 
+### Sistema de motion (spec 024)
+Todo el movimiento del sitio sale de **un** juego de tokens. No hay librería de
+animación: es CSS más un puñado de hooks.
+
+| Pieza | Dónde | Qué es |
+|---|---|---|
+| Tokens | `styles/index.css` → `:root` | `--motion-fast/quick/normal/slow/lento`, las tres curvas, `--motion-stagger`, `--motion-distance`, `--motion-reveal` |
+| Espejo en JS | `lib/motion.js` → `MOTION` | Los mismos números, para el JS que necesita saber cuánto dura algo (desmontar el drawer, apagar el "✓") |
+| Clases | `styles/index.css` | `.motion-fade-up`, `.motion-scale-in`, `.motion-stagger`, `.reveal-hijo`, `.motion-press`, `.motion-pop`, `.motion-check-in`, `.motion-zoom`, `.motion-panel-in/out`, `.motion-overlay-in/out`, `.motion-page`, `.motion-menu`, `.motion-dropzone`, `.hero-entra`, `.header-sombra` |
+| Hooks | `lib/motion.js` | `useReducedMotion`, `useFlash`, `usePulseOnChange`, `useMontajeAnimado`, `useMountedFlag`, `staggerDelay`, `varStagger` |
+
+**⚠️ Los tokens son un espejo, como los precios.** Están escritos en el CSS y en
+`lib/motion.js`, y `lib/motion.test.js` **lee `index.css`** y falla si los dos
+lados se separan. Mismo criterio que la regla 11, aplicado a algo mucho menos
+grave pero que se desincroniza igual de fácil.
+
+**Dos reglas que no se negocian**
+1. Solo se anima `transform`, `opacity` y `filter`. Nada de `width`/`height`/
+   `top`/`left`: son layout en cada frame.
+2. El contenedor de una ruta **solo puede animar opacidad**. Un `transform` o un
+   `filter` ahí convierte al contenedor en bloque contenedor de sus
+   descendientes `position: fixed` y despega del viewport a las barras de compra
+   (`StickyMobileBar`, la barra mobile de `ResumenPedido`). Está medido y
+   documentado en `PageFade`, dentro de `App.jsx`.
+
+`prefers-reduced-motion` apaga todo lo narrativo y conserva el feedback de acción
+sin movimiento (el "+" sigue pasando a "✓"; el drawer abre y cierra al instante).
+
 ### Capa `config/` — la fuente de verdad comercial
 | Archivo | Contenido |
 |---|---|
