@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `020-ticker-de-confianza` |
-| **Estado** | `READY FOR REVIEW` — con 6 preguntas abiertas (§12) que bloquean la aprobación |
+| **Estado** | ✅ `IMPLEMENTADA` — 14/09/2026 (aprobada con las opciones recomendadas de §12; ver `acceptance.md`) |
 | **Fecha** | 14/09/2026 |
 | **Autor** | Mariano (request) · Claude (redacción) |
 
@@ -49,15 +49,15 @@ hallazgo (§4).
 
 ## 3. Scope
 
-- [ ] Una **tira en movimiento continuo** (ticker) arriba de todas las páginas,
+- [x] Una **tira en movimiento continuo** (ticker) arriba de todas las páginas,
       con estos mensajes:
   - envío gratis, con **los dos** umbrales (Rosario y resto del país)
   - 2x1 en calcos de Argentina
   - 30 días de garantía y devolución
   - 10 % OFF desde 10 calcos pagando por transferencia *(ya estaba en la barra;
     se conserva — ver §12 P-6)*
-- [ ] La tira **se ve también cuando hay un banner de promo** (hoy el 3x2).
-- [ ] **Nueva política de devoluciones**: devolución por cualquier motivo
+- [x] La tira **se ve también cuando hay un banner de promo** (hoy el 3x2).
+- [x] **Nueva política de devoluciones**: devolución por cualquier motivo
       durante 30 días. Se reescribe en `/politicas/cambios`, en los Términos y
       en el FAQ, y se documenta en las reglas de negocio.
 
@@ -162,21 +162,22 @@ hallazgo (§4).
 ### Política nueva de devoluciones *(decisión de Mariano, 14/9/2026)*
 
 Lo decidido: **devolución por cualquier motivo durante 30 días.** Las
-condiciones de abajo son la propuesta; las marcadas con **P-n** esperan
-confirmación en §12.
+condiciones de abajo son las opciones recomendadas en §12, que Mariano aprobó
+enteras el 14/9/2026 (*"ok a lo recomendado"*).
 
 | # | Regla | Estado |
 |---|---|---|
-| D-1 | **Plazo**: 30 días corridos desde que el cliente recibe el pedido. | propuesta |
+| D-1 | **Plazo**: 30 días corridos desde que el cliente recibe el pedido. | ✅ decidido |
 | D-2 | **Motivo**: cualquiera, incluido "no me gustó". | decidido |
-| D-3 | **Estado del producto**: calcos **sin pegar** (una vez pegadas el adhesivo se activa y no sirven más). | **P-1** |
-| D-4 | **Qué entra**: todo lo de catálogo (calcos sueltas, packs, mayorista). Lo hecho con el archivo o las fotos del cliente, solo por falla. Los archivos imprimibles (digitales) no se devuelven. | **P-3** |
-| D-5 | **Envío de vuelta**: a cargo del cliente, salvo falla de fabricación o error nuestro. | **P-2** |
-| D-6 | **Reembolso**: lo pagado por los productos, por el mismo medio de pago, dentro de los 10 días hábiles de recibida la devolución. El envío original no se reembolsa, salvo falla o error nuestro. | **P-4** |
-| D-7 | **Falla de fabricación**: reposición sin costo, avisando dentro de los 30 días (hoy son 7). | propuesta |
-| D-8 | **Error en el pedido** (llegó otra cosa): envío de lo correcto sin costo, avisando dentro de los 30 días (hoy son 48 h). | propuesta |
-| D-9 | **Cómo se pide**: por WhatsApp o mail, con el número de pedido. | propuesta |
+| D-3 | **Estado del producto**: el cliente **devuelve** las calcos, **sin pegar** (una vez pegadas el adhesivo se activa y no sirven más). | ✅ P-1 |
+| D-4 | **Qué entra**: todo lo de catálogo (calcos sueltas, packs, mayorista). Lo hecho con el archivo o las fotos del cliente —personalizados, Promo Negocio, Polaroid y tatuajes temporales— solo por falla. Los archivos imprimibles (digitales) no se devuelven. | ✅ P-3 |
+| D-5 | **Envío de vuelta**: a cargo del cliente, salvo falla de fabricación o error nuestro. | ✅ P-2 |
+| D-6 | **Reembolso**: lo pagado por los productos, por el mismo medio de pago, dentro de los 10 días hábiles de recibida la devolución. El envío original no se reembolsa, salvo falla o error nuestro. | ✅ P-4 |
+| D-7 | **Falla de fabricación**: reposición sin costo, avisando dentro de los 30 días (hoy son 7). | ✅ decidido |
+| D-8 | **Error en el pedido** (llegó otra cosa): envío de lo correcto sin costo, avisando dentro de los 30 días (hoy son 48 h). | ✅ decidido |
+| D-9 | **Cómo se pide**: por WhatsApp o mail, con el número de pedido. | ✅ decidido |
 | D-10 | **Cancelación antes de producir**: sin cambios respecto de hoy. | sin cambios |
+| D-11 | **Desde cuándo rige**: para todo pedido recibido en los últimos 30 días al momento de publicarla. | ✅ P-5 |
 
 ---
 
@@ -193,7 +194,7 @@ confirmación en §12.
 | Menú mobile abierto | La tira queda debajo del menú, como hoy la barra |
 | Scroll > 80 px | La tira se recoge con el header compacto, como hoy |
 | Checkout | La tira también está (el header es global); se recoge al bajar al formulario |
-| Pedido hecho antes del cambio de política | ⚠️ ver §12 P-5 |
+| Pedido hecho antes del cambio de política | Si se recibió en los últimos 30 días, entra (D-11) |
 
 ---
 
@@ -212,49 +213,51 @@ Ninguno.
   eventos que ya existen (`view_item` → `add_to_cart` → `begin_checkout` →
   `purchase`), 14 días antes vs 14 después.
 - ¿Cuántas devoluciones genera la política nueva? → **no es analytics**: es
-  operación. Se cuenta a mano por WhatsApp/mail (ver §12 P-4).
+  operación. Se cuenta a mano por WhatsApp/mail (ver §9 D-6).
 
 ---
 
-## 12. Preguntas abiertas
+## 12. Preguntas abiertas — ✅ resueltas
 
-Las cinco primeras bloquean la aprobación porque definen el texto legal de
-`/politicas/cambios`. Cada una trae la opción recomendada.
+**Mariano, 14/9/2026: "ok a lo recomendado".** Las seis quedan con la opción
+recomendada, volcada en §9 (D-1 a D-11). Se conservan las alternativas para que
+se entienda qué se descartó.
 
-- [ ] **P-1 — ¿Hay que devolver las calcos para recibir el reembolso?**
+- [x] **P-1 — ¿Hay que devolver las calcos para recibir el reembolso?**
   - **Recomendado: sí, sin pegar.** Es la política estándar y la más barata de
     sostener.
   - Alternativa: no hace falta devolverlas ("si no te gustan, te devolvemos la
     plata"). Para compras chicas sale más barato que pagar el envío de vuelta,
     pero no hay nada que frene el abuso (sobre todo en mayorista: 100 calcos
     revendibles).
-- [ ] **P-2 — ¿Quién paga el envío de vuelta?**
+- [x] **P-2 — ¿Quién paga el envío de vuelta?**
   - **Recomendado: el cliente, salvo falla o error nuestro.**
   - Alternativa: siempre EPICALCOS. Al interior son ~$8.500 por devolución, más
     que muchos pedidos.
   - ⚠️ Con la opción recomendada, en un pedido de pocas calcos el envío de
     vuelta cuesta más que el reembolso, así que casi nadie la va a usar. La
     promesa sigue siendo cierta, pero pesa menos de lo que suena.
-- [ ] **P-3 — ¿Qué productos entran?**
+- [x] **P-3 — ¿Qué productos entran?**
   - **Recomendado**: catálogo (calcos sueltas, packs, mayorista) entra entero.
     Lo hecho con el archivo o las fotos del cliente —personalizados, Promo
     Negocio, Polaroid— entra **solo por falla**: no se puede revender, y el
     Código Civil y Comercial (art. 1116) excluye los productos personalizados
     del derecho de revocación (confirmarlo con un profesional). Los archivos
     imprimibles no se devuelven.
-  - **¿Tatuajes temporales?** ¿Son diseños de catálogo o se hacen con el diseño
-    del cliente? Eso define de qué lado quedan.
-- [ ] **P-4 — ¿Cómo se reembolsa?**
+  - **¿Tatuajes temporales?** Resuelto desde el código: `routes/Tatuajes.jsx`
+    pide *"Subí tus diseños"* (hasta 10 por hoja). Se hacen con el diseño del
+    cliente, así que quedan del lado de *solo por falla*.
+- [x] **P-4 — ¿Cómo se reembolsa?**
   - **Recomendado**: por el mismo medio de pago (MP → devolución desde el panel;
     transferencia → a la cuenta del cliente), dentro de los 10 días hábiles de
     recibida la devolución. El envío original no se devuelve, salvo falla o
     error nuestro.
-- [ ] **P-5 — ¿Desde cuándo rige?**
+- [x] **P-5 — ¿Desde cuándo rige?**
   - **Recomendado**: para todo pedido recibido en los últimos 30 días al
     momento de publicarla. Es lo más simple de explicar y el costo de
     retroactividad es de a lo sumo un mes de pedidos.
   - Alternativa: solo pedidos hechos desde la publicación.
-- [ ] **P-6 — ¿El 10 % por transferencia sigue en la tira?**
+- [x] **P-6 — ¿El 10 % por transferencia sigue en la tira?**
   - **Recomendado: sí.** Ya estaba en la barra y es una promo vigente; sacarlo
     no estaba en el pedido. Si preferís una tira con solo lo que pediste, se
     saca.

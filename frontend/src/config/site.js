@@ -3,7 +3,7 @@
  * Todos los datos comerciales viven acá — un solo lugar para editar.
  */
 import { formatPrice } from '../lib/formato.js';
-import { BULK_THRESHOLD } from './pricing.js';
+import { BULK_THRESHOLD, esCategoriaEn2x1 } from './pricing.js';
 
 export const site = {
   name: 'EPICALCOS',
@@ -198,31 +198,74 @@ export const bankTransfer = {
 };
 
 /**
- * Mensajes de la barra superior. **UNO POR VEZ** — no es una marquesina.
+ * Garantía de devolución (spec 020). UN solo número para todo el sitio: lo leen
+ * la tira de anuncios, /politicas/cambios, los Términos (§6) y el FAQ.
  *
- * Hasta el 4/9/2026 esto eran SIETE promesas girando juntas (los dos umbrales
- * de envío, +5.000 clientes, +120.000 calcos, producción, personalizados y pago
- * seguro). Encima, con una promo viva, arriba había además un banner dorado: dos
- * tiras de colores compitiendo y ninguna ganando. Una barra que promete siete
- * cosas no comunica ninguna.
+ * Hasta el 14/9/2026 la política era "no aceptamos cambios ni devoluciones"
+ * (fallas de fábrica: 7 días; errores de pedido: 48 h). Mariano la cambió a
+ * devolución por CUALQUIER motivo durante 30 días, con condiciones: calcos sin
+ * pegar, envío de vuelta a cargo del cliente salvo falla o error nuestro, y lo
+ * hecho con el archivo del cliente solo por falla. El detalle está en
+ * specs/020-ticker-de-confianza/requirements.md §9.
  *
- * Ahora quedan sólo las DOS promesas COMERCIALES —lo que cambia la decisión de
- * compra— y `AnnouncementBar` muestra una sola a la vez. Lo que se fue de acá no
- * se perdió: las métricas de marca tienen su propia sección (MetricasConfianza)
- * y los atributos del producto la suya (Beneficios), donde se leen de verdad.
+ * ⚠️ Cambiar el número acá cambia a la vez la promesa de la tira y el texto
+ * legal: es lo que tiene que pasar. Escrito a mano en cualquiera de los cuatro
+ * lugares, el día que se toque uno el sitio promete un plazo y la política
+ * cumple otro. `lib/politicaDevoluciones.test.js` lo verifica.
+ */
+export const devoluciones = {
+  /** Días corridos desde que el cliente RECIBE el pedido (no desde que paga). */
+  dias: 30
+};
+
+/**
+ * Mensajes de la tira de arriba (`AnnouncementBar`), que los pasa en continuo.
+ * Cada uno responde una duda de compra —cuánto sale el envío, qué promo hay,
+ * qué pasa si no me gusta— y nada más.
  *
- * ⚠️ Los montos y el umbral SALEN DEL CONFIG. Escritos a mano, un cambio dejaba
- * la barra prometiendo un número y el checkout cobrando otro.
+ * Esto ya fue y vino, así que la historia importa:
+ * - Hasta el 4/9/2026 era una marquesina con SIETE promesas (los dos umbrales
+ *   de envío, +5.000 clientes, +120.000 calcos, producción, personalizados y
+ *   pago seguro). Una barra que promete siete cosas no comunica ninguna.
+ * - La spec 014 la dejó en DOS mensajes, uno por vez, y la apagaba cuando había
+ *   una promo viva. Con el 3x2 sin fecha de fin (spec 017) eso la apagó para
+ *   siempre: desde el 7/9/2026 el header no decía desde cuánto el envío es
+ *   gratis.
+ * - La spec 020 (14/9/2026, pedido de Mariano) la vuelve marquesina, visible
+ *   también con promo, con estos cuatro mensajes. Las métricas de marca siguen
+ *   afuera —tienen su sección (MetricasConfianza), igual que los atributos del
+ *   producto (Beneficios)— y `lib/anuncios.test.js` frena que vuelvan.
+ *
+ * Es una FUNCIÓN y no un array porque el mensaje del 2x1 depende de que la promo
+ * esté viva: un array armado al cargar el módulo seguiría anunciando una promo
+ * apagada. `now` se inyecta para testear los bordes sin mockear el reloj (mismo
+ * criterio que `esActiva()` en config/pricing.js).
+ *
+ * ⚠️ Los montos, el umbral del 10 % y los días de garantía SALEN DEL CONFIG.
+ * Escritos a mano, un cambio dejaba la barra prometiendo un número y el
+ * checkout cobrando otro.
  *
  * ⚠️ El 10 % NUNCA se anuncia a secas: siempre con sus dos condiciones (desde
  * `BULK_THRESHOLD` calcos Y pagando por transferencia). Es el error que ya se
  * cometió en /categorias con "10% off automático" y que el cliente descubría
  * recién al elegir medio de pago.
+ *
+ * ⚠️ Argentina se anuncia por el 2x1, NO por un %. La promo ARGENTINA 50 %
+ * venció el 19/8/2026, y reactivarla la ACUMULARÍA con el 2x1: un par saldría
+ * 75 % off. Decisión de Mariano, 14/9/2026.
+ *
+ * @param {number} [now]
+ * @returns {string[]}
  */
-export const announcements = [
-  `🇦🇷 Envío gratis a todo el país desde ${formatPrice(shipping.freeShippingThresholdNational)}`,
-  `💸 10% OFF desde ${BULK_THRESHOLD} calcos pagando por transferencia`
-];
+export function anunciosVigentes(now = Date.now()) {
+  return [
+    `🚚 Envío gratis desde ${formatPrice(shipping.freeShippingThresholdRosario)} en Rosario ` +
+      `y desde ${formatPrice(shipping.freeShippingThresholdNational)} al resto del país`,
+    esCategoriaEn2x1('argentina', now) && '🇦🇷 2x1 en calcos de Argentina',
+    `🔄 ${devoluciones.dias} días de garantía y devolución`,
+    `💸 10% OFF desde ${BULK_THRESHOLD} calcos pagando por transferencia`
+  ].filter(Boolean);
+}
 
 /**
  * Secciones despublicadas temporalmente. El código de la sección queda intacto:

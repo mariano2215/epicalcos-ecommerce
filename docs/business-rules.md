@@ -479,6 +479,43 @@ Activos: `ahorro_pack` (% vs $) y `guia_tamano` (colapsada vs abierta).
 - Opt-out con link firmado (HMAC), permanente.
 - `ABANDONED_CART_TEST_EMAIL` = modo prueba: solo escribe a esa dirección.
 
+### Cambios y devoluciones (spec 020, desde el 14/9/2026)
+`config/site.js → devoluciones = { dias: 30 }`
+
+Hasta el 14/9/2026 **no había devoluciones** (fallas: 7 días; errores de pedido:
+48 h). Desde entonces, decisión de Mariano:
+
+| # | Regla |
+|---|---|
+| D-1 | **30 días corridos desde que el cliente recibe el pedido** |
+| D-2 | Por **cualquier motivo**, incluido "no me gustó" |
+| D-3 | El cliente **devuelve** las calcos, **sin pegar** |
+| D-4 | Entra todo lo de **catálogo** (calcos sueltas, packs, mayorista). Lo hecho con el archivo o las fotos del cliente —personalizados, Promo Negocio, Polaroid, tatuajes— **solo por falla**. Los archivos imprimibles no se devuelven |
+| D-5 | El **envío de vuelta** lo paga el cliente, salvo falla o error nuestro |
+| D-6 | **Reembolso** de lo pagado por los productos, por el mismo medio de pago, dentro de los 10 días hábiles de recibida la devolución. El envío original no se devuelve, salvo falla o error nuestro. **Se hace a mano** (panel de MP o transferencia) |
+| D-7 | Falla de fabricación: reposición sin costo, avisando dentro de los 30 días |
+| D-8 | Error en el pedido: se manda lo correcto sin costo, avisando dentro de los 30 días |
+| D-9 | Se pide por WhatsApp o mail, con el número de pedido |
+| D-10 | Cancelación: sin cambios (antes de producir, sí; en producción, no) |
+| D-11 | Rige para todo pedido recibido en los últimos 30 días al publicarla |
+
+⚠️ **El plazo es UN número** (`devoluciones.dias`) y lo leen cuatro lugares: la
+tira de anuncios del header, `/politicas/cambios`, los Términos (§6) y el FAQ.
+Ninguno lo escribe a mano; `lib/politicaDevoluciones.test.js` falla si alguno
+vuelve a decir "no aceptamos devoluciones".
+
+### Tira de anuncios del header (spec 020)
+`config/site.js → anunciosVigentes(now)` · `components/AnnouncementBar.jsx`
+
+Marquesina con cuatro respuestas a dudas de compra: envío gratis (los **dos**
+umbrales), 2x1 en calcos de Argentina (**solo mientras el 2x1 está vivo**), los
+días de garantía y el 10 % por transferencia con sus dos condiciones. Se ve
+**también con banner de promo** y se recoge al scrollear.
+
+Argentina se anuncia por el **2x1**, nunca por un %: la promo del 50 % venció el
+19/8/2026 y, reactivada, se acumularía con el 2x1. Lo frena
+`lib/anuncios.test.js`.
+
 ---
 
 ## 8. ⚠️ El espejo de precios — regla de oro

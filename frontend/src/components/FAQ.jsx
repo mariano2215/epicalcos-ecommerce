@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { shipping } from '../config/site.js';
+import { shipping, devoluciones } from '../config/site.js';
 import { formatPrice } from '../lib/formato.js';
 
 const faqs = [
@@ -99,7 +99,15 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Puedo cambiar o devolver el pedido?',
-    a: 'Por tratarse de productos personalizados de uso único, no aceptamos cambios ni devoluciones. Si hay un desperfecto de fábrica, mandanos foto/video y lo solucionamos.'
+    // Hasta el 14/9/2026 esta respuesta decía "no aceptamos cambios ni
+    // devoluciones". Los días salen del config porque la tira de arriba promete
+    // el mismo plazo en todas las páginas (spec 020): escrito a mano, el día que
+    // cambie uno el sitio se contradice solo.
+    a:
+      `Sí. Tenés ${devoluciones.dias} días desde que lo recibís para devolverlo por cualquier motivo, ` +
+      'con las calcos sin pegar. Lo que se hace con tu archivo o tus fotos (personalizados, Negocio, ' +
+      'Polaroid y tatuajes) se cambia solo si viene con una falla de fábrica. Todo el detalle está en ' +
+      'Cambios y devoluciones, al pie de la página.'
   },
   {
     tag: 'general',

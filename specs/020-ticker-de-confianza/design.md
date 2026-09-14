@@ -157,10 +157,10 @@ export function anunciosVigentes(now = Date.now()) {
 }
 ```
 
-### Texto propuesto para `/politicas/cambios`
+### Texto de `/politicas/cambios`
 
-Con las opciones **recomendadas** de `requirements.md` §12. Si Mariano elige
-otra, se ajusta acá antes de implementar.
+Con las opciones recomendadas de `requirements.md` §12, **aprobadas el
+14/9/2026**.
 
 ```
 Cambios y devoluciones
@@ -186,9 +186,9 @@ Intro: Tenés 30 días para devolver tu compra, por el motivo que sea.
   paquete y del contenido. Te mandamos lo correcto sin costo.
 
 ## Productos hechos con tu archivo
-- Personalizados, Promo Negocio y fotos Polaroid se producen con tu archivo o
-  tus fotos: entran en la garantía por desperfecto de fabricación, pero no en
-  la devolución por arrepentimiento.
+- Personalizados, Promo Negocio, fotos Polaroid y tatuajes temporales se
+  producen con tu archivo o tus fotos: entran en la garantía por desperfecto de
+  fabricación, pero no en la devolución por arrepentimiento.
 - (se conserva el párrafo actual: sin vista previa, revisá antes de pagar,
   archivo no apto → te escribimos)
 
@@ -266,7 +266,7 @@ Ninguna.
 ## 8. Estrategia de migración
 
 - **Datos / carritos / pedidos**: no aplica.
-- **Política**: la nueva rige según `requirements.md` §12 P-5.
+- **Política**: rige para todo pedido recibido en los últimos 30 días al publicarla (`requirements.md` §9 D-11).
 - **Rollback**: revertir el commit. Para sacar **solo** el mensaje del 2x1 no
   hace falta nada: se apaga con la promo.
 - **Feature flag**: no hay. Vaciar la lista de `anunciosVigentes` apaga la tira

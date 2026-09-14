@@ -560,33 +560,85 @@ a { color: inherit; text-decoration: none; }
 .grid-rise > *:nth-child(n+11) { animation-delay: 0.42s; }
 
 /* ============================================================
-   Barra superior — UN mensaje por vez (ver AnnouncementBar.jsx)
-   Reemplazó a la marquesina `.announcement-ticker`, que arrastraba las siete
-   promesas de `announcements` en movimiento permanente.
+   Tira de anuncios — marquesina de dudas de compra (spec 020)
+   Ver AnnouncementBar.jsx. Reemplazó a `.anuncio-barra` (un mensaje por vez,
+   spec 014), que a su vez había reemplazado a la marquesina de siete promesas.
    ============================================================ */
-.anuncio-barra {
-  background: linear-gradient(90deg, #FF1B8D 0%, #FF5A1F 50%, #FFD84D 100%);
-  color: #111;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 0.5rem 0;
-  text-align: center;
-}
-@media (min-width: 640px) {
-  .anuncio-barra { font-size: 0.875rem; }
+@keyframes anuncio-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
-/* Las frases se apilan en la MISMA celda de grid: la barra no cambia de alto al
-   rotar y no hay CLS. Mismo truco que usaba el titular del hero. */
-.anuncio-barra__pista { display: grid; }
-.anuncio-barra__item {
-  grid-area: 1 / 1;
-  opacity: 0;
-  transform: translateY(0.35em);
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  pointer-events: none;
+/* OSCURA y no el degradado rosa→naranja→amarillo de antes: desde la spec 020
+   la tira convive con el banner dorado de promo, y dos tiras de color seguidas
+   se anulan entre sí (lo que llevó a la spec 014 a callarla). El color queda
+   para la oferta; la tira informa. */
+.anuncio-ticker {
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  padding: 0.45rem 0;
+  /* Mismo desvanecido que el ticker de marcas: sin esto las frases aparecen y
+     desaparecen cortadas contra el borde y se ve el truco de la cinta. */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
 }
-.anuncio-barra__item.is-active { opacity: 1; transform: none; }
+@media (min-width: 640px) {
+  .anuncio-ticker { font-size: 0.875rem; }
+}
+
+/* ~45 px/s en un celular: se lee sin perseguirla. La velocidad sale del ancho
+   de UN grupo dividido la duración, así que si se suman mensajes hay que
+   estirar la duración en la misma proporción o la tira se acelera. */
+.anuncio-ticker__pista {
+  display: flex;
+  width: max-content;
+  animation: anuncio-scroll 34s linear infinite;
+  will-change: transform;
+}
+@media (min-width: 640px) {
+  .anuncio-ticker__pista { animation-duration: 40s; }
+}
+
+/* Frenar con el mouse encima: es la única forma de leer con calma una frase
+   que se va. (En el celular no hay hover — ver AnnouncementBar.jsx.) */
+.anuncio-ticker:hover .anuncio-ticker__pista {
+  animation-play-state: paused;
+}
+
+/* `min-width: 100vw`: el loop funciona porque la animación corre exactamente
+   un grupo. Si el grupo es más angosto que la pantalla (4 frases en un monitor
+   de 1920 px), la segunda copia no alcanza a tapar el borde derecho y se ve un
+   hueco vacío en cada vuelta. Con el mínimo, las frases se reparten a lo ancho. */
+.anuncio-ticker__grupo {
+  display: flex;
+  flex-shrink: 0;
+  min-width: 100vw;
+  justify-content: space-around;
+}
+
+.anuncio-ticker__item {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+/* El separador va DESPUÉS de cada frase, incluida la última del grupo: así
+   entre la última de una copia y la primera de la otra hay el mismo punto y el
+   mismo aire que entre dos frases cualesquiera, y el empalme no se nota. */
+.anuncio-ticker__item::after {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin: 0 1.25rem;
+  border-radius: 9999px;
+  background: #FF1B8D;
+}
 
 /* ============================================================
    Marcas que confiaron — pasarela de logos circulares
@@ -944,7 +996,40 @@ a { color: inherit; text-decoration: none; }
     animation: none !important;
   }
   .promo-timebox::after { display: none; }
-  .anuncio-barra__item { transition: none !important; }
+  /* La tira de anuncios quieta, con TODAS las frases a la vista y en varias
+     líneas. No "sólo la primera" (lo que hacía la barra de antes): eso le
+     escondía la garantía a quien no puede ver movimiento. Sin la copia del loop
+     y sin el desvanecido de los bordes, que acá cortaría texto que no se mueve. */
+  .anuncio-ticker {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .anuncio-ticker__pista {
+    animation: none !important;
+    width: auto;
+    justify-content: center;
+  }
+  .anuncio-ticker__grupo {
+    /* Sin esto el grupo conserva su `flex-shrink: 0` y mide lo que todas las
+       frases en una línea: no envolvería nunca y el overflow lo cortaría. */
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.15rem 1.25rem;
+    padding: 0 1rem;
+  }
+  .anuncio-ticker__grupo[aria-hidden='true'] { display: none; }
+  /* `flex-shrink: 1` + `min-width: 0` además del `white-space`: en la
+     marquesina el ítem no se encoge nunca, y sin esto la frase del envío
+     (~410 px) se salía del borde a 375 px en vez de partirse en dos líneas. */
+  .anuncio-ticker__item {
+    flex-shrink: 1;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
+  .anuncio-ticker__item::after { display: none; }
   .chip-busqueda:active { transform: none; }
   .carrusel-snap { scroll-behavior: auto; }
   /* Sin animación la tira queda cortada al ancho de la pantalla, así que se

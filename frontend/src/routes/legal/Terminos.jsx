@@ -1,5 +1,6 @@
 import LegalLayout from '../../components/LegalLayout.jsx';
 import { useSeo } from '../../lib/seo.js';
+import { devoluciones } from '../../config/site.js';
 
 export default function Terminos() {
   useSeo({
@@ -11,7 +12,7 @@ export default function Terminos() {
     <LegalLayout
       title="Términos y condiciones"
       intro="Estas condiciones aplican a todas las compras realizadas en EPICALCOS."
-      lastUpdated="2026"
+      lastUpdated="septiembre 2026"
       breadcrumbName="Términos"
     >
       <h2>1. Identificación</h2>
@@ -48,10 +49,15 @@ export default function Terminos() {
         <a href="/politicas/envios" className="text-white/80 hover:text-white underline">Política de envíos</a>.
       </p>
 
+      {/* Hasta el 14/9/2026 decía "no aceptamos cambios ni devoluciones". El
+          plazo sale de `devoluciones.dias` —el mismo número que promete la tira
+          de arriba—, nunca escrito a mano (spec 020). */}
       <h2>6. Cambios y devoluciones</h2>
       <p>
-        Por tratarse de <strong>productos personalizados y de uso único</strong>, no aceptamos cambios ni
-        devoluciones excepto por desperfectos de fabricación. Detalle completo en la{' '}
+        Tenés <strong>{devoluciones.dias} días desde que recibís el pedido</strong> para devolverlo por
+        cualquier motivo, con las calcos sin pegar. Los productos hechos con tu archivo o tus fotos
+        (personalizados, Promo Negocio, fotos Polaroid y tatuajes temporales) solo se cambian por
+        desperfecto de fabricación. Condiciones completas en la{' '}
         <a href="/politicas/cambios" className="text-white/80 hover:text-white underline">Política de cambios</a>.
       </p>
 

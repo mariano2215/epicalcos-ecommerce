@@ -35,11 +35,6 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Una promo viva es EL mensaje comercial de la página. La barra de anuncios se
-  // calla: dos tiras de colores compitiendo arriba se anulan entre sí (ya había
-  // pasado cuando el ticker vivía arriba del banner).
-  const hayPromo = promoActive || mayoristaPromoActive || argentinaPromoActive;
-
   return (
     /* El modal de búsqueda va FUERA del <header>, no adentro.
        El header tiene `backdrop-filter`, y un elemento con backdrop-filter se
@@ -198,10 +193,16 @@ export default function Header() {
         </div>
       )}
 
-      {/* Un mensaje comercial por vez, y ninguno si ya hay banner de promo.
-          Se recoge al scrollear: pasado el primer scroll, la promesa ya se leyó
-          y esos 32 px valen más para el producto. */}
-      {!hayPromo && !compacto && <AnnouncementBar />}
+      {/* La tira de anuncios va SIEMPRE, haya o no banner de promo (spec 020).
+          Hasta el 14/9/2026 se callaba con una promo viva —dos tiras de colores
+          compitiendo se anulaban (spec 014)—, pero con el 3x2 sin fecha de fin
+          eso la apagó para siempre: desde el 7/9 el header no decía en ningún
+          lado desde cuánto el envío es gratis. Ahora la tira es oscura y el
+          color queda solo en el banner: una se lee como oferta, la otra como
+          información.
+          Se recoge al scrollear: pasado el primer scroll las dudas ya se leyeron
+          y esos ~35 px valen más para el producto. */}
+      {!compacto && <AnnouncementBar />}
     </header>
 
     <BuscadorModal abierto={buscando} onCerrar={() => setBuscando(false)} />
