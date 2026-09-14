@@ -1,0 +1,230 @@
+# Tasks — /personalizados: "Hacelo calco"
+
+| | |
+|---|---|
+| **Spec** | `023-personalizados-hacelo-calco` |
+| **Design** | [`design.md`](design.md) |
+| **Estado** | `NO INICIADA` |
+
+---
+
+## ⛔ Antes de tocar una sola línea
+
+**La existencia de esta lista no autoriza a ejecutarla.**
+
+La implementación arranca solo cuando Mariano dice *"Implementá la spec 023"*.
+Ver [`specs/README.md`](../README.md).
+
+- [x] Los tres documentos anteriores están completos
+- [ ] Mariano aprobó el diseño
+- [ ] Mariano respondió (o aceptó los defaults de) las preguntas P-1 a P-12
+- [ ] **Mariano pidió explícitamente la implementación**
+
+---
+
+## Cómo usar esta lista
+
+- Los pasos van **en orden**. Cada fase deja el repo en verde.
+- Sin refactors de oportunidad (regla 8): lo que aparezca va a *Hallazgos*.
+- Si una task resulta mal planteada, **se para y se avisa**.
+- Las tasks marcadas **[P-n]** dependen de una respuesta de Mariano: sin
+  respuesta se implementa el *default* de `requirements.md` §12 y el flag queda
+  apagado.
+
+---
+
+## Fase 0 — Preparación
+
+- [ ] **0.1** Releer `Configurador.jsx`, `SubidaArchivo.jsx`, `ResumenPedido.jsx`, `QueSigue.jsx`, `precioPersonalizados.js` + test, `lib/analytics.js`, `lib/seo.js`, `config/personalizados.js` y la rama `custom` de `netlify/functions/lib/pricing.js`
+  - *Verificación*: sé qué hace cada uno y por qué (comentarios incluidos)
+- [ ] **0.2** Suite en verde
+  ```bash
+  npm test
+  ```
+  - *Verificación*: 524 tests pasan (o el número vigente, anotado acá)
+- [ ] **0.3** **Medir la línea de base** antes de cambiar nada: `npm run build --prefix frontend` + `vite preview`, `/personalizados` a 375 px, LCP con `PerformanceObserver` (3 corridas, mediana) y peso del chunk `Personalizados-*.js`
+  - *Verificación*: los números quedan anotados en la Bitácora
+- [ ] **0.4** `git fetch` y rama
+  ```bash
+  git checkout -b feat/023-personalizados-hacelo-calco
+  ```
+  - *Verificación*: `git branch --show-current` no dice `main`
+
+---
+
+## Fase 1 — Datos y copy (sin UI)
+
+- [ ] **1.1** `ARCHIVO.formatosEntrada` y `ARCHIVO.formatosConvertibles` en `config/personalizados.js`; `ARCHIVO.formatos` intacto
+  - *Verificación*: `grep -n "formatos" frontend/src/config/personalizados.js` muestra los tres; Polaroid/Negocio siguen leyendo `formatos`
+- [ ] **1.2** `config/personalizadosLanding.js` con todo el copy de `requirements.md` §7 y la FAQ de §9.2. Flags `publicar` para las piezas pendientes: `archivoImperfecto` [P-3], `faqFondo` / `recorteFotos` [P-4], `faqBoceto` [P-5], `ladoMayor` [P-6], `recomendarNegocio` [P-9]; claim en una constante [P-11]
+  - *Verificación*: el módulo se importa en Node (`node -e "import('./frontend/src/config/personalizadosLanding.js')"` no tira)
+- [ ] **1.3** `data/personalizadosFotos.js` con las fotos reales de hoy (`logo-1.webp` en `queConvertir.logo` y en `galeria`; `negocio-muestra.webp` en `galeria`) y el resto vacío
+  - *Verificación*: ninguna entrada apunta a un archivo que no existe (test)
+- [ ] **1.4** `personalizado: true` en el testimonio de Sofía M. (`data/testimonials.js`)
+  - *Verificación*: `Testimonials` del Home y `SocialProof` se ven igual
+- [ ] **1.5** `config/personalizadosLanding.test.js` (design §9)
+  - *Verificación*: suite verde
+
+---
+
+## Fase 2 — Lógica pura
+
+- [ ] **2.1** `cotizarTanda()` en `lib/precioPersonalizados.js` (reemplaza `calcularPrecio`), con `promo3x2` y `round` de `config/pricing.js`
+  - *Verificación*: para 6 cm × 10 con 3x2 → unitario 1.120, total 11.200, ahorro 30 %
+- [ ] **2.2** `lib/borradorPersonalizado.js`: `crearBorrador({ subir, preparar, medir, storage })`, singleton por defecto, cola de 4, `estadoCta`, `construirLineas`, persistencia `epicalcos.personalizados.borrador.v1`
+  - *Verificación*: `construirLineas` emite la forma exacta de design §3.2
+- [ ] **2.3** `lib/prepararImagen.js` (WEBP → PNG + `comprimirImagen` + transparencia)
+  - *Verificación*: un `.webp` sale como `.png` con el mismo nombre base
+- [ ] **2.4** `lib/vistaCalco.js` (helpers puros + `dibujarVistaCalco`)
+- [ ] **2.5** Tests: `borradorPersonalizado.test.js`, `vistaCalco.test.js`, `precioPersonalizados.test.js` ampliado con la **paridad contra `validateAndPriceOrder`**
+  - *Verificación*: ningún caso de 4/6/9 cm × {1,2,3,5,10,25,50,100} da `price_mismatch`, y `itemsTotal` = `cotizarTanda().total`
+
+---
+
+## Fase 3 — Analytics
+
+- [ ] **3.1** Trackers en `lib/analytics.js`: `trackPersonalizedView`, `…UploadStart`, `…UploadComplete`, `…UploadError`, `…Preview`, `…SizeSelected`, `…QuantitySelected`, `…ConfigurationComplete`, `…AddToCart`; `pixelCustom` con los nombres viejos de Meta [P-12]
+  - *Verificación*: ningún componente llama a `gtag`/`fbq`/`dataLayer` directo (`grep`)
+- [ ] **3.2** `nombreParaAnalytics()` en `toItems` y en `content_name`; `rangoPeso()`
+  - *Verificación*: test — `sticker`/`pack`/`fixed` idénticos a hoy; `custom:` sin nombre de archivo
+- [ ] **3.3** Retirar `trackPersonalizadoPaso`, `trackPersonalizadoArchivo`, `trackPersonalizadoPrecio`
+  - *Verificación*: `grep -rn "trackPersonalizado" frontend/src` solo encuentra lo que se reusa
+- [ ] **3.4** `lib/analyticsPersonalizados.test.js`
+  - *Verificación*: ningún payload `personalized_*` tiene `nombre`, `url` ni `instrucciones`
+
+---
+
+## Fase 4 — Hero configurador
+
+- [ ] **4.1** `useBorrador.js` (`useSyncExternalStore`)
+- [ ] **4.2** `ZonaSubida.jsx`: botón real + input `sr-only`, drag & drop, lista con miniatura/progreso, Reemplazar/Quitar/Reintentar, "Agregar igual y mandarlo por WhatsApp", `aria-live`, `data-clarity-mask`
+  - *Verificación*: con teclado solo (Tab + Enter) se abre el selector; el foco se ve
+- [ ] **4.3** `VistaPrevia.jsx`: ORIGINAL | VISTA CALCO (| EN UN TERMO); rótulo "vista aproximada"; JPG + silueta → recuadro + "El contorno lo prepara nuestro equipo"; PDF/AI → ícono
+  - *Verificación*: PNG transparente muestra borde que sigue la forma en silueta; círculo y cuadrado dibujan su forma
+- [ ] **4.4** `SelectorTamano.jsx` (radio group, MÁS ELEGIDO [P-7], usos de `usosPorTamano.js`, precio c/u de `SIZES`); al elegir por primera vez con diseño cargado, la vista pasa a VISTA CALCO
+- [ ] **4.5** `SelectorCantidad.jsx`: − / + / 1·5·10·25·50·100, total, unitario y ahorro si hay 3x2, "sumá N y una te sale gratis", recomendación Negocio si `recomendarNegocio` [P-9] (`trackWholesaleClick('personalizados')`)
+  - *Verificación*: con el 3x2 apagado (`activa:false` en un test local) no aparece ningún "ahorrás"
+- [ ] **4.6** `OpcionesExtra.jsx` (corte default silueta [P-8] + instrucciones, plegado)
+- [ ] **4.7** `BotonCta.jsx` con los seis estados de design §3.1
+- [ ] **4.8** `HeroConfigurador.jsx`: claim (no heading), **H1 único**, subtítulo, texto; 2 columnas `lg:` / 1 columna mobile
+- [ ] **4.9** Agregar al carrito: `construirLineas` → `addCustom` × N (silent, sin drawer) → `openDrawer()` una vez → `trackPersonalizedAddToCart` → estado `agregado` → la tanda se vacía
+  - *Verificación*: 3 diseños × 2 copias = 3 líneas `custom:…` de cantidad 2 en el carrito, cada una con su `url`
+- [ ] **4.10** "Ya tenés N en el carrito · Ver carrito" si hay líneas `custom` [RF-C11]
+- [ ] **4.11** `routes/Personalizados.jsx` monta el hero; se borran `Configurador.jsx`, `PasoSelector.jsx`, `ResumenPedido.jsx`, `QueSigue.jsx` (el contenido y el comentario del 15/8 pasan a `Proceso`)
+  - *Verificación*: `grep -rn "Configurador\|PasoSelector\|ResumenPedido\|QueSigue" frontend/src` sin resultados vivos; build OK
+
+---
+
+## Fase 5 — Barra fija mobile
+
+- [ ] **5.1** `BarraFijaMovil.jsx` (`lg:hidden`, `z-40`, safe-area) con `BotonCta`; visible entre el CTA del hero y el CTA final (`IntersectionObserver`)
+  - *Verificación*: a 375 px no tapa el último elemento de ninguna sección ni el footer
+- [ ] **5.2** Comentario de `WhatsAppButton.jsx` actualizado
+  - *Verificación*: a 375 px el botón de WhatsApp queda **arriba** de la barra, sin superponerse (medido con `getBoundingClientRect`)
+
+---
+
+## Fase 6 — Secciones de la landing
+
+Cada sección con foto **no se monta** si su entrada en `personalizadosFotos.js`
+está vacía (RF-L2).
+
+- [ ] **6.1** `BarraConfianza` (datos de `brandStats`, `shipping`, `trustPoints`; 2×2 en mobile)
+- [ ] **6.2** `DeImagenACalco` [P-1] — horizontal `md:`, vertical en mobile
+- [ ] **6.3** `QuePodesConvertir` [P-1] — solo si están las cuatro fotos
+- [ ] **6.4** `Editorial` (texto + claim + CTA → `abrirSelector('editorial')`)
+- [ ] **6.5** `Beneficios` (4 cards del copy)
+- [ ] **6.6** `ArchivoImperfecto` [P-3] — detrás del flag, después de la galería
+- [ ] **6.7** `Galeria` — masonry con `columns-2 md:columns-3`, rótulos en algunas, "Ni un render"
+- [ ] **6.8** `Proceso` — SUBÍ / REVISAMOS / PRODUCIMOS / RECIBÍS con plazos de `shipping`; id `como-funciona` (destino de "Ver cómo funciona")
+- [ ] **6.9** `Calidad` [P-1] — 50/50
+- [ ] **6.10** `Precios` — tamaños de `SIZES`, "sin mínimo", tabla 10·25·50·100 con `cotizarTanda` solo si hay 3x2; card de Negocio [P-9]
+- [ ] **6.11** `Testimonios` — solo `personalizado: true` [P-2]
+- [ ] **6.12** `Faq` — acordeón accesible (`aria-expanded`), preguntas con flag apagado no se renderizan
+- [ ] **6.13** `CtaFinal` — HACER MI CALCO → scroll al hero + `abrirSelector('cta_final')`; plazo de `shipping.production`
+- [ ] **6.14** Orden final en `routes/Personalizados.jsx` según `requirements.md` §7.6; claim ≤ 3 veces
+  - *Verificación*: `document.querySelectorAll('h1').length === 1`; ningún `<img>` de sección con `loading` distinto de `lazy`
+
+---
+
+## Fase 7 — SEO
+
+- [ ] **7.1** `useSeo` en `Personalizados.jsx`: título, descripción (con `shipping.production`), `image` = `/meta/personalizados.jpg`, `jsonLd` = `@graph` [Product, BreadcrumbList, FAQPage] desde `personalizadosEstatico.js`
+- [ ] **7.2** `/meta/personalizados.jpg` desde `logo-1.webp` (`sips`), hasta la foto de P-1
+- [ ] **7.3** `lib/prerender.js` + `lib/personalizadosEstatico.js` + `lib/prerender.test.js`
+  - *Verificación*: test verde (design §9)
+- [ ] **7.4** `scripts/prerender.mjs` + `"postbuild"` en `frontend/package.json`; respeta `HIDDEN_SECTIONS`; ante error copia `index.html` y avisa (D-9)
+  - *Verificación*: `npm run build --prefix frontend` deja `dist/personalizados.html`; forzando un error, el build termina igual con el aviso
+- [ ] **7.5** `curl` al `vite preview`:
+  ```bash
+  curl -s http://localhost:4173/personalizados | grep -o '<title>[^<]*</title>\|rel="canonical"[^>]*\|<h1[^>]*>'
+  ```
+  - *Verificación*: título, canonical y un H1 propios
+
+---
+
+## Fase 8 — Imágenes
+
+- [ ] **8.1** Target `images/personalizados/` en `scripts/optimize-images.mjs` (800 + 400 px)
+- [ ] **8.2** Cargar en el manifiesto las fotos que Mariano haya mandado [P-1]; `width`/`height` reales y `alt` que describe la foto
+  - *Verificación*: ninguna imagen de la página pesa > 150 KB (`ls -l`)
+
+---
+
+## Fase 9 — Verificación
+
+- [ ] **9.1** Suite completa en verde
+  ```bash
+  npm test
+  ```
+- [ ] **9.2** Build + `vite preview` + Browser pane a 375 px: recorrido de design §9 (PNG transparente, JPG, PDF, WEBP; tres cortes; termo; cantidad; agregar; drawer; checkout hasta antes de pagar)
+- [ ] **9.3** Navegar al carrito con una subida en curso y volver; refrescar con diseños subidos
+- [ ] **9.4** Teclado solo, de punta a punta
+- [ ] **9.5** LCP y peso del chunk vs. la línea de base de 0.3
+  - *Verificación*: LCP no peor (tolerancia 10 %); chunk anotado
+- [ ] **9.6** `window.dataLayer` durante el recorrido: funnel completo y sin PII
+- [ ] **9.7** Consola sin errores; ningún scroll horizontal a 375 px (`document.documentElement.scrollWidth <= 375`)
+- [ ] **9.8** Regresión: `/polaroid`, `/negocio`, `/mayorista` suben archivos como antes; una compra de catálogo llega al checkout
+
+---
+
+## Fase 10 — Documentación
+
+- [ ] **10.1** `docs/analytics.md`: eventos `personalized_*`, tabla viejo → nuevo con fecha, funnel §4, `item_name` sanitizado
+- [ ] **10.2** `docs/architecture.md`: el paso de prerender del build
+- [ ] **10.3** `docs/business-rules.md` §7: alta explícita, una línea por diseño, WEBP convertido
+- [ ] **10.4** `docs/database.md` §3: `epicalcos.personalizados.borrador.v1`
+- [ ] **10.5** `docs/QA-CHECKLIST.md`: checklist de personalizados para iPhone / Instagram / Android
+- [ ] **10.6** Comentarios del **por qué** en el código (D-1, D-2, D-4, D-7, D-11, D-13)
+
+---
+
+## Fase 11 — Cierre
+
+- [ ] **11.1** Recorrer `acceptance.md` punto por punto con resultado real
+- [ ] **11.2** Commit (archivo por archivo, sin `-A`: puede haber WIP de otras sesiones) + merge a `main` + push
+  - ⚠️ **push a `main` = deploy a producción**
+- [ ] **11.3** Después del deploy:
+  ```bash
+  curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://epicalcos.com/personalizados
+  curl -s https://epicalcos.com/personalizados | grep -o '<title>[^<]*</title>\|rel="canonical"[^>]*'
+  ```
+  - *Verificación*: `200` sin redirect, título y canonical propios. Si no: D-8
+- [ ] **11.4** Pedirle a Mariano: reindexación en Search Console + checklist en su iPhone y en Instagram + GA4 DebugView
+- [ ] **11.5** Estado de la spec en `DONE` (o lo que corresponda según 11.1)
+
+---
+
+## Hallazgos fuera de scope
+
+Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
+
+| Hallazgo | Archivo | Propuesta |
+|---|---|---|
+
+---
+
+## Bitácora
+
+| Fecha | Qué cambió respecto al diseño | Motivo |
+|---|---|---|
