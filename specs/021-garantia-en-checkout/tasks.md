@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `021-garantia-en-checkout` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `NO INICIADA` |
+| **Estado** | `DONE` — 14/09/2026 |
 
 ---
 
@@ -13,44 +13,44 @@
 **La existencia de esta lista no autoriza a ejecutarla.**
 
 - [x] Los tres documentos anteriores están completos
-- [ ] Mariano respondió P-1 y P-2 de `requirements.md` §12
-- [ ] Mariano aprobó el diseño
-- [ ] **Mariano pidió explícitamente la implementación** (*"Implementá la spec 021"*)
+- [x] Mariano respondió P-1 y P-2 de `requirements.md` §12 (*"ok a lo recomendado"*, 14/9/2026)
+- [x] Mariano aprobó el diseño
+- [x] **Mariano pidió explícitamente la implementación** (*"implementá la spec 021"*, 14/9/2026)
 
 ---
 
 ## Fase 0 — Preparación
 
-- [ ] **0.1** Volcar las respuestas de P-1 y P-2 en la tabla de mensajes de
+- [x] **0.1** Volcar las respuestas de P-1 y P-2 en la tabla de mensajes de
       `design.md` §1
   - *Verificación*: no queda ninguna **P-n** abierta
-- [ ] **0.2** Releer `CheckoutForm.jsx`, `routes/Checkout.jsx`, `lib/analytics.js`
+- [x] **0.2** Releer `CheckoutForm.jsx`, `routes/Checkout.jsx`, `lib/analytics.js`
       y `business-rules.md` §7 (política)
-- [ ] **0.3** Suite en verde antes de empezar
+- [x] **0.3** Suite en verde antes de empezar
   ```bash
   npm test
   ```
-  - *Verificación*: anotar el número (hoy, 507)
+  - *Verificación*: anotar el número (hoy, 507) → **507 / 507**
 
 ---
 
 ## Fase 1 — La lógica
 
-- [ ] **1.1** `lib/garantia.js`: `grupoDeLinea`, `garantiaDelCarrito` y los
+- [x] **1.1** `lib/garantia.js`: `grupoDeLinea`, `garantiaDelCarrito` y los
       textos de los tres tipos, con `devoluciones.dias`
   - *Verificación*: no importa React ni el `CartContext`
-- [ ] **1.2** `lib/garantia.test.js` con los casos de `design.md` §9
+- [x] **1.2** `lib/garantia.test.js` con los casos de `design.md` §9
   - *Verificación*: pasan todos
 
 ---
 
 ## Fase 2 — La UI
 
-- [ ] **2.1** `components/GarantiaCheckout.jsx`: `<li>` de ancho completo,
+- [x] **2.1** `components/GarantiaCheckout.jsx`: `<li>` de ancho completo,
       mensaje, `<details>`/`<summary>` "Ver condiciones" con target de 44 px y
       foco visible; `null` si el tipo es `null`
   - *Verificación*: no hay links ni `window.open` en el componente
-- [ ] **2.2** `CheckoutForm.jsx`: leer `items` de `useCart()`, calcular el tipo y
+- [x] **2.2** `CheckoutForm.jsx`: leer `items` de `useCart()`, calcular el tipo y
       renderizar `<GarantiaCheckout>` como primer ítem de la lista de confianza;
       reescribir el comentario de la lista (spec 021, por qué ya no es "una
       garantía inventada")
@@ -66,38 +66,38 @@
 
 ## Fase 4 — Analytics
 
-- [ ] **4.1** `trackGarantiaCondiciones(tipo)` en `lib/analytics.js` →
+- [x] **4.1** `trackGarantiaCondiciones(tipo)` en `lib/analytics.js` →
       `garantia_condiciones_ver` con `{ tipo }`, por `pushDataLayer`
-- [ ] **4.2** Se dispara solo al **abrir** (`onToggle` con `open === true`)
+- [x] **4.2** Se dispara solo al **abrir** (`onToggle` con `open === true`)
   - *Verificación*: abrir-cerrar-abrir = 2 eventos, cerrar = 0
-- [ ] **4.3** Sin PII
-- [ ] **4.4** `docs/analytics.md`: el evento y qué responde
+- [x] **4.3** Sin PII
+- [x] **4.4** `docs/analytics.md`: el evento y qué responde
 
 ---
 
 ## Fase 5 — Tests y verificación
 
-- [ ] **5.1** Suite completa en verde
-- [ ] **5.2** `npm run build --prefix frontend` sin errores (y restaurar el
+- [x] **5.1** Suite completa en verde → **524 / 524** (507 + 17 de `garantia.test.js`)
+- [x] **5.2** `npm run build --prefix frontend` sin errores (y restaurar el
       `sitemap.xml` que regenera el `prebuild`, que no es parte del cambio)
-- [ ] **5.3** Verificación manual de `design.md` §9 en el dev server, a 375 px
+- [x] **5.3** Verificación manual de `design.md` §9 en el dev server, a 375 px
 
 ---
 
 ## Fase 6 — Documentación
 
-- [ ] **6.1** Comentarios con el **por qué** en `garantia.js`, `GarantiaCheckout.jsx`
+- [x] **6.1** Comentarios con el **por qué** en `garantia.js`, `GarantiaCheckout.jsx`
       y la lista de `CheckoutForm.jsx`
 
 ---
 
 ## Fase 7 — Cierre
 
-- [ ] **7.1** Validar contra `acceptance.md`, punto por punto
-- [ ] **7.2** Reportar hallazgos
-- [ ] **7.3** Commit + push — ⚠️ **push a `main` = deploy a producción**.
+- [x] **7.1** Validar contra `acceptance.md`, punto por punto
+- [x] **7.2** Reportar hallazgos
+- [x] **7.3** Commit + push — ⚠️ **push a `main` = deploy a producción**.
       `git fetch` antes; stagear archivo por archivo.
-- [ ] **7.4** Estado de la spec → `DONE`
+- [x] **7.4** Estado de la spec → `DONE`
 
 ---
 
@@ -117,3 +117,6 @@
 
 | Fecha | Qué cambió respecto al diseño | Motivo |
 |---|---|---|
+| 14/09/2026 | Las condiciones de `devolucion` suman *"Los 30 días corren desde que recibís el pedido"* y aclaran *"(el envío no)"* en el reembolso | La tabla de `design.md` §1 era un resumen; RF-9 pide no sacarle nada a la política, y D-1 y D-6 dicen las dos cosas |
+| 14/09/2026 | La garantía cerrada mide 95 px (el botón de pagar baja 103 px), casi dos filas de chips de 48 px | El título no entra en una línea a 285 px. Se mantuvo el título afuera del `<summary>` por claridad; la alternativa compacta (título dentro del `<summary>`) ahorraría ~20-35 px — ver `acceptance.md`, ANF-2 |
+| 14/09/2026 | El chevron lleva `motion-reduce:transition-none` | Mismo cuidado que el resto del sitio con `prefers-reduced-motion` |

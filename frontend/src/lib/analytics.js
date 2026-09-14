@@ -571,6 +571,18 @@ export function trackCuponAplicadoEnPromo(code, promo) {
   debug('cupon_aplicado_en_promo', code, promo);
 }
 
+/**
+ * Se abrió "Ver condiciones" de la garantía, arriba del botón de pagar (spec
+ * 021). `tipo` es la garantía que le tocaba a ese carrito: `devolucion` ·
+ * `mixto` · `falla` (ver lib/garantia.js). Leído contra `begin_checkout`, dice
+ * si "¿y si no me gusta?" es una duda real en el momento de pagar.
+ * Solo el tipo: nada del carrito ni del comprador.
+ */
+export function trackGarantiaCondiciones(tipo) {
+  pushDataLayer({ event: 'garantia_condiciones_ver', tipo });
+  debug('garantia_condiciones_ver', tipo);
+}
+
 /** Interacción con prueba social (testimonio o foto de UGC). */
 export function trackTestimonialInteraction(nombre, accion = 'click') {
   pushDataLayer({ event: 'testimonial_interaction', testimonial: nombre, accion });

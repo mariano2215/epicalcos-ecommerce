@@ -63,7 +63,7 @@ components/GarantiaCheckout.jsx (NUEVO)
 
 ### Los mensajes
 
-Con las opciones recomendadas de `requirements.md` §12:
+Con las opciones recomendadas de `requirements.md` §12, **aprobadas el 14/9/2026**:
 
 | Tipo | Mensaje | Condiciones (desplegable) |
 |---|---|---|
@@ -222,6 +222,6 @@ Ninguna.
 
 ## 11. Preguntas abiertas del diseño
 
-Ninguna propia: dependen de P-1 y P-2 de `requirements.md`. Si Mariano elige
-las alternativas, cambian solo los textos de la tabla de §1 (y en P-2, que
-`falla` devuelva `null`).
+Ninguna. P-1 y P-2 de `requirements.md` se resolvieron con la opción
+recomendada (14/9/2026): mensaje preciso para los carritos mixtos y garantía por
+falla visible para los de solo personalizados.

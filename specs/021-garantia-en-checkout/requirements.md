@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `021-garantia-en-checkout` |
-| **Estado** | `READY FOR REVIEW` — con 2 preguntas abiertas (§12) |
+| **Estado** | ✅ `IMPLEMENTADA` — 14/09/2026 (aprobada con las opciones recomendadas de §12; ver `acceptance.md`) |
 | **Fecha** | 14/09/2026 |
 | **Autor** | Mariano (request) · Claude (redacción) |
 
@@ -47,11 +47,11 @@ gente abre las condiciones.
 
 ## 3. Scope
 
-- [ ] Un mensaje de garantía en la lista de confianza del checkout, **arriba del
+- [x] Un mensaje de garantía en la lista de confianza del checkout, **arriba del
       botón de pagar**, que cambia según lo que hay en el carrito (§7).
-- [ ] Las condiciones de esa garantía, plegadas, desplegables sin salir del
+- [x] Las condiciones de esa garantía, plegadas, desplegables sin salir del
       checkout.
-- [ ] Un evento de analytics al abrir las condiciones.
+- [x] Un evento de analytics al abrir las condiciones.
 
 ---
 
@@ -110,8 +110,8 @@ Cada producto del carrito cae en uno de tres grupos, igual que en la política
 | ID | Requisito | Prioridad |
 |---|---|---|
 | RF-1 | Carrito **solo de catálogo** → el checkout dice que hay 30 días para devolverlo por cualquier motivo. | 🔴 must |
-| RF-2 | Carrito **mixto** (catálogo + hecho con tu archivo) → dice que hay 30 días para devolver **lo de catálogo**, sin extender la promesa a lo personalizado. *(ver §12 P-1)* | 🔴 must |
-| RF-3 | Carrito **solo hecho con tu archivo** → dice que si llega con una falla se repone gratis. **No** usa la palabra "devolver". *(ver §12 P-2)* | 🔴 must |
+| RF-2 | Carrito **mixto** (catálogo + hecho con tu archivo) → dice que hay 30 días para devolver **lo de catálogo**, sin extender la promesa a lo personalizado. *(P-1: preciso)* | 🔴 must |
+| RF-3 | Carrito **solo hecho con tu archivo** → dice que si llega con una falla se repone gratis. **No** usa la palabra "devolver". *(P-2: se muestra)* | 🔴 must |
 | RF-4 | Carrito **solo digital** → no hay mensaje de garantía; la lista queda como hoy. | 🔴 must |
 | RF-5 | Lo digital **no cuenta** para decidir el mensaje: digital + catálogo se trata como solo catálogo. | 🔴 must |
 | RF-6 | Los días son **el mismo número** que usan la tira, la política, los Términos y el FAQ. | 🔴 must |
@@ -190,15 +190,18 @@ Ninguno.
 
 ---
 
-## 12. Preguntas abiertas
+## 12. Preguntas abiertas — ✅ resueltas
 
-- [ ] **P-1 — Carritos mixtos: ¿mensaje preciso o general?**
+**Mariano, 14/9/2026: "ok a lo recomendado".** Se conservan las alternativas
+para que se entienda qué se descartó.
+
+- [x] **P-1 — Carritos mixtos: ¿mensaje preciso o general?**
   - **Recomendado: preciso** — *"30 días para devolver las calcos de catálogo"*.
     El general (*"30 días de garantía y devolución"*, como la tira) le promete
     devolución a un personalizado que la política excluye, justo en el momento
     de pagar.
   - Alternativa: general. Más corto y más fuerte, pero promete de más.
-- [ ] **P-2 — Carritos solo de personalizados: ¿mostrar la garantía de
+- [x] **P-2 — Carritos solo de personalizados: ¿mostrar la garantía de
       fabricación o nada?**
   - **Recomendado: mostrarla** — *"Si llega con una falla, te lo reponemos
     gratis"*. Es cierta y responde la duda típica de quien sube su archivo:

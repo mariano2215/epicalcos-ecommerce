@@ -110,6 +110,28 @@ separado no dicen nada.
 cualquier extensión del navegador lo lee (mismo criterio que
 `contacto_form_error`).
 
+## La garantía en el checkout (spec 021)
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `garantia_condiciones_ver` | se **abre** "Ver condiciones", arriba del botón de pagar (cerrarlo no dispara nada) | `tipo`: `devolucion` · `mixto` · `falla` |
+
+`tipo` es la garantía que le tocaba a ese carrito (`lib/garantia.js`): catálogo
+→ `devolucion`, catálogo + hecho con archivo → `mixto`, solo hecho con archivo
+→ `falla`. Un carrito solo digital no muestra garantía, así que nunca lo dispara.
+
+**Cómo se lee**:
+
+- `garantia_condiciones_ver / begin_checkout` = qué proporción de los que llegan
+  a pagar tiene la duda *"¿y si no me gusta?"* lo bastante fuerte como para
+  abrir las condiciones.
+- `purchase` en sesiones **con** y **sin** el evento: si los que la abren compran
+  menos, las condiciones asustan más de lo que tranquilizan.
+- Por `tipo`: si `falla` casi no se abre, a quien sube su archivo no le preocupa
+  la garantía; si se abre mucho, la duda es real y el texto tiene que ser claro.
+
+Sin PII ni valor: solo el tipo.
+
 ---
 
 `search` · `search_no_results` · `catalogo_orden` · `generate_lead` ·
