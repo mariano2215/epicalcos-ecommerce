@@ -17,7 +17,7 @@ Ver [`specs/README.md`](../README.md).
 
 - [x] Los tres documentos anteriores están completos
 - [ ] Mariano aprobó el diseño
-- [ ] Mariano respondió (o aceptó los defaults de) las preguntas P-1 a P-12
+- [x] Mariano respondió P-1, P-3, P-5, P-9 y P-11 (14/9/2026); el resto va con su default (`requirements.md` §12)
 - [ ] **Mariano pidió explícitamente la implementación**
 
 ---
@@ -56,9 +56,9 @@ Ver [`specs/README.md`](../README.md).
 
 - [ ] **1.1** `ARCHIVO.formatosEntrada` y `ARCHIVO.formatosConvertibles` en `config/personalizados.js`; `ARCHIVO.formatos` intacto
   - *Verificación*: `grep -n "formatos" frontend/src/config/personalizados.js` muestra los tres; Polaroid/Negocio siguen leyendo `formatos`
-- [ ] **1.2** `config/personalizadosLanding.js` con todo el copy de `requirements.md` §7 y la FAQ de §9.2. Flags `publicar` para las piezas pendientes: `archivoImperfecto` [P-3], `faqFondo` / `recorteFotos` [P-4], `faqBoceto` [P-5], `ladoMayor` [P-6], `recomendarNegocio` [P-9]; claim en una constante [P-11]
+- [ ] **1.2** `config/personalizadosLanding.js` con todo el copy de `requirements.md` §7 y la FAQ de §9.2. Flags `publicar` (apagados) para lo que espera respuesta: `faqFondo` / `faqMascota` [P-4], `ladoMayor` [P-6]. **No** existen ni la pieza de P-3 ni la pregunta del boceto de P-5: no se escriben, ni apagadas. Claim `HACELO CALCO.` en una constante [P-11]
   - *Verificación*: el módulo se importa en Node (`node -e "import('./frontend/src/config/personalizadosLanding.js')"` no tira)
-- [ ] **1.3** `data/personalizadosFotos.js` con las fotos reales de hoy (`logo-1.webp` en `queConvertir.logo` y en `galeria`; `negocio-muestra.webp` en `galeria`) y el resto vacío
+- [ ] **1.3** `data/personalizadosFotos.js` con todas las listas **vacías** [P-1]: la única foto real (`logo-1.webp`) llega a la página por el testimonio de Sofía M. (1.4), no por el manifiesto
   - *Verificación*: ninguna entrada apunta a un archivo que no existe (test)
 - [ ] **1.4** `personalizado: true` en el testimonio de Sofía M. (`data/testimonials.js`)
   - *Verificación*: `Testimonials` del Home y `SocialProof` se ven igual
@@ -99,10 +99,10 @@ Ver [`specs/README.md`](../README.md).
 - [ ] **4.1** `useBorrador.js` (`useSyncExternalStore`)
 - [ ] **4.2** `ZonaSubida.jsx`: botón real + input `sr-only`, drag & drop, lista con miniatura/progreso, Reemplazar/Quitar/Reintentar, "Agregar igual y mandarlo por WhatsApp", `aria-live`, `data-clarity-mask`
   - *Verificación*: con teclado solo (Tab + Enter) se abre el selector; el foco se ve
-- [ ] **4.3** `VistaPrevia.jsx`: ORIGINAL | VISTA CALCO (| EN UN TERMO); rótulo "vista aproximada"; JPG + silueta → recuadro + "El contorno lo prepara nuestro equipo"; PDF/AI → ícono
+- [ ] **4.3** `VistaPrevia.jsx`: ORIGINAL | VISTA CALCO (| EN UN TERMO); rótulo "vista aproximada"; JPG + silueta → imagen con borde redondeado, sin texto sobre contorno ni fondo (RF-P3/P5); PDF/AI → ícono
   - *Verificación*: PNG transparente muestra borde que sigue la forma en silueta; círculo y cuadrado dibujan su forma
 - [ ] **4.4** `SelectorTamano.jsx` (radio group, MÁS ELEGIDO [P-7], usos de `usosPorTamano.js`, precio c/u de `SIZES`); al elegir por primera vez con diseño cargado, la vista pasa a VISTA CALCO
-- [ ] **4.5** `SelectorCantidad.jsx`: − / + / 1·5·10·25·50·100, total, unitario y ahorro si hay 3x2, "sumá N y una te sale gratis", recomendación Negocio si `recomendarNegocio` [P-9] (`trackWholesaleClick('personalizados')`)
+- [ ] **4.5** `SelectorCantidad.jsx`: − / + / 1·5·10·25·50·100, total, unitario y ahorro si hay 3x2, "sumá N y una te sale gratis", recomendación Negocio cuando el total de un diseño alcanza `NEGOCIO.price` [P-9] (`trackWholesaleClick('personalizados')`)
   - *Verificación*: con el 3x2 apagado (`activa:false` en un test local) no aparece ningún "ahorrás"
 - [ ] **4.6** `OpcionesExtra.jsx` (corte default silueta [P-8] + instrucciones, plegado)
 - [ ] **4.7** `BotonCta.jsx` con los seis estados de design §3.1
@@ -134,12 +134,12 @@ está vacía (RF-L2).
 - [ ] **6.3** `QuePodesConvertir` [P-1] — solo si están las cuatro fotos
 - [ ] **6.4** `Editorial` (texto + claim + CTA → `abrirSelector('editorial')`)
 - [ ] **6.5** `Beneficios` (4 cards del copy)
-- [ ] **6.6** `ArchivoImperfecto` [P-3] — detrás del flag, después de la galería
-- [ ] **6.7** `Galeria` — masonry con `columns-2 md:columns-3`, rótulos en algunas, "Ni un render"
+- ~~**6.6** `ArchivoImperfecto`~~ — descartada (P-3). No se crea el componente
+- [ ] **6.7** `Galeria` — masonry con `columns-2 md:columns-3`, rótulos en algunas, "Ni un render"; se monta desde 4 fotos
 - [ ] **6.8** `Proceso` — SUBÍ / REVISAMOS / PRODUCIMOS / RECIBÍS con plazos de `shipping`; id `como-funciona` (destino de "Ver cómo funciona")
 - [ ] **6.9** `Calidad` [P-1] — 50/50
-- [ ] **6.10** `Precios` — tamaños de `SIZES`, "sin mínimo", tabla 10·25·50·100 con `cotizarTanda` solo si hay 3x2; card de Negocio [P-9]
-- [ ] **6.11** `Testimonios` — solo `personalizado: true` [P-2]
+- [ ] **6.10** `Precios` — tamaños de `SIZES`, "sin mínimo", tabla 10·25·50·100 con `cotizarTanda` solo si hay 3x2; card de Negocio con `NEGOCIO` [P-9]
+- [ ] **6.11** `Testimonios` — solo `personalizado: true` [P-2]; va tercera (después de la barra de confianza) mientras `FOTOS.deImagenACalco` esté vacío, y en su lugar del orden completo cuando no
 - [ ] **6.12** `Faq` — acordeón accesible (`aria-expanded`), preguntas con flag apagado no se renderizan
 - [ ] **6.13** `CtaFinal` — HACER MI CALCO → scroll al hero + `abrirSelector('cta_final')`; plazo de `shipping.production`
 - [ ] **6.14** Orden final en `routes/Personalizados.jsx` según `requirements.md` §7.6; claim ≤ 3 veces

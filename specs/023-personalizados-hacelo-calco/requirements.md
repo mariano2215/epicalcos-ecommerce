@@ -10,10 +10,15 @@
 > **Este documento define QUÉ debe suceder, no CÓMO.**
 > Nada de nombres de archivo, funciones ni librerías — eso va en `design.md`.
 
-> ⚠️ **Hay 12 preguntas abiertas en §12.** Varias son hechos operativos que el
-> repo no sabe (qué pasa con una foto con fondo, si se manda boceto antes de
-> imprimir, qué fotos reales hay). Donde falta la respuesta, la spec toma la
-> opción **más conservadora** —no promete, no muestra— y lo marca.
+> **Respuestas de Mariano del 14/9/2026 incorporadas** (§12): no hay más fotos
+> reales que la que ya está en la página; "¿Tu archivo no está perfecto?" no
+> vuelve; no se manda boceto; la recomendación de Negocio va; ortografía RAE.
+> Las que quedaron sin respuesta usan su default conservador —no promete, no
+> muestra—.
+>
+> ⚠️ **Dos cosas no se dicen en ningún texto del sitio**: que no hay fotos (ni
+> "próximamente", ni placeholders) y que no se manda boceto. Hay test que lo
+> frena (RF-L18).
 
 ---
 
@@ -122,21 +127,18 @@ Organizado por prioridad (la del brief).
 
 ### P1 — alto impacto
 - [ ] Barra de confianza compacta después del hero
-- [ ] "De imagen a calco" (ORIGINAL → CALCO → APLICADA) — **solo con fotos
-      reales**
-- [ ] "Qué podés convertir en calco" (mascota, foto, dibujo, logo) — **solo con
-      fotos reales**
+- [ ] Testimonio real con foto (el de Sofía M., el que ya está en la página)
 - [ ] Bloque editorial "Si es importante para vos, podemos convertirlo en calco"
 - [ ] Beneficios en cuatro cards
-- [ ] "¿Tu archivo no está perfecto?" — **pendiente de P-3**
-- [ ] Galería de trabajos reales — **solo con fotos reales**
 - [ ] Proceso de producción en cuatro pasos
-- [ ] Calidad del producto (foto macro) — **solo con foto real**
 - [ ] Precios y cantidades (precio por tamaño + beneficio real por cantidad)
-- [ ] Recomendación a Negocio para cantidades altas — **pendiente de P-9**
-- [ ] Testimonios de personalizados — **solo testimonios reales**
+- [ ] Recomendación a Negocio para cantidades altas (P-9: va)
 - [ ] FAQ propia de personalizados
 - [ ] CTA final
+- [ ] Secciones con fotos —"De imagen a calco", "Qué podés convertir",
+      galería, calidad— **construidas pero apagadas**: se prenden solas el día
+      que se carguen fotos reales (P-1: hoy no hay). Mientras tanto no existen
+      en la página, sin ningún texto que lo delate
 
 ### P2 — dentro de esta spec
 - [ ] Vista del diseño a escala sobre la silueta de un termo (la escala física
@@ -149,8 +151,14 @@ Organizado por prioridad (la del brief).
 
 ## 4. Fuera de scope
 
-- [ ] **Quitar el fondo automáticamente.** No existe. **No se simula**: donde
-      el brief pide "Quitar fondo" se muestra el texto de revisión humana (RF-P5).
+- [ ] **"¿Tu archivo no está perfecto?"** — descartada por Mariano el
+      14/9/2026, ratificando la decisión del 15/8/2026 (sembraba la duda justo
+      al subir). Tampoco va la frase "No hace falta que tu archivo esté
+      perfecto" que el brief pedía bajo la zona de subida: es el mismo mensaje.
+- [ ] **Boceto o prueba antes de imprimir.** No se hace y **no se menciona**
+      (P-5): ni como pregunta de la FAQ ni como paso del proceso.
+- [ ] **Quitar el fondo automáticamente.** No existe. **No se simula** y no se
+      pregunta por el fondo (RF-P5).
 - [ ] **Mockups fotográficos / renders** del diseño sobre objetos. La escala
       sobre un termo es una **silueta dibujada**, declarada como aproximada.
 - [ ] **Cualquier cambio de precio, promo, cupón o envío.** El precio sigue
@@ -251,7 +259,7 @@ Organizado por prioridad (la del brief).
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-U1 | La zona de subida es grande y protagonista: *"Subí tu diseño · Arrastrá tu imagen acá · o · ELEGIR ARCHIVO"* + formatos aceptados + *"No hace falta que tu archivo esté perfecto. Lo revisamos antes de producirlo."* (esta frase ya es política publicada) | 🔴 must |
+| RF-U1 | La zona de subida es grande y protagonista: *"Subí tu diseño · Arrastrá tu imagen acá · o · ELEGIR ARCHIVO"* + formatos aceptados + *"Lo revisamos antes de producirlo."* (política publicada). **Sin** "No hace falta que tu archivo esté perfecto" (P-3) | 🔴 must |
 | RF-U2 | Los formatos que se nombran son **exactamente** los que se aceptan, escritos desde la misma lista que valida | 🔴 must |
 | RF-U3 | Valida formato y peso máximo por archivo; comprime las fotos pesadas antes de subir (como hoy) | 🔴 must |
 | RF-U4 | Muestra progreso por archivo | 🔴 must |
@@ -271,9 +279,9 @@ Organizado por prioridad (la del brief).
 |---|---|---|
 | RF-P1 | Al elegir una imagen, el estado vacío se reemplaza por la vista previa **local** inmediata, antes de que termine la subida | 🔴 must |
 | RF-P2 | Selector de vista **ORIGINAL \| VISTA CALCO**. La vista calco dibuja el borde según el corte elegido (silueta, cuadrado, círculo) | 🔴 must |
-| RF-P3 | La vista calco se rotula como **aproximada**. Con una imagen sin transparencia y corte silueta no se inventa un contorno: se muestra el recuadro y *"El contorno lo prepara nuestro equipo"* | 🔴 must |
+| RF-P3 | La vista calco se rotula como **aproximada**. Con una imagen sin transparencia y corte silueta no se inventa un contorno ni se promete uno (P-4 sin respuesta): se muestra la imagen con borde redondeado y el rótulo | 🔴 must |
 | RF-P4 | Al elegir el tamaño por primera vez la vista pasa sola a VISTA CALCO (el momento de "creación") | 🟡 should |
-| RF-P5 | En lugar de "Quitar fondo": *"¿Necesita fondo transparente? Nuestro equipo revisa el archivo antes de imprimir."* | 🔴 must |
+| RF-P5 | No hay botón "Quitar fondo" ni ninguna pregunta sobre el fondo. La frase del brief (*"¿Necesita fondo transparente?…"*) se descarta por el mismo motivo que P-3: plantea un problema en el momento de subir. Lo que tranquiliza ya está en la zona de subida ("Lo revisamos antes de producirlo") | 🔴 must |
 | RF-P6 | Tercera vista **EN UN TERMO**: el diseño sobre la silueta de un termo, con la escala proporcional al tamaño elegido; cambia al cambiar el tamaño | 🟢 could |
 | RF-P7 | Archivos que no se pueden previsualizar (PDF, AI) muestran un ícono y el nombre, sin vista calco | 🔴 must |
 
@@ -291,29 +299,35 @@ Organizado por prioridad (la del brief).
 
 ### 7.6 Secciones de la landing
 
-Orden (el del brief, sin la 5 —ver RF-L3—): hero → confianza → de imagen a
-calco → qué podés convertir → editorial → beneficios → archivo imperfecto →
+Orden completo (el del brief, sin la 5 —RF-L3— y sin la 7 —P-3—): hero →
+confianza → de imagen a calco → qué podés convertir → editorial → beneficios →
 galería → proceso → calidad → precios → testimonios → FAQ → CTA final.
+
+**Lo que se ve hoy** (P-1: sin fotos nuevas): hero → confianza → **testimonio
+con foto** → editorial → beneficios → proceso → precios → FAQ → CTA final. El
+testimonio sube al lugar de "De imagen a calco" mientras esa sección no exista:
+es la única foto real y hoy ya está arriba de todo (RF-L14).
 
 | ID | Requisito | Prioridad |
 |---|---|---|
 | RF-L1 | **Barra de confianza**: calcos vendidas, clientes, plazo de producción, vinilo premium, resistente al agua — todos desde la configuración. Mobile: grilla 2×2 o carrusel, sin ocupar más de ~1 pantalla de alto a 375 px | 🟡 should |
-| RF-L2 | **Toda sección que depende de fotos** (de imagen a calco, qué podés convertir, galería, calidad, fotos del proceso) **no se muestra** mientras no haya fotos reales cargadas para ella. Ni un placeholder, ni un render | 🔴 must |
+| RF-L2 | **Toda sección que depende de fotos** (de imagen a calco, qué podés convertir, galería, calidad, fotos del proceso) **no se muestra** mientras no haya fotos reales cargadas para ella. Ni un placeholder, ni un render, ni un texto que diga que faltan | 🔴 must |
 | RF-L3 | El "selector visual de tamaño" vive **dentro del hero** (usos + escala), no como una segunda sección con otro selector del mismo dato | 🔴 must |
 | RF-L4 | **De imagen a calco**: tríos ORIGINAL → CALCO → APLICADA; horizontal en desktop, vertical en mobile | 🟡 should |
 | RF-L5 | **Qué podés convertir**: cuatro cards (mascota, foto, dibujo, logo) con foto real; una card sin foto no se muestra | 🟡 should |
 | RF-L6 | **Editorial**: *"Si es importante para vos, podemos convertirlo en calco."* + lista (tu mascota, una foto, tu emprendimiento, un dibujo, una frase, un recuerdo, tu logo, una idea) + claim + CTA SUBIR MI DISEÑO. Solo texto | 🟡 should |
 | RF-L7 | **Beneficios**: cuatro cards — corte prolijo, vinilo premium, resistentes al agua, resistentes al sol — con el mismo alcance que ya declara el sitio | 🟡 should |
-| RF-L8 | **¿Tu archivo no está perfecto?** — solo si Mariano revierte la decisión del 15/8/2026 (P-3) | 🟡 should |
-| RF-L9 | **Galería**: *"Así quedaron los de ellos."* + *"Fotos de clientes y de nuestros pedidos. Ni un render."*; grilla tipo masonry; rótulos FOTO → CALCO / LOGO → CALCO en algunas fotos, no en todas | 🟡 should |
+| RF-L8 | ~~¿Tu archivo no está perfecto?~~ — **DESCARTADO** (P-3, 14/9/2026) | — |
+| RF-L9 | **Galería**: *"Así quedaron los de ellos."* + *"Fotos de clientes y de nuestros pedidos. Ni un render."*; grilla tipo masonry; rótulos FOTO → CALCO / LOGO → CALCO en algunas fotos, no en todas. Se monta desde **4** fotos: una "galería" de una foto no es una galería | 🟡 should |
 | RF-L10 | **Proceso**: SUBÍ → REVISAMOS → PRODUCIMOS → RECIBÍS, con los plazos de la configuración. Con foto real por paso si la hay; si no, ícono | 🟡 should |
 | RF-L11 | **Calidad**: 50/50 foto macro + *"No imprimimos simplemente una imagen. Hacemos una calco."* + bullets confirmados | 🟡 should |
 | RF-L12 | **Precios**: precio por tamaño, "sin mínimo", y —si hay beneficio vigente— precio por unidad en 10 · 25 · 50 · 100, calculado | 🟡 should |
-| RF-L13 | **Recomendación Negocio**: con cantidades altas, un link discreto *"¿Son para tu negocio? Ver opciones para empresas →"* con la oferta real de Negocio. No interrumpe el flujo (P-9) | 🟡 should |
-| RF-L14 | **Testimonios**: solo testimonios reales **de personalizados**. Con uno solo, se muestra uno solo; con ninguno, la sección no está | 🟡 should |
-| RF-L15 | **FAQ propia** (§9.2) con respuestas que salen de reglas vigentes; las que dependen de P-4/P-5/P-6 se publican solo con la respuesta confirmada | 🟡 should |
+| RF-L13 | **Recomendación Negocio**: cuando lo que suman las copias de un diseño alcanza el precio de la Promo Negocio, un link discreto *"¿Son para tu negocio? Con la Promo Negocio te llevás {100} de tu diseño en {6 cm} por {$39.999} →"* (números de la configuración). No interrumpe el flujo. La Promo Negocio se puede tomar aunque el cliente quiera menos de 100 (P-9) | 🟡 should |
+| RF-L14 | **Testimonios**: solo testimonios reales **de personalizados** — hoy, el de Sofía M. con su foto. Mientras no haya tríos de "De imagen a calco", va en ese lugar (tercera sección); cuando los haya, baja a su lugar del orden completo | 🟡 should |
+| RF-L15 | **FAQ propia** (§9.2) con respuestas que salen de reglas vigentes; las que dependen de P-4/P-6 se publican solo con la respuesta confirmada. La del boceto no existe (P-5) | 🟡 should |
 | RF-L16 | **CTA final**: *"Eso que tenés guardado en el celular puede convertirse en calco."* + *"Subí tu imagen y hacela parte de tus cosas."* + **HACER MI CALCO** (sube al hero y abre el selector) + plazo de producción de la configuración | 🟡 should |
 | RF-L17 | El claim aparece como mucho **tres** veces en la página (hero, editorial, CTA final) | 🟡 should |
+| RF-L18 | **Nada de lo que no se dice**: ningún texto de la página (ni el HTML inicial) menciona boceto, prueba antes de imprimir, "próximamente", fotos que faltan, ni que el archivo tiene que (o no tiene que) estar perfecto | 🔴 must |
 
 ### 7.7 Barra fija en mobile
 
@@ -359,7 +373,7 @@ galería → proceso → calidad → precios → testimonios → FAQ → CTA fin
 | Formatos, 10 MB por archivo, 150 DPI recomendados, hasta 100 archivos | `business-rules.md` §7 | no (WEBP se convierte antes de subir: el formato que llega a producción sigue en la lista) |
 | Promo 3x2: catálogo + personalizados, cada 3 la más barata gratis, sin fecha de fin | `business-rules.md` "Promo 3x2" | no — se **muestra** |
 | El 10 % por transferencia cuenta solo calcos de catálogo | `business-rules.md` §2 | no — por eso **no** se promete en esta página |
-| Promo Negocio: 100 de un diseño en 6 cm a precio fijo | `business-rules.md` "Promo Negocio" | no — se **recomienda** |
+| Promo Negocio: 100 de un diseño en 6 cm a precio fijo; se puede tomar aunque el cliente quiera menos (Mariano, 14/9/2026) | `business-rules.md` "Promo Negocio" | no — se **recomienda** |
 | Devolución: lo hecho con el archivo del cliente, solo por falla | `business-rules.md` D-4 | no — la FAQ lo dice |
 | Revisamos cada archivo antes de producir y avisamos si hay un problema | FAQ publicada del Home | no |
 | Ni un render en la prueba visual | regla vigente de galerías y testimonios | no — se extiende a esta página |
@@ -380,11 +394,13 @@ galería → proceso → calidad → precios → testimonios → FAQ → CTA fin
 | Producción en 2 a 3 días hábiles | ✅ configuración (vale para personalizados hoy); ⚠️ cantidades altas, P-10 |
 | Vinilo premium, resistentes al agua y al sol, buena adherencia, corte prolijo | ✅ ya publicado |
 | "Lo revisamos antes de producirlo" / "te contactamos si hay un problema" | ✅ ya publicado en la FAQ |
-| "Fondo común → fondo preparado", "Foto → recorte" | ❓ P-4 |
-| "¿Me muestran cómo queda antes de imprimir?" | ❓ P-5 |
+| "No hace falta que tu archivo esté perfecto" | ❌ no va (P-3) |
+| "Fondo común → fondo preparado", "Foto → recorte" | ❌ era parte de la sección de P-3; además P-4 sin respuesta |
+| "¿Me muestran cómo queda antes de imprimir?" | ❌ no se manda boceto y **no se dice** (P-5) |
+| Fotos reales de personalizados | ⚠️ solo la del testimonio de Sofía M. (P-1); **no se dice** que no hay más |
 | "La medida corresponde al lado mayor del diseño" | ❓ P-6 |
 | "6 cm · MÁS ELEGIDO" | ✅ para el catálogo (ya publicado); ❓ para personalizados, P-7 |
-| "Quitar fondo" automático | ❌ no existe — no se muestra |
+| "Quitar fondo" automático | ❌ no existe — no se muestra, y tampoco la pregunta "¿Necesita fondo transparente?" (RF-P5) |
 | JPG · PNG · WEBP | ⚠️ hoy WEBP no se acepta; RF-U12 lo agrega convirtiéndolo |
 | Descuento por cantidad | ✅ el 3x2 vigente; ❌ ningún otro para personalizados |
 | Testimonio "Mandé una foto de mi perro y quedó increíble" | ❌ no existe — ejemplo del brief, no se publica |
@@ -395,13 +411,13 @@ galería → proceso → calidad → precios → testimonios → FAQ → CTA fin
 |---|---|---|
 | ¿Tengo que quitar el fondo de la imagen? | "si no, te ayudamos a adaptarlo" (FAQ mayorista) | ⚠️ confirmar alcance para fotos (P-4) |
 | ¿Qué formatos aceptan? | lista de formatos | ✅ |
-| ¿Qué pasa si mi imagen tiene baja calidad? | FAQ publicada | ✅ |
+| ¿Qué pasa si mi imagen tiene baja calidad? | FAQ publicada, **sin** la última frase ("No hace falta que nos mandes el archivo perfecto", P-3) | ✅ |
 | ¿Puedo mandar una foto de WhatsApp? | resolución de WhatsApp vs. 150 DPI | ✅ |
 | ¿Pueden hacer una calco de mi mascota? | depende de P-4 | ⚠️ |
 | ¿Pueden imprimir mi logo? | testimonio real + Negocio | ✅ |
 | ¿Puedo pedir varios diseños diferentes? | tope de archivos | ✅ |
 | ¿Cómo elijo el tamaño? | usos por tamaño | ✅ (+P-6) |
-| ¿Me muestran cómo queda antes de imprimir? | — | ❓ P-5 — **no se publica sin respuesta** |
+| ~~¿Me muestran cómo queda antes de imprimir?~~ | — | ❌ **no existe** (P-5: no se hace y no se dice) |
 | ¿Son resistentes al agua? / ¿Resisten el sol? | FAQ publicada | ✅ |
 | ¿Cuánto tarda la producción? | configuración | ✅ (+P-10) |
 | ¿Puedo pedir muchas unidades? | tope por línea + Negocio | ✅ |
@@ -425,7 +441,7 @@ galería → proceso → calidad → precios → testimonios → FAQ → CTA fin
 | El mismo archivo dos veces | Se ignora el segundo, con aviso |
 | 100 diseños (tope) | El resto no se toma, con aviso (hoy) |
 | PNG con fondo transparente + silueta | Vista calco con borde que sigue la forma |
-| JPG + silueta | Recuadro + "El contorno lo prepara nuestro equipo" |
+| JPG + silueta | La imagen con borde redondeado + "vista aproximada"; nada sobre el contorno ni el fondo |
 | PDF o AI | Sin vista previa; ícono + nombre |
 | SVG | Vista previa como imagen (sin ejecutar nada del archivo) |
 | Imagen de muy baja resolución | Aviso sin bloquear |
@@ -485,48 +501,39 @@ personalized_view → personalized_upload_start → personalized_upload_complete
 
 ## 12. Preguntas abiertas
 
-Todas son de Mariano. Las marcadas **bloquea** frenan una parte concreta; el
-resto tiene un default seguro que la spec ya aplica.
+Respondidas por Mariano el 14/9/2026 (✅) o con default aceptado (➖, sin
+respuesta explícita: se aplica el conservador).
 
-- [ ] **P-1 — Fotos reales** *(bloquea las secciones con foto, RF-L2)*. ¿Qué hay
-      o qué se puede sacar, con permiso del cliente? Lo que haría falta está en
-      `design.md` §3.4 (lista de tomas). Sin fotos, esas secciones no se publican
-      y la página sale con el resto.
-- [ ] **P-2 — Testimonios de personalizados.** Hoy hay uno que sirve (Sofía M.,
-      logo "Pet Friendly"). El de Giuliana S. dice "Termo personalizado" pero la
-      foto muestra calcos de catálogo: en esta página sería engañoso. ¿Hay más,
-      con permiso?
-- [ ] **P-3 — "¿Tu archivo no está perfecto?"** El 15/8/2026 sacaste esa card
-      porque *sembraba la duda de que el archivo podía no servir justo cuando el
-      cliente está por subirlo* (queda escrito en el código). El brief la vuelve
-      "sección fundamental". **Recomendación:** volverla, pero lejos de la zona
-      de subida (después de la galería), en positivo ("Subilo igual") y sin la
-      frase "si detectamos un problema". ¿Va?
-- [ ] **P-4 — Fotos con fondo.** Con una foto de una mascota y corte silueta,
-      ¿recortan el fondo a mano? ¿Siempre, está incluido en el precio? Define
-      "Foto → recorte" y la FAQ del fondo. **Default:** no se promete recorte.
-- [ ] **P-5 — ¿Se manda boceto antes de imprimir?** ¿A todos, o solo se avisa si
-      hay un problema? **Default:** la pregunta no se publica.
-- [ ] **P-6 — ¿La medida es el lado mayor del diseño?** **Default:** no se dice.
-- [ ] **P-7 — ¿6 cm es también el más elegido en personalizados?** El sitio ya
-      lo dice para el catálogo. **Default:** se usa la marca "MÁS ELEGIDO".
-- [ ] **P-8 — Corte por defecto.** **Default:** silueta (el que coincide con
-      "seguimos la forma del diseño").
-- [ ] **P-9 — Recomendar Negocio.** Con la Promo Negocio (100 de un diseño en
-      6 cm a precio fijo), a partir de ~38 copias de un mismo diseño en 6 cm
-      Negocio sale **más barato y con más calcos** que el configurador con 3x2.
-      Recomendarlo le ahorra plata al cliente y **baja el ticket** de ese
-      pedido. ¿Se muestra? ¿Desde cuántas? **Default:** se muestra cuando
-      Negocio es objetivamente mejor para esa tanda (el número sale de las
-      reglas, no se escribe).
-- [ ] **P-10 — Plazo con cantidades altas.** La FAQ mayorista dice 3 a 5 días
-      para 100 calcos. ¿Aplica a personalizados? **Default:** se muestra el plazo
-      general y la FAQ aclara que para cantidades grandes se coordina.
-- [ ] **P-11 — Ortografía del claim.** El brief escribe "HACÉLO", "convertíla",
-      "llevála". Con pronombre pegado la tilde se va (RAE): **hacelo**,
-      **convertila**, **llevala** (sí "subí", "hacé"). **Default:** sin tilde. El
-      claim vive en un solo lugar: cambiarlo es una línea.
-- [ ] **P-12 — Audiencias de Meta.** ¿Hay audiencias o conversiones
-      personalizadas armadas sobre `PersonalizadoInicio` / `PersonalizadoArchivo`?
-      **Default:** Meta sigue recibiendo esos nombres (sin el nombre de archivo) y
-      GA4 recibe los nuevos, para no romper nada que exista.
+- [x] ✅ **P-1 — Fotos reales.** *"No hay fotos reales por el momento. Solo la
+      que está en la página. (No decirlo)."* → La única foto es la del
+      testimonio de Sofía M. (logo "Pet Friendly"). Las secciones con fotos se
+      construyen apagadas (RF-L2) y ningún texto dice que faltan (RF-L18). La
+      lista de tomas de `design.md` §3.4 queda para cuando haya.
+- [x] ➖ **P-2 — Testimonios de personalizados.** Solo el de Sofía M. El de
+      Giuliana S. ("Termo personalizado") muestra calcos de catálogo y no va.
+- [x] ✅ **P-3 — "¿Tu archivo no está perfecto?"** *"NO volver a poner."* → Se
+      descarta la sección y también la frase "No hace falta que tu archivo esté
+      perfecto" bajo la zona de subida y al final de la respuesta de la FAQ
+      (§4, RF-U1, §9.2).
+- [x] ➖ **P-4 — Fotos con fondo.** Sin respuesta → no se promete recorte: las
+      preguntas "¿Tengo que quitar el fondo?" y "¿Pueden hacer una calco de mi
+      mascota?" quedan sin publicar, y la vista calco de una foto opaca no dice
+      nada del contorno (RF-P3).
+- [x] ✅ **P-5 — Boceto antes de imprimir.** *"No le mandamos boceto (no
+      decirlo)."* → La pregunta no existe y ningún texto lo menciona (RF-L18).
+- [x] ➖ **P-6 — ¿La medida es el lado mayor?** No se dice.
+- [x] ➖ **P-7 — 6 cm "MÁS ELEGIDO".** Se usa (el sitio ya lo dice).
+- [x] ➖ **P-8 — Corte por defecto.** Silueta.
+- [x] ✅ **P-9 — Recomendar Negocio.** *"No baja: la promoción es por 100
+      automáticamente. Si quiere 38 le damos 38, pero la misma promoción por el
+      monto de 100 calcos la puede hacer tranquilamente."* → Se muestra cuando lo
+      que suman las copias de un diseño alcanza el precio de Negocio (con los
+      precios de hoy y el 3x2: 38 copias en 6 cm, 31 en 9 cm, 50 en 4 cm —
+      calculado con la regla del 3x2 y el redondeo del servidor). El umbral se calcula;
+      no se escribe (RF-L13).
+- [x] ➖ **P-10 — Plazo con cantidades altas.** Plazo general; la FAQ aclara que
+      para cantidades grandes se coordina.
+- [x] ✅ **P-11 — Ortografía.** *"Respetá la RAE."* → **HACELO CALCO.**,
+      "convertila", "llevala", "hacela" (sí "subí", "hacé").
+- [x] ➖ **P-12 — Audiencias de Meta.** Meta sigue recibiendo los nombres
+      custom viejos (sin nombre de archivo); GA4 recibe los nuevos.

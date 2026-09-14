@@ -22,7 +22,7 @@
 | ¿Cómo lo lee Google? | SPA pura, sin prerender. `curl /personalizados` → 200 con `<title>`, description y **`<link rel="canonical" href="https://epicalcos.com/">` del Home**, sin H1. `useSeo` corrige todo recién en el navegador. El `index.html` es el fallback de **todas** las rutas, así que el canonical al Home lo arrastra el sitio entero (fuera de scope, §12) |
 | ¿Analytics? | `trackPersonalizadoArchivo(info)` manda `{ nombre, pesoMB }` → **nombre de archivo a GA4 y a Meta**. `nombreLinea()` mete el nombre del archivo en `line.name`, que `toItems()` manda como `item_name` y `trackAddToCart` como `content_name`. `trackPersonalizadoPrecio` lee `material` (no existe) y el configurador le pasa `tamano` (se pierde). `docs/analytics.md` §4 dice que el funnel arranca en `view_item`, que la página nunca dispara |
 | ¿Accesibilidad? | La zona de subida es un `<label>` con el `<input type=file className="hidden">` adentro: `display:none` saca el input del orden de tabulación y el label no es enfocable |
-| ¿Fotos reales disponibles? | De personalizados, dos: `/testimonials/logo-1.webp` (logo "Pet Friendly" pegado en la puerta de un local, APLICADA) y `/images/negocio-muestra.webp` (plancha de calcos de logo troqueladas, CALCO). **Son logos distintos**: no forman un trío. `/testimonials/personalizados-1.webp` es un termo con calcos **de catálogo** (Homero, Stitch, Vans) — no sirve para esta página. Ningún ORIGINAL, ninguna mascota, foto ni dibujo, ninguna macro, ninguna foto de proceso |
+| ¿Fotos reales disponibles? | De personalizados, dos: `/testimonials/logo-1.webp` (logo "Pet Friendly" pegado en la puerta de un local, APLICADA) y `/images/negocio-muestra.webp` (plancha de calcos de logo troqueladas, CALCO). **Son logos distintos**: no forman un trío. `/testimonials/personalizados-1.webp` es un termo con calcos **de catálogo** (Homero, Stitch, Vans) — no sirve para esta página. Ningún ORIGINAL, ninguna mascota, foto ni dibujo, ninguna macro, ninguna foto de proceso. **P-1 (Mariano, 14/9/2026): no hay más, y para esta página vale solo la que ya está en ella** (`logo-1.webp`, vía el testimonio) — y no se dice |
 | ¿Comentarios que explican por qué está así? | (1) `QueSigue.jsx`: la card "¿Y si mi archivo no está perfecto?" **se sacó el 15/8/2026 por pedido de Mariano** → P-3. (2) `Configurador.jsx`: una línea por diseño es el arreglo del bug de "N archivos → 1 calco" → **se preserva** (§1, D-1). (3) `SocialProof.jsx`: la foto destacada va arriba en `/personalizados` porque "la prueba no es la frase, es ver el calco puesto" → la idea sube de rango: la página entera se vuelve eso. (4) `config/personalizados.js`: `formatosLegibles()` existe porque el texto de formatos estaba escrito a mano y mentía → el copy nuevo lo sigue usando. (5) `comprimirImagen.js`: nunca pasar PNG a JPEG (el alfa define la silueta) → la conversión de WEBP va a PNG |
 | ¿Tests hoy? | 524 en verde (34 archivos). `precioPersonalizados.test.js` corre `validateAndPriceOrder` real contra las líneas del configurador |
 | ¿Carritos guardados? | No se rompen: la forma de la línea **no cambia** (§3.2) |
@@ -77,6 +77,8 @@
 | D-14 | Eventos nuevos en GA4 con los nombres del brief; en Meta **se conservan** los nombres custom viejos sin PII | Renombrar todo | Puede haber audiencias de Meta sobre `PersonalizadoInicio`/`PersonalizadoArchivo` (P-12). GA4 no tiene ese costo y los eventos viejos tenían datos rotos |
 | D-15 | Botones con el texto en el caso del sitio: "Subir mi diseño", "Crear mi calco", "Agregar al carrito · $X" | Mayúsculas forzadas del brief | `.btn-primary` no fuerza mayúsculas y el brief pide no cambiar el sistema de botones. Los títulos sí van en mayúscula (CSS global) |
 | D-16 | Beneficio por cantidad = **3x2 vigente**, calculado con `promo3x2()` y redondeado igual que el server (`round(base × keepFraction)` por unidad) | Tabla de precios por cantidad escrita en el config | "No hardcodear precios" + el servidor rechaza lo que no coincide. Si el 3x2 se apaga, el bloque desaparece solo |
+| D-17 | Con el manifiesto vacío, el **testimonio con foto va tercero** (lugar de "De imagen a calco") y baja a su lugar cuando haya tríos | Respetar el orden del brief (testimonios en el lugar 12) | Es la única foto real de la página y hoy está arriba de todo a propósito (comentario de `SocialProof.jsx`: *la prueba no es la frase, es ver el calco puesto*). Mandarla al fondo dejaría la página sin ninguna imagen hasta el final |
+| D-18 | La vista calco de una imagen opaca en silueta **no dice nada** del contorno ni del fondo | "El contorno lo prepara nuestro equipo" / "¿Necesita fondo transparente?" | P-4 sin respuesta (no se promete recorte) y P-3: no se plantea un problema en el momento de subir |
 
 ---
 
@@ -122,7 +124,7 @@
 | `…/personalizados/OpcionesExtra.jsx` | Corte (reusa `Swatch` de `swatches.jsx`) + instrucciones, plegado |
 | `…/personalizados/BotonCta.jsx` | El CTA de tres estados; lo usan el hero y la barra fija |
 | `…/personalizados/BarraFijaMovil.jsx` | Barra inferior `lg:hidden`, visible entre el CTA del hero y el CTA final |
-| `…/personalizados/secciones/*.jsx` | `BarraConfianza`, `DeImagenACalco`, `QuePodesConvertir`, `Editorial`, `Beneficios`, `ArchivoImperfecto`, `Galeria`, `Proceso`, `Calidad`, `Precios`, `Testimonios`, `Faq`, `CtaFinal` |
+| `…/personalizados/secciones/*.jsx` | `BarraConfianza`, `DeImagenACalco`, `QuePodesConvertir`, `Editorial`, `Beneficios`, `Galeria`, `Proceso`, `Calidad`, `Precios`, `Testimonios`, `Faq`, `CtaFinal` |
 | `frontend/public/meta/personalizados.jpg` | Imagen OG (JPG: WhatsApp e Instagram no siempre muestran WebP). Sale de `logo-1.webp` hasta tener la foto de P-1 |
 | Tests (§9) | `borradorPersonalizado.test.js`, `vistaCalco.test.js`, `prerender.test.js`, `personalizadosLanding.test.js`, `analyticsPersonalizados.test.js` |
 
@@ -132,7 +134,7 @@
 | `components/personalizados/Configurador.jsx` | Lo reemplazan `HeroConfigurador` + el store |
 | `components/personalizados/PasoSelector.jsx` | Solo lo usaba el configurador (verificado con grep) |
 | `components/personalizados/ResumenPedido.jsx` | Ídem (el comentario de `WhatsAppButton.jsx` que lo nombra se actualiza) |
-| `components/personalizados/QueSigue.jsx` | Su contenido pasa a `secciones/Proceso.jsx` (con su comentario del 15/8) |
+| `components/personalizados/QueSigue.jsx` | Su contenido pasa a `secciones/Proceso.jsx`, **con su comentario del 15/8** más la ratificación del 14/9/2026 (P-3): es lo que evita que alguien vuelva a proponer la card |
 
 `swatches.jsx` y `SubidaArchivo.jsx` **quedan**.
 
@@ -227,24 +229,33 @@ las calcos. El copy lo dice ("el 3x2 se aplica en el carrito sobre todas tus
 calcos"). `promoActiva` viene de `usePromoActive()` (se entera del cambio de
 ventana sin recargar, igual que el carrito).
 
-**Recomendación Negocio (P-9)**: se muestra cuando `NEGOCIO.size === tamano` y
-`cotizarTanda({ tamano, unidades: copias }).total >= NEGOCIO.price` para un
-diseño — o sea, cuando Negocio da `NEGOCIO.qty` calcos por menos plata. Con los
-precios de hoy, desde 38 copias en 6 cm. El número sale de las reglas.
+**Recomendación Negocio (P-9, confirmada)**: se muestra cuando
+`cotizarTanda({ tamano, unidades: copias }).total >= NEGOCIO.price` para **un**
+diseño, en cualquier tamaño — el texto dice el tamaño de Negocio
+(`NEGOCIO.size`), así que el de 9 cm sabe que la promo es en 6. Con los precios
+y el 3x2 de hoy (calculado con las funciones reales): **38 copias en 6 cm, 31 en
+9 cm, 50 en 4 cm**. Mariano, 14/9/2026: *la Promo Negocio se puede tomar aunque
+el cliente quiera menos de 100* — no baja el ticket, porque se paga el monto de
+la promo. El umbral no se escribe en ningún lado: sale de `NEGOCIO` y del 3x2.
 
 ### 3.4 Fotos reales (`data/personalizadosFotos.js`) y lista de tomas (P-1)
 ```js
 export const FOTOS = {
   deImagenACalco: [ /* { original, calco, aplicada: {src,w,h,alt}, etiqueta:'FOTO → CALCO' } */ ],
-  queConvertir: { mascota: null, foto: null, dibujo: null, logo: { src:'/testimonials/logo-1.webp', w:800, h:743, alt:'…' } },
+  queConvertir: { mascota: null, foto: null, dibujo: null, logo: null },
   galeria: [ /* {src,w,h,alt,etiqueta?} */ ],
   calidad: null,
   proceso: { subi: null, revisamos: null, producimos: null, recibis: null }
 };
 ```
-Hoy se puede cargar: `queConvertir.logo` (Pet Friendly) y en la galería
-`logo-1.webp` + `negocio-muestra.webp`. **Con eso, "Qué podés convertir" no se
-monta** (necesita las cuatro, RF-L5) y la galería arranca con dos fotos.
+**Hoy (P-1) todo el manifiesto va vacío**: ninguna de las cuatro secciones con
+foto se monta, y ningún texto lo dice. La única foto real llega a la página por
+el testimonio de Sofía M. (`data/testimonials.js`, `personalizado: true`), que
+mientras `deImagenACalco` esté vacío ocupa ese lugar — tercera sección (D-17).
+`negocio-muestra.webp` es real pero no se usa acá: la respuesta fue "solo la que
+está en la página".
+
+La galería se monta desde **4** fotos; "Qué podés convertir", con las cuatro.
 
 Lista de tomas para Mariano (todas en celular, luz natural, fondo neutro):
 
@@ -363,7 +374,7 @@ Ninguna.
 | `lib/precioPersonalizados.test.js` (ampliado) | `cotizarTanda` para 4/6/9 cm × {1,2,3,5,10,25,50,100} con y sin 3x2; **paridad**: `validateAndPriceOrder` del server acepta las líneas de `construirLineas` y su `itemsTotal` = `cotizarTanda().total`; umbral de Negocio sale de `NEGOCIO` |
 | `lib/vistaCalco.test.js` | `hayTransparencia` sobre `Uint8ClampedArray` sintéticos; `margenPx`; `anchoEnTermo` proporcional (9 cm = ancho del termo) |
 | `lib/prerender.test.js` | título, description, canonical y OG reemplazados; **un** `<h1>`; JSON-LD parseable con `Product` + `AggregateOffer` (`lowPrice`/`highPrice` = min/max de `SIZES`), `BreadcrumbList`, `FAQPage`; **sin** `AggregateRating`; `modulepreload` al chunk; idempotente; con `HIDDEN_SECTIONS` no genera |
-| `config/personalizadosLanding.test.js` | la FAQ nombra exactamente `formatosEntrada`; ningún precio escrito a mano (todo `$` del copy sale de `SIZES`/`NEGOCIO`); plazos = `shipping`; claim ≤ 3 usos; las preguntas pendientes (P-4/P-5/P-6) no están publicadas mientras su flag esté en `false` |
+| `config/personalizadosLanding.test.js` | la FAQ nombra exactamente `formatosEntrada`; ningún precio escrito a mano (todo `$` del copy sale de `SIZES`/`NEGOCIO`); plazos = `shipping`; claim ≤ 3 usos y escrito `HACELO` (P-11); las preguntas pendientes (P-4/P-6) no están publicadas mientras su flag esté en `false`; **guarda de lo que no se dice** (RF-L18): ningún string del módulo matchea `/boceto|prueba de impresi|próximamente|perfect/i` |
 | `lib/analyticsPersonalizados.test.js` | `toItems` idéntico para `sticker`/`pack`/`fixed`; `custom:` sin nombre de archivo; ningún `personalized_*` lleva `nombre`, `url` ni `instrucciones`; `rangoPeso` |
 
 ### ⚠️ Tests de paridad

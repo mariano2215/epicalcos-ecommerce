@@ -49,7 +49,7 @@
 ### Subida
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
-| AC-U1 | *(RF-U1, U2)* La zona dice "Subí tu diseño / Arrastrá tu imagen acá / Elegir archivo", los formatos que lista son `formatosLegibles(ARCHIVO.formatosEntrada)` y el `accept` del input es la misma lista | inspección + test | ⬜ |
+| AC-U1 | *(RF-U1, U2)* La zona dice "Subí tu diseño / Arrastrá tu imagen acá / Elegir archivo" y "Lo revisamos antes de producirlo" (sin "No hace falta que tu archivo esté perfecto"); los formatos que lista son `formatosLegibles(ARCHIVO.formatosEntrada)` y el `accept` del input es la misma lista | inspección + test | ⬜ |
 | AC-U2 | *(RF-U3, U7)* Un `.gif` muestra "No pudimos subir esta imagen. Probá con …"; un PNG de 40 MB sin comprimir posible muestra el mensaje de peso; ningún mensaje contiene un código HTTP, "MIME" ni "payload" | recorrido | ⬜ |
 | AC-U3 | *(RF-U4)* Cada archivo muestra su progreso | recorrido con throttling | ⬜ |
 | AC-U4 | *(RF-U5)* "Reemplazar" cambia el archivo conservando el lugar en la lista; "Quitar" lo saca | recorrido | ⬜ |
@@ -67,9 +67,9 @@
 |---|---|---|---|
 | AC-P1 | *(RF-P1)* La vista previa aparece antes de que termine la subida | throttling | ⬜ |
 | AC-P2 | *(RF-P2, P3)* PNG transparente + silueta → borde blanco que sigue la forma; + círculo → recorte circular; + cuadrado → cuadrado con margen; todas rotuladas "vista aproximada" | screenshots | ⬜ |
-| AC-P3 | *(RF-P3)* JPG sin transparencia + silueta → recuadro + "El contorno lo prepara nuestro equipo" | screenshot | ⬜ |
+| AC-P3 | *(RF-P3)* JPG sin transparencia + silueta → la imagen con borde redondeado y "vista aproximada"; ningún texto sobre contorno ni fondo | screenshot | ⬜ |
 | AC-P4 | *(RF-P4)* Con diseño cargado, elegir el tamaño por primera vez pasa la vista a VISTA CALCO | recorrido | ⬜ |
-| AC-P5 | *(RF-P5)* No existe ningún botón "Quitar fondo"; está el texto de revisión humana | inspección | ⬜ |
+| AC-P5 | *(RF-P5)* No existe ningún botón "Quitar fondo" ni la pregunta "¿Necesita fondo transparente?" | inspección | ⬜ |
 | AC-P6 | *(RF-P6)* EN UN TERMO: el diseño de 9 cm ocupa ~el ancho del termo y el de 4 cm ~0,44 de ese ancho; cambia al cambiar el tamaño | medición en el DOM | ⬜ |
 | AC-P7 | *(RF-P7)* Un PDF muestra ícono + nombre, sin vista calco | recorrido | ⬜ |
 
@@ -89,14 +89,15 @@
 | AC-L1 | *(RF-L1)* La barra de confianza muestra +120.000, +5.000, "2 a 3 días", vinilo premium y resistente al agua, desde el config; a 375 px ocupa ≤ 1 pantalla | inspección | ⬜ |
 | AC-L2 | *(RF-L2)* Con el manifiesto de fotos vacío para una sección, esa sección no está en el DOM | test + inspección | ⬜ |
 | AC-L3 | *(RF-L3)* Hay un solo selector de tamaño en la página | `querySelectorAll('[role=radiogroup]')` | ⬜ |
-| AC-L4 | *(RF-L4, L5, L9, L11)* Cada sección con fotos reales: se ve bien a 375 y 1280, fotos lazy, WebP, `alt` descriptivo | screenshots (⏭️ si todavía no hay fotos, con el motivo) | ⬜ |
+| AC-L4 | *(RF-L2, L4, L5, L9, L11)* Con el manifiesto de hoy (P-1: sin fotos nuevas), "De imagen a calco", "Qué podés convertir", galería y calidad **no están en el DOM**. Con fotos de prueba **locales, sin commitear**, cada una se monta y se ve bien a 375 y 1280 (lazy, WebP, `alt`) | inspección + prueba local | ⬜ |
 | AC-L5 | *(RF-L6, L7, L10, L12)* Editorial, beneficios, proceso y precios presentes con el copy de la spec y los datos del config | inspección | ⬜ |
-| AC-L6 | *(RF-L8)* "¿Tu archivo no está perfecto?" presente **solo** si P-3 = sí | inspección | ⬜ |
-| AC-L7 | *(RF-L13)* Con 38+ copias de un diseño en 6 cm (3x2 vivo) aparece el link a Negocio con la oferta de `NEGOCIO`; con 37, no (si P-9 = sí) | recorrido | ⬜ |
-| AC-L8 | *(RF-L14)* Solo aparecen testimonios marcados `personalizado` | inspección | ⬜ |
-| AC-L9 | *(RF-L15)* La FAQ no muestra las preguntas pendientes (P-4/P-5/P-6) hasta tener respuesta | inspección | ⬜ |
+| AC-L6 | *(RF-L8, P-3)* No existe la sección "¿Tu archivo no está perfecto?" | inspección | ⬜ |
+| AC-L7 | *(RF-L13)* Con el 3x2 vivo, el link a Negocio (con `qty`, `size` y `price` de `NEGOCIO`) aparece desde 38 copias de un diseño en 6 cm, 31 en 9 cm y 50 en 4 cm, y no una copia antes; `wholesale_click` al tocarlo | recorrido + test | ⬜ |
+| AC-L8 | *(RF-L14)* Solo aparece el testimonio de Sofía M., con su foto, como tercera sección (después de la barra de confianza) | inspección | ⬜ |
+| AC-L9 | *(RF-L15)* La FAQ no tiene la pregunta del boceto (P-5) ni las de P-4/P-6 | inspección | ⬜ |
 | AC-L10 | *(RF-L16)* "Hacer mi calco" del CTA final sube al hero y abre el selector | recorrido | ⬜ |
-| AC-L11 | *(RF-L17)* El claim aparece ≤ 3 veces | `document.body.innerText.match(/HACELO CALCO/gi).length` | ⬜ |
+| AC-L11 | *(RF-L17)* El claim aparece ≤ 3 veces, escrito **HACELO** (sin tilde, P-11) | `document.body.innerText.match(/HACELO CALCO/gi).length` y `/HACÉLO/i` sin resultados | ⬜ |
+| AC-L12 | *(RF-L18)* Ni la página renderizada ni `dist/personalizados.html` contienen "boceto", "prueba de impresión", "próximamente" ni "perfect" | `grep -ci` sobre el HTML estático + `innerText` + test del copy | ⬜ |
 
 ### Barra fija y microinteracciones
 | ID | Criterio | Cómo se verifica | Resultado |
