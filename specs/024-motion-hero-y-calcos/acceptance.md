@@ -5,7 +5,7 @@
 | **Spec** | `024-motion-hero-y-calcos` |
 | **Requirements** | [`requirements.md`](requirements.md) |
 | **Validado el** | 18/09/2026 |
-| **Resultado** | ✅ cards aceptadas y publicadas · ✅ hero aceptado, **esperando publicación** (Q1) en la rama local `spec-024-hero` |
+| **Resultado** | ✅ aceptada · cards publicadas el 18/9/2026 (`773cc9d`) · hero publicado el 18/9/2026 |
 
 > Si un criterio no está acá, no es parte de "terminado". Si está, la feature no
 > se cierra hasta cumplirlo.
@@ -125,8 +125,8 @@ animaciones de `transform`/`opacity` corren en el compositor sin esperarlas).
 ## 4. Definition of Done
 
 - [x] Todos los criterios de §1 y §2 en ✅, ⚠️ con el cómo, o ⏭️ justificado.
-- [ ] Corte en la serie anotado en `docs/CRO-EXPERIMENTS.md` con la fecha real —
-      **se hace al publicar el hero** (Fase 6 de `tasks.md`).
+- [x] Corte en la serie anotado en `docs/CRO-EXPERIMENTS.md`: los dos tests del
+      hero arrancan de cero el 18/9/2026 (lectura desde el viernes 2/10).
 - [x] Hallazgos fuera de scope comunicados a Mariano.
 - [ ] Mariano vio el Home y una grilla y dio el OK visual.
-- [ ] Estado de `requirements.md` en `DONE` — cuando el hero esté publicado.
+- [ ] Estado de `requirements.md` en `DONE` — con el OK visual de Mariano.

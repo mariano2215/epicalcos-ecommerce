@@ -79,6 +79,29 @@ directamente antes que promediar dos mundos distintos.
 
 ---
 
+## ⚠️ 18/9/2026 — `hero_titular` y `hero_buscador` ARRANCAN DE CERO
+
+La spec 024 cambió la presentación del hero del Home: fondo en movimiento, un
+saludo arriba del H1 ("Bienvenido" → "Estás en casa") y la entrada escalonada
+del contenido. Mariano decidió publicarlo **sin esperar** la lectura de los dos
+tests, que cumplían dos semanas desde el corte del 7/9 el lunes 21/9.
+
+**Qué significa**: los 11 días del 7/9 al 17/9 **se descartan**. Las dos
+variables siguen intactas —el H1, el subtítulo, los botones y la ubicación del
+buscador son idénticos a antes en las cuatro celdas, y todo lo nuevo es igual
+para todas—, pero el hero que rodea a esas variables es otro, y un efecto medido
+con el hero viejo no vale para el nuevo.
+
+**Qué hacer**:
+- Leer **solo desde el 18/9/2026** (el día del deploy) en adelante.
+- Las dos semanas completas se cumplen el **viernes 2/10/2026**: no leer antes.
+- La asignación NO se reinicia: cada persona conserva la variante que tenía
+  (`epicalcos.exp.v1`). No hace falta — lo que arranca de cero es la ventana de
+  lectura, no el reparto.
+- `hero_cta` sigue pausado; nada de esto lo cambia.
+
+---
+
 ## ⚠️ Regla dura: nunca testear un PRECIO
 
 Los experimentos son **solo de presentación**.

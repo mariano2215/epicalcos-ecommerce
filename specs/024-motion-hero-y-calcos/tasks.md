@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `024-motion-hero-y-calcos` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `EN CURSO` — cards publicadas; hero listo en la rama local `spec-024-hero`, esperando Q1 |
+| **Estado** | `PUBLICADA` (18/9/2026) — falta el OK visual de Mariano |
 
 ---
 
@@ -156,17 +156,20 @@ Ver [`specs/README.md`](../README.md).
 
 ---
 
-## Fase 6 — Publicar el hero (cuando Mariano lo diga, después de leer los tests)
+## Fase 6 — Publicar el hero
 
-- [ ] **6.1** Leer `hero_titular` y `hero_buscador` (serie desde el 7/9; dos
-      semanas completas el lunes 21/9/2026). Ver `docs/CRO-EXPERIMENTS.md`.
-- [ ] **6.2** En `main`: `git merge spec-024-hero` (o `cherry-pick` del commit).
+> Mariano, 18/9/2026: *"publicá el hero, que arranquen de 0 esos test"*. Se
+> publicó sin esperar la lectura (6.1 no aplica).
+
+- [x] ~~**6.1** Leer `hero_titular` y `hero_buscador` (serie desde el 7/9; dos
+      semanas completas el lunes 21/9/2026). Ver `docs/CRO-EXPERIMENTS.md`.~~ No aplica: los tests arrancan de cero.
+- [x] **6.2** En `main`: `git merge spec-024-hero` (o `cherry-pick` del commit). → cherry-pick, desde un worktree (el índice de la carpeta compartida tiene WIP de la 023 stageado).
       Si `index.css` o `Hero.jsx` cambiaron en `main` mientras tanto, resolver
       el conflicto a mano y repetir la Fase 4.
-- [ ] **6.3** `docs/CRO-EXPERIMENTS.md`: corte en la serie con la fecha del
+- [x] **6.3** `docs/CRO-EXPERIMENTS.md`: corte en la serie con la fecha del
       merge, en el mismo commit o en el inmediato siguiente.
-- [ ] **6.4** `npm test` en verde → push → estado de la spec a `DONE`.
-- [ ] **6.5** Borrar la rama: `git branch -d spec-024-hero`.
+- [x] **6.4** `npm test` en verde → push → estado de la spec a `DONE`. → `PUBLICADA` hasta el OK visual.
+- [x] **6.5** Borrar la rama: `git branch -d spec-024-hero`.
 
 ---
 

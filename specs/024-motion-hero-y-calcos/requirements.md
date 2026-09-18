@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `024-motion-hero-y-calcos` |
-| **Estado** | `IN PROGRESS` — cards publicadas; hero listo en la rama local `spec-024-hero`, esperando la lectura de los tests (Q1) |
+| **Estado** | `PUBLICADA` (18/9/2026) — cards y hero en producción; falta el OK visual de Mariano para `DONE` |
 | **Fecha** | 18/09/2026 |
 | **Autor** | Mariano (pedido) + Claude (redacción) |
 
@@ -251,7 +251,7 @@ comerciales ni pasos al funnel (`CLAUDE.md` regla 13 — no aplica).
 
 ## 12. Preguntas abiertas
 
-- [x] **Q1 — ¿Cuándo sale el hero?** ✅ *Por defecto (18/9): cards ya, hero después de leer los tests.*
+- [x] **Q1 — ¿Cuándo sale el hero?** ✅ *Por defecto (18/9): cards ya, hero después de leer los tests.* → **Cambiado por Mariano el mismo 18/9: "publicá el hero, que arranquen de 0 esos test".** Corte anotado en `docs/CRO-EXPERIMENTS.md`.
   `hero_titular` y `hero_buscador` están corriendo, y su serie **se reinició el
   7/9** (cambio de promos). Las dos semanas completas se cumplen el **lunes
   21/9/2026**. Cambiar el hero antes corta la serie otra vez con apenas 11 días
