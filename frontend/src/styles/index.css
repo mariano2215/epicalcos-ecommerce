@@ -321,6 +321,185 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
+   Hero del Home en movimiento (spec 024) — ver Hero.jsx
+   ============================================================ */
+
+/* El Home deja SOLO el negro de base: los colores se mudan a `.hero-malla`, que
+   se mueve. `.hero-gradient` no se toca porque también es el fondo de las cuatro
+   pantallas de pago, y ésas se quedan quietas. */
+.hero-gradient--vivo { background: #111111; }
+
+.hero-malla {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* La franja oscura de arriba (el primer `radial-gradient` de `.hero-gradient`):
+   QUIETA y por encima de las manchas. Es la que mantiene legibles el header y
+   el titular cuando una mancha sube. */
+.hero-malla::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(20, 20, 20, 1) 0%, rgba(17, 17, 17, 0.95) 22%, rgba(17, 17, 17, 0.6) 38%, transparent 52%);
+}
+
+/* Cada mancha es uno de los `radial-gradient` de color de `.hero-gradient`, con
+   su mismo color y en su mismo punto de reposo (`left`/`top`). El tamaño
+   reproduce el radio que hoy da el `transparent 3x%` (≈160 px a 375, ≈380 px a
+   1280), así que con la animación apagada el hero se ve como antes.
+
+   ⚠️ Se mueven con `transform`, que corre en el compositor sin repintar. NO
+   animar `background-position` (lo que hace `.page-gradient`): obliga a
+   repintar el hero entero en cada cuadro, y en un Android de gama media eso se
+   ve como tirones al scrollear. Tampoco `filter: blur()`: el degradado a
+   transparente ya es difuso, y un blur sobre 5 capas es lo que tira los fps.
+
+   El centrado va en `translate` y el recorrido en `transform`: son propiedades
+   distintas y no se pisan. `alternate` hace que cada ciclo vuelva por el mismo
+   camino — sin salto al reiniciar. Los retrasos negativos arrancan cada mancha
+   a mitad de su recorrido, para que nunca se muevan sincronizadas. */
+.hero-malla__mancha {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: max(var(--tam, 58%), var(--tam-min, 320px));
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: radial-gradient(circle closest-side, var(--color) 0%, transparent 100%);
+  animation: var(--deriva) var(--dur) ease-in-out var(--retraso) infinite alternate;
+  will-change: transform;
+}
+/* En el orden de pintado del degradado original: el naranja abajo de todo, el
+   azul arriba. Las dos de abajo llevan un mínimo más grande: en un hero vertical
+   (celular) el radio original sale de la diagonal más larga y da ~370-400 px. */
+.hero-malla__mancha--naranja { --x: 60%; --y: 95%; --color: rgba(255, 90, 31, 0.9);   --deriva: malla-deriva-a; --dur: 23s; --retraso: -6s; --tam-min: 400px; }
+.hero-malla__mancha--fucsia  { --x: 30%; --y: 85%; --color: rgba(255, 27, 141, 0.95); --deriva: malla-deriva-b; --dur: 19s; --retraso: -11s; --tam-min: 370px; }
+.hero-malla__mancha--rosa    { --x: 78%; --y: 55%; --color: rgba(255, 77, 202, 0.95); --deriva: malla-deriva-c; --dur: 21s; --retraso: -3s; }
+.hero-malla__mancha--violeta { --x: 55%; --y: 52%; --color: rgba(139, 92, 246, 0.85); --deriva: malla-deriva-a; --dur: 17s; --retraso: -9s; --tam: 40%; --tam-min: 240px; }
+.hero-malla__mancha--azul    { --x: 20%; --y: 45%; --color: rgba(58, 134, 255, 0.9);  --deriva: malla-deriva-b; --dur: 24s; --retraso: -14s; }
+
+/* Los porcentajes son del tamaño de la mancha: ±20 % son ~65 px en un celular
+   y ~150 px a 1280. Suficiente para que se note en pocos segundos de mirar. */
+@keyframes malla-deriva-a {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(22%, -14%, 0) scale(1.12); }
+  66%  { transform: translate3d(-10%, 18%, 0) scale(0.92); }
+  100% { transform: translate3d(16%, 8%, 0) scale(1.05); }
+}
+@keyframes malla-deriva-b {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(-20%, 12%, 0) scale(0.9); }
+  66%  { transform: translate3d(14%, -18%, 0) scale(1.15); }
+  100% { transform: translate3d(-8%, -10%, 0) scale(1); }
+}
+@keyframes malla-deriva-c {
+  0%   { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%  { transform: translate3d(18%, 16%, 0) scale(0.9); }
+  100% { transform: translate3d(-18%, -6%, 0) scale(1.12); }
+}
+
+/* Con el hero fuera de pantalla, su fondo no corre. `data-pausado` lo pone un
+   IntersectionObserver en Hero.jsx. Incluye el aurora y las calcos flotantes de
+   ESTE hero, que ya se movían sin que nadie las viera: esta spec suma 5 capas y
+   ésta es la compensación. */
+.hero-gradient--vivo[data-pausado] .hero-malla__mancha,
+.hero-gradient--vivo[data-pausado] .hero-aurora,
+.hero-gradient--vivo[data-pausado] .sticker-float {
+  animation-play-state: paused;
+}
+
+/* El saludo: todas las frases están en el DOM a la vez, apiladas en la MISMA
+   celda de grid. La caja mide lo que la frase más alta desde el primer cuadro,
+   así que rotar no empuja al titular ni un píxel. Sin posiciones absolutas ni
+   alturas escritas a mano.
+   Más chico y más apagado que el H1 a propósito: es un saludo, no el titular. */
+.hero-saludo {
+  display: grid;
+  justify-items: center;
+  margin: 0 auto 1rem;
+  font-family: var(--fuente-titulos);
+  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  letter-spacing: 0.28em;
+  /* El letter-spacing deja aire DESPUÉS de la última letra y el texto centrado
+     queda corrido a la izquierda: esto lo compensa. */
+  padding-left: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+@media (min-width: 768px) {
+  .hero-saludo { font-size: 0.95rem; margin-bottom: 1.25rem; }
+}
+.hero-saludo__frase { grid-area: 1 / 1; opacity: 0; }
+/* Estado quieto: solo la última. Es lo que ve quien vuelve al Home navegando y
+   quien tiene "reducir movimiento" — y donde termina la animación. */
+.hero-saludo__frase--final { opacity: 1; }
+
+/* Los tiempos NO están acá: llegan de lib/heroSaludo.js como custom properties
+   (`--i` en cada frase, `--saludo-dur` y `--saludo-entrada` en el <p>), porque
+   el tope de 5 s lo verifica un test y el CSS no sabe cuántas frases hay.
+   - Las frases de paso: `both`, invisibles antes de su turno y después.
+   - La última: `backwards`, y al terminar manda el estilo base (visible). */
+.hero--entrada .hero-saludo__frase {
+  animation: saludo-pasa var(--saludo-dur) ease-in-out both;
+  animation-delay: calc(var(--i) * var(--saludo-dur));
+}
+.hero--entrada .hero-saludo__frase--final {
+  animation: saludo-queda var(--saludo-entrada) cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i) * var(--saludo-dur));
+}
+@keyframes saludo-pasa {
+  0%   { opacity: 0; transform: translateY(0.7em); }
+  15%  { opacity: 1; transform: none; }
+  82%  { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-0.7em); }
+}
+@keyframes saludo-queda {
+  from { opacity: 0; transform: translateY(0.7em); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* La entrada escalonada. Tres reglas que no son de estilo:
+
+   1. El retraso va POR ROL, no por posición. Con un nth-child, en la variante
+      `en_hero` de `hero_buscador` los botones serían la 4.ª pieza y en `debajo`
+      la 3.ª: aparecerían en momentos distintos según la celda, y eso es una
+      segunda variable colada en el experimento. Así salen a los 450 ms en las
+      cuatro celdas, y terminan antes de los 1,2 s.
+
+   2. El titular y el subtítulo SUBEN pero no aparecen: `hero-sube` no toca la
+      opacidad. Chrome no cuenta como candidato a LCP a un elemento invisible, y
+      un fade-in correría el LCP del Home lo que dure la animación.
+
+   3. `backwards`, NUNCA `both` ni `forwards`. Con `both` el último keyframe
+      queda aplicado para siempre (el error de `.grid-rise`, más abajo): el
+      buscador y los botones quedarían con su propio contexto de apilamiento y
+      el desplegable del buscador pasaría por DEBAJO de los botones. Con
+      `backwards` la animación deja de existir al terminar. */
+@keyframes hero-sube {
+  from { transform: translateY(16px); }
+  to   { transform: none; }
+}
+@keyframes hero-aparece {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+.hero--entrada .hero-pieza {
+  animation: hero-sube 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: var(--retraso, 0ms);
+}
+.hero--entrada .hero-pieza--aparece { animation-name: hero-aparece; }
+.hero-pieza--titular   { --retraso: 0ms; }
+.hero-pieza--subtitulo { --retraso: 120ms; }
+.hero-pieza--buscador  { --retraso: 300ms; }
+.hero-pieza--botones   { --retraso: 450ms; }
+
+/* ============================================================
    Buscador (components/BuscadorCalcos.jsx)
    ============================================================ */
 .buscador { position: relative; }
@@ -1094,4 +1273,13 @@ a { color: inherit; text-decoration: none; }
   .sticker-card { transition: box-shadow 0.25s ease, border-color 0.25s ease; }
   .sticker-card:hover { scale: none; }
   .sticker-card:has(:focus-visible) { scale: none; }
+  /* Hero del Home (spec 024): fondo quieto con los colores de siempre, sin
+     entrada y con el saludo fijo en su frase final. Hero.jsx ya no pone
+     `.hero--entrada` con reduced-motion; esto es la segunda guarda, por si la
+     preferencia cambia con la página abierta. */
+  .hero-malla__mancha,
+  .hero--entrada .hero-pieza,
+  .hero--entrada .hero-saludo__frase {
+    animation: none !important;
+  }
 }
