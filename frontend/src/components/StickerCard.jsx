@@ -35,7 +35,10 @@ export default function StickerCard({ sticker, listName = 'catalog', mostrarTama
   const onSelect = () => trackSelectItem({ ...sticker, price: unit }, listName);
 
   return (
-    <article className="card-glass card-glass-hover overflow-hidden flex flex-col">
+    // `sticker-card` y no `card-glass-hover`: el hover de la card crece con la
+    // propiedad `scale`, que es la única que sobrevive a la animación de entrada
+    // de las grillas (`grid-rise`). El porqué completo está en index.css.
+    <article className="card-glass sticker-card overflow-hidden flex flex-col">
       <Link
         to={href}
         onClick={onSelect}
@@ -59,9 +62,13 @@ export default function StickerCard({ sticker, listName = 'catalog', mostrarTama
              `max-height: 100%` no resolvía contra el alto que deriva del
              `aspect-square`. Con la imagen ocupando la caja exacta, `object-contain`
              hace el letterbox adentro y NADA puede desbordar, sea cual sea la
-             proporción del archivo. El `p-2` del contenedor deja 8 px por lado,
-             más que los 4 px que se come el `scale-105` del hover. */
-          className="w-full h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
+             proporción del archivo. El `p-2` del contenedor le deja 8 px de aire
+             por lado.
+             La imagen NO tiene zoom propio (hasta la spec 024 hacía un
+             `scale-105` al pasarle el cursor): ahora crece la card entera, y un
+             segundo zoom adentro, que arrancaba solo cuando el cursor tocaba la
+             foto y no el nombre, se veía como un tirón. */
+          className="w-full h-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.45)]"
         />
         {enCarrito > 0 && (
           <span

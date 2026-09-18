@@ -559,6 +559,53 @@ a { color: inherit; text-decoration: none; }
 .grid-rise > *:nth-child(10) { animation-delay: 0.38s; }
 .grid-rise > *:nth-child(n+11) { animation-delay: 0.42s; }
 
+/* Card de calco que crece al pasarle el cursor (StickerCard, spec 024).
+
+   ⚠️ Con la propiedad `scale`, NUNCA con `transform: scale()`. La entrada de
+   `.grid-rise` de acá arriba tiene `fill-mode: both`: deja aplicado su último
+   keyframe (`transform: none`) para siempre, y un valor de animación le gana en
+   la cascada a cualquier `:hover`. Así murió en silencio el "sube 4 px" de
+   `card-glass-hover` en la grilla de categoría y en las landings por uso: solo
+   se veía en el Home, que no usa `grid-rise` (verificado el 18/9/2026). `scale`
+   es otra propiedad, `rise` no la toca, y funciona en las tres grillas.
+
+   El hover va dentro de `(hover: hover) and (pointer: fine)` porque en un
+   celular el `:hover` se queda pegado después de tocar: la card quedaba
+   agrandada después de cada "+".
+
+   7,5 % y no 8 % redondo: el peor caso es el Home a ≥ 1200 px, con cards de
+   281 px y `gap-3` (12 px) entre ellas. Al 8 % crecen 11,2 px por lado y quedan
+   a 0,8 px de la vecina —borde contra borde—; al 7,5 % crecen 10,5 px y queda
+   aire. En la grilla de categoría (≤ 190 px) sobra lugar. Si se agranda el
+   `max-width` de `.container-app` o se achica el `gap`, rehacer esta cuenta.
+   El `z-index` es para que la sombra quede arriba de las cards de al lado y no
+   debajo. */
+.sticker-card {
+  position: relative;
+  transition:
+    scale 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .sticker-card:hover {
+    scale: 1.075;
+    z-index: 2;
+    border-color: rgba(255, 27, 141, 0.4);
+    box-shadow: 0 32px 90px rgba(255, 27, 141, 0.18);
+  }
+}
+/* Regla APARTE del `:hover`, no en la misma lista con una coma: un navegador
+   que no entiende `:has()` descarta la regla entera, y se llevaría puesto
+   también el hover. Con teclado la card crece igual; con el foco que deja un
+   click de mouse, no (`:focus-visible`). */
+.sticker-card:has(:focus-visible) {
+  scale: 1.075;
+  z-index: 2;
+  border-color: rgba(255, 27, 141, 0.4);
+  box-shadow: 0 32px 90px rgba(255, 27, 141, 0.18);
+}
+
 /* ============================================================
    Tira de anuncios — marquesina de dudas de compra (spec 020)
    Ver AnnouncementBar.jsx. Reemplazó a `.anuncio-barra` (un mensaje por vez,
@@ -1041,4 +1088,10 @@ a { color: inherit; text-decoration: none; }
   .marcas-ticker__item:hover img { transform: none; }
   .sticker-float { transition: none !important; transform: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  /* La card de calco no crece: se queda con el resaltado del borde, que marca
+     igual cuál está bajo el cursor. Hover y foco en reglas separadas, por el
+     mismo motivo que arriba (`:has()`). */
+  .sticker-card { transition: box-shadow 0.25s ease, border-color 0.25s ease; }
+  .sticker-card:hover { scale: none; }
+  .sticker-card:has(:focus-visible) { scale: none; }
 }
