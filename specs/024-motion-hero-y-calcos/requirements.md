@@ -132,7 +132,7 @@ Lo que **sí** entra:
 | ID | Requisito | Prioridad |
 |---|---|---|
 | RF-1 | El degradado de colores del hero del Home se mueve de forma continua: las manchas de color cambian de lugar y se nota a simple vista en menos de 5 segundos de mirar. | 🔴 must |
-| RF-2 | El movimiento es lento y sin saltos: ningún ciclo dura menos de 15 s y no hay un "corte" visible cuando el ciclo vuelve a empezar. | 🔴 must |
+| RF-2 | El movimiento es **claramente visible** y sin saltos: ciclos de 6 a 9 s y ningún "corte" visible cuando el ciclo vuelve a empezar. *Corregido el 18/9/2026: decía "lento, ningún ciclo de menos de 15 s", y así el fondo parecía quieto (ver `tasks.md`, Hallazgos 6).* | 🔴 must |
 | RF-3 | La paleta es la de hoy (azul, violeta, fucsia, rosa, naranja sobre negro) y la franja superior sigue oscura, para que el header y el titular se lean igual que ahora. | 🔴 must |
 | RF-4 | Cuando el hero sale de la pantalla (la persona scrolleó hacia abajo), las animaciones de fondo del hero se detienen; vuelven al volver a verlo. | 🟡 should |
 

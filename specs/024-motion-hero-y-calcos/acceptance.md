@@ -43,7 +43,7 @@ animaciones de `transform`/`opacity` corren en el compositor sin esperarlas).
 | ID | Criterio | Cómo se verificó | Resultado |
 |---|---|---|---|
 | AC-1 | *(RF-1)* Las 5 manchas tienen una animación corriendo y su posición cambia entre dos lecturas separadas por 3 s. | `getAnimations()` + `getBoundingClientRect()` a los ~2 s y ~5 s | ✅ 5 × `running`. A 375 px se desplazaron entre 14 y 100 px; a 1280 px entre 19 y 342 px. |
-| AC-2 | *(RF-2)* Ninguna dura menos de 15 s y todas tienen `alternate`. | `effect.getTiming()` | ✅ 17, 19, 21, 23 y 24 s; las 5 `alternate`. |
+| AC-2 | *(RF-2, corregido)* Ciclos de 6 a 9 s, todos `alternate`, y el movimiento se ve. | `effect.getTiming()` + velocidad medida en producción | ✅ 6, 7, 8, 8,5 y 9 s; las 5 `alternate`. Velocidad: ver Hallazgos 6 de `tasks.md`. *(La primera versión, 17-24 s, cumplía el criterio viejo pero el fondo parecía quieto.)* |
 | AC-3 | *(RF-3)* Con las animaciones apagadas, el hero es visualmente equivalente al de antes. | Recorte del fondo solo (sin calcos ni texto), reduced-motion, build de antes vs dev de después, a 375 y 1280 | ✅ Misma paleta y distribución (azul izq., violeta centro, rosa der., fucsia abajo, franja superior oscura). En el celular el fucsia y el naranja de abajo quedaban chicos: se subió su tamaño mínimo (ver *Hallazgos* de `tasks.md`). |
 | AC-4 | *(RF-4)* Fuera de pantalla: `data-pausado` y todo en `paused`; al volver, `running`. | `scrollTo` al final y a 0, `animationPlayState` | ✅ Abajo: `data-pausado`, 5 manchas + aurora + 8 calcos en `paused`. Arriba: sin atributo, todo `running`. |
 | AC-5 | Las pantallas de pago siguen quietas. | `/pago-exitoso` | ✅ Sin `.hero-malla`; `.hero-gradient` conserva sus `radial-gradient` originales. |

@@ -375,30 +375,35 @@ a { color: inherit; text-decoration: none; }
 /* En el orden de pintado del degradado original: el naranja abajo de todo, el
    azul arriba. Las dos de abajo llevan un mínimo más grande: en un hero vertical
    (celular) el radio original sale de la diagonal más larga y da ~370-400 px. */
-.hero-malla__mancha--naranja { --x: 60%; --y: 95%; --color: rgba(255, 90, 31, 0.9);   --deriva: malla-deriva-a; --dur: 23s; --retraso: -6s; --tam-min: 400px; }
-.hero-malla__mancha--fucsia  { --x: 30%; --y: 85%; --color: rgba(255, 27, 141, 0.95); --deriva: malla-deriva-b; --dur: 19s; --retraso: -11s; --tam-min: 370px; }
-.hero-malla__mancha--rosa    { --x: 78%; --y: 55%; --color: rgba(255, 77, 202, 0.95); --deriva: malla-deriva-c; --dur: 21s; --retraso: -3s; }
-.hero-malla__mancha--violeta { --x: 55%; --y: 52%; --color: rgba(139, 92, 246, 0.85); --deriva: malla-deriva-a; --dur: 17s; --retraso: -9s; --tam: 40%; --tam-min: 240px; }
-.hero-malla__mancha--azul    { --x: 20%; --y: 45%; --color: rgba(58, 134, 255, 0.9);  --deriva: malla-deriva-b; --dur: 24s; --retraso: -14s; }
+.hero-malla__mancha--naranja { --x: 60%; --y: 95%; --color: rgba(255, 90, 31, 0.9);   --deriva: malla-deriva-a; --dur: 8s;   --retraso: -2s; --tam-min: 400px; }
+.hero-malla__mancha--fucsia  { --x: 30%; --y: 85%; --color: rgba(255, 27, 141, 0.95); --deriva: malla-deriva-b; --dur: 7s;   --retraso: -5s; --tam-min: 370px; }
+.hero-malla__mancha--rosa    { --x: 78%; --y: 55%; --color: rgba(255, 77, 202, 0.95); --deriva: malla-deriva-c; --dur: 9s;   --retraso: -1s; }
+.hero-malla__mancha--violeta { --x: 55%; --y: 52%; --color: rgba(139, 92, 246, 0.85); --deriva: malla-deriva-a; --dur: 6s;   --retraso: -3s; --tam: 40%; --tam-min: 240px; }
+.hero-malla__mancha--azul    { --x: 20%; --y: 45%; --color: rgba(58, 134, 255, 0.9);  --deriva: malla-deriva-b; --dur: 8.5s; --retraso: -6s; }
 
-/* Los porcentajes son del tamaño de la mancha: ±20 % son ~65 px en un celular
-   y ~150 px a 1280. Suficiente para que se note en pocos segundos de mirar. */
+/* ⚠️ RÁPIDO Y AMPLIO A PROPÓSITO. La primera versión (18/9/2026) tenía ciclos de
+   17-24 s y recorridos de ±20 %: medido en producción, las manchas se movían a
+   5-30 px por segundo y, siendo difusas, el fondo parecía QUIETO — Mariano lo
+   había pedido "dinámico" y no se veía. Ahora: ciclos de 6-9 s, recorridos de
+   hasta ±45 % del tamaño de la mancha (~150 px en un celular) y escala de 0,85
+   a 1,3. El costo es el mismo: la velocidad no agrega trabajo, sigue siendo
+   `transform` en el compositor. Antes de "suavizarlo", mirarlo en un celular. */
 @keyframes malla-deriva-a {
   0%   { transform: translate3d(0, 0, 0) scale(1); }
-  33%  { transform: translate3d(22%, -14%, 0) scale(1.12); }
-  66%  { transform: translate3d(-10%, 18%, 0) scale(0.92); }
-  100% { transform: translate3d(16%, 8%, 0) scale(1.05); }
+  33%  { transform: translate3d(45%, -30%, 0) scale(1.3); }
+  66%  { transform: translate3d(-35%, 32%, 0) scale(0.85); }
+  100% { transform: translate3d(30%, 20%, 0) scale(1.15); }
 }
 @keyframes malla-deriva-b {
   0%   { transform: translate3d(0, 0, 0) scale(1); }
-  33%  { transform: translate3d(-20%, 12%, 0) scale(0.9); }
-  66%  { transform: translate3d(14%, -18%, 0) scale(1.15); }
-  100% { transform: translate3d(-8%, -10%, 0) scale(1); }
+  33%  { transform: translate3d(-42%, 25%, 0) scale(0.85); }
+  66%  { transform: translate3d(32%, -38%, 0) scale(1.3); }
+  100% { transform: translate3d(-20%, -22%, 0) scale(1.05); }
 }
 @keyframes malla-deriva-c {
-  0%   { transform: translate3d(0, 0, 0) scale(1.05); }
-  50%  { transform: translate3d(18%, 16%, 0) scale(0.9); }
-  100% { transform: translate3d(-18%, -6%, 0) scale(1.12); }
+  0%   { transform: translate3d(0, 0, 0) scale(1.1); }
+  50%  { transform: translate3d(40%, 35%, 0) scale(0.85); }
+  100% { transform: translate3d(-40%, -15%, 0) scale(1.3); }
 }
 
 /* Con el hero fuera de pantalla, su fondo no corre. `data-pausado` lo pone un

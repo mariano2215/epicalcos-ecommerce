@@ -196,3 +196,12 @@ Ver [`specs/README.md`](../README.md).
    siguiente, así que durante un instante no hay ninguna. Es lo diseñado (sin
    dos textos superpuestos), se menciona por si a la vista se prefiere que se
    crucen.
+6. **El fondo "en movimiento" parecía quieto** (Mariano, 18/9/2026: *"¿por qué
+   no está el gradiente en movimiento que te pedí?"*). Estaba publicado y
+   corriendo, pero con ciclos de 17-24 s y recorridos de ±20 %: medido en
+   producción, las manchas iban a **5-32 px/s**, y siendo difusas no se percibe.
+   El error fue del requisito, no del código: RF-2 pedía "lento, ningún ciclo
+   de menos de 15 s", que contradice el "dinámico" del pedido. Corregido con
+   ciclos de 6-9 s y recorridos de hasta ±45 % → **60-111 px/s**, aprobado por
+   Mariano con un GIF de antes/después. Lección: un requisito de "intensidad"
+   se valida mirándolo en movimiento, no leyendo `getTiming()`.

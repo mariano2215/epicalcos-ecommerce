@@ -106,8 +106,9 @@ de color pasan a una capa propia.
 - Tamaño: `width: max(60%, 320px); aspect-ratio: 1`. Con eso el radio queda
   cerca del que hoy da el `transparent 36%` (≈160 px a 375, ≈310 px a 1024).
 - Se mueven con `transform` (compositor, sin repintar): 3 recorridos
-  `malla-deriva-a|b|c` que combinan `translate3d` de ±10–18 % y `scale` 0,9–1,15.
-  Duraciones distintas (17, 19, 21, 23, 24 s) y `animation-delay` negativos para
+  `malla-deriva-a|b|c` que combinan `translate3d` de hasta ±45 % y `scale` 0,85–1,3.
+  Duraciones distintas (6, 7, 8, 8,5 y 9 s — *corregido: eran 17-24 s y ±10-18 %,
+  y no se veía*) y `animation-delay` negativos para
   que nunca se sincronicen. **`alternate`**: el ciclo vuelve por el mismo camino,
   así que no hay salto al reiniciar (RF-2).
 - El centrado va en la propiedad `translate: -50% -50%` y el movimiento en
