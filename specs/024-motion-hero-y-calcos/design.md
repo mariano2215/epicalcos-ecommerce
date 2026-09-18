@@ -258,12 +258,12 @@ useEffect(() => {
     border-color 0.25s ease;
 }
 @media (hover: hover) and (pointer: fine) {
-  .sticker-card:hover { scale: 1.08; z-index: 2; border-color: …; box-shadow: …; }
+  .sticker-card:hover { scale: 1.075; z-index: 2; border-color: …; box-shadow: …; }
 }
 /* Regla APARTE: un selector que el navegador no entiende invalida la lista
    entera. Si `:has()` fuera en la misma regla que `:hover`, un navegador sin
    `:has()` perdería también el hover. */
-.sticker-card:has(:focus-visible) { scale: 1.08; z-index: 2; border-color: …; }
+.sticker-card:has(:focus-visible) { scale: 1.075; z-index: 2; border-color: …; }
 ```
 
 - **`scale`, no `transform`** — por el hallazgo de §0.
@@ -273,9 +273,10 @@ useEffect(() => {
 - `:has(:focus-visible)`: la card crece cuando el foco de **teclado** entra al
   link o al "+", no con el foco que deja un clic de mouse (RF-25).
 - `z-index: 2` + `position: relative`: la sombra de la card agrandada queda sobre
-  las vecinas (RF-22). Con `scale: 1.08`, una card de 154 px (grilla de 6
-  columnas) crece 6 px por lado y una de 220 px (Home, 4 columnas) 9 px; la
-  separación es 12 px (`gap-3`), así que **no llega a pisar a la vecina**.
+  las vecinas (RF-22). La separación es 12 px (`gap-3`). *Corregido al
+  implementar*: las cards del Home miden **281 px**, no ~220; al 8 % quedaban a
+  0,8 px de la vecina. Con **7,5 %** crecen 10,5 px por lado (1,5 px de aire) y
+  las de categoría (~183 px) 6,9 px. Ver *Hallazgos* de `tasks.md`.
 - Una `transition` sobre `scale` se revierte desde donde esté si el cursor sale
   a mitad de camino: no hay salto (RF-26).
 - `StickerCard` deja `card-glass-hover` (el resaltado de borde y sombra pasa a
@@ -416,9 +417,6 @@ Sin superficie nueva: no hay input, ni red, ni secretos.
   hijo para siempre. Mata el hover de cualquier card que se ponga en esas
   grillas (hoy: el "sube 4 px"). Arreglo probable: `backwards`. Se propone
   aparte porque cambia la entrada de todas las grillas del sitio.
-- **El comentario de `Hero.jsx` sobre el LCP** dice que la primera calco del
-  campo "es la que define el LCP". Por tamaño de área, en desktop el H1 le gana
-  seguro y en mobile el H1 y el subtítulo compiten. No cambia nada de esta spec
-  (ninguno de los tres se esconde), pero el comentario puede estar desactualizado.
-  Se mide en la validación con Lighthouse y, si corresponde, se corrige el
-  comentario en esta misma spec (es documentación del archivo que se toca).
+- ~~**El comentario de `Hero.jsx` sobre el LCP** puede estar desactualizado.~~
+  **Medido: está bien.** A 375 px el LCP es la calco flotante del hero en las 28
+  corridas (antes y después). No se toca.

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `024-motion-hero-y-calcos` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `IN PROGRESS` — cards publicadas; hero listo en la rama local `spec-024-hero`, esperando la lectura de los tests (Q1) |
 | **Fecha** | 18/09/2026 |
 | **Autor** | Mariano (pedido) + Claude (redacción) |
 
@@ -251,7 +251,7 @@ comerciales ni pasos al funnel (`CLAUDE.md` regla 13 — no aplica).
 
 ## 12. Preguntas abiertas
 
-- [ ] **Q1 — ¿Cuándo sale el hero?** `REQUIRES CONFIRMATION`
+- [x] **Q1 — ¿Cuándo sale el hero?** ✅ *Por defecto (18/9): cards ya, hero después de leer los tests.*
   `hero_titular` y `hero_buscador` están corriendo, y su serie **se reinició el
   7/9** (cambio de promos). Las dos semanas completas se cumplen el **lunes
   21/9/2026**. Cambiar el hero antes corta la serie otra vez con apenas 11 días
@@ -260,7 +260,7 @@ comerciales ni pasos al funnel (`CLAUDE.md` regla 13 — no aplica).
   cards ya (no están en ningún experimento) y el hero **después de leer los dos
   tests** el 21/9 o más adelante.
 
-- [ ] **Q2 — El copy del saludo.** `REQUIRES CONFIRMATION`
+- [x] **Q2 — El copy del saludo.** ✅ *Por defecto (18/9): "BIENVENIDO" + las tres frases propuestas.*
   Propuesta (voseo, sin prometer nada que no se haga):
   1. **BIENVENIDO**
   2. **QUÉ BUENO VERTE POR ACÁ**
@@ -271,16 +271,16 @@ comerciales ni pasos al funnel (`CLAUDE.md` regla 13 — no aplica).
   **"¡HOLA!"** o **"TE DAMOS LA BIENVENIDA"** (22 caracteres: entra en una línea
   a 375 px). Si no hay respuesta, va "BIENVENIDO" tal como se pidió.
 
-- [ ] **Q3 — ¿Una vuelta o en loop?** `REQUIRES CONFIRMATION`
+- [x] **Q3 — ¿Una vuelta o en loop?** ✅ *Por defecto (18/9): una vuelta.*
   **Recomendación: una vuelta.** Hasta el 4/9 el hero tenía un titular que
   rotaba 5 frases sin parar y se sacó en la spec 014 porque competía con todo lo
   demás. Una sola vuelta da la bienvenida y se aparta. Un loop infinito además
   obliga a poner un botón de pausa para cumplir WCAG 2.2.2.
 
-- [ ] **Q4 — ¿También las cards de categoría?** Las portadas de "Encontrá lo que
+- [x] **Q4 — ¿También las cards de categoría?** ✅ *Por defecto (18/9): no, solo calcos.* Las portadas de "Encontrá lo que
   te representa" y el menú de categorías tienen su propio hover (suben 4 px).
   El pedido dice "card de cada sticker", así que quedan afuera salvo que se
   pida.
 
-- [ ] **Q5 — ¿Cuánto crece la card?** Propuesta 8 %. Con la separación actual
+- [x] **Q5 — ¿Cuánto crece la card?** ✅ *Por defecto (18/9): 8 % → implementado a **7,5 %**: al 8 % las cards del Home (281 px) quedaban a 0,8 px de la vecina. Ver `tasks.md`, Hallazgos.* Propuesta 8 %. Con la separación actual
   de las grillas (12 px) el tope sin superponerse a la vecina es ~10 %.
