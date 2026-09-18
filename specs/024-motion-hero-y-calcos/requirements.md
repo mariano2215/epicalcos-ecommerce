@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `024-motion-hero-y-calcos` |
-| **Estado** | `PUBLICADA` (18/9/2026) — cards y hero en producción; falta el OK visual de Mariano para `DONE` |
+| **Estado** | `DONE` (18/9/2026) — cards y hero en producción, OK de Mariano |
 | **Fecha** | 18/09/2026 |
 | **Autor** | Mariano (pedido) + Claude (redacción) |
 

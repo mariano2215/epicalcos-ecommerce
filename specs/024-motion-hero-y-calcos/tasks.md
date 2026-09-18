@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `024-motion-hero-y-calcos` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `PUBLICADA` (18/9/2026) — falta el OK visual de Mariano |
+| **Estado** | `DONE` (18/9/2026) |
 
 ---
 
@@ -168,7 +168,7 @@ Ver [`specs/README.md`](../README.md).
       el conflicto a mano y repetir la Fase 4.
 - [x] **6.3** `docs/CRO-EXPERIMENTS.md`: corte en la serie con la fecha del
       merge, en el mismo commit o en el inmediato siguiente.
-- [x] **6.4** `npm test` en verde → push → estado de la spec a `DONE`. → `PUBLICADA` hasta el OK visual.
+- [x] **6.4** `npm test` en verde → push → estado de la spec a `DONE`. → `DONE` con el OK de Mariano (18/9/2026).
 - [x] **6.5** Borrar la rama: `git branch -d spec-024-hero`.
 
 ---

@@ -128,5 +128,5 @@ animaciones de `transform`/`opacity` corren en el compositor sin esperarlas).
 - [x] Corte en la serie anotado en `docs/CRO-EXPERIMENTS.md`: los dos tests del
       hero arrancan de cero el 18/9/2026 (lectura desde el viernes 2/10).
 - [x] Hallazgos fuera de scope comunicados a Mariano.
-- [ ] Mariano vio el Home y una grilla y dio el OK visual.
-- [ ] Estado de `requirements.md` en `DONE` — con el OK visual de Mariano.
+- [x] Mariano dio el OK: *"ok, cerrá la spec como terminada"* (18/9/2026).
+- [x] Estado de `requirements.md` en `DONE`.
