@@ -203,7 +203,18 @@ export async function crearLeadEnCRM({ payer, shipping, items, total, orderId })
  * mismo CRM de pedidos, distinguible por Estado="Lead 10% OFF". No es un
  * pedido: no lleva N° de orden ni monto. Nunca lanza. Devuelve el pageId o null.
  */
-export async function crearLeadNewsletter(email) {
+/**
+ * Alta del lead del popup de bienvenida.
+ *
+ * ⚠️ El select `Estado` sigue diciendo "Lead 10% OFF" aunque ahora se entregue
+ * el pack sorpresa: renombrarlo crea una opción NUEVA en Notion y parte los
+ * filtros y las vistas que ya existen (spec 025, P-6). Lo que cambia es el
+ * texto de Observaciones, que es donde se lee qué se ganó de verdad.
+ *
+ * @param {string} email
+ * @param {{ oferta?: 'cupon'|'regalo' }} contexto default `cupon`.
+ */
+export async function crearLeadNewsletter(email, { oferta = 'cupon' } = {}) {
   if (!getToken()) {
     console.warn('[notion] NOTION_TOKEN no configurado — salteando CRM (lead)');
     return null;
@@ -221,7 +232,11 @@ export async function crearLeadNewsletter(email) {
         rich_text: [
           {
             text: {
-              content: `Dejó el mail en el popup de 10% OFF (cupón EPICA10) — ${new Date(fecha).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour12: false })}`,
+              content: `${
+                oferta === 'regalo'
+                  ? 'Dejó el mail en el popup y se ganó el PACK DE STICKERS SORPRESA (gratis con la compra, 10 min)'
+                  : 'Dejó el mail en el popup de 10% OFF (cupón EPICA10)'
+              } — ${new Date(fecha).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour12: false })}`,
             },
           },
         ],

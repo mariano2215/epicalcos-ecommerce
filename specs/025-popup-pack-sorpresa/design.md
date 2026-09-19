@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `025-popup-pack-sorpresa` |
 | **Requirements** | [`requirements.md`](requirements.md) |
-| **Fecha** | 18/09/2026 |
+| **Fecha** | 18/09/2026 · implementado el 19/09/2026 |
 
 > **Este documento define CÓMO se implementará.**
 
@@ -287,9 +287,12 @@ Ninguna.
 
 ## 11. Preguntas abiertas del diseño
 
-- [ ] El título de la línea (`🎁 Pack de stickers sorpresa (regalo)`) depende de
-      P-1: si Mariano define "10 calcos de 4 cm", el título lo dice y el mail
-      interno también, para que el armado sea inequívoco.
+- [x] El título de la línea quedó `🎁 Pack de stickers sorpresa (regalo)`, sin
+      número: P-1 se resolvió por la propuesta por defecto. **Cuando Mariano
+      defina qué trae el pack** (ej. "10 calcos de 4 cm"), cambiar
+      `LINEA_REGALO.title` en `netlify/functions/lib/pricing.js` y
+      `REGALO_BIENVENIDA.titulo` en los dos `pricing.js` — el copy del popup, el
+      checkout y los cuatro canales del pedido salen de ahí.
 - [ ] Hallazgo para después: `RegaloCountdown` y `CuponCountdown` comparten la
       lógica de intervalo. Si el cupón con ventana se retira del todo, se puede
       borrar uno. Si conviven, conviene extraer un hook. No entra acá (regla 8).

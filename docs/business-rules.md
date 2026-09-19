@@ -278,6 +278,44 @@ El contador se muestra en **las dos** pantallas: el popup (donde se entrega) y
 el checkout (donde se usa). Uno que la persona no ve mientras completa el
 formulario no cambia ninguna conducta.
 
+### 3.5 Pack de stickers sorpresa (spec 025) — ✅ VIVO (desde el 19/9/2026)
+
+`REGALO_BIENVENIDA` · `activa: true`
+
+El popup de bienvenida entrega un **pack de stickers sorpresa** en lugar del
+10 % OFF. Va **gratis dentro del pedido** si la compra entra dentro de los 10
+minutos de haber dejado el mail.
+
+| | |
+|---|---|
+| Qué se gana | Un pack sorpresa, **uno por pedido**, sin importar cuántos productos tenga |
+| Compra mínima | **Ninguna** — cualquier compra con algo físico lo gana |
+| Duración | `REGALO_BIENVENIDA.ventanaMs` = 10 min, por usuario |
+| Tolerancia del servidor | `REGALO_TOLERANCIA_MS` = 60 s (relojes corridos) |
+| Dónde se guarda | `localStorage` → `epicalcos.regaloBienvenida` = `{ regalo, emitidoEn }`, más una copia en memoria |
+| Qué viaja al servidor | `regaloEmitidoEn` en el payload del checkout |
+| Pedido solo digital | **No lo lleva**: no hay caja donde meterlo |
+| Vencido a mitad del checkout | Sale la línea y aparece un aviso — **sin borrar nada de lo tipeado** |
+| Vencido al confirmar | El servidor lo ignora. **NUNCA rechaza el pedido** |
+| Interruptor | `activa: false` en **los dos** `pricing.js` → vuelve el 10 % OFF de la 3.4 |
+
+⚠️ **EL REGALO NO TOCA NINGÚN PRECIO.** No suma al subtotal, ni al umbral de
+envío gratis, ni a ninguna promo, y no es una línea del carrito: es estado del
+checkout. Corre con todas las promos vigentes, igual que si no estuviera.
+
+⚠️ **NO viaja como ítem de Mercado Pago.** Que MP acepte un ítem a $0 no está
+documentado, y si lo rechazara se caería la preferencia entera — o sea, la
+venta. Viaja como línea en el pedido guardado, en Notion y en el CRM interno,
+más `metadata.regalo` en la preferencia para cuando Blobs se cae.
+
+⚠️ **El instante de emisión lo manda el cliente y es falsificable**, igual que el
+del cupón (3.4). Aceptado explícitamente: limitarlo exigiría guardar en Blobs
+quién ya lo recibió, y Blobs ya se cayó dos veces en silencio. El techo del
+abuso es **un pack por pedido pagado**.
+
+Al lead **no** se le manda mail con el regalo: el pack vive en el navegador
+donde dejó el mail, y el link de un mail abre otro navegador donde no existe.
+
 ### 3.3 Promo Argentina — 50 % off por categoría
 `PROMO_ARGENTINA` · `activa: true`
 **Del 17/8/2026 00:00 al 19/8/2026 23:59 (ART)**
@@ -454,9 +492,21 @@ menú, footer, Home, categorías, buscador, sitemap y feed de Meta, y hace que s
 ruta redirija a `/categorias`. El código de la sección queda intacto.
 
 ### Popup de bienvenida
-Captura el mail → guarda el lead en Notion + CRM interno → manda dos mails
-(aviso interno y el cupón al cliente) → devuelve `EPICA10`, que queda en
-`localStorage` (`epicalcos.welcomeCoupon`) para autocompletar el checkout.
+Captura el mail → guarda el lead en Notion + CRM interno → avisa por mail →
+devuelve lo que se ganó. **Desde la spec 025 entrega el pack de stickers
+sorpresa** (ver 3.5), que queda en `localStorage` (`epicalcos.regaloBienvenida`)
+y aparece en el checkout como línea GRATIS con su contador. Con el regalo activo
+**no** se le manda mail al lead.
+
+Con `REGALO_BIENVENIDA.activa = false` vuelve al camino anterior: devuelve
+`EPICA10`, lo manda por mail y lo guarda en `epicalcos.welcomeCoupon` para
+autocompletar el checkout (ver 3.4).
+
+El popup elige qué pantalla mostrar **por la respuesta del servidor** (`oferta`)
+y no por su propio flag: un navegador con el bundle viejo, cargado antes del
+deploy, no manda `oferta` y sigue recibiendo el 10 % OFF que su pantalla le
+prometió. El estado del lead en Notion sigue llamándose "Lead 10% OFF" a
+propósito — renombrarlo partiría las vistas y los filtros que ya existen.
 
 ### A/B testing
 `lib/experiments.js` — implementación propia, asignación síncrona (localStorage

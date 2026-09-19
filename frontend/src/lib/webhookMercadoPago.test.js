@@ -109,6 +109,32 @@ describe('un pago aprobado siempre termina en dos mails', () => {
     expect(interno.text).toContain('Disney #3 · 6 cm');
   });
 
+  it('con Blobs caído, el aviso igual dice que va el PACK SORPRESA', async () => {
+    // El regalo no viaja como ítem de la preferencia (a MP no se le manda), así
+    // que cuando el pedido guardado no está, el detalle rearmado desde MP no lo
+    // trae. Lo único que queda es `metadata.regalo`. Sin esta reposición el
+    // mail saldría completo y en silencio, y la caja iría sin el pack — la
+    // misma falla muda que ya costó un pedido con "PEDIDO —".
+    vi.stubGlobal('fetch', stubFetch({
+      pago: { ...pagoAprobado, metadata: { ...pagoAprobado.metadata, regalo: 'pack_sorpresa' } }
+    }));
+
+    await handler(notificacion());
+
+    const interno = mailsEnviados().find((m) => m.subject.includes('Nuevo pedido'));
+    expect(interno.html).toContain('INCLUIR PACK SORPRESA');
+    expect(interno.text).toContain('Pack de stickers sorpresa (regalo) x1 — GRATIS');
+  });
+
+  it('sin `regalo` en la metadata, el aviso no inventa ningún pack', async () => {
+    vi.stubGlobal('fetch', stubFetch());
+
+    await handler(notificacion());
+
+    const interno = mailsEnviados().find((m) => m.subject.includes('Nuevo pedido'));
+    expect(interno.html).not.toContain('PACK SORPRESA');
+  });
+
   it('los mails salen aunque Meta CAPI no conteste nunca', async () => {
     process.env.META_CAPI_TOKEN = 'token';
     process.env.META_PIXEL_ID = '123';

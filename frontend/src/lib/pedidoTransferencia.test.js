@@ -136,3 +136,95 @@ describe('un pedido por transferencia avisa siempre', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * El pack sorpresa en un pedido por transferencia (spec 025).
+ *
+ * Es el camino donde más importa que se vea: sin webhook de confirmación, el
+ * mail interno es la única constancia de la venta, y si ahí el pack no aparece
+ * la caja sale sin él. El regalo tampoco puede mover un solo número del pedido.
+ */
+const pedidoConRegalo = (emitidoEn = Date.now()) => {
+  const base = pedido();
+  return { ...base, body: JSON.stringify({ ...JSON.parse(base.body), regaloEmitidoEn: emitidoEn }) };
+};
+
+describe('pack sorpresa', () => {
+  it('el mail interno lo destaca arriba y lo lista como GRATIS', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta({ id: 'resend-1' })));
+
+    await handler(pedidoConRegalo());
+
+    const interno = mails().find((m) => m.subject.includes('Nuevo pedido'));
+    // La banda, arriba de la tabla: una línea más entre 30 es justo lo que se
+    // pasa por alto cuando hay diez pedidos para armar.
+    expect(interno.html).toContain('INCLUIR PACK SORPRESA');
+    expect(interno.text).toContain('INCLUIR PACK SORPRESA');
+    // Y la línea, que dice GRATIS y no "$ 0".
+    expect(interno.html).toContain('Pack de stickers sorpresa');
+    expect(interno.html).toContain('GRATIS');
+    expect(interno.text).toContain('Pack de stickers sorpresa (regalo) x1 — GRATIS');
+  });
+
+  it('la línea del pack aparece UNA sola vez en el pedido', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta({ id: 'resend-1' })));
+
+    await handler(pedidoConRegalo());
+
+    const interno = mails().find((m) => m.subject.includes('Nuevo pedido'));
+    const veces = (interno.text.match(/Pack de stickers sorpresa/g) || []).length;
+    expect(veces).toBe(1);
+  });
+
+  it('el mail al cliente también le dice que va el pack', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta({ id: 'resend-1' })));
+
+    await handler(pedidoConRegalo());
+
+    const cliente = mails().find((m) => m.subject.includes('Pedido confirmado'));
+    expect(cliente.html).toContain('Pack de stickers sorpresa');
+    expect(cliente.html).toContain('GRATIS');
+  });
+
+  it('⚠️ el total del pedido es el MISMO con regalo que sin él', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta({ id: 'resend-1' })));
+
+    const conRegalo = JSON.parse((await handler(pedidoConRegalo())).body);
+    const sinRegalo = JSON.parse((await handler(pedido())).body);
+
+    expect(conRegalo.total).toBe(sinRegalo.total);
+    expect(conRegalo.total).toBe(3200);
+  });
+
+  it('con la ventana vencida el pedido sale sin pack, y sale igual', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta({ id: 'resend-1' })));
+
+    const res = await handler(pedidoConRegalo(Date.now() - 20 * 60 * 1000));
+
+    expect(res.statusCode).toBe(200);
+    const interno = mails().find((m) => m.subject.includes('Nuevo pedido'));
+    expect(interno.html).not.toContain('INCLUIR PACK SORPRESA');
+    expect(interno.html).not.toContain('Pack de stickers sorpresa');
+  });
+
+  it('un `regaloEmitidoEn` basura no voltea el pedido', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta({ id: 'resend-1' })));
+
+    const res = await handler(pedidoConRegalo('no-es-un-numero'));
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body).total).toBe(3200);
+  });
+
+  it('el mail de un pedido SIN regalo sigue mostrando los precios de sus líneas', async () => {
+    // Regresión de la regla "unit_price 0 → GRATIS": no puede volverse loca con
+    // las líneas que sí cuestan (el mail de carrito abandonado usa lo mismo).
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta({ id: 'resend-1' })));
+
+    await handler(pedido());
+
+    const interno = mails().find((m) => m.subject.includes('Nuevo pedido'));
+    expect(interno.text).toContain('Marvel #3 · 6 cm x2 — $ 3.200');
+    expect(interno.html).not.toContain('GRATIS');
+  });
+});

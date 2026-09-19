@@ -479,6 +479,51 @@ export function ventanaCuponAbierta(emitidoEn, now = Date.now(), tolerancia = 0)
 /** Clave de localStorage donde el popup de bienvenida guarda el código para prellenarlo en el checkout. */
 export const WELCOME_COUPON_STORAGE_KEY = 'epicalcos.welcomeCoupon';
 
+/**
+ * ─── PACK DE STICKERS SORPRESA DEL POPUP (spec 025) ───────────────────────────
+ * El popup de bienvenida entrega un pack de stickers sorpresa que viaja GRATIS
+ * dentro del pedido si la compra entra dentro de los 10 minutos siguientes.
+ *
+ * `activa: false` apaga el regalo en el popup, en el checkout y en el servidor,
+ * y el popup vuelve al 10 % OFF de la spec 017 — que queda intacto justamente
+ * para poder volver.
+ *
+ * ⚠️ ESPEJADO CON EL SERVIDOR: `activa`, `id` y `ventanaMs` tienen que coincidir
+ * con netlify/functions/lib/pricing.js (lo verifica regaloBienvenida.test.js).
+ * A diferencia de un precio, una desincronización acá no rechaza el checkout:
+ * hace algo más difícil de explicar, que es prometer en pantalla un regalo que
+ * el servidor después no mete en la caja.
+ *
+ * ⚠️ EL INSTANTE DE EMISIÓN LO GUARDA EL NAVEGADOR Y VIAJA EN EL PAYLOAD, igual
+ * que el del cupón: es FALSIFICABLE y está aceptado (requirements §9, P-4). El
+ * techo del abuso es un pack por pedido pagado.
+ */
+export const REGALO_BIENVENIDA = {
+  activa: true,
+  id: 'pack_sorpresa',
+  titulo: 'Pack de stickers sorpresa',
+  ventanaMs: 10 * 60 * 1000
+};
+
+/** Clave de localStorage donde el popup guarda el regalo y su instante de emisión. */
+export const REGALO_STORAGE_KEY = 'epicalcos.regaloBienvenida';
+
+/**
+ * ¿La ventana del regalo sigue abierta?
+ *
+ * ⚠️ A DIFERENCIA DE `ventanaCuponAbierta`: sin `emitidoEn` NO hay regalo. Un
+ * cupón sin emisión es un código que alguien tipeó a mano y vale igual; un
+ * regalo sin emisión no existe, porque no hay otra forma de ganarlo que el
+ * popup. Devolver `true` acá le regalaría el pack a todo el que entre al
+ * checkout.
+ */
+export function ventanaRegaloAbierta(emitidoEn, now = Date.now(), tolerancia = 0) {
+  const ts = Number(emitidoEn);
+  if (!Number.isFinite(ts)) return false;
+  if (ts > now + tolerancia) return false; // emisión en el futuro: no se cree
+  return now - ts <= REGALO_BIENVENIDA.ventanaMs + tolerancia;
+}
+
 /** Clave de sessionStorage donde el checkout guarda la spec de los personalizados para el CTA de WhatsApp en /pago-exitoso. */
 export const CUSTOM_SPEC_STORAGE_KEY = 'epicalcos.customSpec';
 

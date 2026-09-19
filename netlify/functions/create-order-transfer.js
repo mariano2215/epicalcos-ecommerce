@@ -10,7 +10,7 @@
 import { saveOrder } from './lib/orderStore.js';
 import { borrarCarrito } from './lib/abandonedStore.js';
 import { crearLeadEnCRM } from './_notion.js';
-import { validateAndPriceOrder } from './lib/pricing.js';
+import { validateAndPriceOrder, LINEA_REGALO } from './lib/pricing.js';
 import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
 import { buildOrderView, notifyOrder } from './lib/notify.js';
 
@@ -60,13 +60,17 @@ export const handler = async (event) => {
     return json(400, { error: 'invalid_json' });
   }
 
-  const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon, couponIssuedAt: rawIssuedAt } = body;
+  const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon, couponIssuedAt: rawIssuedAt, regaloEmitidoEn: rawRegalo } = body;
   const couponCode = clip(rawCoupon, 30) || undefined;
   // Instante de emisión del cupón (spec 017). Se coacciona a número y se
   // descarta cualquier cosa que no lo sea: viene del cliente, así que no puede
   // entrar como string ni como objeto al cálculo de la ventana.
   const emitido = Number(rawIssuedAt);
   const couponIssuedAt = Number.isFinite(emitido) ? emitido : undefined;
+  // Pack sorpresa (spec 025): mismo tratamiento que el instante del cupón. Lo
+  // que no sea un número se descarta y el pedido sale sin pack, nunca con 400.
+  const emitidoRegalo = Number(rawRegalo);
+  const regaloEmitidoEn = Number.isFinite(emitidoRegalo) ? emitidoRegalo : undefined;
 
   const payer = {
     name: clip(rawPayer?.name, 120),
@@ -89,7 +93,7 @@ export const handler = async (event) => {
 
   // Precios y envío: SIEMPRE recalculados en el servidor. paymentMethod
   // 'transferencia' es lo que habilita el 10% off por volumen (ver lib/pricing.js).
-  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'transferencia', couponCode, couponIssuedAt });
+  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'transferencia', couponCode, couponIssuedAt, regaloEmitidoEn });
   if (!order.ok) {
     console.warn('[create-order-transfer] pedido rechazado:', order.error, order.detail || '');
     return json(400, { error: order.error, message: order.detail });
@@ -106,6 +110,12 @@ export const handler = async (event) => {
   const shippingCost = order.shippingCost;
   shipping.method = order.shippingMethod;
 
+  // El pack va como una línea más del pedido, a $0: así sale solo en el mail
+  // interno, en el del cliente, en Notion y en el CRM sin que ninguno de los
+  // cuatro necesite código propio. `itemsTotal` y `total` se siguen calculando
+  // sobre `order.itemsTotal`, que no lo incluye — el regalo no suma nada.
+  const itemsPedido = order.regalo ? [...order.items, LINEA_REGALO] : order.items;
+
   const storedOrder = {
     orderId,
     createdAt: new Date().toISOString(),
@@ -113,7 +123,7 @@ export const handler = async (event) => {
     status: 'pendiente_transferencia',
     payer,
     shipping: { ...shipping, cost: shippingCost },
-    items: order.items,
+    items: itemsPedido,
     itemsTotal: order.itemsTotal,
     total: order.itemsTotal + shippingCost
   };
@@ -150,7 +160,7 @@ export const handler = async (event) => {
 
   storedOrder.notionPageId =
     (await paso('notion', () =>
-      crearLeadEnCRM({ payer, shipping, items: order.items, total: storedOrder.total, orderId })
+      crearLeadEnCRM({ payer, shipping, items: itemsPedido, total: storedOrder.total, orderId })
     )) || undefined;
 
   await paso('saveOrder', () => saveOrder(orderId, storedOrder));

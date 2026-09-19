@@ -110,6 +110,41 @@ separado no dicen nada.
 cualquier extensión del navegador lo lee (mismo criterio que
 `contacto_form_error`).
 
+⚠️ **`cupon_emitido` y `cupon_vencido` dejan de dispararse desde el popup el día
+del deploy de la spec 025** (19/9/2026): el popup pasa a entregar el pack
+sorpresa y no un código. La serie se corta ahí, no se degrada — si vuelve a
+aparecer, es porque se apagó el regalo (`REGALO_BIENVENIDA.activa = false`).
+`cupon_aplicado_en_promo` sigue vivo: lo dispara cualquier cupón, no solo el del
+popup.
+
+## El pack de stickers sorpresa (spec 025)
+
+Reemplaza a la ventana del cupón como oferta del popup. Misma lógica de lectura:
+los dos eventos son de la MISMA ventana de 10 minutos y se leen juntos.
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `regalo_emitido` | el popup entrega el pack | `regalo`, `ventana_ms` |
+| `regalo_vencido` | la ventana llega a cero sin comprar | `regalo`, `donde`: `popup` · `checkout` |
+| `purchase` | compra que salió CON el pack | los de siempre + `regalo` |
+
+**Cómo se leen**:
+
+- `purchase` con `regalo` / `regalo_emitido` = qué parte de los que ganan el pack
+  termina comprando dentro de la ventana. Es **el** número de la promo.
+- `regalo_vencido` con `donde: 'checkout'` es el caso caro: estaba comprando y se
+  le venció encima. Si sale alto, 10 minutos es poco — y la primera palanca es
+  mostrar el contador también en el carrito (spec 025, P-5).
+- `generate_lead` no cambia (`lead_source: 'welcome_popup'`), a propósito: es lo
+  que permite comparar la serie **antes y después** del cambio y responder si el
+  pack convierte mejor que el 10 % OFF.
+
+El `value` del `purchase` **no** cambia por el regalo: el pack no cuesta nada y
+no es un producto. Tampoco entra a `ecommerce.items` — sumarlo ahí inflaría el
+conteo de unidades de todo GA4 con algo que nadie compró.
+
+⚠️ Sin el mail ni ningún dato del lead, igual que arriba.
+
 ## La garantía en el checkout (spec 021)
 
 | Evento | Cuándo | Parámetros |

@@ -24,7 +24,7 @@ const KEY = 'epicalcos.purchase.v1';
 /**
  * @param {{ orderId: string, items: Array, itemsTotal: number,
  *           shippingCost: number, total: number, coupon?: string,
- *           paymentMethod: 'mercadopago'|'transferencia' }} order
+ *           paymentMethod: 'mercadopago'|'transferencia', regalo?: string|null }} order
  */
 export function stashPurchase(order) {
   try {
@@ -47,7 +47,11 @@ export function stashPurchase(order) {
         shippingCost: order.shippingCost,
         total: order.total,
         coupon: order.coupon || null,
-        paymentMethod: order.paymentMethod
+        paymentMethod: order.paymentMethod,
+        // El pack sorpresa que llevaba el pedido (spec 025). Viaja hasta la
+        // pantalla de gracias por lo mismo que el resto: el redirect a Mercado
+        // Pago se lleva puesto todo el estado del checkout.
+        regalo: order.regalo || null
       })
     );
   } catch {

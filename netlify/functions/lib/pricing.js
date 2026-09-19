@@ -229,6 +229,68 @@ export function ventanaCuponAbierta(emitidoEn, now = Date.now(), tolerancia = CU
   return now - ts <= CUPON_VENTANA_MS + tolerancia;
 }
 
+// --- Pack de stickers sorpresa del popup (espejo de la spec 025) ---
+// El popup entrega un pack que va GRATIS dentro del pedido si la compra entra
+// dentro de los 10 minutos. NO es una línea del carrito y NO toca ningún precio:
+// se decide DESPUÉS del pricing y se suma al pedido guardado y a los canales
+// internos (mail, Notion, CRM) para que nadie despache una caja sin el pack.
+//
+// ⚠️ ESPEJO EXACTO de REGALO_BIENVENIDA en frontend/src/config/pricing.js
+// (`activa`, `id` y `ventanaMs`). Lo verifica regaloBienvenida.test.js.
+//
+// ⚠️ `emitidoEn` LO MANDA EL CLIENTE Y ES FALSIFICABLE, igual que el del cupón.
+// Aceptado explícitamente (spec 025, requirements §9 y P-4): limitarlo exigiría
+// guardar en Blobs quién ya lo recibió, y Blobs ya se cayó dos veces en
+// silencio. El techo del abuso es un pack por pedido pagado. ESTA VALIDACIÓN NO
+// ES UN CONTROL DE SEGURIDAD — ataja el caso honesto y nada más.
+export const REGALO_BIENVENIDA = {
+  activa: true,
+  id: 'pack_sorpresa',
+  titulo: 'Pack de stickers sorpresa',
+  ventanaMs: 10 * 60 * 1000
+};
+// Margen por relojes corridos, igual que el del cupón: el frontend valida SIN
+// tolerancia, así la pantalla nunca promete un regalo que acá se caiga.
+export const REGALO_TOLERANCIA_MS = 60 * 1000;
+
+/**
+ * La línea del regalo dentro del pedido.
+ *
+ * Va a `storedOrder.items`, a Notion y al CRM interno, y NUNCA a los ítems de
+ * Mercado Pago: no está documentado que MP acepte un ítem a $0 y, si lo
+ * rechaza, se cae la preferencia y con ella la venta entera.
+ *
+ * Que sea una línea más de `items` y no un campo aparte es a propósito: así el
+ * pack aparece solo en los cuatro canales que ya dibujan ítems. Con un campo
+ * suelto, cada canal necesitaría código nuevo y el que se olvidara despacharía
+ * una caja sin pack. El precio de esa decisión es el filtro en metaCapi.js.
+ */
+export const LINEA_REGALO = {
+  id: 'regalo:pack_sorpresa',
+  title: '🎁 Pack de stickers sorpresa (regalo)',
+  quantity: 1,
+  unit_price: 0,
+  currency_id: 'ARS'
+};
+
+/**
+ * ¿Este pedido se lleva el pack? Devuelve el id del regalo, o null.
+ *
+ * NUNCA rechaza un pedido: un regalo vencido, ausente, en el futuro o basura se
+ * ignora y la compra sigue sin él. Rechazar dejaría a alguien sin poder comprar
+ * por un regalo, que es justo lo contrario de lo que busca la promo.
+ */
+export function regaloVigente({ emitidoEn, digitalOnly = false, now = Date.now() } = {}) {
+  if (!REGALO_BIENVENIDA.activa) return null;
+  // Un pedido de solo archivos imprimibles no tiene caja donde meter el pack.
+  if (digitalOnly) return null;
+  const ts = Number(emitidoEn);
+  if (!Number.isFinite(ts)) return null;
+  if (ts > now + REGALO_TOLERANCIA_MS) return null; // emisión en el futuro
+  if (now - ts > REGALO_BIENVENIDA.ventanaMs + REGALO_TOLERANCIA_MS) return null;
+  return REGALO_BIENVENIDA.id;
+}
+
 const WHOLESALE_QTY = 100; // pack mayorista: MÍNIMO 100 calcos (sin tope), 50 % off
 const WHOLESALE_DISCOUNT = 0.5;
 
@@ -518,12 +580,13 @@ function lineBase(id, quantity) {
  * Valida y re-precia un pedido completo con las reglas del servidor.
  * Nunca confía en unit_price ni en shipping.cost del cliente.
  *
- * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object, paymentMethod?: string, couponCode?: string, couponIssuedAt?: number }} payload
+ * @param {{ items: Array<{id, title, quantity, unit_price}>, shipping?: object, paymentMethod?: string, couponCode?: string, couponIssuedAt?: number, regaloEmitidoEn?: number }} payload
  * @returns {{ ok: true, items: Array, itemsTotal: number, shippingCost: number,
- *             shippingMethod: string, methodValue: string, couponApplied: string|null }
+ *             shippingMethod: string, methodValue: string, couponApplied: string|null,
+ *             regalo: string|null }
  *          | { ok: false, error: string, detail?: string }}
  */
-export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCode, couponIssuedAt }) {
+export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCode, couponIssuedAt, regaloEmitidoEn }) {
   if (!Array.isArray(items) || items.length === 0) {
     return { ok: false, error: 'items_empty' };
   }
@@ -732,6 +795,13 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     province: shipping?.province
   });
 
+  // Pack sorpresa (spec 025). Se calcula ACÁ, al final y sobre `digitalOnly`, a
+  // propósito: no entra a `clean` ni a `priced`, así que no puede mover un
+  // precio, el itemsTotal, el umbral de envío gratis ni el costo del correo. Si
+  // alguna vez hay que moverlo más arriba, hay un test que compara el mismo
+  // pedido con y sin regalo justamente para que eso no pase inadvertido.
+  const regalo = regaloVigente({ emitidoEn: regaloEmitidoEn, digitalOnly });
+
   return {
     ok: true,
     items: priced,
@@ -739,6 +809,7 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
     shippingCost,
     shippingMethod: shippingMethodLabel(methodValue, shipping?.city, shipping?.province),
     methodValue,
-    couponApplied
+    couponApplied,
+    regalo
   };
 }

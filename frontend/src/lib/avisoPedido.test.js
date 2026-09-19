@@ -139,3 +139,54 @@ describe('buildOrderView · a qué mail se le confirma', () => {
     expect(v.email).toBe('—');
   });
 });
+
+/**
+ * El pack sorpresa y el aviso rearmado desde Mercado Pago (spec 025).
+ *
+ * El regalo NO viaja como ítem de la preferencia —un ítem a $0 podría voltear
+ * la venta entera—, así que cuando Blobs se cae y el detalle se rearma con lo
+ * que devuelve MP, la línea no está por ningún lado. Sin esta reposición el
+ * aviso saldría completo y en silencio, y la caja iría sin el regalo: la misma
+ * falla muda que ya costó un pedido con "PEDIDO —".
+ */
+describe('buildOrderView · el pack sorpresa sobrevive a Blobs caído', () => {
+  const pagoConRegalo = {
+    ...pagoMP,
+    metadata: { ...pagoMP.metadata, regalo: 'pack_sorpresa' }
+  };
+
+  it('sin pedido guardado, repone la línea del regalo desde la metadata', () => {
+    const v = buildOrderView(null, pagoConRegalo);
+
+    const regalos = v.items.filter((i) => i.id === 'regalo:pack_sorpresa');
+    expect(regalos).toHaveLength(1);
+    expect(regalos[0]).toMatchObject({ quantity: 1, unit_price: 0 });
+  });
+
+  it('no la duplica cuando el pedido guardado ya la traía', () => {
+    const guardado = {
+      orderId: 'EPI-1788120580793-yir3k',
+      items: [
+        { id: 'sticker:disney-3:6cm', title: 'Disney #3 · 6 cm', quantity: 1, unit_price: 1600 },
+        { id: 'regalo:pack_sorpresa', title: '🎁 Pack de stickers sorpresa (regalo)', quantity: 1, unit_price: 0 }
+      ],
+      itemsTotal: 1600
+    };
+
+    const v = buildOrderView(guardado, pagoConRegalo);
+
+    expect(v.items.filter((i) => i.id === 'regalo:pack_sorpresa')).toHaveLength(1);
+  });
+
+  it('sin regalo en la metadata no inventa ninguna línea', () => {
+    const v = buildOrderView(null, pagoMP);
+
+    expect(v.items.some((i) => i.id === 'regalo:pack_sorpresa')).toBe(false);
+  });
+
+  it('reponerla no mueve el total del pedido: el pack no cuesta nada', () => {
+    expect(buildOrderView(null, pagoConRegalo).itemsTotal).toBe(
+      buildOrderView(null, pagoMP).itemsTotal
+    );
+  });
+});

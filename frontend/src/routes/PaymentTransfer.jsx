@@ -31,7 +31,8 @@ export default function PaymentTransfer() {
         total: paid.total,
         shipping: paid.shippingCost,
         coupon: paid.coupon,
-        paymentMethod: paid.paymentMethod
+        paymentMethod: paid.paymentMethod,
+        regalo: paid.regalo
       });
     }
     clear();

@@ -12,7 +12,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { saveOrder } from './lib/orderStore.js';
 import { borrarCarrito } from './lib/abandonedStore.js';
 import { crearLeadEnCRM } from './_notion.js';
-import { validateAndPriceOrder } from './lib/pricing.js';
+import { validateAndPriceOrder, LINEA_REGALO } from './lib/pricing.js';
 import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
 
 // CORS restringido a los orígenes propios (antes era "*"). Los requests sin
@@ -78,13 +78,18 @@ export const handler = async (event) => {
     return json(400, { error: 'invalid_json' });
   }
 
-  const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon, couponIssuedAt: rawIssuedAt } = body;
+  const { items, payer: rawPayer, shipping: rawShipping, couponCode: rawCoupon, couponIssuedAt: rawIssuedAt, regaloEmitidoEn: rawRegalo } = body;
   const couponCode = clip(rawCoupon, 30) || undefined;
   // Instante de emisión del cupón (spec 017). Se coacciona a número y se
   // descarta cualquier cosa que no lo sea: viene del cliente, así que no puede
   // entrar como string ni como objeto al cálculo de la ventana.
   const emitido = Number(rawIssuedAt);
   const couponIssuedAt = Number.isFinite(emitido) ? emitido : undefined;
+  // Instante en que el popup entregó el pack sorpresa (spec 025). Mismo
+  // tratamiento que el del cupón: se coacciona a número y lo que no lo sea se
+  // descarta. Un valor inválido NUNCA rechaza el pedido, solo lo deja sin pack.
+  const emitidoRegalo = Number(rawRegalo);
+  const regaloEmitidoEn = Number.isFinite(emitidoRegalo) ? emitidoRegalo : undefined;
 
   // Señales para la API de conversiones de Meta: cookies del píxel que manda el
   // frontend + IP y user-agent de ESTE request (el del comprador, no el de MP).
@@ -122,7 +127,7 @@ export const handler = async (event) => {
   // Precios y envío: SIEMPRE recalculados en el servidor a partir del id de
   // cada item (lib/pricing.js). Si el precio recibido no coincide con las
   // reglas vigentes, se rechaza el pedido (precio adulterado o frontend viejo).
-  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'mercadopago', couponCode, couponIssuedAt });
+  const order = validateAndPriceOrder({ items, shipping, paymentMethod: 'mercadopago', couponCode, couponIssuedAt, regaloEmitidoEn });
   if (!order.ok) {
     console.warn('[create-preference] pedido rechazado:', order.error, order.detail || '');
     return json(400, { error: order.error, message: order.detail });
@@ -135,24 +140,39 @@ export const handler = async (event) => {
     const orderId = `EPI-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const siteUrl = process.env.URL || 'https://epicalcos-ecommerce.netlify.app';
 
-    const mpItems = [...order.items];
     const shippingCost = order.shippingCost;
     shipping.method = order.shippingMethod; // etiqueta recalculada en el servidor
-    if (shippingCost > 0) {
-      mpItems.push({
-        id: 'shipping',
-        title: `Envío — ${order.shippingMethod}`,
-        quantity: 1,
-        unit_price: shippingCost,
-        currency_id: 'ARS'
-      });
-    }
+    const lineaEnvio =
+      shippingCost > 0
+        ? {
+            id: 'shipping',
+            title: `Envío — ${order.shippingMethod}`,
+            quantity: 1,
+            unit_price: shippingCost,
+            currency_id: 'ARS'
+          }
+        : null;
+    const mpItems = [...order.items, ...(lineaEnvio ? [lineaEnvio] : [])];
+
+    // ⚠️ EL REGALO NO VIAJA A MERCADO PAGO. Que MP acepte un ítem a $0 no está
+    // documentado, y si lo rechaza se cae la preferencia entera — o sea, la
+    // venta. Va solo en el pedido guardado y en los canales internos, pegado a
+    // los productos y ANTES del envío, que es donde el mail lo va a mostrar.
+    const itemsPedido = order.regalo
+      ? [...order.items, LINEA_REGALO, ...(lineaEnvio ? [lineaEnvio] : [])]
+      : mpItems;
 
     // Registrar el lead en el CRM de Notion ("Checkout iniciado") y guardar el
     // pageId para que el webhook actualice esa misma fila al confirmarse el pago.
     // crearLeadEnCRM nunca lanza: si Notion falla, el checkout sigue igual.
     const total = order.itemsTotal + shippingCost;
-    const notionPageId = await crearLeadEnCRM({ payer, shipping, items: order.items, total, orderId });
+    const notionPageId = await crearLeadEnCRM({
+      payer,
+      shipping,
+      items: order.regalo ? [...order.items, LINEA_REGALO] : order.items,
+      total,
+      orderId
+    });
 
     const preference = await preferenceClient.create({
       body: {
@@ -176,7 +196,12 @@ export const handler = async (event) => {
           shipping_zip_code: shipping?.zipCode,
           shipping_address: payer?.address,
           comments: clip(shipping?.comments, MAX_MP_COMMENTS) || undefined,
-          notion_page_id: notionPageId || undefined
+          notion_page_id: notionPageId || undefined,
+          // El pack viaja en la metadata además de en el pedido guardado porque
+          // Blobs ya se cayó en silencio dos veces (ver notify.js:68). Sin esto,
+          // un aviso rearmado desde MP diría "todo bien" y la caja saldría sin
+          // el pack.
+          regalo: order.regalo || undefined
         },
         notification_url: `${siteUrl}/api/mercadopago-webhook`
       }
@@ -208,7 +233,7 @@ export const handler = async (event) => {
         comments: shipping?.comments,
         cost: shippingCost
       },
-      items: mpItems,
+      items: itemsPedido,
       itemsTotal,
       total: itemsTotal + shippingCost,
       tracking

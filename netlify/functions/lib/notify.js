@@ -31,6 +31,7 @@
  */
 
 import { digitalDeliveries, needsManualDelivery, tieneArchivosDigitales, linkEntrega } from './digital.js';
+import { LINEA_REGALO } from './pricing.js';
 
 const DEFAULT_TO = 'epicalcos@gmail.com';
 const DEFAULT_FROM = 'EPICALCOS <onboarding@resend.dev>';
@@ -101,7 +102,16 @@ export function buildOrderView(order, payment) {
 
   // El pedido guardado manda; si no está, el detalle se rearma con lo que trae
   // el pago. Un aviso de venta sin decir qué se vendió no sirve para nada.
-  const items = order?.items?.length ? order.items : itemsDelPago(payment);
+  const itemsBase = order?.items?.length ? order.items : itemsDelPago(payment);
+  // Con Blobs caído el detalle se rearma desde MP, y ahí el pack NO viene: a la
+  // preferencia no se le manda (un ítem a $0 podría voltear la venta entera).
+  // La metadata sí lo dice, así que la línea se repone acá. Sin esto el aviso
+  // saldría completo y en silencio, y la caja iría sin el regalo.
+  // El `some` evita duplicarla cuando el pedido guardado sí estaba.
+  const items =
+    meta.regalo && !itemsBase.some((i) => i.id === LINEA_REGALO.id)
+      ? [...itemsBase, LINEA_REGALO]
+      : itemsBase;
   const itemsTotal =
     order?.itemsTotal ??
     (items.length
@@ -187,16 +197,22 @@ function bankTransferText() {
   return `  CVU: ${BANK_TRANSFER.cvu}\n  Alias: ${BANK_TRANSFER.alias}\n  Titular: ${BANK_TRANSFER.titular}`;
 }
 
+/**
+ * Una línea a $0 se escribe GRATIS y no "$ 0".
+ *
+ * Hoy la única que llega así es el pack sorpresa (spec 025), pero la regla es
+ * del precio y no del id: cualquier línea sin cargo se lee igual. "$ 0" en un
+ * mail de pedido se lee como un error de cálculo, y el que arma la caja
+ * necesita entender de un vistazo que eso va igual adentro.
+ */
+const precioLinea = (i) => {
+  const total = Number(i.unit_price) * Number(i.quantity);
+  return total === 0 ? 'GRATIS' : money(total);
+};
+
 function itemsText(items) {
   if (!items?.length) return '—';
-  return items
-    .map(
-      (i) =>
-        `• ${i.title} x${i.quantity} — ${money(
-          Number(i.unit_price) * Number(i.quantity)
-        )}`
-    )
-    .join('\n');
+  return items.map((i) => `• ${i.title} x${i.quantity} — ${precioLinea(i)}`).join('\n');
 }
 
 function itemsHtml(items) {
@@ -207,12 +223,40 @@ function itemsHtml(items) {
       <tr>
         <td style="padding:6px 10px;border-bottom:1px solid #eee">${esc(i.title)}</td>
         <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center">${esc(i.quantity)}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${money(
-          Number(i.unit_price) * Number(i.quantity)
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${esc(
+          precioLinea(i)
         )}</td>
       </tr>`
     )
     .join('');
+}
+
+/**
+ * ¿Este pedido se lleva el pack sorpresa? Se pregunta por la LÍNEA y no por un
+ * campo aparte: la línea es lo único que viaja igual por Blobs, por la metadata
+ * de MP y por el pedido de transferencia.
+ */
+function llevaRegalo(o) {
+  return (o?.items || []).some((i) => i.id === LINEA_REGALO.id);
+}
+
+/**
+ * Banda del pack sorpresa, arriba de todo en el mail interno.
+ *
+ * La línea ya está en la tabla de ítems, pero una línea más en una tabla de 30
+ * es exactamente lo que se pasa por alto cuando hay diez pedidos para armar.
+ * Acá el costo de no verlo es despachar una caja sin el regalo que el cliente
+ * vio prometido en pantalla. Por eso va arriba y con color propio.
+ */
+function bandaRegalo(o) {
+  if (!llevaRegalo(o)) return '';
+  return `<div style="margin:0 0 16px;padding:14px;background:#f0fdf4;border:2px solid #16a34a;border-radius:8px">
+            <strong style="color:#15803d;font-size:15px">🎁 INCLUIR PACK SORPRESA</strong><br>
+            <span style="font-size:14px">
+              Este pedido se ganó el <strong>pack de stickers sorpresa</strong> del popup: va
+              GRATIS dentro de la caja, además de lo que pagó.
+            </span>
+          </div>`;
 }
 
 function buildEmailHtml(o) {
@@ -278,6 +322,7 @@ function buildEmailHtml(o) {
     <h2 style="margin:0 0 4px">🛒 Nuevo pedido EPICALCOS</h2>
     <p style="margin:0 0 16px">${statusBadge} &nbsp; <strong>Ref:</strong> ${esc(o.orderId)}</p>
 
+    ${bandaRegalo(o)}
     ${manualDigital}
     ${entregaTrasConfirmar}
 
@@ -364,9 +409,12 @@ function buildEmailText(o) {
           `   Por ahora, mandale la descarga a ${o.email} a mano.\n`)
     );
   })();
+  const bandaRegaloTexto = llevaRegalo(o)
+    ? '\n🎁 INCLUIR PACK SORPRESA — este pedido se ganó el pack de stickers sorpresa del popup.\n'
+    : '';
   return `NUEVO PEDIDO EPICALCOS — Ref: ${o.orderId}
 Estado del pago: ${statusLabel(o)}
-${manualDigital}${entregaTrasConfirmar}
+${bandaRegaloTexto}${manualDigital}${entregaTrasConfirmar}
 CLIENTE
   Nombre: ${o.name}
   Email: ${o.email}
@@ -929,7 +977,13 @@ export async function createNotionRow(o) {
  * un mail nuevo. No-op si falta RESEND_API_KEY. Nunca lanza.
  * @param {string} email
  */
-export async function sendLeadEmail(email) {
+/**
+ * Aviso interno de que alguien dejó el mail en el popup.
+ * @param {string} email
+ * @param {{ oferta?: 'cupon'|'regalo' }} contexto qué se ganó. Default `cupon`
+ *   para que cualquier llamador viejo siga diciendo lo mismo que antes.
+ */
+export async function sendLeadEmail(email, { oferta = 'cupon' } = {}) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.log('[notify] RESEND_API_KEY no configurada — se omite el mail de lead.');
@@ -953,9 +1007,18 @@ export async function sendLeadEmail(email) {
         from,
         to,
         reply_to: email,
-        subject: `📧 Nuevo lead (popup 10% OFF) — ${email}`,
-        html: `<p>Alguien dejó su mail en el popup de bienvenida.</p><p><strong>Mail:</strong> ${esc(email)}</p><p>Se le mandó el cupón <strong>EPICA10</strong> (si el remitente está verificado en Resend).</p>`,
-        text: `Nuevo lead (popup 10% OFF)\nMail: ${email}\nCupón enviado: EPICA10`
+        subject:
+          oferta === 'regalo'
+            ? `📧 Nuevo lead (popup pack sorpresa) — ${email}`
+            : `📧 Nuevo lead (popup 10% OFF) — ${email}`,
+        html:
+          oferta === 'regalo'
+            ? `<p>Alguien dejó su mail en el popup de bienvenida.</p><p><strong>Mail:</strong> ${esc(email)}</p><p>Se ganó el <strong>pack de stickers sorpresa</strong>: va gratis si compra dentro de los 10 minutos. No se le manda mail — el regalo vive en su navegador.</p>`
+            : `<p>Alguien dejó su mail en el popup de bienvenida.</p><p><strong>Mail:</strong> ${esc(email)}</p><p>Se le mandó el cupón <strong>EPICA10</strong> (si el remitente está verificado en Resend).</p>`,
+        text:
+          oferta === 'regalo'
+            ? `Nuevo lead (popup pack sorpresa)\nMail: ${email}\nSe ganó el pack de stickers sorpresa (10 min para comprar).`
+            : `Nuevo lead (popup 10% OFF)\nMail: ${email}\nCupón enviado: EPICA10`
       })
     });
     if (!res.ok) {

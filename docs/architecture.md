@@ -215,10 +215,12 @@ Un solo contexto: `CartContext`.
 **Mercado Pago** — `create-preference.js`
 1. CORS restringido + tope de body (200 KB)
 2. Valida `payer` (nombre + email con formato)
-3. **`validateAndPriceOrder()`** — reprecia todo desde cero
+3. **`validateAndPriceOrder()`** — reprecia todo desde cero y decide, **después
+   del pricing**, si el pedido se lleva el pack sorpresa (spec 025)
 4. Crea el lead en Notion ("Checkout iniciado") y guarda su `pageId`
-5. Crea la preferencia en MP (con `external_reference = EPI-{ts}-{rand}`)
-6. Guarda el pedido completo en Blobs
+5. Crea la preferencia en MP (con `external_reference = EPI-{ts}-{rand}`).
+   ⚠️ **El pack NO va en los ítems de MP** — ver más abajo
+6. Guarda el pedido completo en Blobs, esta vez **con** la línea del pack
 7. Borra el carrito abandonado
 8. Notifica al CRM interno (`order.created`)
 9. Devuelve `init_point`
@@ -227,6 +229,14 @@ Un solo contexto: `CartContext`.
 Igual hasta el paso 3, pero sin MP: manda los mails **de inmediato** (no hay
 webhook que confirme) y marca el pedido `pendiente_transferencia`. El
 comprobante llega por WhatsApp y se registra a mano.
+
+⚠️ **El pack sorpresa nunca viaja a Mercado Pago.** Que MP acepte un ítem a $0
+no está documentado y, si lo rechazara, se caería la preferencia entera — o sea,
+la venta. El pack viaja por otros tres caminos: como línea a $0 en el pedido
+guardado (de ahí sale solo en el mail interno, el mail al cliente, Notion y el
+CRM), como `metadata.regalo` en la preferencia (el plan B para cuando Blobs se
+cae y el aviso se rearma desde MP), y filtrado explícitamente en `metaCapi.js`,
+que es el único consumidor al que esa línea le hace daño.
 
 **Confirmación** — `mercadopago-webhook.js`
 1. Verifica la firma HMAC de MP (`lib/mpSignature.js`) → 401 si es inválida

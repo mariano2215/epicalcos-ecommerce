@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `025-popup-pack-sorpresa` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` — implementada el 19/9/2026 |
 | **Fecha** | 18/09/2026 |
 | **Autor** | Mariano (request) · Claude (redacción) |
 
@@ -264,32 +264,35 @@ Sin mail ni ningún dato del lead en el `dataLayer`.
 
 ## 12. Preguntas abiertas
 
-Cada una tiene una **propuesta por defecto**, que es la que usa el diseño. Si
-Mariano no la cambia, se implementa así.
+Cada una tiene una **propuesta por defecto**, que es la que usa el diseño.
 
-- [ ] **P-1 — ¿Qué trae el pack?** Cantidad y tamaño de calcos. Sirve para el
+✅ **Resueltas el 19/9/2026**: Mariano aceptó **las seis por defecto**
+(*"dale, listame las P-1 a P-6 e implementá la spec"*). Se implementaron tal
+como están escritas abajo.
+
+- [x] **P-1 — ¿Qué trae el pack?** Cantidad y tamaño de calcos. Sirve para el
       copy y para calcular el costo.
       *Propuesta*: el copy dice "pack de stickers sorpresa", sin número, hasta
       que Mariano lo defina.
-- [ ] **P-2 — ¿Hay compra mínima?** El pedido dice "con tu compra".
+- [x] **P-2 — ¿Hay compra mínima?** El pedido dice "con tu compra".
       *Propuesta*: **ninguna**. Cualquier compra con algo físico lo gana, incluso
       un solo calco de $1.200. Si el costo del pack no lo banca, se agrega un
       mínimo como regla aparte.
-- [ ] **P-3 — ¿Se le manda un mail al lead?** Hoy le llega el código EPICA10.
+- [x] **P-3 — ¿Se le manda un mail al lead?** Hoy le llega el código EPICA10.
       *Propuesta*: **no**. El regalo vive en el navegador donde dejó el mail. Un
       mail que se abre desde la app de Gmail abre **otro** navegador, sin el
       regalo, y le prometería algo que esa pantalla no muestra. Con 10 minutos
       de ventana, además, casi siempre se leería vencido.
-- [ ] **P-4 — Abuso: ¿un pack por persona?** Hoy nada impide ganarlo de nuevo
+- [x] **P-4 — Abuso: ¿un pack por persona?** Hoy nada impide ganarlo de nuevo
       desde una ventana privada.
       *Propuesta*: **aceptarlo**, como en la 017. Limitarlo exige guardar en el
       servidor quién ya lo recibió, y ese almacenamiento (Blobs) ya se cayó dos
       veces. El techo del abuso es un pack por pedido pagado.
-- [ ] **P-5 — ¿También en el carrito?** El contador solo se ve en el popup y el
+- [x] **P-5 — ¿También en el carrito?** El contador solo se ve en el popup y el
       checkout.
       *Propuesta*: fuera de esta spec. Si `regalo_vencido` con `donde: popup`
       sale alto, es la primera palanca.
-- [ ] **P-6 — Estado del lead en Notion.** Hoy se llama "Lead 10% OFF".
+- [x] **P-6 — Estado del lead en Notion.** Hoy se llama "Lead 10% OFF".
       *Propuesta*: **dejarlo**. Renombrarlo crea una opción nueva en el select
       y parte los filtros y vistas que ya existen. Solo cambia el texto de
       Observaciones.

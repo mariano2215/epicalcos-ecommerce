@@ -187,3 +187,46 @@ describe('CAPI: dedup y no-op (spec 003)', () => {
     ).resolves.toEqual({ sent: false, reason: 'exception' });
   });
 });
+
+/**
+ * El pack sorpresa (spec 025) viaja como una línea más del pedido para que
+ * salga solo en el mail, en Notion y en el CRM. Meta es el único consumidor de
+ * `order.items` al que esa línea le hace daño: su id no existe en el catálogo,
+ * así que ensucia el Purchase con un producto fantasma y le suma una unidad al
+ * conteo que nadie compró.
+ */
+describe('el regalo no entra al Purchase de la API de conversiones', () => {
+  const pedidoConRegalo = {
+    payer: { name: 'Ana Perez', email: 'ana@example.com', phone: '3411234567' },
+    shipping: { city: 'Rosario', province: 'Santa Fe', zipCode: '2000' },
+    items: [
+      { id: 'sticker:marvel-3:6cm', title: 'Marvel #3 · 6 cm', quantity: 2, unit_price: 1600 },
+      { id: 'regalo:pack_sorpresa', title: '🎁 Pack de stickers sorpresa (regalo)', quantity: 1, unit_price: 0 },
+      { id: 'shipping', title: 'Envío — Rosario', quantity: 1, unit_price: 4500 }
+    ],
+    total: 7700
+  };
+
+  it('no lo manda en contents ni lo cuenta en num_items', async () => {
+    const res = await sendPurchaseEvent({
+      orderId: 'EPI-1789000000000-abc12',
+      order: pedidoConRegalo,
+      payment: { transaction_amount: 7700, date_approved: '2026-09-18T18:00:00.000Z' }
+    });
+    expect(res.sent).toBe(true);
+
+    const { contents, num_items: numItems } = capturado.data[0].custom_data;
+    expect(contents.map((c) => c.id)).toEqual(['sticker:marvel-3:6cm']);
+    // 2 calcos: ni el envío ni el pack suman unidades.
+    expect(numItems).toBe(2);
+  });
+
+  it('el value sigue siendo lo que se pagó: el regalo no vale nada', async () => {
+    await sendPurchaseEvent({
+      orderId: 'EPI-1789000000000-abc12',
+      order: pedidoConRegalo,
+      payment: { transaction_amount: 7700, date_approved: '2026-09-18T18:00:00.000Z' }
+    });
+    expect(capturado.data[0].custom_data.value).toBe(7700);
+  });
+});

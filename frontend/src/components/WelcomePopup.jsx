@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext.jsx';
 import { captureLead } from '../services/leadService.js';
-import { trackLeadCapture, trackCuponEmitido, trackCuponVencido } from '../lib/analytics.js';
-import { CUPON_VENTANA_MS } from '../config/pricing.js';
+import {
+  trackLeadCapture,
+  trackCuponEmitido,
+  trackCuponVencido,
+  trackRegaloEmitido,
+  trackRegaloVencido
+} from '../lib/analytics.js';
+import { CUPON_VENTANA_MS, REGALO_BIENVENIDA } from '../config/pricing.js';
 import { emitirCupon } from '../lib/cuponVentana.js';
+import { emitirRegalo } from '../lib/regaloBienvenida.js';
 import CuponCountdown from './CuponCountdown.jsx';
+import RegaloCountdown from './RegaloCountdown.jsx';
 
 const SEEN_KEY = 'epicalcos.welcomePopup.seen';
 // El popup se dispara cuando, scrolleando, se llega a la sección de categorías
@@ -27,10 +36,20 @@ const HIDDEN_ON = ['/checkout', '/carrito'];
 
 export default function WelcomePopup() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { totalItems } = useCart();
   const [visible, setVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle | submitting | done | error
   const [code, setCode] = useState('');
+  /**
+   * Qué se ganó, según LA RESPUESTA del servidor y no según el flag local
+   * (spec 025). Si el regalo está apagado del lado del servidor, acá llega
+   * `'cupon'` y la pantalla de éxito es la de siempre: nunca se muestra un
+   * regalo que después no va a estar en la caja.
+   */
+  const [oferta, setOferta] = useState('cupon');
+  const [regalo, setRegalo] = useState(null);
   // El instante de emisión arranca la ventana de 10 minutos (spec 017). Se
   // guarda en estado además de en localStorage para que el contador de este
   // popup no dependa de volver a leer el storage.
@@ -127,21 +146,43 @@ export default function WelcomePopup() {
     setVisible(false);
   };
 
+  /**
+   * Con el carrito lleno, el botón del popup confirmado lleva derecho a pagar:
+   * la ventana son 10 minutos y cada pantalla de más entre el regalo y el
+   * checkout se los come. Con el carrito vacío no hay a dónde mandarlo todavía,
+   * así que solo se cierra y sigue eligiendo (RF-4).
+   */
+  const irAComprar = () => {
+    const hayCarrito = totalItems > 0;
+    close();
+    if (hayCarrito) navigate('/checkout');
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email)) return;
     setStatus('submitting');
     try {
-      const { code: promoCode } = await captureLead(email);
-      setCode(promoCode);
+      // Se le PIDE el regalo; el servidor contesta qué se entregó de verdad.
+      const res = await captureLead(email, REGALO_BIENVENIDA.activa ? 'regalo' : undefined);
       setStatus('done');
       markSeen();
       trackLeadCapture('welcome_popup');
-      // Emitir ARRANCA la ventana: de acá salen los 10 minutos que cuenta el
-      // contador de abajo y los que va a revalidar el servidor.
-      const ts = emitirCupon(promoCode);
-      setEmitidoEn(ts);
-      trackCuponEmitido(promoCode, CUPON_VENTANA_MS);
+
+      if (res?.oferta === 'regalo') {
+        setOferta('regalo');
+        // Emitir ARRANCA la ventana: de acá salen los 10 minutos que cuenta el
+        // contador de abajo, los que muestra el checkout y los que revalida el
+        // servidor al crear el pedido.
+        setRegalo(emitirRegalo());
+        trackRegaloEmitido(res.regalo || REGALO_BIENVENIDA.id, REGALO_BIENVENIDA.ventanaMs);
+      } else {
+        setOferta('cupon');
+        setCode(res?.code);
+        const ts = emitirCupon(res?.code);
+        setEmitidoEn(ts);
+        trackCuponEmitido(res?.code, CUPON_VENTANA_MS);
+      }
     } catch (err) {
       console.error(err);
       setStatus('error');
@@ -168,7 +209,28 @@ export default function WelcomePopup() {
         </button>
 
         <div className="relative">
-          {status === 'done' ? (
+          {status === 'done' && oferta === 'regalo' ? (
+            <>
+              <div className="text-5xl mb-3">🎁</div>
+              <h3 className="font-display font-extrabold text-2xl">¡Tu pack sorpresa está reservado!</h3>
+              <p className="text-white/70 text-sm mt-2">
+                Va <strong className="text-white">gratis</strong> adentro de tu pedido si comprás en
+                los próximos <strong className="text-white">10 minutos</strong>.
+              </p>
+              {/* El contador va acá y también en el checkout: uno que la persona
+                  no ve mientras completa el formulario no cambia ninguna
+                  conducta. `donde: 'popup'` distingue al que nunca avanzó del
+                  que lo perdió comprando — ese segundo es el caso caro. */}
+              <RegaloCountdown
+                regalo={regalo}
+                onVencido={() => trackRegaloVencido(REGALO_BIENVENIDA.id, 'popup')}
+                className="mt-4 justify-center"
+              />
+              <button onClick={irAComprar} className="btn-primary w-full mt-5">
+                {totalItems > 0 ? 'Ir a pagar' : 'Elegir mis calcos'}
+              </button>
+            </>
+          ) : status === 'done' ? (
             <>
               <div className="text-5xl mb-3">🎁</div>
               <h3 className="font-display font-extrabold text-2xl">¡Listo, gracias!</h3>
@@ -193,10 +255,24 @@ export default function WelcomePopup() {
           ) : (
             <>
               <div className="text-5xl mb-3">🎁</div>
-              <h3 className="font-display font-extrabold text-2xl">10% OFF en tu primera compra</h3>
-              <p className="text-white/70 text-sm mt-2">
-                Dejanos tu mail y te mandamos el código al toque.
-              </p>
+              {REGALO_BIENVENIDA.activa ? (
+                <>
+                  <h3 className="font-display font-extrabold text-2xl">
+                    Pack de stickers sorpresa GRATIS
+                  </h3>
+                  <p className="text-white/70 text-sm mt-2">
+                    Dejanos tu mail y te lo sumamos a tu pedido, sin cargo, si comprás en los
+                    próximos 10 minutos.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="font-display font-extrabold text-2xl">10% OFF en tu primera compra</h3>
+                  <p className="text-white/70 text-sm mt-2">
+                    Dejanos tu mail y te mandamos el código al toque.
+                  </p>
+                </>
+              )}
               <form onSubmit={submit} className="mt-5 flex flex-col gap-2.5">
                 <input
                   type="email"
@@ -207,7 +283,11 @@ export default function WelcomePopup() {
                   className="input-dark text-center"
                 />
                 <button type="submit" disabled={status === 'submitting'} className="btn-primary w-full">
-                  {status === 'submitting' ? 'Enviando…' : 'Quiero mi 10% OFF'}
+                  {status === 'submitting'
+                    ? 'Enviando…'
+                    : REGALO_BIENVENIDA.activa
+                      ? 'Quiero mi pack sorpresa'
+                      : 'Quiero mi 10% OFF'}
                 </button>
               </form>
               {status === 'error' && (

@@ -13,17 +13,22 @@ import {
   couponAnulaTodo,
   esPromoArgentina,
   PROMO_ARGENTINA,
-  CUSTOM_SPEC_STORAGE_KEY
+  CUSTOM_SPEC_STORAGE_KEY,
+  REGALO_BIENVENIDA,
+  ventanaRegaloAbierta
 } from '../config/pricing.js';
 import {
   trackBeginCheckout,
   trackAddShippingInfo,
   trackAddPaymentInfo,
   trackCuponVencido,
-  trackCuponAplicadoEnPromo
+  trackCuponAplicadoEnPromo,
+  trackRegaloVencido
 } from '../lib/analytics.js';
 import { leerCupon, olvidarCupon } from '../lib/cuponVentana.js';
 import CuponCountdown from '../components/CuponCountdown.jsx';
+import { leerRegalo, olvidarRegalo } from '../lib/regaloBienvenida.js';
+import RegaloCountdown from '../components/RegaloCountdown.jsx';
 import { stashPurchase } from '../lib/purchaseTracking.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
@@ -96,6 +101,29 @@ export default function Checkout() {
   const [couponIssuedAt, setCouponIssuedAt] = useState(null);
   const [cuponVencidoAviso, setCuponVencidoAviso] = useState(false);
   const [couponError, setCouponError] = useState('');
+  /**
+   * Pack de stickers sorpresa del popup (spec 025).
+   *
+   * Es estado del CHECKOUT y no una línea del carrito, a propósito: como línea
+   * entraría al 3x2, al conteo de unidades, al umbral de envío gratis y a los
+   * carritos ya guardados en `localStorage`. Acá no toca ninguno de esos
+   * números — no cambia el subtotal, ni el descuento, ni el envío, ni el total.
+   *
+   * Se lee UNA vez al montar: si la ventana ya estaba cerrada al entrar, no hay
+   * línea ni aviso (RF-13). Un pedido de solo archivos imprimibles nunca lo
+   * lleva, porque no hay caja donde meterlo (RF-20, espejado en el servidor).
+   */
+  const [regalo, setRegalo] = useState(() => {
+    // El interruptor se pregunta ACÁ y no dentro de `ventanaRegaloAbierta`: esa
+    // función responde una sola cosa —si la ventana está abierta— y el checkout
+    // tiene que apagar el regalo aunque lo esté. Sin esto, apagar la promo le
+    // seguiría mostrando el pack a todo el que lo tuviera guardado, y el
+    // servidor se lo sacaría del pedido sin decir nada (requirements §10).
+    if (!REGALO_BIENVENIDA.activa || digitalOnly) return null;
+    const guardado = leerRegalo();
+    return guardado && ventanaRegaloAbierta(guardado.emitidoEn) ? guardado : null;
+  });
+  const [regaloVencidoAviso, setRegaloVencidoAviso] = useState(false);
   /**
    * El campo de cupón arranca COLAPSADO detrás de un link.
    *
@@ -191,6 +219,24 @@ export default function Checkout() {
     // vencido: el servidor tampoco lo aceptaría.
     olvidarCupon();
   }, [appliedCoupon]);
+
+  /**
+   * Se terminó la ventana del pack con el checkout abierto (spec 025).
+   *
+   * ⚠️ NO se toca NADA del formulario, por lo mismo que en `vencerCupon`: lo que
+   * ya tipeó queda donde está. Acá el momento es incluso más benigno que con el
+   * cupón —el total no se mueve, solo desaparece una línea—, y justamente por
+   * eso el aviso tiene que decirlo: sin explicación, una línea que se esfuma
+   * sola se lee como que el sitio perdió algo del pedido.
+   */
+  const vencerRegalo = useCallback(() => {
+    trackRegaloVencido(REGALO_BIENVENIDA.id, 'checkout');
+    setRegalo(null);
+    setRegaloVencidoAviso(true);
+    // Se olvida del storage para que la próxima pantalla no lo reofrezca ya
+    // vencido: el servidor tampoco lo aceptaría.
+    olvidarRegalo();
+  }, []);
 
   // Precios reales según el medio de pago y el cupón aplicado. Un cupón de %
   // normal (EPICA10) se SUMA al 10% por transferencia; uno de bundle o uno
@@ -352,11 +398,12 @@ export default function Checkout() {
           shippingCost,
           total,
           coupon: appliedCoupon || null,
-          paymentMethod: method
+          paymentMethod: method,
+          regalo: regalo?.regalo || null
         });
 
       if (method === 'transferencia') {
-        const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon, couponIssuedAt });
+        const { orderId } = await createTransferOrder({ items, payer, shipping: fullShipping, couponCode: appliedCoupon, couponIssuedAt, regaloEmitidoEn: regalo?.emitidoEn });
         if (!orderId) throw new Error('Respuesta inválida del backend');
         stash(orderId);
         clear();
@@ -364,7 +411,7 @@ export default function Checkout() {
         return;
       }
 
-      const { init_point, external_reference } = await createPreference({ items, payer, shipping: fullShipping, couponCode: appliedCoupon, couponIssuedAt });
+      const { init_point, external_reference } = await createPreference({ items, payer, shipping: fullShipping, couponCode: appliedCoupon, couponIssuedAt, regaloEmitidoEn: regalo?.emitidoEn });
       if (!init_point) throw new Error('Respuesta inválida del backend');
       stash(external_reference);
       window.location.href = init_point;
@@ -392,6 +439,13 @@ export default function Checkout() {
 
         <div className="grid lg:grid-cols-3 gap-6 mt-8">
           <div className="lg:col-span-2">
+            {/* RF-9: a 375 px el resumen va DESPUÉS del formulario en la grilla,
+                o sea al final de todo. Un contador que viva solo ahí no lo ve
+                nadie mientras completa los datos — que es justo cuando corren
+                los 10 minutos. Esta banda es el mismo contador, arriba y solo
+                en mobile. El `onVencido` lo maneja el del resumen: con los dos
+                escuchando, el evento de analytics saldría duplicado. */}
+            {regalo && <RegaloCountdown regalo={regalo} compacto className="lg:hidden mb-3" />}
             <CheckoutForm
               onSubmit={handleSubmit}
               onShippingChange={onShippingChange}
@@ -427,6 +481,42 @@ export default function Checkout() {
                 </div>
               ))}
             </div>
+
+            {/* El regalo va FUERA del área scrolleable de arriba: con 10 líneas
+                en el carrito quedaría debajo del scroll y no lo vería nadie, que
+                es lo único que no puede pasar con lo que la persona vino a
+                buscar del popup. Sin foto: no hay una del pack, y un placeholder
+                gris al lado de las fotos reales se lee como imagen rota. */}
+            {regalo && (
+              <div className="mt-3">
+                <div className="flex gap-3 items-center rounded-xl border border-emerald-400/30 bg-emerald-400/[0.07] p-2.5">
+                  <div
+                    className="w-14 h-14 rounded-xl bg-white/5 grid place-items-center text-2xl shrink-0"
+                    aria-hidden
+                  >
+                    🎁
+                  </div>
+                  <div className="flex-1 text-sm">
+                    <div className="font-semibold leading-snug">{REGALO_BIENVENIDA.titulo}</div>
+                    <div className="text-white/50">x1</div>
+                  </div>
+                  <div className="text-sm font-extrabold text-emerald-300">GRATIS</div>
+                </div>
+                <RegaloCountdown regalo={regalo} onVencido={vencerRegalo} className="mt-2" />
+              </div>
+            )}
+
+            {regaloVencidoAviso && (
+              <div
+                className="mt-3 text-sm rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-white/70"
+                role="status"
+              >
+                ⌛ Se terminó el tiempo del pack sorpresa y lo sacamos de tu pedido.
+                <span className="block text-white/45 text-xs mt-0.5">
+                  Tus datos quedaron como estaban — podés seguir con la compra.
+                </span>
+              </div>
+            )}
 
             <div className="border-t border-white/10 my-4" />
 

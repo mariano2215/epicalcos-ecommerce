@@ -83,7 +83,8 @@ export default function PaymentSuccess() {
         total: paid.total,
         shipping: paid.shippingCost,
         coupon: paid.coupon,
-        paymentMethod: paid.paymentMethod
+        paymentMethod: paid.paymentMethod,
+        regalo: paid.regalo
       });
     }
     // Recuperamos la spec de los personalizados (sobrevive al redirect de MP) para el CTA de WhatsApp.

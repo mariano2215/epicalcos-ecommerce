@@ -75,6 +75,7 @@ que se manda a Mercado Pago.
   payer:   { name, email, phone, address },
   shipping:{ method, methodValue, city, province, zipCode, comments, cost },
   items:   [ { id, title, quantity, unit_price, currency_id } ],  // incluye 'shipping'
+                                            // y, si lo ganó, 'regalo:pack_sorpresa' a $0 (spec 025)
   itemsTotal: 0,                            // sin el envío
   total: 0,                                 // itemsTotal + envío
   tracking: { fbp, fbc, clientIp, userAgent },   // señales para Meta CAPI
@@ -239,15 +240,22 @@ deploy. No hay panel para cargar productos.
 |---|---|---|
 | `epicalcos.cart.v2` | el carrito completo (array de líneas) | `CartContext` |
 | `epicalcos.welcomeCoupon` | cupón del popup, para autocompletar el checkout | `config/pricing.js` |
+| `epicalcos.regaloBienvenida` | pack sorpresa del popup: `{ regalo, emitidoEn }` (spec 025) | `lib/regaloBienvenida.js` |
 | `epicalcos.exp.v1` | asignación de variantes A/B + id de visitante | `lib/experiments.js` |
 | — | categorías recientes | `lib/recientes.js` |
 | — | tamaño elegido para la grilla | `lib/tamanoElegido.js` |
 | — | datos de advanced matching de Meta | `lib/advancedMatching.js` |
 
+⚠️ `epicalcos.regaloBienvenida` es el ÚNICO key con **copia en memoria** además
+del storage (`lib/regaloBienvenida.js`). El cupón podía vivir sin storage porque
+tenía un código tipeable; el regalo no tiene ninguno, así que en el navegador
+embebido de Instagram —con el storage bloqueado— se perdería al pasar del popup
+al checkout. La copia se pierde al recargar la página: es el techo aceptado.
+
 ### sessionStorage
 | Clave | Qué guarda | Por qué |
 |---|---|---|
-| `epicalcos.purchase.v1` | pedido ya preciado (ítems, envío, total, cupón) | sobrevive al redirect a Mercado Pago; se **lee y borra** en `/pago-exitoso` para no duplicar el evento |
+| `epicalcos.purchase.v1` | pedido ya preciado (ítems, envío, total, cupón, regalo) | sobrevive al redirect a Mercado Pago; se **lee y borra** en `/pago-exitoso` para no duplicar el evento |
 | `epicalcos.customSpec` | spec de los personalizados | CTA de WhatsApp en `/pago-exitoso` |
 
 ### Forma de una línea del carrito

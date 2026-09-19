@@ -358,11 +358,16 @@ export function trackAddShippingInfo(items, shippingTier) {
  *        propio para poder separar en GA4 las ventas por transferencia —que se
  *        registran antes de recibir el comprobante— de las de Mercado Pago.
  */
-export function trackPurchase({ orderId, items, total, shipping, coupon, paymentMethod }) {
+export function trackPurchase({ orderId, items, total, shipping, coupon, paymentMethod, regalo }) {
   pushDataLayer({ ecommerce: null });
   pushDataLayer({
     event: 'purchase',
     payment_method: paymentMethod,
+    // El pack sorpresa (spec 025) va como parámetro del evento y NO dentro de
+    // `ecommerce.items`: no es un producto que se compró — no tiene precio, no
+    // está en el catálogo y sumarlo ahí inflaría el conteo de unidades de todo
+    // GA4. Acá sirve para partir las ventas con regalo y sin él.
+    ...(regalo ? { regalo } : {}),
     ecommerce: {
       transaction_id: orderId,
       currency: 'ARS',
@@ -563,6 +568,26 @@ export function trackCuponEmitido(code, ventanaMs) {
 export function trackCuponVencido(code, donde = 'checkout') {
   pushDataLayer({ event: 'cupon_vencido', cupon: code, donde });
   debug('cupon_vencido', code, donde);
+}
+
+/**
+ * El popup entregó el pack de stickers sorpresa y arrancó su ventana (spec 025).
+ * Es el denominador de la promo: contra esto se mide cuántos terminan comprando.
+ */
+export function trackRegaloEmitido(regalo, ventanaMs) {
+  pushDataLayer({ event: 'regalo_emitido', regalo, ventana_ms: ventanaMs });
+  debug('regalo_emitido', regalo, ventanaMs);
+}
+
+/**
+ * La ventana se cerró sin compra. `donde` dice en qué pantalla lo perdió:
+ * 'popup' es alguien que nunca avanzó, 'checkout' es alguien que estaba
+ * comprando y se le venció encima — ese es el caso caro, y si sale alto quiere
+ * decir que 10 minutos es poco.
+ */
+export function trackRegaloVencido(regalo, donde = 'checkout') {
+  pushDataLayer({ event: 'regalo_vencido', regalo, donde });
+  debug('regalo_vencido', regalo, donde);
 }
 
 /** Se usó el cupón con una promo N x M corriendo: es el costo de acumular. */

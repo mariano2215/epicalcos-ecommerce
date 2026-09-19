@@ -21,6 +21,7 @@
  * Sin token o sin pixel id es un no-op. Nunca lanza.
  */
 import { createHash } from 'node:crypto';
+import { LINEA_REGALO } from './pricing.js';
 
 const GRAPH_URL = 'https://graph.facebook.com/v21.0';
 const DEFAULT_COUNTRY = 'ar';
@@ -114,8 +115,12 @@ export async function sendPurchaseEvent({ orderId, order, payment }) {
     const parsed = approvedAt ? Math.floor(new Date(approvedAt).getTime() / 1000) : NaN;
     const eventTime = Number.isFinite(parsed) ? parsed : Math.floor(Date.now() / 1000);
 
-    const items = (order?.items || payment?.additional_info?.items || [])
-      .filter((i) => i.id !== 'shipping');
+    // El envío no es un producto, y el pack sorpresa (spec 025) tampoco: su id
+    // no existe en el catálogo de Meta, así que mandarlo ensucia el Purchase con
+    // un producto fantasma y le suma una unidad al num_items que nadie compró.
+    const items = (order?.items || payment?.additional_info?.items || []).filter(
+      (i) => i.id !== 'shipping' && i.id !== LINEA_REGALO.id
+    );
     const contents = items.map((i) => ({
       id: String(i.id),
       quantity: Number(i.quantity) || 1,
