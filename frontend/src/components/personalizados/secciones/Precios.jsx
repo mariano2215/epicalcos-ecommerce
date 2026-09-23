@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { TAMANOS, getTamano } from '../../../config/personalizados.js';
+import { NEGOCIO } from '../../../config/pricing.js';
 import { PRECIOS, NEGOCIO_COPY, TAMANO_MAS_ELEGIDO } from '../../../config/personalizadosLanding.js';
 import { usoCorto } from '../../../lib/usosPorTamano.js';
 import { formatPrice } from '../../../lib/formato.js';
@@ -7,6 +8,9 @@ import { cotizarTanda } from '../../../lib/precioPersonalizados.js';
 import { usePromoActive } from '../../../lib/promo.js';
 import { trackWholesaleClick } from '../../../lib/analytics.js';
 import { useBorrador } from '../useBorrador.js';
+
+/** Mismo % que ya muestra /negocio (`NegocioForm.jsx`) — un solo número para la misma promo en todo el sitio. */
+const NEGOCIO_OFF = Math.round((1 - NEGOCIO.price / NEGOCIO.listPrice) * 100);
 
 /**
  * Precios y cantidades (RF-L12, L13). Todo sale de las reglas: el precio por
@@ -47,10 +51,22 @@ export default function Precios() {
             <p className="text-xs text-white/50 mt-1">Precio por unidad en {tam.label}, con el 3x2 aplicado:</p>
             <ul className="mt-3 divide-y divide-white/10">
               {PRECIOS.cantidadesEjemplo.map((n) => {
-                const c = cotizarTanda({ tamano: tam.id, unidades: n, promoActiva: true });
+                // A partir de NEGOCIO.qty en NEGOCIO.size, la Promo Negocio (acá
+                // abajo) siempre sale más barata que el 3x2 solo — mostrar el
+                // precio de lista del 3x2 en esta fila (ej. $107.200 para 100 en
+                // 6 cm) contradecía el "$39.999" del cartel de abajo, dos precios
+                // distintos para lo mismo en la misma pantalla. Esta fila muestra
+                // el precio con el que en verdad se paga: el de Negocio.
+                const esNegocio = n === NEGOCIO.qty && tam.id === NEGOCIO.size;
+                const c = esNegocio
+                  ? { unitario: Math.round(NEGOCIO.price / NEGOCIO.qty), total: NEGOCIO.price, ahorroPct: NEGOCIO_OFF }
+                  : cotizarTanda({ tamano: tam.id, unidades: n, promoActiva: true });
                 return (
                   <li key={n} className="grid grid-cols-[4.5rem_1fr_auto] items-baseline gap-3 py-2 text-sm tabular-nums">
-                    <span className="text-white/80 whitespace-nowrap">{n} calcos</span>
+                    <span className="text-white/80 whitespace-nowrap">
+                      {n} calcos
+                      {esNegocio && <span className="block text-[10px] text-white/40 normal-case">Promo Negocio</span>}
+                    </span>
                     <span className="text-white/60 text-right whitespace-nowrap">
                       {formatPrice(c.unitario)} c/u · <strong className="text-white">{formatPrice(c.total)}</strong>
                     </span>
