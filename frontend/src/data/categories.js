@@ -4,8 +4,16 @@ import {
   PROMO_MAYORISTA_100,
   WHOLESALE_QTY,
   WHOLESALE_DISCOUNT,
-  IMPRIMIBLE_PRINCIPAL
+  IMPRIMIBLE_PRINCIPAL,
+  NEGOCIO,
+  TATUAJES,
+  SIZES,
+  POLAROID_SIZES,
+  sizeLabel
 } from '../config/pricing.js';
+
+/** Precio de arranque ("desde $X"): el tamaño/tier más barato de la lista. */
+const desde = (lista) => Math.min(...lista.map((x) => x.price));
 import { formatPrice } from '../lib/formato.js';
 
 /**
@@ -110,7 +118,7 @@ const ALL_SPECIALS = [
     to: '/personalizados',
     name: 'Personalizados',
     emoji: '🎨',
-    blurb: 'Tu diseño, sin mínimo · desde $1.200',
+    blurb: `Tu diseño, sin mínimo · desde ${formatPrice(desde(SIZES))}`,
     accent: 'from-fuchsia-500 to-pink-500'
   },
   {
@@ -130,7 +138,11 @@ const ALL_SPECIALS = [
     to: '/negocio',
     name: 'Negocio',
     emoji: '🏪',
-    blurb: '100 calcos de tu logo en 6 cm · $39.999',
+    // Cantidad, tamaño y precio salen de NEGOCIO (config/pricing.js) — antes
+    // estaba escrito a mano y, a diferencia del blurb de /personalizados
+    // (que sí lo verifica personalizadosLanding.test.js), nada lo hubiera
+    // avisado si NEGOCIO.price cambiaba y este texto quedaba desactualizado.
+    blurb: `${NEGOCIO.qty} calcos de tu logo en ${sizeLabel(NEGOCIO.size)} · ${formatPrice(NEGOCIO.price)}`,
     accent: 'from-sky-400 to-blue-600'
   },
   {
@@ -148,7 +160,7 @@ const ALL_SPECIALS = [
     to: '/tatuajes',
     name: 'Tatuajes temporales',
     emoji: '💉',
-    blurb: 'Por hoja · $12.000',
+    blurb: `Por hoja · ${formatPrice(TATUAJES.price)}`,
     accent: 'from-violet-500 to-indigo-600'
   },
   {
@@ -156,7 +168,7 @@ const ALL_SPECIALS = [
     to: '/polaroid',
     name: 'Fotos Polaroid',
     emoji: '📸',
-    blurb: 'x10 fotos · desde $9.000',
+    blurb: `x10 fotos · desde ${formatPrice(desde(POLAROID_SIZES))}`,
     accent: 'from-emerald-400 to-teal-500'
   }
 ];
