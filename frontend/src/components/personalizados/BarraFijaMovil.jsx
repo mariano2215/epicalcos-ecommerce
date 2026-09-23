@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePromoActive } from '../../lib/promo.js';
-import { cotizarTanda } from '../../lib/precioPersonalizados.js';
+import { precioEfectivoTanda } from '../../lib/precioPersonalizados.js';
 import { estadoCta } from '../../lib/borradorPersonalizado.js';
 import { formatPrice } from '../../lib/formato.js';
 import BotonCta from './BotonCta.jsx';
@@ -52,13 +52,13 @@ export default function BarraFijaMovil() {
   }, [tipoCta]);
 
   const disenos = Math.max(1, estado.disenos.length);
-  const unidades = disenos * estado.copias;
-  // Mismo cálculo que HeroConfigurador (enmienda 22/9/2026): sin `material` acá
-  // esta barra mostraba el total SIN el recargo del holográfico mientras el CTA
-  // del hero sí lo mostraba — dos precios distintos para el mismo "Agregar".
+  // Mismo cálculo que HeroConfigurador (enmienda 22/9/2026): `precioEfectivoTanda`
+  // y no `cotizarTanda` directo, para que esta barra tope a la Promo Negocio
+  // exactamente igual que el CTA del hero — dos precios distintos para el mismo
+  // "Agregar" ya pasó una vez acá (con el material) y no tiene que volver a pasar.
   const cotizacion = useMemo(
-    () => cotizarTanda({ tamano: estado.tamano, unidades, promoActiva, material: estado.material, disenos }),
-    [estado.tamano, unidades, promoActiva, estado.material, disenos]
+    () => precioEfectivoTanda({ tamano: estado.tamano, copias: estado.copias, disenos, promoActiva, material: estado.material }),
+    [estado.tamano, estado.copias, disenos, promoActiva, estado.material]
   );
   const visible = !heroVisible && !finalAlcanzado;
 

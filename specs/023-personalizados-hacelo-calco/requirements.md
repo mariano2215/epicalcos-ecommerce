@@ -320,6 +320,9 @@ Organizado por prioridad (la del brief).
 | RF-MAT5 | El total del configurador (RF-Q2) incluye el recargo cuando corresponde, y el recargo se ve como su propio concepto (no diluido en el "unitario") | 🔴 must |
 | RF-MAT6 | El recargo **no** participa de ningún descuento: ni 3x2, ni cupón, ni 10 % por transferencia | 🔴 must |
 | RF-MAT7 | Un carrito manipulado para quedarse con un diseño en Vinilo Holográfico sin su recargo se **rechaza** en el checkout, igual que un `price_mismatch` | 🔴 must |
+| RF-MAT8 *(enmienda 22/9/2026, "topear el precio en $39.999")* | Un solo diseño en 6 cm cuyas copias ya cuestan lo mismo o más que la Promo Negocio se cobra al precio de Negocio ($39.999), nunca al del 3x2 puro — el total mostrado y el que se agrega al carrito son siempre el mismo, y nunca superan lo que cuesta tomar la promo | 🔴 must |
+| RF-MAT9 *(enmienda 22/9/2026)* | Con más de un diseño, o en un tamaño que no sea 6 cm, RF-MAT8 no aplica: sigue siendo una recomendación con link a `/negocio` (Negocio entrega específicamente 6 cm) | 🔴 must |
+| RF-MAT10 *(enmienda 22/9/2026, Mariano)* | Si RF-MAT8 aplica y el material es Vinilo Holográfico, el recargo de $15.000 se suma arriba del precio de Negocio ($54.999 en total), nunca lo reemplaza | 🔴 must |
 
 ### 7.6 Secciones de la landing
 
@@ -399,7 +402,8 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 | Formatos, 10 MB por archivo, 150 DPI recomendados, hasta 100 archivos | `business-rules.md` §7 | no (WEBP se convierte antes de subir: el formato que llega a producción sigue en la lista) |
 | Promo 3x2: catálogo + personalizados, cada 3 la más barata gratis, sin fecha de fin | `business-rules.md` "Promo 3x2" | no — se **muestra** |
 | El 10 % por transferencia cuenta solo calcos de catálogo | `business-rules.md` §2 | no — por eso **no** se promete en esta página |
-| Promo Negocio: 100 de un diseño en 6 cm a precio fijo; se puede tomar aunque el cliente quiera menos (Mariano, 14/9/2026) | `business-rules.md` "Promo Negocio" | no — se **recomienda** |
+| Promo Negocio: 100 de un diseño en 6 cm a precio fijo; se puede tomar aunque el cliente quiera menos (Mariano, 14/9/2026) | `business-rules.md` "Promo Negocio" | no — se **recomienda**, salvo RF-MAT8 |
+| Con un solo diseño en 6 cm por encima del umbral de Negocio, el configurador cobra el precio de Negocio directamente, no el 3x2 (RF-MAT8, enmienda 22/9/2026) | `business-rules.md` §1 "Calcos personalizados" | **sí** — antes era solo una recomendación |
 | Devolución: lo hecho con el archivo del cliente, solo por falla | `business-rules.md` D-4 | no — la FAQ lo dice |
 | Revisamos cada archivo antes de producir y avisamos si hay un problema | FAQ publicada del Home | no |
 | Ni un render en la prueba visual | regla vigente de galerías y testimonios | no — se extiende a esta página |

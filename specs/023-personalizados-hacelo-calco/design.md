@@ -153,8 +153,8 @@
 |---|---|---|
 | `frontend/src/config/pricing.js` | **No** (solo se importan `SIZES`, `NEGOCIO`, `PROMO_3X2`, `promo3x2`, `round`) | — |
 | `frontend/src/config/site.js` | **No** (solo lectura: `shipping`, `devoluciones`, `contact`, `navLinks`) | — |
-| `frontend/src/context/CartContext.jsx` *(enmienda 22/9/2026)* | **Sí, acotado**: `esCustomViejo()` (§3.2) y `removeItem()` (acopla la línea de recargo). Se usan `addCustom`, `addFixed`, `items`, `removeItem`, `openDrawer` como están — nada de esto cambia su firma | `Cart.jsx`, `CartDrawer.jsx`, `Checkout.jsx`, `services/cartRecovery`, y todo lo de la fila de `analytics.js` de abajo (todos siguen viendo la misma API) |
-| `netlify/functions/lib/pricing.js` *(enmienda 22/9/2026)* | **Sí, acotado**: rama `custom` de `lineBase()` + una entrada nueva en `FIXED_PRICES` + una pasada de validación cruzada al final de `validateAndPriceOrder()` (§3.5/§6). Nada de lo existente (sticker, pack, negocio, digital, Polaroid, promos) cambia | `create-preference.js`, `create-order-transfer.js`, y los tests de `promoPricing.test.js` / `precioPersonalizados.test.js` |
+| `frontend/src/context/CartContext.jsx` *(enmienda 22/9/2026, ampliada 22/9/2026 con el tope a Negocio)* | **Sí, acotado**: `esCustomViejo()` (§3.2), `removeItem()` (acopla la línea de recargo — ahora también para `negocio:`, §3.6) y `addNegocio()` **se empieza a llamar** desde `personalizados/BotonCta.jsx` además de `NegocioForm.jsx` (la función en sí no cambia). Se usan `addCustom`, `addFixed`, `addNegocio`, `items`, `removeItem`, `openDrawer` como están — nada de esto cambia su firma | `Cart.jsx`, `CartDrawer.jsx`, `Checkout.jsx`, `services/cartRecovery`, `NegocioForm.jsx` (dueño original de `addNegocio`/`negocio:{ts}` — su comportamiento no cambia, ver la prueba manual de §9), y todo lo de la fila de `analytics.js` de abajo |
+| `netlify/functions/lib/pricing.js` *(enmienda 22/9/2026, ampliada 22/9/2026 con el tope a Negocio)* | **Sí, acotado**: rama `custom` de `lineBase()`, rama `negocio` de `lineBase()` (parsea un material opcional, §3.6 — `negocio:{ts}` de siempre sigue validando igual), una entrada nueva en `FIXED_PRICES` y una pasada de validación cruzada al final de `validateAndPriceOrder()` (§3.5/§3.6/§6, ahora también puebla `requierenRecargo` desde líneas `negocio:`). Nada de lo existente (sticker, pack, digital, Polaroid, promos, ni el `negocio:{ts}` de 2 segmentos) cambia de comportamiento | `create-preference.js`, `create-order-transfer.js`, y los tests de `promoPricing.test.js` / `precioPersonalizados.test.js` |
 | `frontend/src/lib/analytics.js` | **Sí** | `CartContext`, `OfertaPrincipal`, `StickerCard`, `ImprimiblesCard`, `Testimonials`, `FixedProductPage`, `IntentSelector`, `GaleriaUGC`, `GarantiaCheckout`, `FeaturedStickers`, `WhatsAppButton`, `BuscadorCalcos`, `PackBuilder`, `CategoryCard`, `Hero`, `ShippingInfo`, `WelcomePopup`, `contacto/*` (3), `personalizados/Configurador`, rutas `PaymentSuccess`, `LandingUso`, `Cart`, `Checkout`, `Polaroid`, `Producto`, `Category`, `Categorias`, `PaymentTransfer`, `services/cartRecovery` |
 
 Impacto del cambio en `analytics.js`: `toItems()` y el `content_name` de
@@ -367,6 +367,67 @@ pricear cada línea individualmente, RF-MAT7):
 |---|---|
 | `MATERIALES` = `[{id:'vinilo-blanco',...},{id:'dtf-uv',...},{id:'vinilo-holografico',...}]` | allowlist de materiales válidos en la rama `custom` de `lineBase` |
 | `RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 15000 }` | `FIXED_PRICES['material-holografico'] = 15000` |
+
+### 3.6 Tope a la Promo Negocio (enmienda 22/9/2026, "topear el precio en $39.999")
+
+**Por qué NO es un ajuste al precio por unidad**: el modelo entero de
+`custom:` es `unit_price × quantity`. Negocio da hasta 100 calcos por un
+precio FIJO que no escala con la cantidad — igual que el recargo del
+holográfico (§3.5), forzar eso dentro del `unit_price` de una línea `custom:`
+obliga a repartir $39.999 entre las copias, y `round($39.999 / 38) × 38 ≠
+$39.999`: exactamente el desvío de unos pesos que dispara `price_mismatch`.
+
+**La solución reutiliza el producto Negocio que ya existe y está probado**
+(`negocio:{ts}`, `addNegocio()`, `NegocioForm.jsx`) en vez de inventar una
+fórmula de precio nueva: cuando conviene, `useAgregarAlCarrito()`
+(`BotonCta.jsx`) agrega ESA línea —con el diseño ya subido en
+`meta.archivos`, igual que si el cliente hubiera pasado por `/negocio`— en
+vez de la línea `custom:` de siempre. RF-MAT8/9: solo con **un** diseño y
+**tamaño 6 cm** (`NEGOCIO.size`) — Negocio entrega específicamente 6 cm, así
+que con otro tamaño el cliente recibiría algo distinto de lo que configuró;
+ahí sigue siendo, como hasta ahora, una recomendación con link.
+
+**`precioEfectivoTanda()`** (`lib/precioPersonalizados.js`) es la ÚNICA
+función que decide "¿topea o no?" — la usan `HeroConfigurador.jsx`,
+`BarraFijaMovil.jsx` (el total que se MUESTRA) y `useAgregarAlCarrito()` (lo
+que se COBRA), así que no puede pasar de nuevo lo que ya pasó una vez con el
+material: dos componentes calculando el mismo precio por separado y
+mostrando números distintos (ver la Bitácora de `tasks.md`, 22/9/2026 — pasó
+una vez con el material y `BarraFijaMovil.jsx`). Es `cotizarTanda()` sin cambios, salvo que devuelve
+`{ ...total: NEGOCIO.price (+ recargo), unidades: NEGOCIO.qty, esNegocio: true }`
+cuando corresponde.
+
+**El cartel "¿Son para tu negocio?"** (`NEGOCIO_COPY`, el link a `/negocio`)
+se sigue mostrando SOLO cuando `precioEfectivoTanda()` NO topeó (más de un
+diseño, u otro tamaño): si ya topeó, mostrarlo además sería redundante —el
+total de arriba ya lo tiene adentro.
+
+**Vinilo Holográfico + Negocio** (RF-MAT10, Mariano 22/9/2026): el recargo se
+SUMA arriba de Negocio, nunca lo reemplaza. Igual que con `custom:`, viaja en
+su propia línea `fixed:material-holografico:{id}`, pero acá `{id}` es el
+mismo timestamp que la línea `negocio:` (no hay un "id de diseño" en
+`negocio:`) — y el id de la línea Negocio gana el material como segundo
+segmento para que el servidor sepa que tiene que exigir el recargo:
+`negocio:{ts}` (de siempre, sin material) → `negocio:{material}:{ts}`
+(enmienda, SOLO cuando el material es holográfico). El servidor (`lineBase`,
+rama `negocio`) parsea ese segmento opcional igual que hace con `custom:`, y
+la validación cruzada de §3.5 se extiende para poblar `requierenRecargo`
+también desde líneas `negocio:` con material holográfico — el mismo mecanismo,
+una sola vez, sin duplicar la lógica de rechazo.
+
+**PII**: la línea `negocio:` auto-agregada NO lleva el nombre del archivo en
+`name` (a diferencia de una `custom:`, que sí, a propósito, para que el
+cliente distinga sus líneas). Acá hay una sola línea de Negocio, no hace
+falta distinguirla de nada, y `nombreParaAnalytics()` no sabe limpiar un
+`negocio:` — meterle el nombre del archivo habría sido el mismo error que
+esta spec ya corrigió una vez (1.6, nombre de archivo a GA4/Meta). El archivo
+real sigue viajando en `meta.archivos`, que es lo que lee el mail/CRM.
+
+**Acoplamiento en el carrito** (`CartContext.jsx`, `removeItem`): la misma
+regla de §3.5 (sacar el diseño saca su recargo) se extiende a
+`id.startsWith('negocio:')`, derivando el id ligado del ÚLTIMO segmento —
+funciona sin cambios para las dos formas (`negocio:{ts}` → ningún recargo que
+encontrar, no-op; `negocio:{material}:{ts}` → lo encuentra y lo saca).
 
 ### Persistencia
 | Dónde | Qué | Ref. |

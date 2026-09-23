@@ -101,6 +101,11 @@ export default function SelectorCantidad({ copias, disenos, tamano, cotizacion, 
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-white/60 text-sm">
                 Total · {c.unidades} calco{c.unidades === 1 ? '' : 's'}
+                {/* Enmienda 22/9/2026 ("topear el precio en $39.999"): un solo diseño en
+                    6 cm cuyas copias ya cuestan lo mismo o más pasa a cobrarse como la
+                    Promo Negocio — nunca más caro que tomarla. Se aclara acá para que
+                    no se lea como un 3x2 con un % raro. */}
+                {c.esNegocio && <span className="block text-[10px] text-white/40 normal-case">Promo Negocio</span>}
               </span>
               <span className="font-display font-extrabold text-3xl tabular-nums" aria-live="polite">
                 {formatPrice(c.total)}
@@ -120,12 +125,12 @@ export default function SelectorCantidad({ copias, disenos, tamano, cotizacion, 
                 <span className="text-emerald-400 font-semibold">Ahorrás {c.ahorroPct} %</span>
               </div>
             )}
-            {promoActiva && c.faltanParaGratis > 0 && (
+            {!c.esNegocio && promoActiva && c.faltanParaGratis > 0 && (
               <p className="text-xs text-brand-yellow mt-2">
                 Sumá {c.faltanParaGratis} calco{c.faltanParaGratis === 1 ? '' : 's'} más y una te sale gratis (3x2).
               </p>
             )}
-            {promoActiva && (
+            {!c.esNegocio && promoActiva && (
               <p className="text-[11px] text-white/40 mt-1">El 3x2 se aplica en el carrito sobre todas tus calcos.</p>
             )}
           </>

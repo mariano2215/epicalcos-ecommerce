@@ -50,6 +50,17 @@ carrito completo.
   las copias de un diseño alcanza su precio (hoy: 38 en 6 cm, 31 en 9 cm, 50 en
   4 cm). La promo se puede tomar aunque el cliente quiera menos de 100
   (Mariano, 14/9/2026).
+- **Tope automático a la Promo Negocio** (spec 023, enmienda 22/9/2026,
+  "topear el precio en $39.999"): si el diseño es **UNO solo**, en **6 cm** (el
+  tamaño de Negocio) y las copias ya cuestan lo mismo o más que Negocio, el
+  configurador **agrega directamente la línea de Negocio** (`negocio:{ts}`) en
+  vez de calcos `custom:` sueltos — el total nunca queda por encima de lo que
+  cuesta tomar la promo. Con más de un diseño, o en otro tamaño, sigue siendo
+  solo una recomendación con link a `/negocio` (Negocio entrega
+  específicamente 6 cm, no el tamaño que el cliente haya elegido). Si el
+  material es **Vinilo Holográfico**, el recargo de $15.000 se suma arriba de
+  los $39.999 (Mariano, 22/9/2026): $54.999 en total, con su propia línea de
+  recargo, igual que con un `custom:`.
 
 ### Productos de precio fijo
 

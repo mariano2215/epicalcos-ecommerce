@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext.jsx';
 import { usePromoActive } from '../../lib/promo.js';
-import { cotizarTanda, convieneNegocio } from '../../lib/precioPersonalizados.js';
+import { precioEfectivoTanda, convieneNegocio } from '../../lib/precioPersonalizados.js';
 import { estadoCta } from '../../lib/borradorPersonalizado.js';
 import { trackPersonalizedConfigurationComplete } from '../../lib/analytics.js';
 import { HERO, CTA, PROCESO } from '../../config/personalizadosLanding.js';
@@ -40,10 +40,14 @@ export default function HeroConfigurador() {
   const disenos = Math.max(1, estado.disenos.length);
   const unidades = disenos * estado.copias;
   const cotizacion = useMemo(
-    () => cotizarTanda({ tamano: estado.tamano, unidades, promoActiva, material: estado.material, disenos }),
-    [estado.tamano, unidades, promoActiva, estado.material, disenos]
+    () => precioEfectivoTanda({ tamano: estado.tamano, copias: estado.copias, disenos, promoActiva, material: estado.material }),
+    [estado.tamano, estado.copias, disenos, promoActiva, estado.material]
   );
-  const conviene = convieneNegocio({ tamano: estado.tamano, copias: estado.copias, promoActiva });
+  // El cartel "¿Son para tu negocio?" es un link a /negocio para cuando el
+  // configurador NO puede topear solo (más de un diseño, u otro tamaño que no
+  // sea el de Negocio): si `cotizacion.esNegocio` ya topeó el precio acá mismo,
+  // mostrar el cartel además sería redundante — el total de arriba ya lo tiene.
+  const conviene = convieneNegocio({ tamano: estado.tamano, copias: estado.copias, promoActiva }) && !cotizacion.esNegocio;
   const cta = estadoCta(estado);
   const enCarrito = items.filter((i) => i.type === 'custom').length;
 

@@ -467,8 +467,9 @@ export function shippingMethodLabel(method, city, province) {
 /**
  * Precio de LISTA por unidad de un item según su id, antes de descuentos por
  * cupón/transferencia/promo. Los ids los genera el frontend con estructura fija:
- *   sticker:{stickerId}:{size} · pack:{tipo}:{size}:{ts} · negocio:{ts} · fixed:{productId}
+ *   sticker:{stickerId}:{size} · pack:{tipo}:{size}:{ts} · fixed:{productId}
  *   custom:{tamano}:{corte}:{ts} · custom:{tamano}:{corte}:{material}:{ts} (enmienda 22/9/2026)
+ *   negocio:{ts} · negocio:{material}:{ts} (enmienda 22/9/2026, solo si el configurador topeó a Negocio con holográfico)
  *
  * `discountable` marca las líneas que participan de los descuentos a calcos
  * sueltos (cupón/transferencia/promo 3x2): SOLO catálogo (sticker) y
@@ -513,8 +514,20 @@ function lineBase(id, quantity) {
     return { error: `tipo de pack desconocido en "${id}"` };
   }
 
+  // negocio:{ts} — el formulario estándar de /negocio, sin material (siempre el
+  // vinilo de la promo). negocio:{material}:{ts} (enmienda 22/9/2026) — cuando
+  // el configurador de /personalizados topea el precio a la Promo Negocio
+  // porque un solo diseño en 6 cm ya cuesta lo mismo o más (ver
+  // `precioEfectivoTanda` del frontend) y el material elegido es Vinilo
+  // Holográfico: el id lleva el material para poder exigir, más abajo, la
+  // misma línea de recargo que exigiría una `custom:` holográfica.
   if (kind === 'negocio') {
     if (quantity !== 1) return { error: 'promo negocio: 1 unidad por línea' };
+    if (parts.length >= 3) {
+      const material = parts[1];
+      if (!CUSTOM_MATERIALES.includes(material)) return { error: `material inválido en "${id}"` };
+      return { base: NEGOCIO_PRICE, kind, discountable: false, material, disenoId: parts[parts.length - 1] };
+    }
     return { base: NEGOCIO_PRICE, kind, discountable: false };
   }
 
@@ -741,16 +754,17 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   }
 
   // Validación cruzada del recargo de material (enmienda 22/9/2026, RF-MAT7):
-  // el precio de una línea `custom:` holográfica no lleva el recargo (viaja en
-  // su propia línea `fixed:material-holografico:{disenoId}`), así que nada de
-  // lo de arriba lo detectaría si esa línea faltara. Un carrito manipulado a
-  // mano para borrar el recargo y quedarse con el diseño en holográfico se
-  // corta acá.
+  // el precio de una línea `custom:` holográfica (o `negocio:` topeada a la
+  // Promo Negocio con ese mismo material, ver `lineBase` arriba) no lleva el
+  // recargo — viaja en su propia línea `fixed:material-holografico:{id}` —,
+  // así que nada de lo de arriba lo detectaría si esa línea faltara. Un
+  // carrito manipulado a mano para borrar el recargo y quedarse con el
+  // diseño en holográfico se corta acá.
   const requierenRecargo = new Set();
   const recargosPresentes = new Set();
   clean.forEach((item, idx) => {
     const lb = bases[idx];
-    if (lb.kind === 'custom' && lb.material === CUSTOM_MATERIAL_HOLOGRAFICO) {
+    if ((lb.kind === 'custom' || lb.kind === 'negocio') && lb.material === CUSTOM_MATERIAL_HOLOGRAFICO) {
       requierenRecargo.add(lb.disenoId);
     }
     if (lb.kind === 'fixed') {

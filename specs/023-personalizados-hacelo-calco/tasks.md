@@ -241,6 +241,26 @@ está vacía (RF-L2).
 
 ---
 
+## Fase 13 — Tope a la Promo Negocio (enmienda 22/9/2026: "topear el precio en $39.999")
+
+- [x] **13.1** `lib/precioPersonalizados.js`: `precioEfectivoTanda()` — igual a `cotizarTanda()` salvo que un solo diseño en 6 cm por encima del umbral de Negocio devuelve `{ total: NEGOCIO.price (+ recargo), unidades: NEGOCIO.qty, esNegocio: true }`
+  - *Verificación*: tests — topea en el umbral, sigue en $39.999 hasta 100 copias, no topea con &gt;1 diseño ni en otro tamaño, el holográfico suma el recargo arriba
+- [x] **13.2** `HeroConfigurador.jsx` y `BarraFijaMovil.jsx`: `cotizarTanda` → `precioEfectivoTanda` (un solo lugar decide el precio, no dos — ver Bitácora 22/9); el cartel "¿Son para tu negocio?" se oculta cuando `cotizacion.esNegocio` ya topeó
+- [x] **13.3** `SelectorCantidad.jsx`: etiqueta "Promo Negocio" junto al total cuando `c.esNegocio`; se ocultan el nudge y el texto del 3x2 (no aplican)
+- [x] **13.4** `BotonCta.jsx` (`useAgregarAlCarrito`): con un solo diseño en 6 cm por encima del umbral, agrega la línea `negocio:` (con el diseño en `meta.archivos`) en vez de `custom:`; el recargo holográfico se liga por el mismo timestamp
+  - *Verificación*: el `item_name` trackeado es el de la línea REAL agregada (negocio o custom), nunca una fantasma
+- [x] **13.5** `netlify/functions/lib/pricing.js`: rama `negocio` de `lineBase` parsea un material opcional (`negocio:{material}:{ts}`); la validación cruzada del recargo (Fase 12) también puebla `requierenRecargo` desde estas líneas
+  - *Verificación*: `negocio:{ts}` de siempre sigue validando idéntico (test)
+- [x] **13.6** `CartContext.jsx`: `removeItem` acopla también `negocio:` con su recargo
+- [x] **13.7** `lib/analytics.js` / `BotonCta.jsx`: la línea `negocio:` auto-agregada NO lleva el nombre del archivo en `name` (PII — ver design.md §3.6); el archivo sigue viajando en `meta.archivos`
+- [x] **13.8** Tests: `precioPersonalizados.test.js` ampliado (`precioEfectivoTanda`, `negocio:{material}:{ts}` aceptado/rechazado, recargo faltante en negocio, `negocio:{ts}` de siempre sin cambios)
+  - *Verificación*: `npm test` → 623/623 ✅ (22/9/2026)
+- [x] **13.9** `docs/business-rules.md`: nueva regla del tope automático
+- [x] **13.10** Recorrido manual en el Browser pane (22/9/2026): 100 copias en 6 cm topea a $39.999 (con y sin holográfico → $54.999), el carrito muestra la línea Negocio + recargo, sacar Negocio saca el recargo, y el formulario ESTÁNDAR de `/negocio` (con nombre de negocio) sigue funcionando idéntico
+  - *Verificación*: ✅ todo correcto. Errores de consola "`useCart` fuera de `CartProvider`" en el pane resultaron ser entradas viejas acumuladas por HMR de tanto editar en vivo — la página renderiza y funciona bien en cada captura; no reproducen en una recarga real
+
+---
+
 ## Hallazgos fuera de scope
 
 Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
@@ -256,3 +276,4 @@ Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
 |---|---|---|
 | 14/09/2026 | Línea de base (0.3) medida con Chrome headless por CDP (375×812 @2x, Slow 4G, CPU 4×), no con el Browser pane | El pane estaba oculto (`visibilityState: hidden`): sin pintar no hay entradas de LCP. Script en el scratchpad de la sesión, sin dependencias |
 | 14/09/2026 | **Línea de base**: LCP mediana **3.292 ms** (5 corridas: 2.740 · 3.372 · 3.404 · 2.872 · 3.292); elemento LCP = `logo-1.webp` (el `SocialProof` destacado). Chunk `Personalizados-*.js` 15,8 kB + `SubidaArchivo-*.js` 9,2 kB. Suite: 524 tests | Tasks 0.2 y 0.3 |
+| 22/09/2026 | `BarraFijaMovil.jsx` tenía su PROPIO `cotizarTanda()` — no recibía `material`/`disenos` (enmienda de material) y después tampoco el tope de Negocio (enmienda "topear el precio en $39.999"): mostraba un total distinto al del CTA del hero para la MISMA tanda | Encontrado recorriendo la UI en el Browser pane, no por los tests (ninguna suite renderiza este componente). Corregido reemplazando su cálculo por `precioEfectivoTanda()`, la MISMA función que usan `HeroConfigurador.jsx` y `useAgregarAlCarrito()` — un solo lugar que decide el precio, no tres |

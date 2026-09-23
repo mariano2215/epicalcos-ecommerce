@@ -108,3 +108,56 @@ export function convieneNegocio({ tamano, copias, promoActiva = false }) {
   const c = cotizarTanda({ tamano, unidades: copias, promoActiva });
   return c.configuracionCompleta && c.total >= NEGOCIO.price;
 }
+
+/**
+ * Precio EFECTIVO de la tanda, para mostrar y para agregar al carrito
+ * (enmienda 22/9/2026, "topear el precio en $39.999"): igual a `cotizarTanda()`,
+ * salvo que UN diseño en `NEGOCIO.size` cuyas copias ya cuestan lo mismo o más
+ * que la Promo Negocio (`convieneNegocio`) se muestra —y se cobra, ver
+ * `useAgregarAlCarrito()` en `BotonCta.jsx`, que arma las líneas reales con esta
+ * misma regla— al precio de Negocio + el recargo del material si corresponde
+ * (Mariano, 22/9/2026: el holográfico se suma arriba de Negocio, no lo
+ * reemplaza), nunca al del 3x2 puro.
+ *
+ * Con más de un diseño, o con un tamaño que no sea el de Negocio, es IDÉNTICO
+ * a `cotizarTanda()`: la promo es específicamente "100 de UN diseño en 6 cm",
+ * así que no hay nada para topear — sigue siendo, como hasta ahora, un link a
+ * /negocio (`conviene`/`NEGOCIO_COPY` en los componentes que llaman a esto).
+ *
+ * @returns igual que `cotizarTanda()` + `{ esNegocio: boolean }`
+ */
+export function precioEfectivoTanda({ tamano, copias = 1, disenos = 1, promoActiva = false, material = null } = {}) {
+  const n = disenosValidos(disenos);
+  const base = cotizarTanda({
+    tamano,
+    unidades: n * unidadesValidas(copias),
+    promoActiva,
+    material,
+    disenos: n
+  });
+  if (n !== 1 || tamano !== NEGOCIO.size || !convieneNegocio({ tamano, copias, promoActiva })) {
+    return { ...base, esNegocio: false };
+  }
+  const recargo = material === MATERIAL_HOLOGRAFICO_ID ? RECARGO_HOLOGRAFICO.precio : 0;
+  const total = NEGOCIO.price + recargo;
+  // Lista de referencia para el "ahorrás": la de las NEGOCIO.qty unidades que en
+  // verdad se llevan (Mariano, 14/9/2026: la promo da 100 aunque pidas menos),
+  // no la de las copias que el cliente tipeó — si no, pedir menos "ahorraba" más
+  // sin ninguna razón real.
+  const totalListaNegocio = base.unitarioLista * NEGOCIO.qty;
+  const ahorro = totalListaNegocio - total;
+  return {
+    ...base,
+    unidades: NEGOCIO.qty,
+    unitario: round(NEGOCIO.price / NEGOCIO.qty),
+    totalLista: totalListaNegocio,
+    total,
+    recargo,
+    ahorro,
+    ahorroPct: ahorro > 0 ? Math.round((ahorro / totalListaNegocio) * 100) : 0,
+    gratis: 0,
+    faltanParaGratis: 0,
+    beneficio: 'negocio',
+    esNegocio: true
+  };
+}

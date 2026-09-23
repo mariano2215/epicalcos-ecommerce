@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { cotizarTanda, convieneNegocio } from './precioPersonalizados.js';
+import { cotizarTanda, convieneNegocio, precioEfectivoTanda } from './precioPersonalizados.js';
 import { construirLineas } from './borradorPersonalizado.js';
 import {
   TAMANOS,
@@ -359,6 +359,91 @@ describe('validateAndPriceOrder — recargo del holográfico (RF-MAT7, enmienda 
 
   it('rechaza un material desconocido en el id', () => {
     const res = validateAndPriceOrder({ ...base, items: [lineaCustom({ id: 'custom:6cm:silueta:oro:f1' })] });
+    expect(res.ok).toBe(false);
+  });
+});
+
+describe('precioEfectivoTanda — topear el precio a la Promo Negocio (enmienda 22/9/2026)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(CON_3X2);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('un solo diseño en 6 cm, en el umbral de Negocio (38 copias): topea a $39.999, no a lo que daría el 3x2', () => {
+    const tresPorDos = cotizarTanda({ tamano: '6cm', unidades: 38, promoActiva: true });
+    expect(tresPorDos.total).toBeGreaterThanOrEqual(NEGOCIO.price); // por eso topea
+    const c = precioEfectivoTanda({ tamano: '6cm', copias: 38, disenos: 1, promoActiva: true });
+    expect(c).toMatchObject({ esNegocio: true, total: NEGOCIO.price, unidades: NEGOCIO.qty, recargo: 0 });
+  });
+
+  it('menos copias (50) o exactamente 100: el total es siempre $39.999 — "se paga el monto de la promo" (Mariano, 14/9/2026)', () => {
+    expect(precioEfectivoTanda({ tamano: '6cm', copias: 50, disenos: 1, promoActiva: true })).toMatchObject({ esNegocio: true, total: NEGOCIO.price });
+    expect(precioEfectivoTanda({ tamano: '6cm', copias: 100, disenos: 1, promoActiva: true })).toMatchObject({ esNegocio: true, total: NEGOCIO.price });
+  });
+
+  it('Vinilo Holográfico: el recargo se SUMA arriba de Negocio, no lo reemplaza (Mariano, 22/9/2026)', () => {
+    const c = precioEfectivoTanda({ tamano: '6cm', copias: 100, disenos: 1, promoActiva: true, material: MATERIAL_HOLOGRAFICO_ID });
+    expect(c).toMatchObject({ esNegocio: true, recargo: RECARGO_HOLOGRAFICO.precio, total: NEGOCIO.price + RECARGO_HOLOGRAFICO.precio });
+  });
+
+  it('debajo del umbral: sin tope, igual que cotizarTanda de siempre', () => {
+    const c = precioEfectivoTanda({ tamano: '6cm', copias: 10, disenos: 1, promoActiva: true });
+    expect(c.esNegocio).toBe(false);
+    expect(c).toMatchObject(cotizarTanda({ tamano: '6cm', unidades: 10, promoActiva: true, disenos: 1 }));
+  });
+
+  it('con más de un diseño no topea, aunque el total combinado supere a Negocio (la promo es "100 de UN diseño")', () => {
+    const c = precioEfectivoTanda({ tamano: '6cm', copias: 50, disenos: 3, promoActiva: true });
+    expect(c.esNegocio).toBe(false);
+    expect(c.total).toBeGreaterThan(NEGOCIO.price);
+  });
+
+  it('en otro tamaño no topea (Negocio entrega específicamente 6 cm)', () => {
+    expect(precioEfectivoTanda({ tamano: '9cm', copias: 40, disenos: 1, promoActiva: true }).esNegocio).toBe(false);
+    expect(precioEfectivoTanda({ tamano: '4cm', copias: 60, disenos: 1, promoActiva: true }).esNegocio).toBe(false);
+  });
+});
+
+describe('validateAndPriceOrder — Promo Negocio topeada desde personalizados (enmienda 22/9/2026)', () => {
+  const base = { shipping: { methodValue: 'retiro' }, paymentMethod: 'mercadopago' };
+
+  it('acepta negocio:{ts} de siempre (formulario estándar de /negocio), sin material', () => {
+    const res = validateAndPriceOrder({
+      ...base,
+      items: [{ id: `negocio:${Date.now()}`, title: 'Negocio · Bar La Esquina · 100u 6 cm', quantity: 1, unit_price: NEGOCIO.price }]
+    });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(NEGOCIO.price);
+  });
+
+  it('acepta negocio:{material}:{ts} holográfico + su recargo, y no lo confunde con un huérfano', () => {
+    const ts = Date.now();
+    const res = validateAndPriceOrder({
+      ...base,
+      items: [
+        { id: `negocio:vinilo-holografico:${ts}`, title: 'Negocio · 100u 6 cm', quantity: 1, unit_price: NEGOCIO.price },
+        { id: `fixed:material-holografico:${ts}`, title: 'Recargo · Vinilo Holográfico', quantity: 1, unit_price: RECARGO_HOLOGRAFICO.precio }
+      ]
+    });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(NEGOCIO.price + RECARGO_HOLOGRAFICO.precio);
+  });
+
+  it('rechaza un negocio: holográfico SIN su recargo (mismo mecanismo que un custom: holográfico)', () => {
+    const res = validateAndPriceOrder({
+      ...base,
+      items: [{ id: `negocio:vinilo-holografico:${Date.now()}`, title: 'Negocio · 100u 6 cm', quantity: 1, unit_price: NEGOCIO.price }]
+    });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('recargo_material_faltante');
+  });
+
+  it('rechaza un material desconocido en una línea negocio:', () => {
+    const res = validateAndPriceOrder({
+      ...base,
+      items: [{ id: `negocio:oro:${Date.now()}`, title: 'Negocio · 100u 6 cm', quantity: 1, unit_price: NEGOCIO.price }]
+    });
     expect(res.ok).toBe(false);
   });
 });

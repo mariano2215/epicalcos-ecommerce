@@ -96,6 +96,19 @@
 | AC-MAT8 | La línea de recargo no tiene selector de cantidad propio en `/carrito` | inspección | ⬜ |
 | AC-MAT9 | Un carrito con una línea `custom:6cm:silueta:fxxx` de 4 segmentos (sin material) sigue pagándose igual, como Vinilo Blanco sin recargo | test con `localStorage` viejo | ⬜ |
 
+### Tope a la Promo Negocio *(enmienda 22/9/2026, "topear el precio en $39.999")*
+| ID | Criterio | Cómo se verifica | Resultado |
+|---|---|---|---|
+| AC-NEG1 | *(RF-MAT8)* Un solo diseño en 6 cm, 100 copias: el total mostrado y lo que se agrega al carrito son **siempre** $39.999, nunca el del 3x2 puro ($107.200) | recorrido + test | ✅ |
+| AC-NEG2 | *(RF-MAT8)* Lo mismo con 50 copias (por encima del umbral, 38): también $39.999 — "se paga el monto de la promo" | test | ✅ |
+| AC-NEG3 | *(RF-MAT9)* Con 2 diseños, o en 4 cm/9 cm, NO topea: sigue siendo el 3x2 con el cartel "¿Son para tu negocio?" como link | recorrido + test | ✅ |
+| AC-NEG4 | *(RF-MAT10)* Vinilo Holográfico + tope: $39.999 + $15.000 = **$54.999**, con su propia línea de recargo en el carrito | recorrido + test | ✅ |
+| AC-NEG5 | El carrito muestra una línea `NEGOCIO` (no `custom:`) cuando topeó, con el archivo adjunto (`meta.archivos`) pero SIN el nombre del archivo en el título (PII) | recorrido | ✅ |
+| AC-NEG6 | Sacar la línea Negocio del carrito saca también su recargo, sin dejarlo huérfano | recorrido + test | ✅ |
+| AC-NEG7 | El servidor rechaza un `negocio:{material}:{ts}` holográfico sin su recargo, igual que un `custom:` | test | ✅ |
+| AC-NEG8 | El formulario estándar de `/negocio` (con nombre de negocio) sigue funcionando idéntico — `negocio:{ts}` de 2 segmentos, sin cambios | recorrido + test | ✅ |
+| AC-NEG9 | `HeroConfigurador.jsx` y `BarraFijaMovil.jsx` muestran siempre el MISMO total (una sola función, `precioEfectivoTanda`, decide el precio) | recorrido | ✅ |
+
 ### Secciones
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|

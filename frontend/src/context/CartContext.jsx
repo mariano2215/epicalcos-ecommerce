@@ -274,13 +274,16 @@ export function CartProvider({ children }) {
       const item = state.items.find((i) => i.id === id);
       if (item) trackRemoveFromCart({ ...item, price: precioVidrieraLinea(item) });
       dispatch({ type: 'REMOVE', id });
-      // Enmienda 22/9/2026: sacar un diseño en Vinilo Holográfico saca también
-      // su línea de recargo (`fixed:material-holografico:{disenoId}`) — sin
-      // esto quedaría cobrándose sola, sin el diseño que la originó (RF-MAT7
-      // solo cubre que NO falte; esto cubre que no sobre).
-      if (String(id).startsWith('custom:')) {
-        const disenoId = String(id).split(':').at(-1);
-        const recargoId = `fixed:material-holografico:${disenoId}`;
+      // Enmienda 22/9/2026: sacar un diseño en Vinilo Holográfico —o la línea de
+      // Negocio a la que el configurador lo haya topeado, ver precioEfectivoTanda—
+      // saca también su línea de recargo (`fixed:material-holografico:{id}`) — sin
+      // esto quedaría cobrándose sola, sin lo que la originó (RF-MAT7 solo cubre
+      // que NO falte; esto cubre que no sobre). En los dos casos el id que liga
+      // ambas líneas es el ÚLTIMO segmento del id que se está sacando.
+      const s = String(id);
+      if (s.startsWith('custom:') || s.startsWith('negocio:')) {
+        const idLigado = s.split(':').at(-1);
+        const recargoId = `fixed:material-holografico:${idLigado}`;
         const recargo = state.items.find((i) => i.id === recargoId);
         if (recargo) {
           trackRemoveFromCart({ ...recargo, price: precioVidrieraLinea(recargo) });
