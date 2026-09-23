@@ -15,6 +15,12 @@ import { BULK_THRESHOLD } from '../config/pricing.js';
 // ESE diseño, así que se edita como cualquier calco del catálogo.
 const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 
+// Recargo del Vinilo Holográfico (enmienda 22/9/2026): es `type: 'fixed'`,
+// pero NO es un producto que el cliente elija agregar o editar por su cuenta —
+// va siempre pegado a un diseño. Ni cantidad propia ni botón de quitar propio
+// (CartContext.removeItem ya lo saca solo cuando se saca el diseño).
+const esRecargoMaterial = (id) => String(id).startsWith('fixed:material-holografico:');
+
 export default function Cart() {
   const {
     items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkSavings,
@@ -115,11 +121,13 @@ export default function Cart() {
                         </div>
                       ) : null}
                     </div>
-                    <button onClick={() => removeItem(it.id)} className="text-white/40 hover:text-white" aria-label="Quitar">✕</button>
+                    {!esRecargoMaterial(it.id) && (
+                      <button onClick={() => removeItem(it.id)} className="text-white/40 hover:text-white" aria-label="Quitar">✕</button>
+                    )}
                   </div>
 
                   <div className="mt-3 flex items-center justify-between">
-                    {EDITABLE.has(it.type) ? (
+                    {EDITABLE.has(it.type) && !esRecargoMaterial(it.id) ? (
                       <div className="flex items-center gap-2">
                         <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(it.id, it.quantity - 1)} aria-label="Restar">–</button>
                         <span className="w-10 text-center font-semibold">{it.quantity}</span>
@@ -130,11 +138,13 @@ export default function Cart() {
                       // lo que le importa al cliente es cuántas calcos se lleva. Un archivo
                       // digital no tiene cantidad: se compra una vez y se descarga.
                       <span className="text-sm text-white/60">
-                        {it.type === 'digital'
-                          ? 'Archivos digitales'
-                          : it.meta?.qty
-                            ? `${it.meta.qty * it.quantity} calcos`
-                            : `${it.quantity} unidad${it.quantity === 1 ? '' : 'es'}`}
+                        {esRecargoMaterial(it.id)
+                          ? 'Se agrega con tu diseño'
+                          : it.type === 'digital'
+                            ? 'Archivos digitales'
+                            : it.meta?.qty
+                              ? `${it.meta.qty * it.quantity} calcos`
+                              : `${it.quantity} unidad${it.quantity === 1 ? '' : 'es'}`}
                       </span>
                     )}
                     {/* Tachado cuando la línea tiene una promo por categoría (ver

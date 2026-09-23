@@ -10,9 +10,13 @@ import { trackWhatsappClick } from '../lib/analytics.js';
  * WelcomePopup (z-60) — esos overlays lo tapan solos cuando están abiertos.
  *
  * Hay pantallas con una barra inferior fija que este botón taparía, y cada una
- * desaparece en un breakpoint distinto: /personalizados (ResumenPedido,
+ * desaparece en un breakpoint distinto: /personalizados (BarraFijaMovil,
  * lg:hidden) y la ficha de producto (StickyMobileBar, sm:hidden). El botón se
  * eleva exactamente mientras esa barra existe y vuelve a su lugar después.
+ *
+ * En /personalizados la barra mide 4,25 rem + safe-area (spec 023) y aparece
+ * solo a mitad de página, pero el botón se eleva en toda la ruta: así nunca
+ * salta de lugar mientras el cliente scrollea.
  */
 const ELEVADO = 'bottom-[calc(6rem+env(safe-area-inset-bottom))]';
 const NORMAL = 'bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:bottom-6';

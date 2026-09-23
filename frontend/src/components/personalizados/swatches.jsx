@@ -4,7 +4,8 @@
  *
  * ─── TODOS DIBUJAN SOBRE EL MISMO LIENZO ──────────────────────────────────────
  * `LIENZO` es el lado del viewBox Y el lado que ocupa el <svg> en pantalla, y
- * coincide con la caja que le da PasoSelector (w-11 h-11 = 44 px).
+ * coincide con la caja de 44 px en la que lo muestran los selectores del
+ * configurador (tamaño y corte).
  *
  * POR QUÉ IMPORTA: antes el SVG medía 56 px dentro de esa caja de 44, que tiene
  * `overflow-hidden`. Los 6 px que sobraban de cada lado se recortaban, así que
@@ -143,9 +144,58 @@ function CorteSwatch({ id }) {
   );
 }
 
+/**
+ * Material (enmienda 22/9/2026): un cuadrado —MISMO `MAX_FIGURA` que corte y
+ * tamaño, para que las tres filas de swatches midan igual— con el relleno que
+ * distingue a cada material. Vinilo Blanco y DTF UV son sólidos (mismo trazo
+ * rosa que el resto de los swatches); Holográfico usa un gradiente para que se
+ * note a simple vista CUÁL opción tiene el recargo, sin tener que leer el precio.
+ */
+function MaterialSwatch({ id }) {
+  const off = centrar(MAX_FIGURA);
+  const base = { x: off, y: off, width: MAX_FIGURA, height: MAX_FIGURA, rx: Math.max(3, MAX_FIGURA * 0.16), stroke: TRAZO, strokeWidth: '2' };
+
+  if (id === 'dtf-uv') {
+    // DTF UV: relieve — un segundo cuadrado más chico adentro, sugiriendo la
+    // terminación en capas sin inventar una textura que el material no tiene.
+    const offInterno = centrar(MAX_FIGURA * 0.55);
+    return (
+      <svg {...lienzo}>
+        <rect {...base} fill={RELLENO} />
+        <rect x={offInterno} y={offInterno} width={MAX_FIGURA * 0.55} height={MAX_FIGURA * 0.55} rx={3} fill="none" stroke={TRAZO} strokeWidth="1.5" strokeOpacity="0.6" />
+      </svg>
+    );
+  }
+
+  if (id === 'vinilo-holografico') {
+    const gradientId = 'swatch-holografico';
+    return (
+      <svg {...lienzo}>
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF1B8D" />
+            <stop offset="35%" stopColor="#7C3AED" />
+            <stop offset="65%" stopColor="#06B6D4" />
+            <stop offset="100%" stopColor="#FACC15" />
+          </linearGradient>
+        </defs>
+        <rect {...base} fill={`url(#${gradientId})`} fillOpacity="0.55" />
+      </svg>
+    );
+  }
+
+  // Vinilo Blanco: el swatch "en blanco" — relleno sólido claro, el default.
+  return (
+    <svg {...lienzo}>
+      <rect {...base} fill="rgba(255,255,255,0.18)" />
+    </svg>
+  );
+}
+
 export function Swatch({ kind, id }) {
   if (kind === 'tamano') return <TamanoSwatch id={id} />;
   if (kind === 'corte') return <CorteSwatch id={id} />;
+  if (kind === 'material') return <MaterialSwatch id={id} />;
   return null;
 }
 

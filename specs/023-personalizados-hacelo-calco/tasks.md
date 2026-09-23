@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `023-personalizados-hacelo-calco` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `NO INICIADA` |
+| **Estado** | `EN CURSO` (desde el 14/09/2026) |
 
 ---
 
@@ -16,9 +16,9 @@ La implementación arranca solo cuando Mariano dice *"Implementá la spec 023"*.
 Ver [`specs/README.md`](../README.md).
 
 - [x] Los tres documentos anteriores están completos
-- [ ] Mariano aprobó el diseño
+- [x] Mariano aprobó el diseño
 - [x] Mariano respondió P-1, P-3, P-5, P-9 y P-11 (14/9/2026); el resto va con su default (`requirements.md` §12)
-- [ ] **Mariano pidió explícitamente la implementación**
+- [x] **Mariano pidió explícitamente la implementación** — "Implementá la spec 023", 14/09/2026
 
 ---
 
@@ -215,6 +215,32 @@ está vacía (RF-L2).
 
 ---
 
+## Fase 12 — Material (enmienda 22/9/2026: Vinilo Blanco / DTF UV / Vinilo Holográfico)
+
+- [x] **12.1** `config/personalizados.js`: `MATERIALES` (3 ids), `MATERIAL_POR_DEFECTO = 'vinilo-blanco'`, `MATERIAL_HOLOGRAFICO_ID`, `getMaterial()`, `RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 15000 }`
+  - *Verificación*: `getMaterial('no-existe')` da `null`; los 3 ids están en la allowlist que después usa el server ✅
+- [x] **12.2** `netlify/functions/lib/pricing.js`: `FIXED_PRICES['material-holografico'] = 15000`; rama `custom` de `lineBase` lee material opcional (parts[3] si hay 5 segmentos) contra la misma allowlist; rechaza un material desconocido
+  - *Verificación*: `custom:6cm:silueta:x1` (4 segmentos) sigue validando igual que hoy ✅ (test)
+- [x] **12.3** Validación cruzada en `validateAndPriceOrder`: por cada `custom:` holográfica exige su `fixed:material-holografico:{disenoId}` (quantity 1, precio 15000); rechaza huérfanos — `recargo_material_faltante` / `item_invalid`
+  - *Verificación*: test que arma el pedido SIN la línea de recargo y espera `ok:false` ✅
+- [x] **12.4** `swatches.jsx`: `Swatch({ kind: 'material', id })` — un ícono por material, mismo `LIENZO`/paleta que tamaño y corte
+- [x] **12.5** `SelectorMaterial.jsx` (mismo patrón que `SelectorTamano.jsx`): 3 cards, radio group, "+$15.000" solo en Vinilo Holográfico; `trackPersonalizedMaterialSelected`
+- [x] **12.6** `lib/borradorPersonalizado.js`: `material` en `inicial()` (default `vinilo-blanco`), `setMaterial()`, persistencia (`serializar`/`hidratar`), `construirLineas()` con el id/meta de design.md §3.2
+  - *Verificación*: `construirLineas` mete el material en el id (4º segmento) y en `meta` para los 3 materiales ✅ (test). La línea de recargo NO sale de acá — sale de `BotonCta` (§3.5)
+- [x] **12.7** `HeroConfigurador.jsx`: monta `SelectorMaterial`; el total mostrado (RF-Q2) suma el recargo cuando corresponde, con su propio renglón en `SelectorCantidad`
+- [x] **12.8** `BotonCta.jsx` (`useAgregarAlCarrito`): agrega también la línea de recargo con `addFixed` cuando el material es holográfico
+- [x] **12.9** `CartContext.jsx`: `esCustomViejo` → `!getTamano(parts[1])` (design.md §8); `removeItem` acopla el borrado del recargo
+  - *Verificación*: los 4 ids de material del modelo viejo (commit `1a32e6c`) se siguen purgando al hidratar ✅ (test)
+- [x] **12.10** `Cart.jsx` y `CartDrawer.jsx`: la línea de recargo queda fuera de `EDITABLE` (sin selector de cantidad ni botón de quitar propio)
+- [x] **12.11** `lib/analytics.js`: `trackPersonalizedMaterialSelected(material)`; `material` se suma a los parámetros de `trackPersonalizedConfigurationComplete` y `trackPersonalizedAddToCart`
+- [x] **12.12** Tests: `precioPersonalizados.test.js` ampliado con los casos de design.md §9 (paridad de los 3 materiales, recargo faltante, recargo huérfano, cantidad ≠ 1, material desconocido, no-descuento con 3x2, `esCustomViejo`); `borradorPersonalizado.test.js` actualizado a la nueva forma del id
+  - *Verificación*: `npm test` → 613/613 ✅ (22/9/2026)
+- [x] **12.13** `docs/business-rules.md` §1 "Calcos personalizados", `docs/analytics.md`, `docs/database.md` §3: reflejan la regla y el id nuevos
+- [x] **12.14** Recorrido manual a 375 px (Browser pane, 22/9/2026): elegir material, ver el total, agregar al carrito, confirmar que el recargo aparece como línea propia y no editable, sacar el diseño y confirmar que el recargo se va con él
+  - *Verificación*: ✅ el recorrido encontró y corrigió un bug real — `BarraFijaMovil.jsx` tenía su PROPIO `cotizarTanda()` (no pasaba `material`/`disenos`) y mostraba $1.600 mientras el CTA del hero ya mostraba $16.600 con el holográfico elegido. Corregido; sin errores de consola; carrito queda vacío (sin línea huérfana) al sacar el diseño
+
+---
+
 ## Hallazgos fuera de scope
 
 Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
@@ -228,3 +254,5 @@ Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
 
 | Fecha | Qué cambió respecto al diseño | Motivo |
 |---|---|---|
+| 14/09/2026 | Línea de base (0.3) medida con Chrome headless por CDP (375×812 @2x, Slow 4G, CPU 4×), no con el Browser pane | El pane estaba oculto (`visibilityState: hidden`): sin pintar no hay entradas de LCP. Script en el scratchpad de la sesión, sin dependencias |
+| 14/09/2026 | **Línea de base**: LCP mediana **3.292 ms** (5 corridas: 2.740 · 3.372 · 3.404 · 2.872 · 3.292); elemento LCP = `logo-1.webp` (el `SocialProof` destacado). Chunk `Personalizados-*.js` 15,8 kB + `SubidaArchivo-*.js` 9,2 kB. Suite: 524 tests | Tasks 0.2 y 0.3 |

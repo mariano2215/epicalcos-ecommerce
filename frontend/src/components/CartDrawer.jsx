@@ -7,6 +7,10 @@ import OrderBump from './OrderBump.jsx';
 // `custom`: cada línea es UN diseño personalizado y su cantidad son las copias.
 const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
 
+// Mismo criterio que routes/Cart.jsx: el recargo del Vinilo Holográfico
+// (enmienda 22/9/2026) no se edita ni se quita por su cuenta, va con su diseño.
+const esRecargoMaterial = (id) => String(id).startsWith('fixed:material-holografico:');
+
 export default function CartDrawer() {
   const {
     drawerOpen, closeDrawer, items, removeItem, setQty, subtotal, physicalSubtotal, clear,
@@ -57,12 +61,14 @@ export default function CartDrawer() {
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="font-semibold text-sm leading-snug">{item.name}</h4>
-                  <button onClick={() => removeItem(item.id)} className="text-white/40 hover:text-white text-sm" aria-label="Quitar">
-                    ✕
-                  </button>
+                  {!esRecargoMaterial(item.id) && (
+                    <button onClick={() => removeItem(item.id)} className="text-white/40 hover:text-white text-sm" aria-label="Quitar">
+                      ✕
+                    </button>
+                  )}
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  {EDITABLE.has(item.type) ? (
+                  {EDITABLE.has(item.type) && !esRecargoMaterial(item.id) ? (
                     <>
                       <button className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10" onClick={() => setQty(item.id, item.quantity - 1)} aria-label="Restar">–</button>
                       <span className="w-8 text-center text-sm">{item.quantity}</span>
@@ -70,11 +76,13 @@ export default function CartDrawer() {
                     </>
                   ) : (
                     <span className="text-xs text-white/50">
-                      {item.type === 'digital'
-                        ? '📩 Por mail'
-                        : item.meta?.qty
-                          ? `${item.meta.qty * item.quantity} calcos`
-                          : `x${item.quantity}`}
+                      {esRecargoMaterial(item.id)
+                        ? 'Con tu diseño'
+                        : item.type === 'digital'
+                          ? '📩 Por mail'
+                          : item.meta?.qty
+                            ? `${item.meta.qty * item.quantity} calcos`
+                            : `x${item.quantity}`}
                     </span>
                   )}
                   {/* Mismo criterio que /carrito: tachado si la línea tiene una promo

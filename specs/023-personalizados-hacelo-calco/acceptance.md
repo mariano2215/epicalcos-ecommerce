@@ -83,6 +83,19 @@
 | AC-Q5 | *(RF-Q6)* Ningún número de precio escrito a mano en los componentes nuevos | `grep -rnE '\$ ?[0-9]\.?[0-9]{3}' frontend/src/components/personalizados` sin resultados | ⬜ |
 | AC-Q6 | *(RF-Q7)* El total del configurador = el subtotal del carrito (con el 3x2) para un carrito vacío al que se agregan esos diseños; el checkout **no** da `price_mismatch` | recorrido hasta el botón de pagar + test de paridad | ⬜ |
 
+### Material *(enmienda 22/9/2026)*
+| ID | Criterio | Cómo se verifica | Resultado |
+|---|---|---|---|
+| AC-MAT1 | *(RF-MAT1)* Tres opciones — Vinilo Blanco, DTF UV, Vinilo Holográfico — cada una con su propio ícono SVG, mismo lenguaje visual que tamaño/corte | inspección | ⬜ |
+| AC-MAT2 | *(RF-MAT2)* Vinilo Blanco y DTF UV: mismo precio de lista que hoy por tamaño | test de paridad | ⬜ |
+| AC-MAT3 | *(RF-MAT3)* Vinilo Holográfico, 1 diseño × 10 copias en 6 cm: total = $16.000 (10 × $1.600) + $15.000 = **$31.000**; el unitario mostrado sigue en $1.600 | recorrido + test | ⬜ |
+| AC-MAT4 | *(RF-MAT5)* El recargo se ve como su propio renglón/concepto, no mezclado en el "unitario" | inspección | ⬜ |
+| AC-MAT5 | *(RF-MAT6)* Con el 3x2 vivo y un diseño holográfico: el 3x2 descuenta el precio por tamaño, **no** el recargo de $15.000 | test | ⬜ |
+| AC-MAT6 | *(RF-MAT7)* Un pedido armado a mano (test) con una línea `custom:...vinilo-holografico...` y sin su línea `fixed:material-holografico:*` es rechazado por el servidor | test | ⬜ |
+| AC-MAT7 | Sacar del carrito un diseño en Vinilo Holográfico saca también su línea de recargo (sin dejarla huérfana) | recorrido + test | ⬜ |
+| AC-MAT8 | La línea de recargo no tiene selector de cantidad propio en `/carrito` | inspección | ⬜ |
+| AC-MAT9 | Un carrito con una línea `custom:6cm:silueta:fxxx` de 4 segmentos (sin material) sigue pagándose igual, como Vinilo Blanco sin recargo | test con `localStorage` viejo | ⬜ |
+
 ### Secciones
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
@@ -136,6 +149,8 @@
 | Cantidad 5000 tipeada | Queda en 1.000 | ⬜ |
 | `sessionStorage` bloqueado | La página funciona sin persistencia | ⬜ (test) |
 | `HIDDEN_SECTIONS` con `personalizados` | No se genera `personalizados.html` y la ruta redirige como hoy | ⬜ (test) |
+| *(enmienda 22/9/2026)* Carrito manipulado: diseño holográfico sin su línea de recargo | El checkout lo rechaza | ⬜ (test) |
+| *(enmienda)* Carrito viejo (línea `custom:` de 4 segmentos) | Se paga como Vinilo Blanco, sin recargo | ⬜ (test) |
 
 ---
 
@@ -168,6 +183,7 @@
 | `personalized_upload_error` | formato / peso / red / duplicado / tope | `reason` | ⬜ |
 | `personalized_preview` | cambio de vista | `view` | ⬜ |
 | `personalized_size_selected` | elegir tamaño | `size` | ⬜ |
+| `personalized_material_selected` *(enmienda 22/9/2026)* | elegir material | `material` | ⬜ |
 | `personalized_quantity_selected` | atajo o cantidad asentada | `quantity` | ⬜ |
 | `personalized_configuration_complete` | una vez por tanda | `size`, `quantity`, `designs`, `value` | ⬜ |
 | `personalized_add_to_cart` + `add_to_cart` ×N | "Agregar" | ecommerce; `item_name` = "Personalizado · 6 cm · Silueta" (sin archivo) | ⬜ |
@@ -192,7 +208,7 @@ La feature **no cambia** reglas de precio; solo muestra una estimación.
 | ID | Criterio | Resultado |
 |---|---|---|
 | PAR-1 | `frontend/src/config/pricing.js` sin cambios | ⬜ (`git diff`) |
-| PAR-2 | `netlify/functions/lib/pricing.js` sin cambios | ⬜ (`git diff`) |
+| PAR-2 | `netlify/functions/lib/pricing.js` **sin cambios en lo existente** — la enmienda de material (22/9/2026) SÍ agrega la rama de material en `custom`, `FIXED_PRICES['material-holografico']` y la validación cruzada; nada de sticker/pack/negocio/digital/Polaroid/promos cambia | ⬜ (`git diff` acotado a esas tres cosas) |
 | PAR-3 | `promoPricing.test.js` pasa | ⬜ |
 | PAR-4 | `envio.test.js` pasa | ⬜ |
 | PAR-5 | `precioPersonalizados.test.js` pasa, con la paridad `cotizarTanda` ↔ `validateAndPriceOrder` | ⬜ |

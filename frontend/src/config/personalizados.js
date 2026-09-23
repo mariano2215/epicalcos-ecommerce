@@ -6,14 +6,21 @@
  *   unitario = precio(tamaño)   →  4 cm $1.200 · 6 cm $1.600 · 9 cm $2.000
  *   total    = unitario × cantidad
  *
- * NO hay mínimo de compra (antes eran 10) ni recargo por material: el cliente
- * elige TAMAÑO + CORTE, sube su archivo y listo.
+ * NO hay mínimo de compra (antes eran 10). El cliente elige TAMAÑO + CORTE +
+ * MATERIAL, sube su archivo y listo.
+ *
+ * MATERIAL (enmienda 22/9/2026, spec 023 §7.9): Vinilo Blanco y DTF UV no
+ * cambian el precio de arriba. Vinilo Holográfico suma `RECARGO_HOLOGRAFICO`
+ * FIJO POR DISEÑO (no por copia) — ver `lib/precioPersonalizados.js` y el
+ * comentario de `construirLineas()` en `lib/borradorPersonalizado.js` sobre
+ * por qué es una línea de carrito aparte y no un ajuste al unitario.
  *
  * ⚠️ ESPEJO OBLIGATORIO: la rama `custom` de `netlify/functions/lib/pricing.js`
- * re-precia con el MISMO SIZE_PRICES. Si cambiás un precio de tamaño, cambialo
- * en `config/pricing.js` Y en el espejo del backend, o el checkout se rechaza
- * con `price_mismatch`. El test `src/lib/precioPersonalizados.test.js` verifica
- * que ambos lados coincidan.
+ * re-precia con el MISMO SIZE_PRICES, y `FIXED_PRICES['material-holografico']`
+ * espeja `RECARGO_HOLOGRAFICO.precio`. Si cambiás un precio de tamaño o el
+ * recargo, cambialo en `config/pricing.js`/acá Y en el espejo del backend, o
+ * el checkout se rechaza con `price_mismatch`. El test
+ * `src/lib/precioPersonalizados.test.js` verifica que ambos lados coincidan.
  */
 import { SIZES } from './pricing.js';
 
@@ -36,6 +43,34 @@ export const CORTES = [
   { id: 'circulo', label: 'Círculo', descripcion: 'Recorte circular.' }
 ];
 
+/**
+ * Materiales (enmienda 22/9/2026, spec 023 §7.9). Vinilo Blanco y DTF UV NO
+ * cambian el precio (valen lo mismo que el tamaño); Vinilo Holográfico suma
+ * `RECARGO_HOLOGRAFICO` FIJO POR DISEÑO, no por copia — ver `precioPersonalizados.js`.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO: `RECARGO_HOLOGRAFICO.precio` está espejado en
+ * `netlify/functions/lib/pricing.js` (`FIXED_PRICES['material-holografico']`).
+ * Los tres ids son además una allowlist que el servidor valida contra el id de
+ * la línea `custom:` — un id de material que no esté acá el servidor lo rechaza.
+ */
+export const MATERIALES = [
+  { id: 'vinilo-blanco', label: 'Vinilo Blanco', descripcion: 'El clásico. Resistente al agua y al sol.' },
+  { id: 'dtf-uv', label: 'DTF UV', descripcion: 'Con relieve y terminación premium.' },
+  { id: 'vinilo-holografico', label: 'Vinilo Holográfico', descripcion: 'Brillo tornasolado que cambia con la luz.' }
+];
+
+export const MATERIAL_POR_DEFECTO = 'vinilo-blanco';
+export const MATERIAL_HOLOGRAFICO_ID = 'vinilo-holografico';
+
+/**
+ * Recargo fijo por diseño (no por copia) del Vinilo Holográfico. `id` es el id
+ * del producto de precio fijo (línea `fixed:material-holografico:{disenoId}`),
+ * NO el id del material (`MATERIAL_HOLOGRAFICO_ID`) — son dos ids distintos a
+ * propósito: uno identifica el material que elige el cliente, el otro la
+ * línea de cobro que ese material dispara.
+ */
+export const RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 15000 };
+
 /** Cantidad: SIN mínimo de compra. El tope espeja MAX_QTY_PER_LINE del backend. */
 export const CANTIDAD = { min: 1, max: 1000, default: 1 };
 
@@ -47,8 +82,30 @@ export const CANTIDAD = { min: 1, max: 1000, default: 1 };
  * los links que viajan en `shipping.comments` hasta el mail/CRM: las Netlify
  * Functions recortan ese texto (ver MAX_COMMENTS en create-preference.js).
  */
+const FORMATOS_CLOUDINARY = ['png', 'jpg', 'jpeg', 'pdf', 'svg', 'ai'];
+
+/**
+ * Formatos que el navegador convierte ANTES de subir (spec 023). El preset de
+ * Cloudinary solo acepta `FORMATOS_CLOUDINARY` y editarlo requiere el API secret,
+ * que no está en el repo ni en Netlify. Un WEBP se pasa a PNG —no a JPEG: los
+ * WEBP de stickers traen transparencia, y la silueta depende del alfa.
+ */
+const FORMATOS_CONVERTIBLES = ['webp'];
+
 export const ARCHIVO = {
-  formatos: ['png', 'jpg', 'jpeg', 'pdf', 'svg', 'ai'],
+  /**
+   * Lo que acepta Cloudinary. ⚠️ Lo usan también Polaroid, Negocio y el armador
+   * mayorista a través de `SubidaArchivo`: sumar acá un formato que Cloudinary
+   * rechaza haría que esas páginas acepten un archivo que después no sube.
+   */
+  formatos: FORMATOS_CLOUDINARY,
+  formatosConvertibles: FORMATOS_CONVERTIBLES,
+  /**
+   * Lo que acepta la zona de subida de /personalizados: lo de Cloudinary más lo
+   * que se convierte en el navegador. El orden es el del texto de ayuda (JPG
+   * primero: es lo que tiene casi todo el mundo en el celular).
+   */
+  formatosEntrada: ['jpg', 'jpeg', 'png', ...FORMATOS_CONVERTIBLES, 'pdf', 'svg', 'ai'],
   /** Formatos raster a los que se les puede medir la resolución en px. */
   formatosRaster: ['png', 'jpg', 'jpeg'],
   pesoMaximoMB: 10,
@@ -79,8 +136,23 @@ export function formatosLegibles(formatos = ARCHIVO.formatos) {
   return `${nombres.slice(0, -1).join(', ')} o ${nombres[nombres.length - 1]}`;
 }
 
+/**
+ * Los mismos formatos, para la zona de subida grande: `"JPG · PNG · WEBP · …"`.
+ * Sale de la misma lista que `formatosLegibles` por el mismo motivo.
+ */
+export function formatosCortos(formatos = ARCHIVO.formatosEntrada) {
+  return formatos.filter((f) => f !== 'jpeg').map((f) => f.toUpperCase()).join(' · ');
+}
+
+/** Extensión en minúscula de un nombre de archivo (`''` si no tiene). */
+export const extension = (nombre) => {
+  const partes = String(nombre || '').split('.');
+  return partes.length > 1 ? partes.pop().toLowerCase() : '';
+};
+
 export const getTamano = (id) => TAMANOS.find((t) => t.id === id) || null;
 export const getCorte = (id) => CORTES.find((c) => c.id === id) || null;
+export const getMaterial = (id) => MATERIALES.find((m) => m.id === id) || null;
 
 /** Cantidad saneada dentro de los límites (entero, sin mínimo comercial). */
 export const clampCantidad = (n) =>

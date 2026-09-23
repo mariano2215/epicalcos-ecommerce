@@ -249,6 +249,7 @@ deploy. No hay panel para cargar productos.
 |---|---|---|
 | `epicalcos.purchase.v1` | pedido ya preciado (ítems, envío, total, cupón) | sobrevive al redirect a Mercado Pago; se **lee y borra** en `/pago-exitoso` para no duplicar el evento |
 | `epicalcos.customSpec` | spec de los personalizados | CTA de WhatsApp en `/pago-exitoso` |
+| `epicalcos.personalizados.borrador.v1` | tamaño, corte, copias, instrucciones y los diseños **ya subidos** (con su link de Cloudinary) que todavía no se agregaron al carrito | que el cliente no pierda sus diseños si navega o refresca (spec 023). Lo que se estaba subiendo no se guarda. `sessionStorage` y no `localStorage`: un archivo de hace una semana no tiene que aparecer solo |
 
 ### Forma de una línea del carrito
 No hay schema declarado; esta es la forma real que arma el `CartContext`:
@@ -268,10 +269,19 @@ No hay schema declarado; esta es la forma real que arma el `CartContext`:
 ```
 
 **Migración de carritos guardados**: `esCustomViejo()` descarta al hidratar las
-líneas del configurador viejo (`custom:{material}:{tamano}:{corte}:{ts}`, 5
-tramos). Sin eso, una línea sobreviviente en el localStorage de alguien haría
-que el servidor rechazara **todo** su checkout. Es el precedente a seguir ante
-cualquier cambio de forma de las líneas.
+líneas del configurador viejo (`custom:{material}:{tamano}:{corte}:{ts}`,
+material PRIMERO). Sin eso, una línea sobreviviente en el localStorage de
+alguien haría que el servidor rechazara **todo** su checkout. Es el precedente
+a seguir ante cualquier cambio de forma de las líneas.
+
+⚠️ **Enmienda 22/9/2026** (spec 023, selector de material): la línea `custom:`
+volvió a ganar el material, pero DESPUÉS de tamaño/corte y ANTES del id del
+diseño — `custom:{tamano}:{corte}:{material}:{ts}` (el formato de 4 tramos
+sin material sigue siendo válido: se interpreta como Vinilo Blanco). El
+chequeo de `esCustomViejo()` dejó de contar tramos y pasa a validar que
+`parts[1]` sea un tamaño real, que distingue los dos formatos sin confundirlos.
+El Vinilo Holográfico agrega, además, una línea propia `fixed:material-holografico:{ts}`
+(recargo fijo por diseño, quantity 1) — no es parte de la línea `custom:`.
 
 ---
 

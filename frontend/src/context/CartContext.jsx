@@ -3,6 +3,7 @@ import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
 import { usePromoActive, use2x1PromoActive } from '../lib/promo.js';
 import { useAvisoDesbloqueo } from '../lib/promoUnlock.js';
 import { META_LINE_SKU, FIXED_SKU, DIGITAL_SKU } from '../config/metaCatalog.js';
+import { getTamano } from '../config/personalizados.js';
 import {
   priceForSize,
   sizeLabel,
@@ -41,11 +42,24 @@ const initialState = { items: [], drawerOpen: false };
 /**
  * Líneas de personalizados del configurador VIEJO (`custom:{material}:{tamano}:{corte}:{ts}`,
  * con precio por material y mínimo de 10). El configurador nuevo emite
- * `custom:{tamano}:{corte}:{ts}`: si una de esas líneas sobrevivió en el
- * localStorage de alguien, el servidor la rechazaría y le trabaría TODO el
- * checkout, así que se descartan al hidratar.
+ * `custom:{tamano}:{corte}:{ts}` o, desde la enmienda de material del
+ * 22/9/2026, `custom:{tamano}:{corte}:{material}:{ts}`: si una línea del
+ * modelo viejo sobrevivió en el localStorage de alguien, el servidor la
+ * rechazaría y le trabaría TODO el checkout, así que se descarta al hidratar.
+ *
+ * ⚠️ Enmienda 22/9/2026: el chequeo pasó de "¿tiene más de 4 segmentos?" a
+ * "¿el segundo campo es un tamaño real?", porque el formato nuevo con
+ * material TAMBIÉN tiene 5 segmentos. En el modelo viejo el material iba
+ * PRIMERO (`parts[1]` = 'vinilo-blanco'/'transparente'/'holografico'/'dtf-uv',
+ * ninguno un tamaño válido); en el nuevo, `parts[1]` sigue siendo el tamaño
+ * (el material se agregó ANTES del id del diseño, no primero, a propósito
+ * para no volver a esta misma trampa — ver design.md §3.2 de la spec 023).
  */
-const esCustomViejo = (id) => String(id).startsWith('custom:') && String(id).split(':').length > 4;
+export const esCustomViejo = (id) => {
+  const s = String(id);
+  if (!s.startsWith('custom:')) return false;
+  return !getTamano(s.split(':')[1]);
+};
 
 /** Hidratación síncrona desde localStorage en el primer render (evita el race con el persist). */
 function initState() {
@@ -260,6 +274,19 @@ export function CartProvider({ children }) {
       const item = state.items.find((i) => i.id === id);
       if (item) trackRemoveFromCart({ ...item, price: precioVidrieraLinea(item) });
       dispatch({ type: 'REMOVE', id });
+      // Enmienda 22/9/2026: sacar un diseño en Vinilo Holográfico saca también
+      // su línea de recargo (`fixed:material-holografico:{disenoId}`) — sin
+      // esto quedaría cobrándose sola, sin el diseño que la originó (RF-MAT7
+      // solo cubre que NO falte; esto cubre que no sobre).
+      if (String(id).startsWith('custom:')) {
+        const disenoId = String(id).split(':').at(-1);
+        const recargoId = `fixed:material-holografico:${disenoId}`;
+        const recargo = state.items.find((i) => i.id === recargoId);
+        if (recargo) {
+          trackRemoveFromCart({ ...recargo, price: precioVidrieraLinea(recargo) });
+          dispatch({ type: 'REMOVE', id: recargoId });
+        }
+      }
     },
     [state.items]
   );

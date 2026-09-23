@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `023-personalizados-hacelo-calco` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `IN PROGRESS` — Mariano pidió la implementación el 14/09/2026 |
 | **Fecha** | 14/09/2026 |
 | **Autor** | Claude Code, a partir del brief de Mariano ("Rediseño y optimización de `/personalizados`") |
 
@@ -19,6 +19,18 @@
 > ⚠️ **Dos cosas no se dicen en ningún texto del sitio**: que no hay fotos (ni
 > "próximamente", ni placeholders) y que no se manda boceto. Hay test que lo
 > frena (RF-L18).
+
+> **Enmienda del 22/9/2026 — Material** (§7.9, §9): Mariano pidió sumar
+> selector de material (Vinilo Blanco / DTF UV / Vinilo Holográfico), con
+> recargo fijo de $15.000 en el holográfico. Esto **revierte parcialmente**
+> "sin recargo por material" (§9, versión original de esta spec) y cambia la
+> forma de la línea `custom:` (RNF-4), que hasta acá no cambiaba. Respuestas
+> de Mariano: el recargo es **fijo por diseño** (no por copia — el unitario no
+> cambia) y el trabajo se hace **dentro de esta spec**, no en una spec aparte.
+> Hay precedente de un modelo de precio por material mucho más complejo
+> (commits `1a32e6c`…`ce6a9fa`, jul/2026: 4 materiales, % por tamaño, tiers de
+> volumen) que se sacó por completo antes de esta spec — este cambio es
+> deliberadamente más chico que aquel.
 
 ---
 
@@ -297,6 +309,18 @@ Organizado por prioridad (la del brief).
 | RF-Q6 | Ningún precio escrito a mano en el copy | 🔴 must |
 | RF-Q7 | El total que muestra el configurador es el mismo que muestra el carrito para un carrito con solo esos diseños | 🔴 must |
 
+### 7.9 Material (enmienda 22/9/2026)
+
+| ID | Requisito | Prioridad |
+|---|---|---|
+| RF-MAT1 | Selector de material con tres opciones: **Vinilo Blanco**, **DTF UV**, **Vinilo Holográfico**, cada una con su propio ícono SVG (mismo lenguaje visual que los swatches de tamaño y corte) | 🔴 must |
+| RF-MAT2 | Vinilo Blanco y DTF UV valen lo mismo que hoy (precio de lista por tamaño, sin recargo) | 🔴 must |
+| RF-MAT3 | Vinilo Holográfico suma un recargo **fijo de $15.000 por diseño**, sin importar la cantidad de copias: el unitario por copia NO cambia, se agrega una vez por diseño | 🔴 must |
+| RF-MAT4 | Sin preselección forzada de material: arranca en Vinilo Blanco (D-4 ya establece "sin preselección" para tamaño; acá el default es explícito porque no hay un material "sin elegir" que tenga sentido mostrar) | 🟡 should |
+| RF-MAT5 | El total del configurador (RF-Q2) incluye el recargo cuando corresponde, y el recargo se ve como su propio concepto (no diluido en el "unitario") | 🔴 must |
+| RF-MAT6 | El recargo **no** participa de ningún descuento: ni 3x2, ni cupón, ni 10 % por transferencia | 🔴 must |
+| RF-MAT7 | Un carrito manipulado para quedarse con un diseño en Vinilo Holográfico sin su recargo se **rechaza** en el checkout, igual que un `price_mismatch` | 🔴 must |
+
 ### 7.6 Secciones de la landing
 
 Orden completo (el del brief, sin la 5 —RF-L3— y sin la 7 —P-3—): hero →
@@ -353,7 +377,7 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 | RNF-1 | **Mobile-first** | a 375 px: sin scroll horizontal, sin pinch zoom, sin modales, targets ≥ 44 px, CTA y precio siempre a mano |
 | RNF-2 | **Performance** | la ruta sigue siendo `lazy`; ninguna imagen de sección arriba del fold; todas las fotos en WebP con ancho/alto declarados y `loading="lazy"`; el trabajo de la vista calco no bloquea la interacción; LCP de `/personalizados` no peor que hoy (medido antes/después) |
 | RNF-3 | **Accesibilidad** | `aria-label` en controles sin texto propio, foco visible, subida por teclado, estados anunciados, textos alternativos que describen la foto |
-| RNF-4 | **Compatibilidad** | un carrito guardado con personalizados del configurador actual se paga igual; ninguna línea cambia de forma |
+| RNF-4 | **Compatibilidad** | un carrito guardado con personalizados del configurador actual se paga igual. ⚠️ Enmienda 22/9/2026: la línea `custom:` SÍ gana un campo (material) para poder cobrar el recargo del holográfico — ver design.md §3.2/§8. Un carrito viejo sin ese campo sigue pagándose igual (default Vinilo Blanco, sin recargo) |
 | RNF-5 | **Seguridad** | ningún secreto nuevo en el bundle; subida sigue siendo "unsigned" como hoy; ningún nombre de archivo en analytics |
 | RNF-6 | **Sin dependencias nuevas** | ni prerender, ni canvas, ni carruseles de terceros |
 | RNF-7 | **Identidad visual** | header, footer, paleta, tipografía (títulos en mayúscula), botones, radios y sombras actuales. No es un micrositio |
@@ -368,6 +392,8 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 |---|---|---|
 | Un personalizado vale lo mismo que un calco de catálogo del mismo tamaño | `business-rules.md` §1 "Calcos personalizados" | no |
 | Sin mínimo de compra | ídem | no |
+| Vinilo Blanco y DTF UV sin recargo; Vinilo Holográfico +$15.000 **fijo por diseño** (enmienda 22/9/2026) | `business-rules.md` §1 "Calcos personalizados" | **sí** — antes era "sin recargo por material" |
+| El recargo del holográfico no entra en el 3x2, el cupón ni el 10 % por transferencia | ídem | **sí** — regla nueva |
 | Cortes (silueta, cuadrado, círculo) no cambian el precio | ídem | no |
 | Una línea del carrito = un diseño | `business-rules.md` §7 "Configurador" | no |
 | Formatos, 10 MB por archivo, 150 DPI recomendados, hasta 100 archivos | `business-rules.md` §7 | no (WEBP se convierte antes de subir: el formato que llega a producción sigue en la lista) |
@@ -381,10 +407,15 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 ⚠️ **Precios, promos, cupones o envíos:**
 
 - [x] **No** requiere cambio en las reglas de precio del cliente ni del servidor
+      *(esto valía hasta el 14/9/2026; la enmienda de material del 22/9 SÍ
+      toca el servidor — ver más abajo)*
 - [x] **No** requiere cambio en las reglas de envío
 - [x] **Sí** requiere test de paridad nuevo: el precio por unidad que muestra el
       configurador con el beneficio por cantidad tiene que ser el mismo que
       calcula el servidor (RF-Q3, RF-Q7)
+- [x] **Sí** (enmienda 22/9/2026) requiere cambio en `netlify/functions/lib/pricing.js`:
+      el servidor tiene que poder rechazar un pedido que se queda con un
+      diseño en Vinilo Holográfico sin su recargo de $15.000 (RF-MAT7)
 
 ### 9.1 Copy: qué está confirmado y qué no
 
@@ -451,6 +482,10 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 | Sin JavaScript / crawler | Ve el HTML propio con el contenido principal |
 | Promo o precio cambia entre el build y la visita | El HTML inicial puede quedar viejo hasta el próximo deploy; al cargar el JS manda el precio vigente (el servidor valida siempre) |
 | WhatsApp flotante + barra fija | Nunca se superponen |
+| *(enmienda 22/9/2026)* Carrito guardado ANTES de esta enmienda (línea `custom:` sin material) | Se sigue pagando igual: se asume Vinilo Blanco, sin recargo |
+| *(enmienda)* Cliente cambia de holográfico a blanco después de agregar el diseño al carrito | No hay edición post-alta (como tamaño/corte hoy): tiene que quitar la línea y volver a cargarla |
+| *(enmienda)* Alguien manipula el carrito (devtools/localStorage) para borrar la línea del recargo y quedarse con el diseño en holográfico | El checkout lo rechaza (mismo mecanismo que `price_mismatch`) — RF-MAT7 |
+| *(enmienda)* Cliente quita del carrito un diseño en Vinilo Holográfico | Se quita también su línea de recargo, sin dejar un cargo huérfano |
 
 ---
 
@@ -466,9 +501,10 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 | `personalized_upload_error` | un archivo no pasa o falla la subida | `reason` (formato / peso / red / duplicado / tope) | GA4 |
 | `personalized_preview` | cambia de vista | `view` (original / calco / termo) | GA4 |
 | `personalized_size_selected` | elige tamaño | `size` | GA4 (+ Meta, P-12) |
+| `personalized_material_selected` *(enmienda 22/9/2026)* | elige material | `material` (vinilo-blanco / dtf-uv / vinilo-holografico) | GA4 |
 | `personalized_quantity_selected` | elige cantidad (atajo al toque; −/+ y tipeo, al asentarse) | `quantity` | GA4 |
-| `personalized_configuration_complete` | primera vez que hay diseño subido + tamaño, por tanda | `size`, `quantity`, `designs`, `value` | GA4 (+ Meta, P-12) |
-| `personalized_add_to_cart` | toca "Agregar al carrito" | `size`, `designs`, `units`, `value` + ecommerce | GA4 |
+| `personalized_configuration_complete` | primera vez que hay diseño subido + tamaño, por tanda | `size`, `quantity`, `designs`, `value`, `material` *(enmienda 22/9/2026)* | GA4 (+ Meta, P-12) |
+| `personalized_add_to_cart` | toca "Agregar al carrito" | `size`, `designs`, `units`, `value`, `material` *(enmienda)* + ecommerce | GA4 |
 
 ### Eventos existentes que cambian
 | Evento | Qué cambia | Por qué |

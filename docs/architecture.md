@@ -137,6 +137,20 @@ functions.directory = "../netlify/functions"
 `npm test` es una **barrera**: si falla, no se publica (ver §11).
 El `prebuild` corre `scripts/generate-sitemap.mjs`.
 
+El `postbuild` corre `scripts/prerender.mjs` (spec 023): escribe
+`dist/personalizados.html` con título, descripción, canonical, Open Graph,
+JSON-LD y el contenido de la página en HTML estático, para que un buscador la lea
+**sin correr JavaScript**. Netlify sirve ese archivo en `/personalizados` (un
+archivo que existe le gana al fallback del SPA) y React reemplaza el contenido de
+`#root` al montar. El HTML sale de los mismos datos que la página
+(`config/personalizadosLanding.js` → `lib/personalizadosEstatico.js`). Si el
+prerender falla, copia `index.html` tal cual y el build sigue: **nunca corta un
+deploy**. Si la sección está en `HIDDEN_SECTIONS`, no genera nada.
+
+⚠️ Todas las demás rutas siguen arrancando con el `<title>` y el canonical del
+Home en el HTML inicial (`index.html` es el fallback de todas). `lib/prerender.js`
+quedó genérico para extenderlo — está propuesto como spec aparte.
+
 `ignore = "exit 1"` está puesto a propósito: sin eso, un push que solo toca
 `netlify/functions/**` (fuera de `base`) quedaba *"Canceled — no content change"*
 y no se deployaba.

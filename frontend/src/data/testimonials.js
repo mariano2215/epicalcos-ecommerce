@@ -19,7 +19,13 @@ export const TESTIMONIALS = [
     name: 'Sofía M.',
     text: 'Tenia que hacer un sticker para la puerta de mi local de mascotas y me quedó re lindo',
     image: '/testimonials/logo-1.webp',
-    label: 'Logo personalizado'
+    label: 'Logo personalizado',
+    /**
+     * Es un diseño PROPIO del cliente, así que sirve de prueba en
+     * /personalizados (spec 023). El de Giuliana dice "Termo personalizado" pero
+     * la foto muestra calcos del catálogo: allá sería engañoso.
+     */
+    personalizado: true
   },
   {
     name: 'Giuliana S.',

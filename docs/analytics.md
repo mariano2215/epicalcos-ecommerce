@@ -138,8 +138,44 @@ Sin PII ni valor: solo el tipo.
 `whatsapp_click` (con la ruta de origen) · `instagram_click` ·
 `contacto_form_error` · `shipping_calculated` (zona + costo) ·
 `pack_builder_start` · `pack_completed` (unidades + diseños distintos) ·
-`personalizado_inicio` · `personalizado_paso` · `personalizado_archivo_cargado` ·
-`personalizado_precio_calculado` · `polaroid_material`
+`personalized_*` (abajo) · `polaroid_material`
+
+#### Personalizados (spec 023, desde el 14/9/2026)
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `personalized_view` | una vez por visita a `/personalizados` (junto con un `view_item` del producto "personalizados", SKU de Meta `006574`) | — |
+| `personalized_upload_start` | abre el selector de archivos o suelta archivos | `origen`: `hero` · `sticky` · `editorial` · `cta_final` |
+| `personalized_upload_complete` | cada archivo subido (o aceptado "por WhatsApp" si no hay subida) | `file_type` (extensión) · `file_size_range` (`<1MB` · `1-5MB` · `5-10MB`) |
+| `personalized_upload_error` | un archivo no entra o no sube | `reason`: `formato` · `peso` · `lectura` · `red` · `duplicado` · `tope` |
+| `personalized_preview` | cambia de vista | `view`: `original` · `calco` · `termo` |
+| `personalized_size_selected` | elige tamaño | `size` |
+| `personalized_material_selected` *(enmienda 22/9/2026)* | elige material | `material`: `vinilo-blanco` · `dtf-uv` · `vinilo-holografico` |
+| `personalized_quantity_selected` | atajo (al toque) o −/+/tipeo (al asentarse, 800 ms) | `quantity` |
+| `personalized_configuration_complete` | una vez por tanda: diseño subido + tamaño | `size` · `quantity` · `designs` · `value` · `material` |
+| `personalized_add_to_cart` | toca "Agregar al carrito" | `size` · `designs` · `units` · `material` + ecommerce (`value`, `items`) |
+
+Además, cada línea dispara su `add_to_cart` estándar — ahora al tocar "Agregar",
+no al subir el archivo como antes. El link a Negocio usa `wholesale_click` con
+`origen: 'personalizados'`.
+
+**Reemplazaron** a `personalizado_inicio` → `personalized_view`,
+`personalizado_paso` → `personalized_size_selected`,
+`personalizado_archivo_cargado` → `personalized_upload_complete` y
+`personalizado_precio_calculado` → `personalized_configuration_complete`, que
+dejaron de llegar a GA4 el 14/9/2026. Tenían dos defectos: el de archivo mandaba
+el **nombre del archivo** y el de precio leía un `material` que ya no existía (y
+perdía el tamaño). En **Meta** se conservan los nombres custom viejos
+(`PersonalizadoInicio`, `PersonalizadoArchivo`, `PersonalizadoPaso`,
+`PersonalizadoPrecio`), ahora sin PII, por si hay audiencias armadas sobre ellos.
+
+⚠️ **Ningún dato del cliente sale a analytics**: ni el nombre ni el link del
+archivo ni las instrucciones. El `item_name` de un personalizado en
+`add_to_cart` / `begin_checkout` / `purchase` era *"Personalizado · 6 cm ·
+Silueta · foto-de-mi-hijo.jpg"*; `nombreParaAnalytics()` (en `lib/analytics.js`,
+el único punto de salida) lo corta en *"Personalizado · 6 cm · Silueta"*. La
+línea del carrito conserva el nombre completo. Lo verifica
+`lib/analyticsPersonalizados.test.js`.
 
 #### Fotos Polaroid (spec 019)
 
@@ -295,9 +331,14 @@ session → view_item_list → select_item → view_item → add_to_cart
 ### Personalizados
 
 ```
-view_item (/personalizados) → personalizado_inicio → personalizado_paso
-        → personalizado_archivo_cargado → add_to_cart → begin_checkout → purchase
+personalized_view → personalized_upload_start → personalized_upload_complete
+        → personalized_configuration_complete → add_to_cart → begin_checkout → purchase
 ```
+
+Métrica principal: *purchase rate* de personalizados (sesiones con un `purchase`
+que incluye una línea `custom:` / sesiones con `personalized_view`). Hasta el
+14/9/2026 el funnel documentado arrancaba en `view_item`, que la página nunca
+disparaba.
 
 ---
 

@@ -109,10 +109,33 @@ function debug(...args) {
   if (DEV) console.log('[analytics]', ...args);
 }
 
+/**
+ * Nombre del producto tal como sale hacia Google y Meta.
+ *
+ * El nombre de una línea de personalizados lleva el nombre del ARCHIVO del
+ * cliente ("Personalizado · 6 cm · Silueta · foto-de-mi-hijo-juan.jpg"): le sirve
+ * a él en el carrito y a Mariano en la nota del pedido, pero es contenido del
+ * cliente y puede ser PII. Hasta la spec 023 viajaba así en `add_to_cart`,
+ * `begin_checkout` y `purchase`. Se corta ACÁ —el único punto de salida— y no en
+ * la línea, que tiene que seguir diciendo qué archivo es cuál.
+ *
+ * Se decide por el prefijo del id y no por `type`: los ítems que se guardan para
+ * el `purchase` al volver de Mercado Pago no siempre traen el tipo.
+ */
+export function nombreParaAnalytics(item) {
+  const id = String(item?.id || '');
+  if (!id.startsWith('custom:')) return item?.name;
+  const [, tamano = '', corte = ''] = id.split(':');
+  const cm = parseFloat(tamano);
+  const tam = Number.isFinite(cm) ? `${cm} cm` : tamano;
+  const cor = corte ? corte[0].toUpperCase() + corte.slice(1) : '';
+  return ['Personalizado', tam, cor].filter(Boolean).join(' · ');
+}
+
 const toItems = (items) =>
   items.map((i) => ({
     item_id: i.id,
-    item_name: i.name,
+    item_name: nombreParaAnalytics(i),
     item_category: i.categoryLabel || i.category,
     price: i.price,
     quantity: i.quantity || 1
@@ -141,7 +164,7 @@ export function trackViewItem(product) {
   pushDataLayer(data);
   pixel('ViewContent', {
     content_ids: [contentId(product)],
-    content_name: product.name,
+    content_name: nombreParaAnalytics(product),
     content_type: 'product',
     currency: 'ARS',
     value: product.price
@@ -290,7 +313,7 @@ export function trackAddToCart(product, quantity = 1, listName) {
   });
   pixel('AddToCart', {
     content_ids: [contentId(product)],
-    content_name: product.name,
+    content_name: nombreParaAnalytics(product),
     content_type: 'product',
     currency: 'ARS',
     value: product.price * quantity
@@ -435,34 +458,104 @@ export function trackInstagramClick(contexto = 'contacto') {
   debug('instagram_click', contexto);
 }
 
-// ─── Configurador de personalizados ───────────────────────────────────────────
+// ─── Personalizados — funnel de la spec 023 ───────────────────────────────────
+//
+//   personalized_view → personalized_upload_start → personalized_upload_complete
+//     → personalized_configuration_complete → add_to_cart → begin_checkout → purchase
+//
+// Reemplazan a `personalizado_inicio` / `_paso` / `_archivo_cargado` /
+// `_precio_calculado` (hasta el 14/9/2026): el de archivo mandaba el NOMBRE del
+// archivo a GA4 y a Meta, y el de precio leía un `material` que ya no existía y
+// perdía el tamaño.
+//
+// ⚠️ NUNCA viaja el nombre, el link ni las instrucciones del cliente: solo la
+// extensión y un rango de peso. Lo verifica `analyticsPersonalizados.test.js`.
+//
+// En Meta se conservan los nombres custom de antes (`PersonalizadoInicio`,
+// `PersonalizadoArchivo`, `PersonalizadoPaso`, `PersonalizadoPrecio`), ahora sin
+// PII: puede haber audiencias armadas sobre ellos (P-12). GA4 no tiene ese costo.
 
-/** Primera interacción con el configurador (una vez por sesión de página). */
-export function trackPersonalizadoInicio() {
-  pushDataLayer({ event: 'personalizado_inicio' });
+/** Peso del archivo en rangos: el número exacto no aporta y huella al archivo. */
+export function rangoPeso(mb) {
+  const n = Number(mb);
+  if (!Number.isFinite(n) || n < 0) return 'desconocido';
+  if (n < 1) return '<1MB';
+  if (n < 5) return '1-5MB';
+  return '5-10MB';
+}
+
+/** Entró a /personalizados (una vez por visita a la página). */
+export function trackPersonalizedView() {
+  pushDataLayer({ event: 'personalized_view' });
   pixelCustom('PersonalizadoInicio');
-  debug('personalizado_inicio');
+  debug('personalized_view');
 }
 
-/** Cada paso completado del configurador. */
-export function trackPersonalizadoPaso(paso, valor) {
-  pushDataLayer({ event: 'personalizado_paso', paso, valor });
-  pixelCustom('PersonalizadoPaso', { paso, valor });
-  debug('personalizado_paso', paso, valor);
+/** Abrió el selector de archivos o soltó archivos. `origen`: hero / sticky / editorial / cta_final. */
+export function trackPersonalizedUploadStart(origen = 'hero') {
+  pushDataLayer({ event: 'personalized_upload_start', origen });
+  debug('personalized_upload_start', origen);
 }
 
-/** Archivo válido cargado en el configurador. */
-export function trackPersonalizadoArchivo(info = {}) {
-  pushDataLayer({ event: 'personalizado_archivo_cargado', ...info });
-  pixelCustom('PersonalizadoArchivo', info);
-  debug('personalizado_archivo_cargado', info);
+/** Un archivo subido (o aceptado para mandar por WhatsApp si no hay subida configurada). */
+export function trackPersonalizedUploadComplete({ ext, pesoMB } = {}) {
+  const datos = { file_type: String(ext || 'desconocido'), file_size_range: rangoPeso(pesoMB) };
+  pushDataLayer({ event: 'personalized_upload_complete', ...datos });
+  pixelCustom('PersonalizadoArchivo', datos);
+  debug('personalized_upload_complete', datos);
 }
 
-/** Configuración completa cotizada en vivo. */
-export function trackPersonalizadoPrecio({ valor, material, cantidad }) {
-  pushDataLayer({ event: 'personalizado_precio_calculado', valor, material, cantidad });
-  pixelCustom('PersonalizadoPrecio', { valor, material, cantidad });
-  debug('personalizado_precio_calculado', valor, material, cantidad);
+/** Un archivo que no entró o no subió. `reason`: formato / peso / lectura / red / duplicado / tope. */
+export function trackPersonalizedUploadError(reason) {
+  pushDataLayer({ event: 'personalized_upload_error', reason });
+  debug('personalized_upload_error', reason);
+}
+
+/** Cambió de vista: original / calco / termo. */
+export function trackPersonalizedPreview(view) {
+  pushDataLayer({ event: 'personalized_preview', view });
+  debug('personalized_preview', view);
+}
+
+export function trackPersonalizedSizeSelected(size) {
+  pushDataLayer({ event: 'personalized_size_selected', size });
+  pixelCustom('PersonalizadoPaso', { paso: 'tamano', valor: size });
+  debug('personalized_size_selected', size);
+}
+
+export function trackPersonalizedQuantitySelected(quantity) {
+  pushDataLayer({ event: 'personalized_quantity_selected', quantity });
+  debug('personalized_quantity_selected', quantity);
+}
+
+/** Eligió material (enmienda 22/9/2026): vinilo-blanco / dtf-uv / vinilo-holografico. */
+export function trackPersonalizedMaterialSelected(material) {
+  pushDataLayer({ event: 'personalized_material_selected', material });
+  debug('personalized_material_selected', material);
+}
+
+/** Primera vez que la tanda tiene diseño subido + tamaño (una vez por tanda). */
+export function trackPersonalizedConfigurationComplete({ size, quantity, designs, value, material }) {
+  pushDataLayer({ event: 'personalized_configuration_complete', size, quantity, designs, value, material });
+  pixelCustom('PersonalizadoPrecio', { valor: value, tamano: size, cantidad: quantity });
+  debug('personalized_configuration_complete', size, quantity, designs, value, material);
+}
+
+/**
+ * Tocó "Agregar al carrito". Además de este, cada línea dispara su `add_to_cart`
+ * estándar desde el CartContext (Meta necesita el `AddToCart` por producto).
+ */
+export function trackPersonalizedAddToCart({ size, designs, units, value, material, items = [] }) {
+  pushDataLayer({ ecommerce: null });
+  pushDataLayer({
+    event: 'personalized_add_to_cart',
+    size,
+    designs,
+    units,
+    material,
+    ecommerce: { currency: 'ARS', value, items: toItems(items) }
+  });
+  debug('personalized_add_to_cart', size, designs, units, value, material);
 }
 
 // ─── Fotos Polaroid (spec 019) ────────────────────────────────────────────────

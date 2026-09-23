@@ -32,10 +32,24 @@ carrito completo.
 ### Calcos personalizados
 `config/personalizados.js`
 
-- Valen **lo mismo que uno de catálogo**, según tamaño. Sin recargo por material.
+- Valen **lo mismo que uno de catálogo**, según tamaño, en **Vinilo Blanco** o
+  **DTF UV**. **Vinilo Holográfico** suma un recargo **fijo de $15.000 por
+  diseño** (spec 023, enmienda 22/9/2026) — no por copia: el unitario no
+  cambia, se cobra una vez por diseño como una línea aparte del carrito
+  (`fixed:material-holografico:{id}`). No entra en el 3x2, el cupón ni el 10 %
+  por transferencia.
 - **Sin mínimo de compra** (antes eran 10 unidades).
-- El cliente elige **tamaño + corte** y sube su archivo.
+- El cliente sube su archivo, elige **tamaño** (sin preselección: un
+  personalizado solo se devuelve por falla) y cantidad; el corte va plegado, con
+  **silueta** por defecto (spec 023).
 - Cortes (no afectan el precio): silueta, cuadrado, círculo.
+- El único beneficio por cantidad es el **3x2** vigente (el configurador lo
+  muestra calculado igual que el servidor). El 10 % por transferencia NO cuenta
+  personalizados.
+- Con cantidades altas se recomienda la **Promo Negocio** cuando lo que suman
+  las copias de un diseño alcanza su precio (hoy: 38 en 6 cm, 31 en 9 cm, 50 en
+  4 cm). La promo se puede tomar aunque el cliente quiera menos de 100
+  (Mariano, 14/9/2026).
 
 ### Productos de precio fijo
 
@@ -441,7 +455,13 @@ mails salen de inmediato y el comprobante se registra a mano.
 
 ### Configurador de personalizados
 `config/personalizados.js → ARCHIVO`
-- Formatos: png, jpg, jpeg, pdf, svg, ai
+- **Alta al carrito explícita** ("Agregar al carrito") desde la spec 023, que
+  crea **una línea por diseño** (`custom:{tamano}:{corte}:{id}`, la misma forma
+  de siempre). No se habilita hasta que terminan las subidas: la línea nace con
+  el link del archivo adentro.
+- Formatos que suben a Cloudinary: png, jpg, jpeg, pdf, svg, ai. La zona de
+  subida acepta además **webp**, que se convierte a PNG en el navegador
+  (`ARCHIVO.formatosEntrada`); el preset de Cloudinary no cambia
 - Peso máximo: **10 MB** por archivo
 - Resolución mínima recomendada: **150 DPI**
 - Máximo **100 archivos** por pedido (tope anti-abuso, no regla comercial)

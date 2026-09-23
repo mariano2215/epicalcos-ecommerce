@@ -278,6 +278,27 @@ Functions y credenciales reales:
       se deduplican por `event_id` (uno solo, origen "Navegador y servidor").
 - [ ] Pedido con **archivo personalizado** → que el link de Cloudinary llega
       entero al mail y al CRM.
+- [ ] **`/personalizados` para buscadores** (spec 023): `curl -s -o /dev/null
+      -w '%{http_code} %{redirect_url}' https://epicalcos.com/personalizados` da
+      `200` sin redirect, y `curl -s https://epicalcos.com/personalizados | grep
+      '<title>'` muestra *"Stickers y Calcos Personalizados con tu Diseño |
+      EPICALCOS"*.
+
+### 6b. `/personalizados` en celulares reales (spec 023)
+
+En un **iPhone (Safari)**, en el **navegador de Instagram** (abrir el link desde
+un DM) y en un **Android (Chrome)**:
+
+- [ ] "Elegir archivo" abre la galería; una foto del carrete (HEIC en iPhone)
+      entra y se ve la vista previa al instante
+- [ ] Elegir 6 cm pasa la vista a "Vista calco"; "En un termo" muestra la escala
+- [ ] Cambiar la cantidad actualiza el total sin saltos; con 10, "Ahorrás 30 %"
+- [ ] "Agregar al carrito" → se abre el carrito lateral con una línea por diseño
+- [ ] La barra de abajo no tapa nada y el botón de WhatsApp queda arriba de ella
+      (con el iPhone con notch/isla: la barra respeta el borde inferior)
+- [ ] Salir al carrito a mitad de una subida y volver: el diseño está subido
+- [ ] Pagar un pedido real y confirmar que el mail y el CRM traen el link del
+      archivo
 - [ ] Pago rechazado → `/pago-error`.
 - [ ] Carrito viejo en `localStorage` de un cliente que no entra hace semanas.
 

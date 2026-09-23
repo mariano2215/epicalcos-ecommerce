@@ -91,7 +91,15 @@
 | `frontend/src/lib/analytics.js` | Trackers `personalized_*`; `nombreParaAnalytics()` en `toItems` y en `content_name`; `rangoPeso()`; se retiran `trackPersonalizadoPaso/Archivo/Precio` y `trackPersonalizadoInicio` pasa a ser el `pixelCustom` de `trackPersonalizedView` | 🟡 módulo compartido (ver tabla) |
 | `frontend/src/lib/precioPersonalizados.js` | `calcularPrecio()` → `cotizarTanda()` (unitario de lista, unitario con 3x2, total, ahorro, % ahorro, gratis, faltan para la próxima) | 🟡 camino de precios (solo lectura de reglas) |
 | `frontend/src/lib/precioPersonalizados.test.js` | Migra los casos de `calcularPrecio`; suma paridad `cotizarTanda` ↔ `validateAndPriceOrder`; suma `construirLineas` ↔ server | 🟢 |
-| `frontend/src/config/personalizados.js` | `ARCHIVO.formatosEntrada` (= `formatos` + `webp`) y `ARCHIVO.formatosConvertibles: ['webp']`. `formatos` **no cambia** | 🟢 |
+| `frontend/src/config/personalizados.js` | `ARCHIVO.formatosEntrada` (= `formatos` + `webp`) y `ARCHIVO.formatosConvertibles: ['webp']`. `formatos` **no cambia**. *(Enmienda 22/9/2026)* suma `MATERIALES`, `MATERIAL_POR_DEFECTO`, `getMaterial()`, `RECARGO_HOLOGRAFICO` | 🟢 |
+| `frontend/src/components/personalizados/swatches.jsx` *(enmienda 22/9/2026)* | Suma `Swatch({ kind: 'material', id })`: un ícono por material, mismo `LIENZO`/paleta que tamaño y corte | 🟢 |
+| `frontend/src/lib/borradorPersonalizado.js` *(enmienda 22/9/2026)* | Suma `material` al estado (`inicial()`, `serializar()`/`hidratar()`), `setMaterial()`, y el id/meta de `construirLineas()` — ver §3.2 | 🟡 forma de la línea del carrito |
+| `frontend/src/components/personalizados/HeroConfigurador.jsx` *(enmienda)* | Monta `SelectorMaterial` entre `SelectorTamano` y `SelectorCantidad`; pasa `material` a `cotizarTanda` | 🟢 |
+| `frontend/src/components/personalizados/BarraFijaMovil.jsx` *(enmienda)* | Tiene su PROPIO `cotizarTanda()` (no comparte el del hero) — hay que pasarle `material`/`disenos` también, o la barra fija muestra un total distinto al del CTA del hero. Encontrado recorriendo la UI en el Browser pane, no por los tests (no hay test de componente para esta barra) | 🟡 detectado en QA manual |
+| `frontend/src/components/personalizados/BotonCta.jsx` *(enmienda)* | `useAgregarAlCarrito()` agrega, además de la línea `custom`, la línea de recargo (`addFixed`) cuando el material es holográfico | 🟡 toca `CartContext` |
+| `frontend/src/context/CartContext.jsx` *(enmienda)* | `esCustomViejo()` deja de contar segmentos y pasa a validar el tamaño (§3.2); `removeItem()` quita también el recargo acoplado | 🟡 módulo compartido (ver tabla) |
+| `frontend/src/routes/Cart.jsx`, `frontend/src/components/CartDrawer.jsx` *(enmienda)* | La línea de recargo no es editable (sin selector de cantidad ni botón de quitar propio): se agrega/quita siempre junto con su diseño | 🟢 |
+| `netlify/functions/lib/pricing.js` *(enmienda)* | Rama `custom` lee el material opcional del id; nueva entrada en `FIXED_PRICES['material-holografico']`; validación cruzada holográfico ↔ recargo | 🟡 módulo compartido (ver tabla) — **la regla más importante del repo** |
 | `frontend/src/data/testimonials.js` | `personalizado: true` en el testimonio de Sofía M. (el único que corresponde, P-2) | 🟢 dato; `Testimonials` y `SocialProof` lo ignoran |
 | `frontend/package.json` | `"postbuild": "node ../scripts/prerender.mjs"` | 🟡 corre en cada build de Netlify |
 | `scripts/optimize-images.mjs` | Target nuevo `public/images/personalizados/` (WebP, 800 px máx + variante 400 px) | 🟢 |
@@ -120,6 +128,7 @@
 | `…/personalizados/ZonaSubida.jsx` | Dropzone (botón real + input `sr-only`), lista de diseños con miniatura, progreso, Reemplazar / Quitar / Reintentar, `aria-live` |
 | `…/personalizados/VistaPrevia.jsx` | ORIGINAL \| VISTA CALCO \| EN UN TERMO; canvas + silueta SVG del termo |
 | `…/personalizados/SelectorTamano.jsx` | 3 cards (radio group): precio c/u, "ideal para", MÁS ELEGIDO |
+| `…/personalizados/SelectorMaterial.jsx` *(enmienda 22/9/2026)* | 3 cards (radio group), mismo patrón que `SelectorTamano`: ícono (`Swatch kind="material"`), nombre, "+$15.000" en Vinilo Holográfico y nada en las otras dos |
 | `…/personalizados/SelectorCantidad.jsx` | − / + / atajos, total, unitario y ahorro con 3x2, "sumá 1 y una te sale gratis", link a Negocio |
 | `…/personalizados/OpcionesExtra.jsx` | Corte (reusa `Swatch` de `swatches.jsx`) + instrucciones, plegado |
 | `…/personalizados/BotonCta.jsx` | El CTA de tres estados; lo usan el hero y la barra fija |
@@ -144,8 +153,8 @@
 |---|---|---|
 | `frontend/src/config/pricing.js` | **No** (solo se importan `SIZES`, `NEGOCIO`, `PROMO_3X2`, `promo3x2`, `round`) | — |
 | `frontend/src/config/site.js` | **No** (solo lectura: `shipping`, `devoluciones`, `contact`, `navLinks`) | — |
-| `frontend/src/context/CartContext.jsx` | **No** (se usan `addCustom`, `items`, `openDrawer` como están) | — |
-| `netlify/functions/lib/pricing.js` | **No** | — |
+| `frontend/src/context/CartContext.jsx` *(enmienda 22/9/2026)* | **Sí, acotado**: `esCustomViejo()` (§3.2) y `removeItem()` (acopla la línea de recargo). Se usan `addCustom`, `addFixed`, `items`, `removeItem`, `openDrawer` como están — nada de esto cambia su firma | `Cart.jsx`, `CartDrawer.jsx`, `Checkout.jsx`, `services/cartRecovery`, y todo lo de la fila de `analytics.js` de abajo (todos siguen viendo la misma API) |
+| `netlify/functions/lib/pricing.js` *(enmienda 22/9/2026)* | **Sí, acotado**: rama `custom` de `lineBase()` + una entrada nueva en `FIXED_PRICES` + una pasada de validación cruzada al final de `validateAndPriceOrder()` (§3.5/§6). Nada de lo existente (sticker, pack, negocio, digital, Polaroid, promos) cambia | `create-preference.js`, `create-order-transfer.js`, y los tests de `promoPricing.test.js` / `precioPersonalizados.test.js` |
 | `frontend/src/lib/analytics.js` | **Sí** | `CartContext`, `OfertaPrincipal`, `StickerCard`, `ImprimiblesCard`, `Testimonials`, `FixedProductPage`, `IntentSelector`, `GaleriaUGC`, `GarantiaCheckout`, `FeaturedStickers`, `WhatsAppButton`, `BuscadorCalcos`, `PackBuilder`, `CategoryCard`, `Hero`, `ShippingInfo`, `WelcomePopup`, `contacto/*` (3), `personalizados/Configurador`, rutas `PaymentSuccess`, `LandingUso`, `Cart`, `Checkout`, `Polaroid`, `Producto`, `Category`, `Categorias`, `PaymentTransfer`, `services/cartRecovery` |
 
 Impacto del cambio en `analytics.js`: `toItems()` y el `content_name` de
@@ -178,6 +187,7 @@ grep -rln "SubidaArchivo" frontend/src      # NegocioForm, FixedProductPage, Pac
     aviso: null|'resolución baja…'
   }],
   tamano: null|'4cm'|'6cm'|'9cm',     // D-4: sin preselección
+  material: 'vinilo-blanco',            // enmienda 22/9/2026 (RF-MAT4): SÍ arranca con default
   corte: 'silueta',                     // D-5 / P-8
   copias: 1,                            // CANTIDAD.min..max
   instrucciones: '',
@@ -198,22 +208,43 @@ grep -rln "SubidaArchivo" frontend/src      # NegocioForm, FixedProductPage, Pac
 | todo `listo`/`por_whatsapp` | `agregar` — "Agregar al carrito · $X" |
 | recién agregado | `agregado` — "✓ Tu calco está en el carrito" (4 s) |
 
-### 3.2 Línea del carrito — **NO CAMBIA**
-`construirLineas(estado)` emite, **por diseño**, exactamente lo que hoy emite el
-efecto del configurador:
+### 3.2 Línea del carrito (enmienda 22/9/2026: gana el material)
+
+Hasta el 22/9/2026 esta sección decía "NO CAMBIA". El pedido de material la
+revierte: `construirLineas(estado)` emite, **por diseño**:
 ```js
-{ id: `custom:${tamano}:${corte}:${d.id}`,
+{ id: `custom:${tamano}:${corte}:${material}:${d.id}`,
   name: `Personalizado · ${tam.label} · ${cor.label} · ${nombreCorto}`,
   categoryLabel: 'Personalizados',
   image: d.url && esRaster ? d.url : customImageDataUri(),
   basePrice: tam.precio, quantity: copias,
-  meta: { tipo: 'calcos', tamano, tamanoLabel, corte, corteLabel, cantidad: copias,
-          instrucciones: instrucciones.trim() || null,
+  meta: { tipo: 'calcos', tamano, tamanoLabel, corte, corteLabel, material, materialLabel,
+          cantidad: copias, instrucciones: instrucciones.trim() || null,
           archivos: [{ nombre, pesoMB, url }] } }
 ```
-Se agregan con `addCustom(line, { openDrawer: false, silent: true })` y, después
-de la última, `openDrawer()` una vez. `resumenPedido.js`, el checkout, el mail,
-el CRM y `/pago-exitoso` siguen igual.
+Se agregan con `addCustom(line, { openDrawer: false, silent: true })`, igual
+que hoy. Si `material === 'vinilo-holografico'`, **además** se agrega una línea
+de recargo con `addFixed()` — ver §3.5. Después de la última línea (custom +
+recargos), `openDrawer()` una vez. `resumenPedido.js`, el checkout, el mail, el
+CRM y `/pago-exitoso` siguen igual: ninguno de esos lee `meta.material`, así
+que no hace falta tocarlos para que el pedido llegue completo (`meta` ya viaja
+entero a todos ellos).
+
+**Por qué se agrega el material y no un campo aparte**: el servidor re-precia
+cada línea **solo por su id** (nunca confía en `meta` — payload real, ver
+§comentario de `lineBase`), y la única forma de que rechace un pedido que se
+quedó sin el recargo del holográfico (RF-MAT7) es que el id de la línea
+`custom` le diga qué material tiene. Ponerlo en `meta` habría sido más simple,
+pero un `meta` manipulado con devtools no lo revisa nadie: el `price_mismatch`
+solo lo dispara lo que compara contra el id.
+
+**Por qué NO va primero, como en el modelo viejo** (`custom:{material}:{tamano}:{corte}:{ts}`,
+commits `1a32e6c`…`ce6a9fa`): `esCustomViejo()` (`CartContext.jsx`) purga
+cualquier línea `custom:` de 5 segmentos por asumir que es de ese modelo. Si el
+material fuera el primer segmento otra vez, sería indistinguible de una línea
+realmente vieja y el purgado la comería. Poniéndolo **antes del id del diseño y
+después de tamaño/corte** (que no se tocan), la migración es: "¿`parts[1]` es
+un tamaño válido?" — ver §8.
 
 ### 3.3 Cotización (`cotizarTanda`)
 ```js
@@ -271,6 +302,72 @@ Lista de tomas para Mariano (todas en celular, luz natural, fondo neutro):
 Formato de entrega: JPG/PNG a cualquier tamaño; `optimize-images.mjs` los pasa a
 WebP 800/400 px.
 
+### 3.5 Material y el recargo del holográfico (enmienda 22/9/2026)
+
+**Por qué una línea aparte y no un precio distinto por unidad**: el recargo es
+"fijo por diseño" (Mariano, 22/9/2026) — $15.000 una sola vez, no importa si el
+diseño pide 1 copia o 500. El modelo de precio de todo el sistema es
+`unit_price × quantity`; forzar un monto que NO escala con `quantity` dentro de
+esa misma línea obliga a repartir $15.000 entre las copias (`round(15000/7) × 7
+≠ 15000`), lo que puede desviar $1-2 del total esperado y el checkout se
+rechazaría con `price_mismatch` — exactamente lo que esta regla existe para
+evitar. Una línea propia, cantidad fija en 1, no tiene ese problema.
+
+**La línea de recargo** (una por diseño en Vinilo Holográfico, agregada con el
+`addFixed()` que ya existe para tatuajes/Polaroid — no es un mecanismo nuevo):
+```js
+addFixed({
+  id: `material-holografico:${d.id}`,   // → línea `fixed:material-holografico:{d.id}`
+  name: 'Recargo · Vinilo Holográfico',
+  categoryLabel: 'Personalizados',
+  price: RECARGO_HOLOGRAFICO.precio,    // 15000
+}, 1)
+```
+`addFixed` arma el id como `fixed:{product.id}` (sin `meta`, no lleva
+timestamp): queda `fixed:material-holografico:{d.id}`, con el id del DISEÑO
+como último segmento — el mismo `d.id` que ya es el último segmento de su línea
+`custom:` hermana. Esa coincidencia es lo que permite acoplarlas sin inventar
+una relación nueva entre líneas.
+
+**Por qué no reutiliza el path del 3x2/cupón**: `PROMO_ELIGIBLE_TYPES` (front)
+y `discountable` (server) ya excluyen todo lo que no sea `sticker`/`custom`.
+Una línea `fixed` cae afuera de las dos automáticamente (RF-MAT6) — cero código
+nuevo para "que no se descuente".
+
+**Acoplamiento en el carrito** (`CartContext.jsx`):
+- `removeItem(id)`: si `id` empieza con `custom:`, además borra la línea
+  `fixed:material-holografico:{mismo último segmento}` si existe. Sin esto,
+  quitar el diseño dejaría el recargo huérfano cobrándose solo.
+- `Cart.jsx` (`EDITABLE`): la línea de recargo no entra en el set de líneas con
+  selector de cantidad — no tiene sentido "2 recargos" para 1 diseño, y
+  editarla independiente del diseño rompería el acople.
+- El envío gratis y el resto de los totales del carrito (`subtotal`,
+  `physicalSubtotal`) ya suman cualquier línea `fixed` como plata real del
+  pedido (mismo criterio que Polaroid/tatuajes) — no hace falta tocar nada ahí.
+
+**Validación cruzada en el servidor** (`validateAndPriceOrder`, DESPUÉS de
+pricear cada línea individualmente, RF-MAT7):
+1. Por cada línea `custom:` aceptada cuyo material (parsed de §3.2) sea
+   `vinilo-holografico`, guardar su `disenoId` (último segmento del id) en un
+   set `requierenRecargo`.
+2. Por cada línea `fixed:material-holografico:{disenoId}`, exigir
+   `quantity === 1` y `unit_price === RECARGO_HOLOGRAFICO` (ya lo hace
+   `lineBase` como cualquier `fixed`); guardar su `disenoId` en
+   `recargosPresentes`.
+3. Si `requierenRecargo` tiene un id que no está en `recargosPresentes` →
+   `{ ok: false, error: 'recargo_material_faltante' }`. Es la única forma real
+   de manipular el pedido para ahorrarse el recargo (borrar esa línea del
+   payload antes de pagar), y es exactamente lo que este paso corta.
+4. Un `recargosPresentes` sin `custom:` holográfico correspondiente (huérfano)
+   también se rechaza (`item_invalid`) — no es explotable a la baja, pero un
+   payload así no debería pasar nunca por el flujo normal.
+
+### Constantes espejadas (nuevas)
+| Frontend (`config/personalizados.js`) | Servidor (`netlify/functions/lib/pricing.js`) |
+|---|---|
+| `MATERIALES` = `[{id:'vinilo-blanco',...},{id:'dtf-uv',...},{id:'vinilo-holografico',...}]` | allowlist de materiales válidos en la rama `custom` de `lineBase` |
+| `RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 15000 }` | `FIXED_PRICES['material-holografico'] = 15000` |
+
 ### Persistencia
 | Dónde | Qué | Ref. |
 |---|---|---|
@@ -282,9 +379,14 @@ pestaña nueva arranca limpia), y un archivo subido hace una semana que el
 cliente ya no recuerda no debería aparecer solo.
 
 ### ⚠️ Compatibilidad con datos existentes
-- [x] La forma de las líneas **no cambia** → los carritos en `epicalcos.cart.v2`
-      siguen andando. `esCustomViejo()` sigue haciendo lo suyo.
+- [ ] *(hasta el 22/9/2026)* ~~La forma de las líneas no cambia~~ — la enmienda
+      de material SÍ le agrega un segmento a `custom:`. Ver §3.2 y §8.
 - [x] Los pedidos en Blobs no cambian.
+- [x] Una línea `custom:{tamano}:{corte}:{ts}` de 4 segmentos (formato de ANTES
+      de esta enmienda — nunca llegó a producción, spec 023 sigue sin
+      commitear) sigue siendo válida: se interpreta como material por defecto
+      (Vinilo Blanco, sin recargo). No hay carritos reales con esa forma
+      todavía, pero los tests de paridad la siguen cubriendo (ANF-4).
 
 ---
 
@@ -316,6 +418,12 @@ Ninguna.
 
 - [x] Ningún secreto en el frontend (la subida sigue siendo unsigned)
 - [x] El servidor no confía en el cliente: precio re-derivado del id (sin cambios)
+- [x] *(enmienda 22/9/2026, RF-MAT7)* El servidor no confía en `meta.material`
+      (nadie lo revisa — un `meta` manipulado no dispara nada): el material
+      vive en el id de la línea `custom:`, y la validación cruzada de §3.5
+      rechaza cualquier pedido donde falte el recargo de un diseño holográfico.
+      Test dedicado: armar un pedido con una línea `custom:...:vinilo-holografico:x1`
+      y **sin** su `fixed:material-holografico:x1` → `ok: false`
 - [x] Instrucciones: `maxLength=500` como hoy
 - [x] Sin PII en logs, URLs ni `dataLayer`: ni nombre, ni URL de archivo, ni
       instrucciones en ningún evento (test)
@@ -345,6 +453,7 @@ Ninguna.
 | `sessionStorage` bloqueado | el store funciona en memoria | nada (sin persistencia) |
 | Canvas no disponible / falla el dibujo | vista calco deshabilitada | solo ORIGINAL |
 | `price_mismatch` | imposible por construcción (líneas iguales a hoy; test) | — |
+| *(enmienda 22/9/2026)* `recargo_material_faltante` — falta el recargo de un diseño holográfico | `validateAndPriceOrder` rechaza antes de crear la preferencia (§3.5) | Mismo mensaje genérico de error de pago que un `price_mismatch` — no se le explica al cliente el mecanismo interno |
 | Falla el prerender | copia `index.html` y avisa en el log | la página como hoy |
 | Tracking falla | try/catch existente | nada |
 
@@ -355,6 +464,15 @@ Ninguna.
 - **Datos existentes**: no hay.
 - **Carritos guardados**: compatibles (§3.2).
 - **Pedidos ya en Blobs**: no aplica.
+- *(enmienda 22/9/2026)* **`esCustomViejo()`**: pasa de `parts.length > 4` a
+  `!getTamano(parts[1])`. Es un cambio de criterio, no solo de número: purga
+  por "¿el segundo campo es un tamaño real?" en vez de "¿tiene más de 4
+  segmentos?", así que sigue reconociendo el formato viejo real
+  (`custom:{material-viejo}:{tamano}:{corte}:{ts}`, donde `parts[1]` NUNCA es
+  un tamaño) y ahora también acepta el formato nuevo de 5 segmentos con
+  material (`parts[1]` SÍ es un tamaño). Test: los 4 ids de material del
+  modelo viejo (`vinilo-blanco`, `transparente`, `holografico`, `dtf-uv` —
+  commit `1a32e6c`) siguen purgándose; una línea nueva con material no.
 - **Eventos**: `personalizado_*` dejan de llegar a GA4 desde el deploy; se anota
   la fecha en `docs/analytics.md` con la tabla viejo → nuevo.
 - **Rollback**: revertir el commit de la feature. El prerender es un
@@ -376,11 +494,13 @@ Ninguna.
 | `lib/prerender.test.js` | título, description, canonical y OG reemplazados; **un** `<h1>`; JSON-LD parseable con `Product` + `AggregateOffer` (`lowPrice`/`highPrice` = min/max de `SIZES`), `BreadcrumbList`, `FAQPage`; **sin** `AggregateRating`; `modulepreload` al chunk; idempotente; con `HIDDEN_SECTIONS` no genera |
 | `config/personalizadosLanding.test.js` | la FAQ nombra exactamente `formatosEntrada`; ningún precio escrito a mano (todo `$` del copy sale de `SIZES`/`NEGOCIO`); plazos = `shipping`; claim ≤ 3 usos y escrito `HACELO` (P-11); las preguntas pendientes (P-4/P-6) no están publicadas mientras su flag esté en `false`; **guarda de lo que no se dice** (RF-L18): ningún string del módulo matchea `/boceto|prueba de impresi|próximamente|perfect/i` |
 | `lib/analyticsPersonalizados.test.js` | `toItems` idéntico para `sticker`/`pack`/`fixed`; `custom:` sin nombre de archivo; ningún `personalized_*` lleva `nombre`, `url` ni `instrucciones`; `rangoPeso` |
+| *(enmienda 22/9/2026)* `lib/precioPersonalizados.test.js` / `promoPricing.test.js` | Vinilo Blanco y DTF UV: mismo precio que hoy, con y sin 3x2. Vinilo Holográfico: `construirLineas` emite la línea `custom:` + la de recargo; el servidor acepta ambas y `itemsTotal` incluye el recargo exactamente una vez por diseño (no por copia); **rechaza** un payload con la `custom:` holográfica y sin su `fixed:material-holografico:*` (`recargo_material_faltante`); rechaza un recargo huérfano; el recargo no se mueve con el 3x2/cupón vivos |
+| *(enmienda)* `context/CartContext` (vía `promoPricing.test.js` o un test dedicado) | `esCustomViejo` sigue purgando los 4 ids de material del modelo viejo y acepta el nuevo formato con material (§8); `removeItem` de una línea `custom:` holográfica quita también su recargo |
 
 ### ⚠️ Tests de paridad
-- [ ] `promoPricing.test.js` — no cambia (no se tocan reglas), tiene que seguir verde
+- [ ] `promoPricing.test.js` — no cambia en lo existente (no se tocan reglas previas), tiene que seguir verde; **suma** los casos de material de arriba
 - [ ] `envio.test.js` — no cambia
-- [x] `precioPersonalizados.test.js` — ampliado (arriba)
+- [x] `precioPersonalizados.test.js` — ampliado (arriba, incluye material)
 
 ### Verificación manual
 - [ ] Recorrido completo a 375 px en el Browser pane: subir PNG transparente,

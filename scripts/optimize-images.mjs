@@ -33,7 +33,12 @@ const PUBLIC = join(__dirname, '..', 'frontend', 'public');
 /** Carpetas a convertir, con el ancho máximo al que tiene sentido servirlas. */
 const TARGETS = [
   { dir: join(PUBLIC, 'stickers-cutout'), maxWidth: 320, quality: 82, recursive: true },
-  { dir: join(PUBLIC, 'testimonials'), maxWidth: 800, quality: 80, recursive: false }
+  { dir: join(PUBLIC, 'testimonials'), maxWidth: 800, quality: 80, recursive: false },
+  // Fotos reales de /personalizados (spec 023, data/personalizadosFotos.js). Acá
+  // entran también JPG: son fotos de celular, no stickers troquelados. 800 px
+  // alcanza para la card más ancha (la de calidad, 50/50 en desktop). Si la
+  // carpeta no existe todavía, no se hace nada.
+  { dir: join(PUBLIC, 'images', 'personalizados'), maxWidth: 800, quality: 80, recursive: false, exts: ['.png', '.jpg', '.jpeg'] }
 ];
 
 /** Manifests que listan rutas .png y hay que reapuntar a .webp. */
@@ -48,30 +53,30 @@ function tieneCwebp() {
   }
 }
 
-/** Todos los .png de un directorio (recursivo opcional). */
-function pngsDe(dir, recursive) {
+/** Todas las imágenes de un directorio con esas extensiones (recursivo opcional). */
+function pngsDe(dir, recursive, exts = ['.png']) {
   if (!existsSync(dir)) return [];
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (recursive) out.push(...pngsDe(full, true));
-    } else if (extname(entry.name).toLowerCase() === '.png') {
+      if (recursive) out.push(...pngsDe(full, true, exts));
+    } else if (exts.includes(extname(entry.name).toLowerCase())) {
       out.push(full);
     }
   }
   return out;
 }
 
-function convertir({ dir, maxWidth, quality, recursive }) {
-  const pngs = pngsDe(dir, recursive);
+function convertir({ dir, maxWidth, quality, recursive, exts }) {
+  const pngs = pngsDe(dir, recursive, exts);
   let hechos = 0;
   let saltados = 0;
   let antes = 0;
   let despues = 0;
 
   for (const png of pngs) {
-    const webp = png.replace(/\.png$/i, '.webp');
+    const webp = png.replace(/\.(png|jpe?g)$/i, '.webp');
     const pesoPng = statSync(png).size;
     antes += pesoPng;
 

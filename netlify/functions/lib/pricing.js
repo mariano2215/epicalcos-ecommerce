@@ -312,6 +312,14 @@ const PERSONALIZADOS_DISCOUNT = 0.1;
 const NEGOCIO_PRICE = 39999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
 export const FIXED_PRICES = {
   'tatuajes-hoja': 12000,
+  // Recargo del Vinilo Holográfico en /personalizados (spec 023, enmienda
+  // 22/9/2026) — espejo de RECARGO_HOLOGRAFICO.precio en
+  // frontend/src/config/personalizados.js. Es un cobro FIJO POR DISEÑO, no por
+  // copia: viaja como su propia línea (`fixed:material-holografico:{disenoId}`,
+  // quantity SIEMPRE 1), nunca como parte del precio por unidad del calco. Ver
+  // el bloque "Espejo de personalizados" más abajo para la validación cruzada
+  // que exige esta línea cuando el material del diseño es holográfico.
+  'material-holografico': 15000,
   // Fotos Polaroid x10 por tamaño Y material — espejo de POLAROID_SIZES del
   // frontend (`price` y `priceIman`). Imantadas = +$600 por foto = +$6.000 por
   // pack, igual en los tres tamaños.
@@ -359,9 +367,40 @@ export function isDigitalOnly(items) {
 // --- Espejo de frontend/src/config/personalizados.js (calcos personalizados) ---
 // Un calco personalizado vale lo MISMO que uno del catálogo, según su tamaño:
 //   unitario = SIZE_PRICES[tamaño]
-// No hay recargo por material ni mínimo de compra (antes eran 10 unidades), así
-// que no hace falta ninguna grilla extra: el precio por tamaño es el SIZE_PRICES
-// de arriba. El test frontend/src/lib/precioPersonalizados.test.js lo verifica.
+// No hay mínimo de compra (antes eran 10 unidades). El test
+// frontend/src/lib/precioPersonalizados.test.js lo verifica.
+//
+// MATERIAL (enmienda 22/9/2026, spec 023 §7.9): Vinilo Blanco y DTF UV no
+// tocan el precio de arriba. Vinilo Holográfico agrega el recargo FIJO POR
+// DISEÑO de FIXED_PRICES['material-holografico'] (arriba), como una línea
+// `fixed:material-holografico:{disenoId}` APARTE — nunca como parte del
+// unit_price del calco (ver el docblock de `lineBase`, rama `custom`, y el
+// comentario de `construirLineas()` en el frontend sobre por qué: repartir un
+// monto fijo entre `quantity` copias no da un entero exacto y dispararía
+// `price_mismatch` por 1-2 pesos).
+//
+// Allowlist de materiales válidos — mismos ids que MATERIALES en el frontend.
+const CUSTOM_MATERIALES = ['vinilo-blanco', 'dtf-uv', 'vinilo-holografico'];
+const CUSTOM_MATERIAL_POR_DEFECTO = 'vinilo-blanco';
+const CUSTOM_MATERIAL_HOLOGRAFICO = 'vinilo-holografico';
+const CUSTOM_RECARGO_ID = 'material-holografico';
+
+/**
+ * Material de una línea `custom:{tamano}:{corte}:{ts}` (4 segmentos, formato
+ * de antes de esta enmienda — el default, Vinilo Blanco sin recargo) o
+ * `custom:{tamano}:{corte}:{material}:{ts}` (5 segmentos, con material
+ * explícito). El id del DISEÑO es siempre el último segmento en los dos casos.
+ * @returns {{ material: string, disenoId: string } | null} `null` si el
+ *   material del quinto formato no está en la allowlist
+ */
+function customMaterialYDiseno(parts) {
+  if (parts.length >= 5) {
+    const material = parts[3];
+    if (!CUSTOM_MATERIALES.includes(material)) return null;
+    return { material, disenoId: parts[parts.length - 1] };
+  }
+  return { material: CUSTOM_MATERIAL_POR_DEFECTO, disenoId: parts[parts.length - 1] };
+}
 
 // --- Espejo de frontend/src/config/site.js (envío) ---
 // ⚠️ El test frontend/src/lib/envio.test.js verifica que estos números sean los
@@ -429,7 +468,7 @@ export function shippingMethodLabel(method, city, province) {
  * Precio de LISTA por unidad de un item según su id, antes de descuentos por
  * cupón/transferencia/promo. Los ids los genera el frontend con estructura fija:
  *   sticker:{stickerId}:{size} · pack:{tipo}:{size}:{ts} · negocio:{ts} · fixed:{productId}
- *   custom:{tamano}:{corte}:{ts}
+ *   custom:{tamano}:{corte}:{ts} · custom:{tamano}:{corte}:{material}:{ts} (enmienda 22/9/2026)
  *
  * `discountable` marca las líneas que participan de los descuentos a calcos
  * sueltos (cupón/transferencia/promo 3x2): SOLO catálogo (sticker) y
@@ -480,6 +519,12 @@ function lineBase(id, quantity) {
   }
 
   if (kind === 'fixed') {
+    // Recargo de material (enmienda 22/9/2026): SIEMPRE 1 unidad — es un cobro
+    // fijo por diseño, no algo que tenga sentido pedir "×2" (ver
+    // `customMaterialYDiseno` y la validación cruzada de `validateAndPriceOrder`).
+    if (parts[1] === CUSTOM_RECARGO_ID && quantity !== 1) {
+      return { error: `recargo de material: 1 unidad por línea en "${id}"` };
+    }
     const price = FIXED_PRICES[parts[1]];
     if (!price) return { error: `producto desconocido "${id}"` };
     // Las Polaroid son el único producto fijo con precio por cantidad: desde 2
@@ -502,13 +547,19 @@ function lineBase(id, quantity) {
     return { base: price, kind, discountable: false };
   }
 
-  // custom:{tamano}:{corte}:{ts} — calco personalizado, al precio del catálogo.
-  // El corte (parts[2]) es especificación pura y no afecta el precio, y no hay
-  // mínimo de compra: cualquier cantidad ≥ 1 es válida.
+  // custom:{tamano}:{corte}:{ts} (4 segmentos, default Vinilo Blanco) o
+  // custom:{tamano}:{corte}:{material}:{ts} (5, enmienda 22/9/2026) — calco
+  // personalizado, al precio del catálogo. El corte (parts[2]) es
+  // especificación pura y no afecta el precio, y no hay mínimo de compra:
+  // cualquier cantidad ≥ 1 es válida. El material NO cambia `base`: el
+  // recargo del holográfico viaja en su propia línea `fixed:` (ver arriba) y
+  // se exige con la validación cruzada al final de `validateAndPriceOrder`.
   if (kind === 'custom') {
     const base = SIZE_PRICES[parts[1]];
     if (!base) return { error: `tamaño inválido en "${id}"` };
-    return { base, kind, discountable: true };
+    const matDiseno = customMaterialYDiseno(parts);
+    if (!matDiseno) return { error: `material inválido en "${id}"` };
+    return { base, kind, discountable: true, material: matDiseno.material, disenoId: matDiseno.disenoId };
   }
 
   return { error: `item desconocido "${id}"` };
@@ -687,6 +738,39 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
       unit_price: expected,
       currency_id: 'ARS'
     });
+  }
+
+  // Validación cruzada del recargo de material (enmienda 22/9/2026, RF-MAT7):
+  // el precio de una línea `custom:` holográfica no lleva el recargo (viaja en
+  // su propia línea `fixed:material-holografico:{disenoId}`), así que nada de
+  // lo de arriba lo detectaría si esa línea faltara. Un carrito manipulado a
+  // mano para borrar el recargo y quedarse con el diseño en holográfico se
+  // corta acá.
+  const requierenRecargo = new Set();
+  const recargosPresentes = new Set();
+  clean.forEach((item, idx) => {
+    const lb = bases[idx];
+    if (lb.kind === 'custom' && lb.material === CUSTOM_MATERIAL_HOLOGRAFICO) {
+      requierenRecargo.add(lb.disenoId);
+    }
+    if (lb.kind === 'fixed') {
+      const parts = item.id.split(':');
+      if (parts[1] === CUSTOM_RECARGO_ID) recargosPresentes.add(parts[2]);
+    }
+  });
+  for (const disenoId of requierenRecargo) {
+    if (!recargosPresentes.has(disenoId)) {
+      return {
+        ok: false,
+        error: 'recargo_material_faltante',
+        detail: 'falta el recargo del Vinilo Holográfico — recargá la página'
+      };
+    }
+  }
+  for (const disenoId of recargosPresentes) {
+    if (!requierenRecargo.has(disenoId)) {
+      return { ok: false, error: 'item_invalid', detail: 'recargo de material sin su diseño holográfico' };
+    }
   }
 
   const itemsTotal = priced.reduce((a, i) => a + i.unit_price * i.quantity, 0);
