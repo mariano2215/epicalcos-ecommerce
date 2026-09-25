@@ -3,6 +3,7 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 import FreeShippingProgress from './FreeShippingProgress.jsx';
 import BulkProgress from './BulkProgress.jsx';
 import OrderBump from './OrderBump.jsx';
+import { useCuponEnCarrito, CuponEnCarritoLinea } from './popup/CuponEnCarrito.jsx';
 
 // `custom`: cada línea es UN diseño personalizado y su cantidad son las copias.
 const EDITABLE = new Set(['sticker', 'fixed', 'custom']);
@@ -19,6 +20,9 @@ export default function CartDrawer() {
     promoFreeUnits, promoSavings, promoUnits, promoToNextFree
   } = useCart();
   const navigate = useNavigate();
+  const totalSinCupon = algunaPromoNxM ? subtotal - promoSavings : subtotal;
+  // Antes del `return null`: es un hook y tiene que correr en todos los renders.
+  const cupon = useCuponEnCarrito({ totalActual: totalSinCupon });
 
   if (!drawerOpen) return null;
 
@@ -162,9 +166,12 @@ export default function CartDrawer() {
                 <span>−{formatPrice(promoSavings)}</span>
               </div>
             )}
+            {/* El 10% del popup (spec 026): mismo número que el checkout con
+                Mercado Pago. Ver CuponEnCarrito.jsx. */}
+            <CuponEnCarritoLinea cupon={cupon} />
             <div className="flex justify-between font-display font-extrabold text-lg">
               <span>Total</span>
-              <span>{formatPrice(algunaPromoNxM ? subtotal - promoSavings : subtotal)}</span>
+              <span>{formatPrice(cupon.activo ? cupon.total : totalSinCupon)}</span>
             </div>
             {algunaPromoNxM && (
               <p className="text-[11px] text-white/40 leading-snug">

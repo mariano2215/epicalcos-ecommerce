@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `026-popup-embudo-de-compra` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `IN PROGRESS` — implementada; falta QA en dispositivos reales (ver `acceptance.md`) |
 | **Fecha** | 25/09/2026 |
 | **Autor** | Mariano (request) · Claude (redacción) |
 

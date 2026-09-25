@@ -8,7 +8,10 @@ import { crearLeadNewsletter } from './_notion.js';
 import { notifyCrmLead } from './lib/crmWebhook.js';
 import { sendLeadEmail, sendLeadCouponEmail } from './lib/notify.js';
 
-const WELCOME_COUPON_CODE = 'EPICA10';
+// Exportado para el test de paridad (popupReglas.test.js): el popup muestra
+// `POPUP_OFERTA.codigo` antes de que responda el servidor, y los dos tienen
+// que ser el mismo código.
+export const WELCOME_COUPON_CODE = 'EPICA10';
 
 const ALLOWED_ORIGINS = [
   process.env.URL,

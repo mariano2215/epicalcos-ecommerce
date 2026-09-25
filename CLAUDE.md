@@ -165,7 +165,7 @@ real de cada uno. Si algo no se cumple, se dice — no se cierra la feature.
 
 ### Al terminar
 ```bash
-npm test                        # desde la raíz. 210 tests, todos tienen que pasar
+npm test                        # desde la raíz. 682 tests (25/9/2026), todos tienen que pasar
 ```
 
 ### Deploy

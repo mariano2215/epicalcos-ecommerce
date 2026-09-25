@@ -92,7 +92,7 @@ hallazgo y se sigue.
 ```bash
 npm test
 ```
-Los 210 tests existentes tienen que seguir pasando. Si la feature toca precios,
+Todos los tests existentes (682 al 25/9/2026) tienen que seguir pasando. Si la feature toca precios,
 promos o envíos, **agregar tests de paridad** frontend↔servidor.
 
 Desde la spec 004 esto **ya no depende de acordarse**: el build de Netlify corre

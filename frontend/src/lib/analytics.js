@@ -434,8 +434,15 @@ export function trackOrdenCatalogo(orden) {
   debug('catalogo_orden', orden);
 }
 
-export function trackLeadCapture(source = 'welcome_popup') {
-  pushDataLayer({ event: 'generate_lead', lead_source: source });
+/**
+ * `extra` (spec 026) lleva los parámetros del popup —`popup_variant`,
+ * `popup_trigger`, `device_type`— y la propiedad de usuario `popup_converted`.
+ * Es opcional a propósito: el formulario de contacto no lo pasa y su evento
+ * sale exactamente igual que antes. `generate_lead` ES la conversión del popup:
+ * no hay un `popup_conversion` aparte, que contaría dos veces la misma.
+ */
+export function trackLeadCapture(source = 'welcome_popup', extra = {}) {
+  pushDataLayer({ event: 'generate_lead', lead_source: source, ...extra });
   pixel('Lead', { content_name: source });
   debug('generate_lead', source);
 }
@@ -662,6 +669,95 @@ export function trackCuponVencido(code, donde = 'checkout') {
 export function trackCuponAplicadoEnPromo(code, promo) {
   pushDataLayer({ event: 'cupon_aplicado_en_promo', cupon: code, promo });
   debug('cupon_aplicado_en_promo', code, promo);
+}
+
+/**
+ * ─── Popup de bienvenida — funnel de la spec 026 ──────────────────────────────
+ *
+ *   popup_view → popup_email_submit → generate_lead → popup_interest_selected /
+ *   popup_cta_click → add_to_cart → begin_checkout → purchase
+ *
+ * `popup_email_submit` es el INTENTO (mail con formato válido, antes de que
+ * responda el servidor) y `generate_lead` el éxito: la resta son los envíos que
+ * fallaron. `popup_close` solo cuenta cierres de verdad; navegar desde el paso 2
+ * no es cerrar, es el CTA funcionando.
+ *
+ * Las propiedades de usuario `popup_exposed` / `popup_converted` dejan
+ * segmentar `add_to_cart`, `begin_checkout` y `purchase` —que pasan páginas
+ * después— sin armar embudos a mano. Hay que registrarlas en GA4 como
+ * dimensiones de usuario para poder usarlas en informes.
+ *
+ * ⚠️ Sin PII: ni el mail ni nada del lead. `page_path` es solo la ruta, sin
+ * query (un `?email=` de algún link externo terminaría en GA4).
+ */
+export function trackPopupView({ variante, disparador, dispositivo, visitante, pagina }) {
+  pushDataLayer({
+    event: 'popup_view',
+    popup_variant: variante,
+    popup_trigger: disparador,
+    page_path: pagina,
+    device_type: dispositivo,
+    new_vs_returning: visitante,
+    user_properties: { popup_exposed: 'true' }
+  });
+  debug('popup_view', disparador, variante);
+}
+
+/** `paso`: 'capture' · 'success'. `metodo`: 'x' · 'esc' · 'overlay' · 'navigation' (atrás del navegador). */
+export function trackPopupClose({ variante, paso, metodo }) {
+  pushDataLayer({ event: 'popup_close', popup_variant: variante, popup_step: paso, close_method: metodo });
+  debug('popup_close', paso, metodo);
+}
+
+export function trackPopupEmailSubmit({ variante, tipoDescuento, dispositivo, pagina }) {
+  pushDataLayer({
+    event: 'popup_email_submit',
+    popup_variant: variante,
+    discount_type: tipoDescuento,
+    page_path: pagina,
+    device_type: dispositivo
+  });
+  debug('popup_email_submit', variante);
+}
+
+export function trackPopupInterestSelected({ variante, interes, destino }) {
+  pushDataLayer({
+    event: 'popup_interest_selected',
+    popup_variant: variante,
+    interest: interes,
+    destination: destino
+  });
+  debug('popup_interest_selected', interes, destino);
+}
+
+/** `destino`: 'catalog' ("Elegir mis calcos") · 'checkout' ("ir a pagar"). */
+export function trackPopupCtaClick({ variante, destino }) {
+  pushDataLayer({ event: 'popup_cta_click', popup_variant: variante, destination: destino });
+  debug('popup_cta_click', destino);
+}
+
+/**
+ * Re-setea las propiedades de usuario del popup en cada carga, sin evento.
+ * `ga4()` solo las manda pegadas a un evento; esta es la excepción, para que
+ * TODOS los hits de la sesión (también el `purchase`) salgan marcados.
+ */
+export function setPopupUserProperties({ exposed, converted }) {
+  const props = {};
+  if (exposed) props.popup_exposed = 'true';
+  if (converted) props.popup_converted = 'true';
+  if (!Object.keys(props).length || typeof window === 'undefined') return;
+  try {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ user_properties: props });
+  } catch (err) {
+    debug('dataLayer falló', err);
+  }
+  if (!usaGtagDirecto()) return;
+  try {
+    window.gtag('set', 'user_properties', props);
+  } catch (err) {
+    debug('gtag falló', err);
+  }
 }
 
 /**

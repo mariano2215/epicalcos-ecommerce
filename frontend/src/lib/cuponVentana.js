@@ -26,12 +26,22 @@ import {
 
 /**
  * Guarda el cupón recién entregado y arranca su ventana.
+ *
+ * `conVentana: false` (spec 026, P-2) lo guarda SIN instante de emisión, que
+ * es exactamente como el checkout y el servidor ya trataban un código tipeado:
+ * sin ventana y válido. Se omite la clave en vez de guardar `emitidoEn: null`
+ * a propósito: `leerCupon` hace `Number(data.emitidoEn)`, y `Number(null)` es
+ * 0 — un cupón "emitido en 1970", o sea vencido.
+ *
  * @returns {number|null} el instante de emisión, o null si no se pudo guardar.
  */
-export function emitirCupon(code) {
+export function emitirCupon(code, { conVentana = true } = {}) {
   const emitidoEn = Date.now();
   try {
-    localStorage.setItem(WELCOME_COUPON_STORAGE_KEY, JSON.stringify({ code, emitidoEn }));
+    localStorage.setItem(
+      WELCOME_COUPON_STORAGE_KEY,
+      JSON.stringify(conVentana ? { code, emitidoEn } : { code })
+    );
     return emitidoEn;
   } catch {
     // Sin storage no hay ventana que sostener, pero el código sigue sirviendo:

@@ -113,6 +113,26 @@ export const EXPERIMENTS = {
     active: true,
     variants: ['colapsada', 'abierta'],
     descripcion: 'SizeGuide en la ficha: colapsada (control) vs abierta de entrada'
+  },
+
+  /**
+   * Spec 026 — ¿cuándo conviene abrir el popup de bienvenida?
+   * Hipótesis: abrirlo antes (8 s) captura más mails sin costar compras;
+   * abrirlo solo por scroll/intención captura menos pero de gente más decidida.
+   * KPI: revenue por sesión. Secundario: generate_lead / sesiones del Home.
+   *
+   * ⚠️ APAGADO a propósito hasta que haya volumen (pedido de Mariano): todo el
+   * mundo ve el control. Los umbrales de cada variante están en
+   * `POPUP_VARIANTES` (config/popup.js), no acá.
+   *
+   * ⚠️ La exposición se cuenta cuando el visitante queda ELEGIBLE (el disparo
+   * se arma en el Home), no cuando ve el popup: la variante decide SI lo ve, y
+   * contar solo a los que lo vieron sesgaría el denominador.
+   */
+  popup_disparo: {
+    active: false,
+    variants: ['b_12s', 'a_8s', 'c_scroll'],
+    descripcion: 'Popup: 12 s (control) vs 8 s vs solo scroll/intención'
   }
 };
 

@@ -238,7 +238,9 @@ deploy. No hay panel para cargar productos.
 | Clave | Qué guarda | Dónde |
 |---|---|---|
 | `epicalcos.cart.v2` | el carrito completo (array de líneas) | `CartContext` |
-| `epicalcos.welcomeCoupon` | cupón del popup, para autocompletar el checkout | `config/pricing.js` |
+| `epicalcos.welcomeCoupon` | cupón del popup, para autocompletar el checkout. `{ code, emitidoEn }`; desde la spec 026 el popup lo guarda como `{ code }` (sin ventana) | `config/pricing.js`, `lib/cuponVentana.js` |
+| `epicalcos.popup.v1` | cuándo vio, cerró, dejó el mail o compró (frecuencia del popup, spec 026) | `lib/popupEstado.js` |
+| `epicalcos.welcomePopup.seen` | lo que guardaba el popup anterior (`'1'`). Se lee una vez para migrar y **no se borra** | `lib/popupEstado.js` |
 | `epicalcos.exp.v1` | asignación de variantes A/B + id de visitante | `lib/experiments.js` |
 | — | categorías recientes | `lib/recientes.js` |
 | — | tamaño elegido para la grilla | `lib/tamanoElegido.js` |
@@ -248,6 +250,7 @@ deploy. No hay panel para cargar productos.
 | Clave | Qué guarda | Por qué |
 |---|---|---|
 | `epicalcos.purchase.v1` | pedido ya preciado (ítems, envío, total, cupón) | sobrevive al redirect a Mercado Pago; se **lee y borra** en `/pago-exitoso` para no duplicar el evento |
+| `epicalcos.popup.sesion.v1` | inicio de la visita, si el popup ya se abrió solo, fichas vistas (rutas), búsqueda y categoría (spec 026) | "una apertura automática por sesión" tiene que aguantar una recarga, y las señales de interés son de esta visita |
 | `epicalcos.customSpec` | spec de los personalizados | CTA de WhatsApp en `/pago-exitoso` |
 | `epicalcos.personalizados.borrador.v1` | tamaño, corte, copias, instrucciones y los diseños **ya subidos** (con su link de Cloudinary) que todavía no se agregaron al carrito | que el cliente no pierda sus diseños si navega o refresca (spec 023). Lo que se estaba subiendo no se guarda. `sessionStorage` y no `localStorage`: un archivo de hace una semana no tiene que aparecer solo |
 

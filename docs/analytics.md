@@ -110,6 +110,48 @@ separado no dicen nada.
 cualquier extensión del navegador lo lee (mismo criterio que
 `contacto_form_error`).
 
+## El popup de bienvenida (spec 026)
+
+```
+popup_view → popup_email_submit → generate_lead → popup_interest_selected /
+popup_cta_click → add_to_cart → begin_checkout → purchase
+```
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `popup_view` | se abre el popup (solo o a mano) | `popup_variant`, `popup_trigger` (`time` · `scroll` · `product_views` · `search` · `category` · `exit_intent` · `manual`), `page_path`, `device_type` (`mobile` · `desktop`), `new_vs_returning` |
+| `popup_close` | se cierra sin navegar | `popup_variant`, `popup_step` (`capture` · `success`), `close_method` (`x` · `esc` · `overlay` · `navigation`) |
+| `popup_email_submit` | se envía un mail con formato válido (antes de la respuesta) | `popup_variant`, `discount_type` (`percentage`), `page_path`, `device_type` |
+| `generate_lead` | el servidor registró el mail: **es la conversión del popup** | `lead_source: 'welcome_popup'` + `popup_variant`, `popup_trigger`, `device_type` |
+| `popup_interest_selected` | elige Mate, Termo, Notebook o Celular | `popup_variant`, `interest`, `destination` |
+| `popup_cta_click` | "Elegir mis calcos" o "ir a pagar" | `popup_variant`, `destination` (`catalog` · `checkout`) |
+| `cupon_emitido` | igual que antes; `ventana_ms` va `null` porque el cupón ya no vence | `cupon`, `ventana_ms` |
+
+**Propiedades de usuario**: `popup_exposed` (vio el popup alguna vez) y
+`popup_converted` (dejó el mail). Se setean con el evento y se re-setean en cada
+carga, así también las lleva el `purchase`. **Hay que registrarlas en GA4 como
+dimensiones de usuario**, y los parámetros de arriba como dimensiones de evento.
+
+No hay `popup_conversion`: sería el mismo hecho que `generate_lead`, que ya es
+el evento de leads de GA4 y dispara el `Lead` de Meta. Contarlo dos veces
+duplicaría la conversión y cortaría la serie histórica.
+
+**Cómo se leen**:
+
+- `generate_lead / popup_view` = tasa de captura. `popup_email_submit −
+  generate_lead` = envíos que fallaron (red, servidor).
+- `popup_view / sesiones que pasan por el Home` = qué parte del tráfico ve el
+  popup. Desde el 25/9 solo aparece en el Home: si el tráfico de anuncios entra
+  por categorías y fichas, este número es chico y ese es el dato para revisarlo.
+- La métrica que manda es **revenue por sesión**: `purchase` segmentado por
+  `popup_converted`, no la tasa de captura.
+- `new_vs_returning`: la primera semana después del deploy todos cuentan como
+  `new` (el registro de la primera visita arranca con el deploy). Leerlo desde
+  la segunda semana.
+- `cupon_vencido` deja de dispararse desde el popup: el cupón ya no vence.
+
+Sin PII: ni el mail ni nada del lead. `page_path` es la ruta sin query.
+
 ## La garantía en el checkout (spec 021)
 
 | Evento | Cuándo | Parámetros |

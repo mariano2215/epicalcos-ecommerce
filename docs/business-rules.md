@@ -143,7 +143,8 @@ siempre el de vidriera.
 
 - **`hidden: true`** significa que el código **no se nombra en ninguna pantalla**
   del sitio. `EPICA10` se entrega solo a quien deja su mail en el popup de
-  bienvenida (se lo muestra el popup y se autocompleta en el checkout). El sitio
+  bienvenida (se lo muestra el popup, se autocompleta en el checkout y, desde
+  la spec 026, se ve en el acceso "🎁 10% OFF activo" de quien ya lo tiene). El sitio
   igual lo acepta si alguien lo escribe: "oculto" es no publicitarlo, no un
   secreto criptográfico — viaja en el bundle JS.
 - **Acumulable** con el 10 % por transferencia: los porcentajes **se suman**
@@ -154,8 +155,12 @@ siempre el de vidriera.
   sobre un cupón que descuenta $0 es una promesa rota a la vista del cliente.
   El tope de lo que corre encima de la promo pasó de 10 % a **20 %**
   (`percentCap`), para que entren transferencia + cupón.
-- ⏱️ **`EPICA10` vence 10 minutos después de que el popup lo entrega** — por
-  usuario, no por fecha global. Ver §3.4.
+- ✅ **Sigue acumulable con el 3x2 y con la transferencia**, tope 20 %
+  (confirmado por Mariano el 25/9/2026, spec 026).
+- ♾️ **Desde la spec 026 (25/9/2026) el popup entrega `EPICA10` SIN ventana**:
+  no vence, y sigue valiendo (y autocompletándose) después de comprar. La
+  maquinaria de la ventana de 10 min sigue existiendo (§3.4) para los cupones
+  guardados antes y por si se vuelve a prender (`POPUP_OFERTA.conVentana`).
 - Tope de seguridad: `MAX_STICKER_DISCOUNT = 0.9` (90 %).
 - `EMOJI50` (2×1 por mensaje privado) venció el 4/8/2026 y se eliminó del código.
 
@@ -278,9 +283,15 @@ siguen funcionando.
 
 ⚠️ **No confundir con la Promo Negocio.**
 
-### 3.4 Ventana del cupón de bienvenida (spec 017)
+### 3.4 Ventana del cupón de bienvenida (spec 017) — ⏸️ el popup ya no la arranca
 
-`EPICA10` vence **10 minutos después de que el popup lo entrega**. Es un
+> **Spec 026 (25/9/2026, decisión de Mariano):** el popup entrega `EPICA10`
+> **sin** instante de emisión, así que no tiene ventana. El servidor no cambió:
+> un `EPICA10` sin `couponIssuedAt` ya valía. Lo que sigue abajo aplica a los
+> cupones guardados antes de esa fecha y vuelve a regir si se pone
+> `POPUP_OFERTA.conVentana = true` (`config/popup.js`).
+
+`EPICA10` vencía **10 minutos después de que el popup lo entregaba**. Es un
 vencimiento **por usuario**, no una fecha global: dos personas que dejan el mail
 con una hora de diferencia tienen ventanas distintas.
 
@@ -484,10 +495,28 @@ mails salen de inmediato y el comprobante se registra a mano.
 menú, footer, Home, categorías, buscador, sitemap y feed de Meta, y hace que su
 ruta redirija a `/categorias`. El código de la sección queda intacto.
 
-### Popup de bienvenida
+### Popup de bienvenida (spec 026)
 Captura el mail → guarda el lead en Notion + CRM interno → manda dos mails
 (aviso interno y el cupón al cliente) → devuelve `EPICA10`, que queda en
 `localStorage` (`epicalcos.welcomeCoupon`) para autocompletar el checkout.
+
+Todo lo configurable está en `frontend/src/config/popup.js`.
+
+| Regla | Valor |
+|---|---|
+| Dónde aparece | **Solo en el Home** (solo o a mano) |
+| Cuándo abre solo | compu: 12 s en el sitio **o** 30 % de scroll · celular: 15 s **o** 50 % · o por intención (2 fichas vistas, una búsqueda, una categoría navegada) · o salida del mouse (compu, ≥ 5 s) |
+| Piso | nunca antes de 5 s en el Home |
+| No interrumpe | escribiendo, buscador o menú abiertos, carrito abierto, recién agregó un calco, pestaña oculta: espera y abre 3 s después |
+| Frecuencia | 1 apertura automática por sesión · cerrado: 7 días · dejó el mail: 30 días (y nunca con el 10 % activo) · después de comprar: nunca |
+| Sin storage (Instagram) | no abre solo; el acceso "🎁 10% OFF" del Home lo abre a mano |
+| Paso 2 | no se cierra: código + Copiar + "¿Qué querés personalizar?" (Mate y Celular → `/categorias`, Termo → `/calcos-termo`, Notebook → `/calcos-notebook`) + "Elegir mis calcos" |
+| El 10 % activo | acceso fijo "🎁 10% OFF activo" en la tienda (no en el pago ni en secciones sin descuento) y línea con el monto en el carrito |
+| Después de comprar | el cupón **sigue** guardado y aplicándose |
+| Interruptor | `POPUP_CONFIG.activo` |
+| A/B | `popup_disparo` en `lib/experiments.js`, **apagado** (8 s vs 12 s vs solo scroll/intención) |
+
+"Primer pedido" es copy: el sistema no verifica que sea la primera compra.
 
 ### A/B testing
 `lib/experiments.js` — implementación propia, asignación síncrona (localStorage

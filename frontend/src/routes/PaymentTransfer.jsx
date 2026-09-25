@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext.jsx';
 import { bankTransfer, contact } from '../config/site.js';
 import { trackPurchase } from '../lib/analytics.js';
 import { consumePurchase } from '../lib/purchaseTracking.js';
+import { registrarCompra } from '../lib/popupEstado.js';
 import { useSeo } from '../lib/seo.js';
 
 export default function PaymentTransfer() {
@@ -23,6 +24,9 @@ export default function PaymentTransfer() {
     // comprobante por WhatsApp. Por eso el evento viaja con
     // `payment_method: 'transferencia'` — permite separarlo en GA4 y en el
     // Píxel. Ver docs/ANALYTICS.md.
+    // Compró: el popup de bienvenida no vuelve a abrirse solo (spec 026). El
+    // 10% que ya tenga activo NO se toca: sigue valiendo (P-3).
+    registrarCompra();
     const paid = consumePurchase();
     if (paid) {
       trackPurchase({

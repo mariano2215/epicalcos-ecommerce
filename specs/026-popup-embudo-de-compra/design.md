@@ -218,7 +218,7 @@ export const POPUP_VARIANTES = {
 export const POPUP_OFERTA = {
   tipo: 'porcentaje',      // futuro: 'monto' | 'monto_con_minimo' (requiere spec de precios)
   codigo: 'EPICA10',       // debe existir en COUPONS de los dos lados (test)
-  ventanaMs: null          // P-2 (25/9): sin ventana. 10 * 60 * 1000 devuelve la spec 017
+  conVentana: false        // P-2 (25/9): sin ventana. true devuelve la spec 017 (dura CUPON_VENTANA_MS)
 };
 
 /** P-4: mate y celular no tienen landing; van a categorías sin tocar el tamaño. */
@@ -254,7 +254,7 @@ popup_disparo: {
 |---|---|---|---|
 | `localStorage` | `epicalcos.popup.v1` **(nueva)** | `{ primeraVisitaEn, vistoEn, cerradoEn, convertidoEn, compradoEn }` (timestamps o `null`) | permanente |
 | `sessionStorage` | `epicalcos.popup.sesion.v1` **(nueva)** | `{ inicioEn, autoAbierto, productos: string[], busqueda, categoria, visitante: 'new'\|'returning' }` | la pestaña |
-| `localStorage` | `epicalcos.welcomeCoupon` (existente) | `{ code, emitidoEn }`; con `ventanaMs: null` → `emitidoEn: null` | sin vencimiento; sigue después de comprar (P-3) |
+| `localStorage` | `epicalcos.welcomeCoupon` (existente) | `{ code, emitidoEn }`; con `conVentana: false` → `{ code }`, sin `emitidoEn` | sin vencimiento; sigue después de comprar (P-3) |
 | `localStorage` | `epicalcos.welcomePopup.seen` (existente) | se **lee** para migrar, no se borra (ver §8) | — |
 
 `productos` guarda slugs de ruta (`/producto/:slug/:num`), sin PII. Se guardan

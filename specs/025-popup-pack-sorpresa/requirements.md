@@ -3,9 +3,17 @@
 | | |
 |---|---|
 | **Spec** | `025-popup-pack-sorpresa` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DISCARDED` (25/09/2026) |
 | **Fecha** | 18/09/2026 |
 | **Autor** | Mariano (request) · Claude (redacción) |
+
+> ⛔ **Descartada el 25/09/2026, reemplazada por la spec 026** (popup CRO: del
+> mail a la compra). Las dos cambiaban el mismo popup en direcciones opuestas:
+> esta sacaba el 10 % OFF y ofrecía un pack sorpresa con 10 minutos; la 026
+> arma el funnel alrededor del 10 %, sin ventana. Era la propuesta por defecto
+> de la 026 (P-1) y Mariano no la cambió. La oferta del popup quedó en
+> `POPUP_OFERTA` (`frontend/src/config/popup.js`): si se quiere probar el pack,
+> se hace como otra oferta sobre el popup de la 026, en una spec chica.
 
 > **Este documento define QUÉ debe suceder, no CÓMO.**
 > Nada de nombres de archivo, funciones ni librerías — eso va en `design.md`.

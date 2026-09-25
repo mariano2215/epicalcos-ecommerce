@@ -9,6 +9,7 @@ import BulkProgress from '../components/BulkProgress.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
 import SocialProof from '../components/SocialProof.jsx';
 import SuggestedStickers from '../components/SuggestedStickers.jsx';
+import { useCuponEnCarrito, CuponEnCarritoLinea } from '../components/popup/CuponEnCarrito.jsx';
 import { BULK_THRESHOLD } from '../config/pricing.js';
 
 // `custom` = una línea por diseño personalizado: la cantidad son las copias de
@@ -27,6 +28,13 @@ export default function Cart() {
     promoActive, promo2x1Active, algunaPromoNxM, promoSavings, digitalOnly
   } = useCart();
   const navigate = useNavigate();
+  const totalSinCupon = algunaPromoNxM ? subtotal - promoSavings : subtotal;
+  const transferSinCupon = (promoActive ? subtotal - promoSavings : subtotal) - bulkSavings;
+  // El 10% del popup (spec 026). Hook: va antes del `return` del carrito vacío.
+  const cupon = useCuponEnCarrito({
+    totalActual: totalSinCupon,
+    totalTransferActual: bulkSavings > 0 ? transferSinCupon : undefined
+  });
 
   useSeo({ title: 'Carrito', description: 'Revisá tu pedido antes de pagar con Mercado Pago.' });
 
@@ -201,18 +209,19 @@ export default function Cart() {
                 <span className="text-white/50">Se calcula en el checkout</span>
               )}
             </div>
+            <CuponEnCarritoLinea cupon={cupon} className="mb-2" />
             <div className="border-t border-white/10 my-3" />
             <div className="flex justify-between font-display font-extrabold text-lg">
-              <span>Total</span><span>{formatPrice(algunaPromoNxM ? subtotal - promoSavings : subtotal)}</span>
+              <span>Total</span><span>{formatPrice(cupon.activo ? cupon.total : totalSinCupon)}</span>
             </div>
             {bulkSavings > 0 && (
               <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2">
                 <div className="flex justify-between text-sm text-emerald-400 font-semibold">
                   <span>Con transferencia</span>
-                  <span>{formatPrice((promoActive ? subtotal - promoSavings : subtotal) - bulkSavings)}</span>
+                  <span>{formatPrice(cupon.activo ? cupon.totalTransfer : transferSinCupon)}</span>
                 </div>
                 <p className="text-[11px] text-emerald-400/80 mt-0.5">
-                  Ahorrás {formatPrice(bulkSavings)} (10% off). Elegís el medio de pago en el checkout.
+                  Ahorrás {formatPrice(cupon.activo && cupon.mostrarMonto ? cupon.total - cupon.totalTransfer : bulkSavings)} (10% off). Elegís el medio de pago en el checkout.
                 </p>
               </div>
             )}

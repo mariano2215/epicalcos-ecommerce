@@ -162,8 +162,10 @@ export default function Header() {
         </div>
       </div>
 
+      {/* `data-popup-bloqueo`: con el menú abierto el popup de bienvenida
+          espera (spec 026). */}
       {open && (
-        <div className="lg:hidden border-t border-white/10 bg-black/80">
+        <div className="lg:hidden border-t border-white/10 bg-black/80" data-popup-bloqueo="">
           <div className="container-app py-3 flex flex-col gap-1">
             {navLinks.map((l) =>
               l.hash ? (

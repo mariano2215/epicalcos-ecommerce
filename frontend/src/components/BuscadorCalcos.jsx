@@ -4,6 +4,7 @@ import { trackSearch, trackSearchResultsView } from '../lib/analytics.js';
 import { suggest } from '../lib/searchCatalog.js';
 import { cargarCatalogo, cargarAliases } from '../lib/catalogoBusqueda.js';
 import { BUSQUEDAS_SUGERIDAS, leerBusquedas, registrarBusqueda } from '../lib/busquedasSugeridas.js';
+import { registrarSenal } from '../lib/popupEstado.js';
 import { CATEGORIES } from '../data/categories.js';
 
 /**
@@ -97,7 +98,11 @@ export default function BuscadorCalcos({
   const onSubmit = (e) => {
     e.preventDefault();
     const termino = q.trim();
-    if (termino) trackSearch(termino);
+    if (termino) {
+      trackSearch(termino);
+      // Una búsqueda es señal de interés para el popup de bienvenida (spec 026).
+      registrarSenal('busqueda');
+    }
     const params = new URLSearchParams();
     if (termino) params.set('q', termino);
     irA(`/categorias${params.toString() ? `?${params.toString()}` : ''}`, termino);
@@ -105,6 +110,7 @@ export default function BuscadorCalcos({
 
   const buscarTermino = (termino) => {
     trackSearch(termino);
+    registrarSenal('busqueda');
     irA(`/categorias?q=${encodeURIComponent(termino)}`, termino);
   };
 

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { trackPurchase } from '../lib/analytics.js';
 import { consumePurchase } from '../lib/purchaseTracking.js';
+import { registrarCompra } from '../lib/popupEstado.js';
 import { CUSTOM_SPEC_STORAGE_KEY } from '../config/pricing.js';
 import { contact } from '../config/site.js';
 import { useSeo } from '../lib/seo.js';
@@ -72,6 +73,9 @@ export default function PaymentSuccess() {
     // que es precio de LISTA: con cupón o 3x2 el value iba inflado y el envío
     // nunca se reportaba. `consumePurchase` lee y borra, así un refresh de esta
     // pantalla no dispara el evento dos veces.
+    // Compró: el popup de bienvenida no vuelve a abrirse solo (spec 026). El
+    // 10% que ya tenga activo NO se toca: sigue valiendo (P-3).
+    registrarCompra();
     const paid = consumePurchase();
     if (paid) {
       setTieneDigital(paid.items.some((i) => String(i.id).startsWith('digital:')));
