@@ -37,9 +37,20 @@ Con este orden de prioridad (pedido §37):
 
 La métrica que manda es **revenue per session**, no la tasa de captura de mails.
 
-⚠️ Este pedido **choca con dos decisiones vigentes**: la ventana de 10 minutos
-de EPICA10 (spec 017, decisión del 7/9/2026) y la spec 025 (el mismo popup,
-cambiado a pack sorpresa, en `READY FOR REVIEW`). Ver §12, P-1 y P-2.
+### Decisiones de Mariano (25/09/2026)
+
+| Tema | Decisión |
+|---|---|
+| Acumulación | El 10% **sigue acumulable** con el 3x2 y con el 10% por transferencia (tope del 20%, como hoy) |
+| P-1 · spec 025 | Sin respuesta: rige la propuesta, la 026 reemplaza a la 025 |
+| P-2 · ventana de 10 min | **Se saca** |
+| P-3 · el cupón después de comprar | **Sigue valiendo** y el checkout lo sigue aplicando solo: "la idea es que compren al final" |
+| P-4 · mate y celular | Van a **categorías**, sin tamaño preelegido: la persona elige tamaño y diseño |
+| P-5 · aclarar a qué aplica | **Sí**, con la línea propuesta |
+| P-6 · dónde aparece | El popup aparece **solo en el Home** |
+| P-7 · "darte de baja" | **Se deja** como está |
+
+Los requisitos de abajo ya incorporan estas decisiones.
 
 ---
 
@@ -97,24 +108,30 @@ quiere personalizar y le muestre el beneficio hasta que compre.
 La comparación antes/después se hace sobre `generate_lead → purchase` y sobre
 revenue por sesión del sitio entero.
 
+⚠️ Con el popup solo en el Home (P-6), `generate_lead` del popup va a depender
+de cuánta gente pasa por el Home. Si el tráfico de anuncios entra sobre todo por
+categorías y fichas, el volumen de leads puede bajar respecto de hoy aunque la
+tasa de captura suba. Se mira la primera semana (design §10).
+
 ---
 
 ## 3. Scope
 
-- [ ] Disparo por tiempo **o** scroll, con umbrales distintos para celular y
-      compu, más señales de intención e intención de salida en compu.
+- [ ] Disparo **solo en el Home**, por tiempo **o** scroll, con umbrales
+      distintos para celular y compu, más señales de intención e intención de
+      salida en compu.
 - [ ] Reglas anti-interrupción: no abrir mientras la persona escribe, busca,
       tiene el carrito u otro diálogo abierto, o acaba de agregar un producto.
 - [ ] Frecuencia: 7 días si lo cerró, 30 si dejó el mail, nunca después de
       comprar, máximo una apertura automática por sesión.
-- [ ] Rutas donde no aparece: todo el camino de pago, y las secciones cuyos
-      productos no tienen el 10%.
+- [ ] El popup se abre (solo o a mano) únicamente en el Home.
+- [ ] Sacar la ventana de 10 minutos del EPICA10 que entrega el popup.
 - [ ] Paso 1: solo el mail, con validación y estados de carga y error.
 - [ ] Paso 2: el popup no se cierra; muestra el código activo, un selector de
       qué quiere personalizar y un CTA comercial.
 - [ ] Beneficio persistente: un acceso chico y fijo que dice que el 10% está
       activo, y el descuento visible en el carrito.
-- [ ] Un acceso manual para reabrir el popup a quien lo cerró.
+- [ ] Un acceso manual en el Home para reabrir el popup a quien lo cerró.
 - [ ] Interruptor para apagar el popup entero.
 - [ ] Configuración de umbrales y variantes de A/B lista para prender, apagada.
 - [ ] Los eventos de §11 y las marcas de usuario para analizar el funnel.
@@ -126,8 +143,10 @@ revenue por sesión del sitio entero.
 
 - **La spec 025 (pack sorpresa).** Este pedido la reemplaza (P-1). La oferta
   queda configurable para poder probar el pack después.
-- **Cambiar EPICA10**: su porcentaje, su alcance (solo calcos sueltas), su tope
-  de acumulación o hacerlo de un solo uso. El servidor sigue validándolo igual.
+- **Cambiar EPICA10**: su porcentaje, su alcance (solo calcos sueltas), su
+  acumulación (sigue sumándose al 3x2 y a la transferencia, tope 20%) o hacerlo
+  de un solo uso. El servidor sigue validándolo igual.
+- **El popup fuera del Home** (P-6).
 - **Descuento de monto fijo o con mínimo de compra.** Se deja preparada la forma
   de la configuración del texto, pero el motor de precios hoy solo sabe de
   cupones en %. Un cupón de monto fijo es otra spec, con cambio espejado.
@@ -151,17 +170,18 @@ revenue por sesión del sitio entero.
 
 | Usuario | Cómo lo afecta |
 |---|---|
-| Visitante nuevo desde Instagram (celular) | Ve el popup a los 15 s o a mitad de página, nunca apenas entra |
-| Visitante en compu | 12 s, 30% de scroll, o al ir a cerrar la pestaña |
-| Quien cerró el popup | No lo vuelve a ver solo por 7 días; puede reabrirlo desde el acceso manual |
+| Visitante nuevo que entra por el Home (celular) | Ve el popup a los 15 s o a mitad de página, nunca apenas entra |
+| Visitante en compu, en el Home | 12 s, 30% de scroll, o al ir a cerrar la pestaña |
+| Visitante que entra directo a una categoría, ficha o landing | No ve el popup mientras no pase por el Home. Si ya tiene el 10%, ve el acceso fijo |
+| Quien cerró el popup | No lo vuelve a ver solo por 7 días; puede reabrirlo desde el acceso manual del Home |
 | Quien dejó el mail | Ve su 10% activo mientras navega y en el carrito, y va directo a productos |
 | Quien ya tenía EPICA10 guardado | Sigue funcionando igual en el checkout |
-| Quien acaba de comprar | No vuelve a ver el popup de primera compra |
-| Cliente mirando personalizados / mayorista / negocio | No ve un 10% que no aplica a lo que mira (P-6) |
+| Quien acaba de comprar | No vuelve a ver el popup. Si tenía el 10%, lo sigue teniendo para la próxima compra |
+| Cliente mirando personalizados / mayorista / negocio | No ve el popup ni el acceso fijo del 10%, que ahí no aplica |
 | Cliente en el checkout | *No afectado*: el popup nunca aparece ahí |
 | Carritos guardados | *No afectado*: el carrito no cambia de forma |
 | Mariano (operación) | Mismos leads en Notion, CRM y mail que hoy |
-| Mercado Pago / servidor de precios | *No afectado* si se acepta P-2 como está propuesta |
+| Mercado Pago / servidor de precios | *No afectado*: sacar la ventana no cambia la validación (ver §9) |
 | GA4 | Eventos nuevos y dos propiedades de usuario |
 | Meta | *No afectado*: `Lead` se sigue mandando igual |
 
@@ -187,6 +207,8 @@ revenue por sesión del sitio entero.
   sesión, no solo si junta mails.
 - **US-9**: Como Mariano, quiero apagar el popup o cambiar sus tiempos tocando
   una línea de configuración.
+- **US-10**: Como cliente que ya compró con el 10%, quiero que me siga valiendo
+  en la próxima compra.
 
 ---
 
@@ -196,11 +218,11 @@ revenue por sesión del sitio entero.
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-1 | En **compu**, el popup se abre solo cuando se cumple lo primero de: **12 s** en el sitio durante la sesión, o **30%** de scroll en la página actual. | 🔴 must |
-| RF-2 | En **celular**, lo primero de: **15 s** en el sitio, o **50%** de scroll. | 🔴 must |
-| RF-3 | También se abre por **intención**: 2 fichas de producto distintas vistas en la sesión, una búsqueda hecha, o una categoría abierta navegando (la página de entrada no cuenta). | 🔴 must |
-| RF-4 | En **compu**, también por **intención de salida** (el mouse sale por arriba de la ventana), después de 5 s en el sitio. En celular no existe este disparo. | 🟡 should |
-| RF-5 | Ningún disparo abre el popup antes de **5 s** de cargada la página. | 🔴 must |
+| RF-1 | En **compu**, estando en el **Home**, el popup se abre solo cuando se cumple lo primero de: **12 s** en el sitio durante la sesión, o **30%** de scroll del Home. | 🔴 must |
+| RF-2 | En **celular**, estando en el Home, lo primero de: **15 s** en el sitio, o **50%** de scroll del Home. | 🔴 must |
+| RF-3 | También se abre por **intención**, estando en el Home: 2 fichas de producto distintas vistas en la sesión, una búsqueda hecha, o una categoría abierta navegando (la página de entrada no cuenta). Las señales se juntan en cualquier página; el popup solo se abre en el Home. | 🔴 must |
+| RF-4 | En **compu**, también por **intención de salida** (el mouse sale por arriba de la ventana del Home), después de 5 s en el sitio. En celular no existe este disparo. | 🟡 should |
+| RF-5 | Ningún disparo abre el popup antes de **5 s** de haber llegado al Home. | 🔴 must |
 | RF-6 | Todos los umbrales (tiempos, porcentajes, cantidad de productos, días de espera) se cambian desde un solo lugar de configuración. | 🔴 must |
 
 ### Anti-interrupción
@@ -208,14 +230,14 @@ revenue por sesión del sitio entero.
 | ID | Requisito | Prioridad |
 |---|---|---|
 | RF-7 | Si al cumplirse un disparo la persona está en alguna de estas situaciones, el popup **espera** a que termine y abre 3 s después: escribiendo en cualquier campo (incluye el buscador y el teclado abierto en celular), con el carrito abierto, con el buscador u otro diálogo abierto, con el menú del celular abierto, acaba de agregar un producto al carrito, o con la pestaña en segundo plano. | 🔴 must |
-| RF-8 | Si mientras espera la persona entra al camino de pago, el popup no se abre ahí; se abre en la próxima página permitida si sigue en la misma sesión. | 🟡 should |
+| RF-8 | Si mientras espera la persona sale del Home, el popup no se abre en otra página; se abre la próxima vez que vuelva al Home en la misma sesión. | 🟡 should |
 
-### Dónde no aparece
+### Dónde aparece
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-9 | Nunca aparece (ni solo ni el acceso manual) en carrito, checkout y las pantallas de resultado del pago (éxito, transferencia, pendiente, error). | 🔴 must |
-| RF-10 | No se abre solo, ni muestra el acceso manual, en las secciones cuyos productos no tienen el 10%: personalizados, mayorista, negocio, polaroid, tatuajes, archivos imprimibles y arma tu pack (P-6). | 🟡 should |
+| RF-9 | El popup se abre **solo en el Home**, tanto solo como a mano (P-6). En ninguna otra página se abre. | 🔴 must |
+| RF-10 | El acceso fijo del 10% activo (RF-33) no se muestra en carrito, checkout, pantallas de resultado del pago (éxito, transferencia, pendiente, error) ni en las secciones cuyos productos no tienen el 10%: personalizados, mayorista, negocio, polaroid, tatuajes, archivos imprimibles y arma tu pack. | 🔴 must |
 
 ### Frecuencia
 
@@ -223,7 +245,7 @@ revenue por sesión del sitio entero.
 |---|---|---|
 | RF-11 | Máximo **una apertura automática por sesión**. Recargar la página no lo vuelve a abrir solo. | 🔴 must |
 | RF-12 | Si lo cerró sin dejar el mail (o lo vio y se fue sin cerrarlo), no se abre solo por **7 días**. | 🔴 must |
-| RF-13 | Si dejó el mail, no se abre solo por **30 días**, y nunca mientras tenga el 10% activo. | 🔴 must |
+| RF-13 | Si dejó el mail, no se abre solo por **30 días**, y nunca mientras tenga el 10% activo. Como el 10% ya no vence (P-2, P-3), en la práctica quien dejó el mail no lo vuelve a ver solo, salvo que borre los datos del navegador. | 🔴 must |
 | RF-14 | Después de una compra confirmada en el sitio, no se vuelve a abrir solo. | 🔴 must |
 | RF-15 | Si el navegador no deja guardar datos, el popup **no se abre solo** (no hay forma de respetar la frecuencia). El acceso manual sigue funcionando. | 🔴 must |
 | RF-16 | Quien ya vio el popup antes de este cambio conserva su historial: si tiene el cupón guardado cuenta como que dejó el mail; si no, como que lo cerró, con los 7 días contados desde su primera visita posterior al deploy. | 🔴 must |
@@ -246,10 +268,10 @@ revenue por sesión del sitio entero.
 |---|---|---|
 | RF-24 | Al registrar el mail, el popup **no se cierra**: cambia en el lugar a "🎉 ¡Listo! Tu 10% OFF ya está activo", con el código a la vista. | 🔴 must |
 | RF-25 | El código tiene un botón **Copiar**. Si el navegador no deja copiar, el código queda seleccionable a mano. | 🟡 should |
-| RF-26 | Debajo del código, una línea aclara que se aplica solo en el checkout y a qué productos vale (P-5). | 🟡 should |
+| RF-26 | Debajo del código: "Se aplica solo en el checkout. Vale para las calcos del catálogo." (P-5) | 🔴 must |
 | RF-27 | "¿Qué querés personalizar?" con 4 opciones: 🧉 Mate, ☕ Termo, 💻 Notebook, 📱 Celular. Tocar una lleva directo a los productos para ese uso y cierra el popup. | 🔴 must |
-| RF-28 | Cada opción lleva a una **página que ya existe** (P-4). | 🔴 must |
-| RF-29 | El botón principal es "Elegir mis calcos →". Si la persona está en el Home o en una página sin productos, la lleva al catálogo; si ya está en una categoría, ficha o landing, cierra el popup y la deja seguir donde estaba. | 🔴 must |
+| RF-28 | Destinos (P-4): Termo → landing de termo; Notebook → landing de notebook; Mate y Celular → catálogo de categorías, **sin tamaño preelegido**, para que elija tamaño y diseño. | 🔴 must |
+| RF-29 | El botón principal es "Elegir mis calcos →" y lleva al catálogo de categorías (el popup solo vive en el Home). | 🔴 must |
 | RF-30 | Si el carrito tiene productos, aparece además un link secundario "Ya tengo calcos en el carrito: ir a pagar" que lleva al checkout. | 🟡 should |
 | RF-31 | La ✕ de cerrar sigue visible en los dos pasos, pero nunca más destacada que el botón principal. | 🔴 must |
 
@@ -257,9 +279,9 @@ revenue por sesión del sitio entero.
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-32 | Con el 10% activo, el checkout lo aplica solo, como hoy. | 🔴 must |
-| RF-33 | Con el 10% activo, en todas las páginas permitidas se ve un acceso chico y fijo "🎁 10% OFF activo" que no tapa contenido ni al botón de WhatsApp. Tocarlo reabre el popup en el paso 2. | 🔴 must |
-| RF-34 | Quien cerró el popup sin dejar el mail ve el mismo acceso con "🎁 10% OFF", que reabre el paso 1. Solo abre con un toque. | 🟡 should |
+| RF-32 | El 10% que entrega el popup **no vence** (P-2). El checkout lo aplica solo en esa compra y en las siguientes desde ese navegador (P-3), sumado al 3x2 y a la transferencia como hoy. | 🔴 must |
+| RF-33 | Con el 10% activo, en las páginas de la tienda donde aplica (RF-10) se ve un acceso chico y fijo "🎁 10% OFF activo" que no tapa contenido ni al botón de WhatsApp. Tocarlo despliega el código, el botón Copiar y "Se aplica solo en el checkout", **sin abrir el popup**. | 🔴 must |
+| RF-34 | En el Home, quien cerró el popup sin dejar el mail ve el acceso "🎁 10% OFF", que reabre el paso 1. Solo abre con un toque. Fuera del Home no aparece. | 🟡 should |
 | RF-35 | En el carrito lateral y en la página de carrito, con el 10% activo y productos que lo reciben, se ve "🎁 Tu 10% OFF está activo" y la línea con el monto que descuenta. El total que se muestra es el mismo que la persona va a ver al entrar al checkout pagando con Mercado Pago. | 🟡 should |
 | RF-36 | Si el monto no se puede mostrar con certeza (por ejemplo, el carrito no tiene productos que lo reciban), se muestra solo el aviso, sin números. Nunca se muestra un descuento que el checkout después no aplique. | 🔴 must |
 
@@ -267,8 +289,8 @@ revenue por sesión del sitio entero.
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-37 | Al llegar a la pantalla de compra exitosa o de pedido por transferencia, el sitio registra que esa persona compró y deja de ofrecerle el popup y el acceso manual. | 🔴 must |
-| RF-38 | Después de comprar, el checkout deja de autocompletar el código del popup (P-3). Escrito a mano sigue valiendo, como hoy. | 🟡 should |
+| RF-37 | Al llegar a la pantalla de compra exitosa o de pedido por transferencia, el sitio registra que esa persona compró: el popup no se vuelve a abrir solo y el acceso "🎁 10% OFF" (el que ofrece el descuento) no aparece más. Si ya tenía el 10%, el acceso "activo" sigue. | 🔴 must |
+| RF-38 | Después de comprar, el código del popup **sigue guardado** y el checkout lo sigue aplicando solo (P-3). | 🔴 must |
 
 ### Interruptor y A/B
 
@@ -311,25 +333,27 @@ revenue por sesión del sitio entero.
 | Regla | Ref. | ¿Se modifica? |
 |---|---|---|
 | El popup entrega `EPICA10` y queda guardado para el checkout | `business-rules.md` "Popup de bienvenida" | no (se agrega cuándo aparece y qué pasa después) |
-| EPICA10: 10% solo sobre calcos sueltas del catálogo, acumulable con transferencia y 3x2, tope 20% | `business-rules.md` §2, §3 | no |
-| Ventana de 10 min por usuario para el EPICA10 del popup | `business-rules.md` §3.4, spec 017 | **sí, si se acepta P-2**: el popup deja de arrancar la ventana |
+| EPICA10: 10% solo sobre calcos sueltas del catálogo, acumulable con transferencia y 3x2, tope 20% | `business-rules.md` §2, §3 | no (**confirmado por Mariano el 25/9/2026**) |
+| Ventana de 10 min por usuario para el EPICA10 del popup | `business-rules.md` §3.4, spec 017 | **sí** (P-2): el popup deja de arrancar la ventana |
 | EPICA10 escrito a mano no vence | `business-rules.md` §2 | no |
 | Experimentos solo de presentación, nunca de precio | `business-rules.md` "A/B testing" | no: se testea **cuándo** aparece el popup |
 
 **Reglas nuevas del popup**
 
-- Aparece como máximo una vez por sesión, nunca antes de 5 s, nunca en el
-  camino de pago, nunca después de una compra.
+- Aparece **solo en el Home**, como máximo una vez por sesión, nunca antes de
+  5 s, nunca después de una compra.
 - Espera: 7 días si se cerró, 30 si se dejó el mail. Con el 10% activo no se
   abre solo.
+- El 10% del popup no vence y sigue valiendo después de comprar (P-2, P-3). En
+  la práctica, EPICA10 pasa a ser un 10% permanente para quien deja el mail,
+  acumulable con el 3x2 y la transferencia hasta el tope del 20%.
 - "Primer pedido" es una promesa de copy: el sistema no verifica que sea la
-  primera compra (hoy tampoco). Del lado del navegador, después de comprar se
-  deja de autocompletar.
+  primera compra (hoy tampoco).
 
 **Espejo de precios**
 
-- [ ] ~~Cambio espejado en los dos `pricing.js`~~: con P-2 como está propuesta,
-      la ventana se deja de arrancar desde el popup y la validación del
+- [ ] ~~Cambio espejado en los dos `pricing.js`~~: con P-2, la ventana se deja
+      de arrancar desde el popup y la validación del
       servidor no cambia (un EPICA10 sin instante de emisión ya vale hoy)
 - [ ] ~~Cambio espejado de envíos~~
 - [x] Test nuevo: el código que devuelve el servidor al capturar el lead es el
@@ -341,8 +365,8 @@ revenue por sesión del sitio entero.
 
 | Caso | Comportamiento esperado |
 |---|---|
-| Llega de Instagram directo a una categoría | La categoría de entrada no cuenta como intención. A los 15 s o al 50% de scroll, si no está haciendo otra cosa |
-| Llega a una ficha, navega a otra ficha a los 3 s | Cumple 2 productos, pero espera a los 5 s de cargada la página |
+| Llega de Instagram directo a una categoría | No ve el popup ahí. Si después va al Home, se evalúa en el Home (la categoría de entrada no cuenta como intención) |
+| Ve 2 fichas y vuelve al Home | Cumple la intención: abre a los 5 s de llegar al Home |
 | Busca "boca" en el buscador | Mientras el campo tiene foco no abre. 3 s después de salir del campo, abre |
 | Toca "+" en la grilla y se abre el carrito | No abre mientras el carrito esté abierto ni en los 3 s siguientes a cerrarlo |
 | Página más corta que la pantalla | El scroll no puede disparar; quedan tiempo, intención y salida |
@@ -352,16 +376,16 @@ revenue por sesión del sitio entero.
 | Deja un mail inválido ("hola@") | "Ingresá un email válido.", sin llamar al servidor |
 | Sin conexión al enviar | Mensaje de error, el popup queda abierto con el mail escrito |
 | El servidor tarda más de 10 s | Se corta, mensaje de error, puede reintentar |
-| Deja el mail estando en una ficha y toca "Elegir mis calcos" | Se cierra el popup y sigue en la ficha |
-| Deja el mail en el Home y toca "Elegir mis calcos" | Va al catálogo |
-| Elige 📱 Celular | Va a la página definida en P-4 |
+| Deja el mail y toca "Elegir mis calcos" | Va al catálogo de categorías |
+| Elige 🧉 Mate o 📱 Celular | Va a categorías, con el tamaño que ya tenía elegido (o el de siempre) |
 | Tiene el 10% activo y el carrito solo con personalizados | El carrito muestra el aviso sin monto: esos productos no reciben el 10% |
 | Tiene el 10% activo y paga por transferencia | El checkout muestra la suma real (10% + 10% con tope del 20%), igual que hoy. El carrito mostró el monto de Mercado Pago, que es el medio por defecto |
 | Navegador de Instagram con storage bloqueado | El popup no se abre solo; si lo abre a mano y deja el mail, el código se muestra y el checkout lo acepta si lo escribe |
 | Ya tenía el popup visto antes del deploy, sin cupón | Vuelve a ser elegible 7 días después de su primera visita posterior al deploy |
-| Ya tenía EPICA10 guardado con la ventana vencida | Sigue vencido, como se le prometió; el acceso manual le ofrece activarlo de nuevo |
-| Compra y vuelve al sitio al día siguiente | Sin popup ni acceso manual. Si escribe EPICA10 a mano, vale |
-| Paga en Mercado Pago y no vuelve al sitio | El navegador no se entera de la compra: sigue con el 10% activo y el acceso fijo, y el popup no se abre solo mientras lo tenga |
+| Ya tenía EPICA10 guardado con la ventana vencida | Sigue vencido, como se le prometió. Si deja el mail de nuevo en el Home, el código nuevo no vence |
+| Compra con el 10% y vuelve al día siguiente | Sin popup. Sigue viendo "10% OFF activo" y el checkout se lo vuelve a aplicar |
+| Compra sin haber dejado el mail | No vuelve a ver el popup ni el acceso "🎁 10% OFF" |
+| Tiene el 10% activo y entra a personalizados | No ve el acceso fijo. Si en el carrito también hay calcos del catálogo, el checkout descuenta solo esas |
 | Interruptor apagado con el popup abierto | Al recargar ya no aparece. El 10% activo sigue funcionando |
 | El visitante tiene el sitio viejo cargado al deployar | Sigue con el popup viejo hasta recargar. El servidor responde igual a los dos |
 
@@ -377,7 +401,7 @@ revenue por sesión del sitio entero.
 | `popup_close` | se cierra sin navegar | `popup_variant`, `popup_step` (`capture` · `success`), `close_method` (`x` · `esc` · `overlay`) | GA4 |
 | `popup_email_submit` | se envía un mail con formato válido (antes de la respuesta del servidor) | `popup_variant`, `discount_type`, `page_path`, `device_type` | GA4 |
 | `popup_interest_selected` | elige Mate, Termo, Notebook o Celular | `popup_variant`, `interest`, `destination` | GA4 |
-| `popup_cta_click` | toca "Elegir mis calcos" o "ir a pagar" | `popup_variant`, `destination` (`catalog` · `stay` · `checkout`) | GA4 |
+| `popup_cta_click` | toca "Elegir mis calcos" o "ir a pagar" | `popup_variant`, `destination` (`catalog` · `checkout`) | GA4 |
 
 `popup_trigger`: `time` · `scroll` · `product_views` · `search` · `category` ·
 `exit_intent` · `manual`.
@@ -388,7 +412,7 @@ revenue por sesión del sitio entero.
 |---|---|---|
 | `generate_lead` (`lead_source: 'welcome_popup'`) | suma `popup_variant`, `popup_trigger`, `device_type`. **Es la conversión del popup**: no se crea un `popup_conversion` aparte | es el evento recomendado de GA4 para leads y ya dispara `Lead` en Meta; duplicarlo contaría dos veces la misma conversión y cortaría la serie histórica |
 | `cupon_emitido` | sin cambios | sigue siendo el denominador de la ventana |
-| `cupon_vencido` | deja de dispararse desde el popup si se acepta P-2 | sin ventana no hay vencimiento |
+| `cupon_vencido` | deja de dispararse desde el popup (P-2) | sin ventana no hay vencimiento |
 
 ### Propiedades de usuario (GA4)
 
@@ -410,7 +434,8 @@ Sirven para segmentar `add_to_cart`, `begin_checkout` y `purchase` sin PII.
 - ¿Se cierra más en celular que en compu? (`popup_close` / `popup_view` por `device_type`)
 
 Sin mail ni ningún dato del lead en el `dataLayer`. `page_path` es solo la ruta,
-sin parámetros de URL.
+sin parámetros de URL. Con P-6 va a ser siempre `/`: se manda igual para que el
+evento no cambie de forma si algún día el popup se habilita en otras páginas.
 
 ⚠️ **Acción de Mariano en GA4**: registrar como dimensiones personalizadas los
 parámetros de evento y las dos propiedades de usuario. Sin eso GA4 los recibe
@@ -420,66 +445,43 @@ pero no deja usarlos en informes.
 
 ## 12. Preguntas abiertas
 
-Cada una tiene una **propuesta por defecto**, que es la que usa el diseño. Si
-Mariano no la cambia, se implementa así.
+Respondidas por Mariano el 25/09/2026, salvo P-1. El resumen está en §0.
 
 - [ ] **P-1: ¿Qué pasa con la spec 025 (pack sorpresa)?** Las dos cambian el
-      mismo popup en direcciones opuestas: la 025 saca el 10% y ofrece un pack;
-      esta arma el funnel alrededor del 10%.
+      mismo popup en direcciones opuestas.
       *Propuesta*: esta spec **reemplaza** a la 025, que pasa a `DISCARDED` con
-      el motivo escrito. La oferta queda en configuración (RF-41), así el pack
-      se puede probar más adelante como otra oferta sobre este mismo popup, en
-      una spec chica.
+      el motivo escrito. La oferta queda en configuración (RF-41) para poder
+      probar el pack más adelante sobre este popup.
+      *Estado*: **sin respuesta; rige la propuesta.**
 
-- [ ] **P-2: ¿Se mantiene la ventana de 10 minutos del EPICA10 del popup?**
-      Este pedido manda a la persona a elegir varias calcos y muestra el 10%
-      mientras navega. Con 10 minutos, el recorrido que se busca (elegir,
-      agregar varias, pagar) apura la compra y achica el carrito, que es lo
-      contrario del objetivo de ticket promedio. Además, el mismo código llega
-      por mail **sin ventana**, y escrito a mano no vence: la ventana solo le
-      llega a quien no abre el mail.
-      *Propuesta*: **el popup deja de arrancar la ventana**. El 10% queda activo
-      hasta que compra. No cambia ningún precio ni el servidor: un EPICA10 sin
-      instante de emisión ya vale hoy. La ventana queda como opción de
-      configuración de la oferta, por si se quiere volver.
-      ⚠️ Revierte la decisión del 7/9/2026. Costo: más pedidos con el 10%
-      encima del 3x2 y de la transferencia (hasta el tope del 20%). Se mide con
-      `cupon_aplicado_en_promo`, que ya existe.
+- [x] **P-2: ¿Se mantiene la ventana de 10 minutos del EPICA10 del popup?**
+      *Decisión*: **se saca.** El popup deja de arrancar la ventana. No cambia
+      ningún precio ni el servidor: un EPICA10 sin instante de emisión ya vale
+      hoy. Revierte la decisión del 7/9/2026 (spec 017).
 
-- [ ] **P-3: ¿Qué pasa con el cupón guardado después de comprar?** Hoy el
-      checkout lo autocompleta en cada compra futura desde ese navegador. Sin
-      ventana (P-2), sería un 10% permanente.
-      *Propuesta*: después de una compra confirmada, el navegador **olvida** el
-      código del popup. Escrito a mano sigue valiendo, como hoy.
+- [x] **P-3: ¿Qué pasa con el cupón guardado después de comprar?**
+      *Decisión*: **sigue valiendo**, y el checkout lo sigue aplicando solo en
+      las compras siguientes. "La idea es que compren al final."
 
-- [ ] **P-4: ¿A dónde lleva cada interés?** Existen `/calcos-termo` y
-      `/calcos-notebook`. **No existen** páginas de mate ni de celular.
-      *Propuesta*:
-      | Interés | Destino | Por qué |
-      |---|---|---|
-      | 🧉 Mate | `/calcos-termo` | la landing ya habla del mate y recomienda 6 cm, el tamaño que la guía indica para mate |
-      | ☕ Termo | `/calcos-termo` | coincide |
-      | 💻 Notebook | `/calcos-notebook` | coincide |
-      | 📱 Celular | `/categorias` con la grilla en **4 cm** | la guía de tamaños dice 4 cm para celular; el tamaño elegido ya se recuerda para toda la grilla |
-      Si `popup_interest_selected` muestra volumen en mate o celular, se
-      justifica una landing propia en otra spec.
+- [x] **P-4: ¿A dónde lleva cada interés?**
+      *Decisión*:
+      | Interés | Destino |
+      |---|---|
+      | 🧉 Mate | `/categorias`, sin tamaño preelegido |
+      | ☕ Termo | `/calcos-termo` |
+      | 💻 Notebook | `/calcos-notebook` |
+      | 📱 Celular | `/categorias`, sin tamaño preelegido |
+      En categorías la persona elige tamaño y diseño.
 
-- [ ] **P-5: ¿Se aclara a qué productos aplica el 10%?** EPICA10 solo descuenta
-      calcos sueltas del catálogo. Quien arma un carrito de personalizados o
-      packs ve $0 de descuento en el checkout.
-      *Propuesta*: **sí**, una línea chica en el paso 2, debajo del código: "Se
-      aplica solo en el checkout. Vale para las calcos del catálogo." El paso 1
-      no se toca.
+- [x] **P-5: ¿Se aclara a qué productos aplica el 10%?**
+      *Decisión*: **sí**. En el paso 2, debajo del código: "Se aplica solo en el
+      checkout. Vale para las calcos del catálogo."
 
-- [ ] **P-6: ¿Se saca el popup de las secciones donde el 10% no aplica?**
-      Personalizados, mayorista, negocio, polaroid, tatuajes, imprimibles y
-      arma tu pack.
-      *Propuesta*: **sí**. Ofrecer ahí un descuento que no se aplica a lo que la
-      persona está mirando es una promesa rota en el checkout. Si navega a una
-      página permitida en la misma sesión, el disparo sigue su curso.
+- [x] **P-6: ¿Dónde aparece el popup?**
+      *Decisión*: **solo en el Home**. Se abre ahí solo o a mano. El acceso fijo
+      del 10% activo sí acompaña la navegación en las páginas donde el 10%
+      aplica (RF-33), porque es el recordatorio del beneficio que pidió el
+      pedido original (§10) y al tocarlo no abre el popup.
 
-- [ ] **P-7: "Podés darte de baja cuando quieras".** No hay link de baja en el
-      mail del cupón; hoy la baja es respondiendo el mail.
-      *Propuesta*: mantener el texto (es cierto si la baja se atiende a mano). Si
-      las novedades se mandan desde una herramienta con link de baja, ya está
-      cubierto.
+- [x] **P-7: "Podés darte de baja cuando quieras".**
+      *Decisión*: **se deja** el texto.

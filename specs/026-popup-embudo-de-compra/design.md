@@ -7,8 +7,9 @@
 | **Fecha** | 25/09/2026 |
 
 > **Este documento define CÓMO se implementará.**
-> Usa las propuestas por defecto de `requirements.md` §12. Si Mariano cambia
-> alguna, se ajusta la sección que corresponda antes de implementar.
+> Incorpora las decisiones de Mariano del 25/09/2026 (`requirements.md` §0):
+> sin ventana, el cupón sigue después de comprar, mate y celular a categorías,
+> popup solo en el Home. P-1 sin respuesta: rige la propuesta.
 
 ---
 
@@ -55,7 +56,7 @@
 
 | Comentario | ¿Sigue vigente? |
 |---|---|
-| `WelcomePopup.jsx:14-24`: el fallback era 600 px de scroll y tapaba la grilla "justo en el momento de más intención de compra"; por eso pasó a exigir scroll profundo **y** tiempo | **Choca con el pedido** (12 s **o** 30%). Se respeta el pedido de Mariano, pero el riesgo que documenta ese comentario se mitiga con las reglas anti-interrupción (RF-7): no abre mientras escribe, busca, tiene el carrito abierto ni en los 3 s posteriores a agregar un producto. Si `popup_close` en `/categoria/*` sale alto, es la primera palanca a tocar. El comentario se reescribe con esta historia |
+| `WelcomePopup.jsx:14-24`: el fallback era 600 px de scroll y tapaba la grilla "justo en el momento de más intención de compra"; por eso pasó a exigir scroll profundo **y** tiempo | **Deja de aplicar** con P-6: el popup solo se abre en el Home, así que ya no tapa la grilla de categoría ni la ficha. En el Home, el "o" (12 s **o** 30%) queda cubierto por las reglas anti-interrupción (RF-7): no abre mientras escribe, busca, tiene el carrito abierto ni en los 3 s posteriores a agregar un producto. El comentario se reescribe con esta historia |
 | `WelcomePopup.jsx:88-100`: la salida exige un `mousemove` previo porque algunos navegadores emiten un `mouseout` con `clientY 0` al cargar | **Vigente.** Se conserva tal cual. El pedido sugiere `mouseY <= 20`, pero eso dispararía al llevar el mouse al menú del header, que está pegado arriba |
 | `WelcomePopup.jsx:41`: sin storage no se muestra | **Vigente** (RF-15) |
 | `cuponVentana.js`: todo acceso a storage en `try/catch` por el navegador de Instagram | **Vigente.** El módulo nuevo sigue la misma regla |
@@ -69,11 +70,13 @@
 ```
 App.jsx (sin cambios)
 └─ <WelcomePopup />  ← orquestador chico, en el bundle principal
-    ├─ usePopupDisparo()          arma tiempo/scroll/intención/salida, chequea bloqueos
+    ├─ usePopupDisparo()          junta señales en todo el sitio; abre solo en `/`
     │    └─ lib/popupReglas.js    funciones puras: ¿puede abrir? ¿qué destino? (testeables)
     │    └─ lib/popupEstado.js    storage (local + sesión) con try/catch, memoria de respaldo,
     │                             suscripción (useSyncExternalStore) y migración de `seen`
-    ├─ <AccesoBeneficio />        chip fijo abajo a la izquierda: "🎁 10% OFF" / "🎁 10% OFF activo"
+    ├─ <AccesoBeneficio />        chip fijo abajo a la izquierda:
+    │                             "🎁 10% OFF" (solo en `/`, reabre el paso 1)
+    │                             "🎁 10% OFF activo" (tienda, despliega el código sin abrir el popup)
     └─ lazy(<PopupDialogo />)     baja recién cuando el disparo se arma (a los 5 s)
          ├─ <PopupCaptura />      paso 1
          └─ <PopupExito />        paso 2 + selector de interés + CTA
@@ -81,7 +84,7 @@ App.jsx (sin cambios)
 lib/cuponVentana.js  emitirCupon(code, { conVentana })   ← mismo storage que ya lee el checkout
 Checkout.jsx         SIN CAMBIOS: ya aplica solo el cupón guardado
 CartDrawer / Cart    <CuponEnCarrito />: aviso + línea con el monto de pricedItems()
-PaymentSuccess/Transfer  registrarCompra()  → popup y acceso apagados, cupón olvidado
+PaymentSuccess/Transfer  registrarCompra()  → sin popup ni acceso de oferta; el cupón QUEDA (P-3)
 BuscadorCalcos       registrarSenal('search')
 Header               data-popup-bloqueo en el menú del celular abierto
 ```
@@ -98,7 +101,8 @@ oculto ──abrir(disparo)──► captura ──enviar──► enviando ─�
 ```
 
 - `captura` lleva `error: null | 'email' | 'servidor'` y conserva el mail.
-- `exito` se puede abrir directo desde el acceso "10% OFF activo".
+- `exito` solo se alcanza enviando el mail. El acceso "10% OFF activo" despliega
+  el código en el mismo chip, sin abrir el popup (P-6).
 - "dismissed" y "converted" son **persistencia**, no estados de pantalla.
 
 ### Decisiones y alternativas descartadas
@@ -108,13 +112,15 @@ oculto ──abrir(disparo)──► captura ──enviar──► enviando ─�
 | El popup deja de arrancar la ventana (`emitirCupon(code, { conVentana: false })`) | Vaciar `CUPONES_CON_VENTANA` en los dos `pricing.js` | Con `emitidoEn` ausente, cliente y servidor **ya** tratan el cupón como sin ventana (`ventanaCuponAbierta`). Así no se toca el espejo de precios ni `cuponVentana.test.js`, y volver a la ventana es un valor de config. Los cupones ya guardados con su ventana siguen como se les prometió |
 | Reusar `epicalcos.welcomeCoupon` y `lib/cuponVentana.js` | Clave nueva `epicalcos_discount_code` (como sugiere el pedido) | El checkout ya lee esa clave, con compatibilidad del formato viejo. Una segunda clave obliga a sincronizar dos fuentes de verdad del mismo cupón |
 | Código y % salen de config (`POPUP_OFERTA.codigo` + `COUPONS[codigo].discount`) | Escribir "10%" y "EPICA10" en el JSX | Pedido §9 y RF-19. Test de paridad con el código que devuelve `capture-lead` |
-| El chip fijo chico como "barra" del beneficio | Barra de ancho completo arriba | A 375 px el header ya tiene `PromoBanner` + `AnnouncementBar`: una tercera barra empuja el contenido y, al aparecer después de convertir, mueve el layout (CLS). El chip no mueve nada y se puede tocar para volver al paso 2 |
+| El popup solo en `/` (P-6) | En todas las páginas de catálogo | Decisión de Mariano. Además elimina el riesgo documentado en `WelcomePopup.jsx:14-24` (tapar la grilla mientras la persona elige) |
+| `registrarCompra()` **no** borra el cupón (P-3) | Olvidarlo después de comprar | Decisión de Mariano: el 10% sigue valiendo para las compras siguientes |
+| El chip fijo chico como "barra" del beneficio | Barra de ancho completo arriba | A 375 px el header ya tiene `PromoBanner` + `AnnouncementBar`: una tercera barra empuja el contenido y, al aparecer después de convertir, mueve el layout (CLS). El chip no mueve nada. Al tocarlo se despliega el código (`aria-expanded`), sin abrir el popup, que solo vive en el Home |
 | El monto en el carrito sale de `pricedItems()` con el mismo medio y cupón que usa el checkout | Calcular 10% del subtotal | EPICA10 solo alcanza calcos sueltas, se acumula con 3x2 y transferencia con tope. Un cálculo propio **simularía** el descuento (pedido §17). `pricedItems` es la función que el checkout ya usa y que el servidor espeja |
 | Guardia de identidad en el carrito: si Σ `pricedItems('mercadopago', '', null)` no es igual al Total que el carrito ya muestra, no se muestran números | Confiar en que coinciden | El carrito arma su total con `subtotal − promoSavings`, el checkout con `pricedItems`. Si alguna vez divergen, preferimos un aviso sin monto a un resumen que no cierra (RF-36) |
 | Lógica de decisión en funciones puras (`lib/popupReglas.js`) | Todo dentro del hook | El repo no tiene tests de componentes. Así cooldowns, rutas, destinos y migración quedan testeados con Vitest en `node` |
 | El diálogo en un chunk `lazy()` | Todo en el bundle principal | El popup nunca aparece antes de 5 s: no tiene sentido que su UI pese en el LCP del Home |
 | Detección de "otro diálogo" por DOM (`[aria-modal="true"]`, `[data-popup-bloqueo]`) + `drawerOpen` | Un registro global de bloqueos que cada componente actualice | Cubre el buscador sin tocarlo y solo agrega un atributo al menú del header. Cualquier diálogo futuro con `aria-modal` queda cubierto solo |
-| Intención por ruta (`/producto/*`, `/categoria/*`) + una línea en el buscador | Llamar `registrarSenal` desde `Producto.jsx` y `Category.jsx` | Leer el `pathname` desde el orquestador no toca esas páginas. La búsqueda no cambia la ruta, así que ahí sí hace falta una línea |
+| Intención por ruta (`/producto/*`, `/categoria/*`) + una línea en el buscador | Llamar `registrarSenal` desde `Producto.jsx` y `Category.jsx` | Leer el `pathname` desde el orquestador no toca esas páginas. La búsqueda no cambia la ruta, así que ahí sí hace falta una línea. Las señales se juntan en cualquier página, pero solo disparan en el Home |
 | `generate_lead` es la conversión; no hay `popup_conversion` | Evento nuevo | Regla del pedido: no duplicar. `generate_lead` ya alimenta el `Lead` de Meta |
 | Kill switch `POPUP_CONFIG.activo` | Objeto `FEATURES` nuevo | El repo ya usa `activa`/`active` por objeto de config (pedido §34: integrarse al sistema existente) |
 | A/B como entrada `popup_disparo` en `EXPERIMENTS` con `active: false` | Lógica de variantes propia del popup | Reusa asignación, override por URL (`?exp_popup_disparo=a_8s`) y kill switch |
@@ -146,14 +152,14 @@ oculto ──abrir(disparo)──► captura ──enviar──► enviando ─�
 
 | Archivo | Responsabilidad |
 |---|---|
-| `frontend/src/config/popup.js` | `POPUP_CONFIG`, `POPUP_VARIANTES`, `POPUP_OFERTA`, `INTERESES`, `RUTAS_FLUJO_COMPRA`, `RUTAS_SIN_DESCUENTO` |
-| `frontend/src/lib/popupReglas.js` | Puras: `rutaPermitida`, `puedeAbrirSolo`, `disparoCumplido`, `porcentajeScroll`, `destinoInteres`, `destinoCta`, `tipoVisitante`, `migrarEstadoViejo` |
+| `frontend/src/config/popup.js` | `POPUP_CONFIG`, `POPUP_VARIANTES`, `POPUP_OFERTA`, `INTERESES`, `RUTAS_POPUP`, `RUTAS_FLUJO_COMPRA`, `RUTAS_SIN_DESCUENTO` |
+| `frontend/src/lib/popupReglas.js` | Puras: `popupPermitido`, `accesoVisible`, `puedeAbrirSolo`, `disparoCumplido`, `porcentajeScroll`, `destinoInteres`, `tipoVisitante`, `migrarEstadoViejo` |
 | `frontend/src/lib/popupEstado.js` | Lectura/escritura de `epicalcos.popup.v1` (local) y `epicalcos.popup.sesion.v1` (sesión) con `try/catch` y copia en memoria; `registrarVisto/Cerrado/Convertido/Compra`, `registrarSenal`; `suscribir` + `usePopupEstado()` |
 | `frontend/src/components/popup/usePopupDisparo.js` | Listeners (scroll con `rAF`, timer, `mouseout`), sondeo de bloqueos cada 1 s, gracia de 3 s, una sola apertura |
 | `frontend/src/components/popup/PopupDialogo.jsx` | Cáscara del diálogo: `role="dialog"`, `aria-modal`, foco, trampa de Tab, Escape, bloqueo de scroll, devolución de foco |
 | `frontend/src/components/popup/PopupCaptura.jsx` | Paso 1 |
-| `frontend/src/components/popup/PopupExito.jsx` | Paso 2: código + Copiar, selector de interés, CTA, link a pagar |
-| `frontend/src/components/popup/AccesoBeneficio.jsx` | Chip fijo abajo a la izquierda, 44 px, elevado donde se eleva WhatsApp |
+| `frontend/src/components/popup/PopupExito.jsx` | Paso 2: código + Copiar, línea de P-5, selector de interés, CTA a `/categorias`, link a pagar |
+| `frontend/src/components/popup/AccesoBeneficio.jsx` | Chip fijo abajo a la izquierda, 44 px, elevado donde se eleva WhatsApp. `oferta`: solo en `/`, abre el paso 1. `activo`: en la tienda, despliega código + Copiar |
 | `frontend/src/components/popup/CuponEnCarrito.jsx` | `useCuponEnCarrito(totales)` + `CuponEnCarritoLinea` |
 | `frontend/src/lib/popupReglas.test.js` | Ver §9 |
 | `frontend/src/lib/popupEstado.test.js` | Ver §9 |
@@ -212,16 +218,21 @@ export const POPUP_VARIANTES = {
 export const POPUP_OFERTA = {
   tipo: 'porcentaje',      // futuro: 'monto' | 'monto_con_minimo' (requiere spec de precios)
   codigo: 'EPICA10',       // debe existir en COUPONS de los dos lados (test)
-  ventanaMs: null          // P-2. 10 * 60 * 1000 devuelve el comportamiento de la spec 017
+  ventanaMs: null          // P-2 (25/9): sin ventana. 10 * 60 * 1000 devuelve la spec 017
 };
 
+/** P-4: mate y celular no tienen landing; van a categorías sin tocar el tamaño. */
 export const INTERESES = [
-  { id: 'mate',     emoji: '🧉', label: 'Mate',     to: '/calcos-termo' },
+  { id: 'mate',     emoji: '🧉', label: 'Mate',     to: '/categorias' },
   { id: 'termo',    emoji: '☕', label: 'Termo',    to: '/calcos-termo' },
   { id: 'notebook', emoji: '💻', label: 'Notebook', to: '/calcos-notebook' },
-  { id: 'celular',  emoji: '📱', label: 'Celular',  to: '/categorias', tamano: '4cm' }
+  { id: 'celular',  emoji: '📱', label: 'Celular',  to: '/categorias' }
 ];
 
+/** P-6: el popup (solo o a mano) únicamente en el Home. */
+export const RUTAS_POPUP = ['/'];
+
+/** Donde el acceso "10% OFF activo" NO se muestra. */
 export const RUTAS_FLUJO_COMPRA = ['/carrito', '/checkout', '/pago-exitoso',
   '/pago-transferencia', '/pago-pendiente', '/pago-error'];
 export const RUTAS_SIN_DESCUENTO = ['/personalizados', '/mayorista', '/negocio',
@@ -243,9 +254,8 @@ popup_disparo: {
 |---|---|---|---|
 | `localStorage` | `epicalcos.popup.v1` **(nueva)** | `{ primeraVisitaEn, vistoEn, cerradoEn, convertidoEn, compradoEn }` (timestamps o `null`) | permanente |
 | `sessionStorage` | `epicalcos.popup.sesion.v1` **(nueva)** | `{ inicioEn, autoAbierto, productos: string[], busqueda, categoria, visitante: 'new'\|'returning' }` | la pestaña |
-| `localStorage` | `epicalcos.welcomeCoupon` (existente) | `{ code, emitidoEn }`; con `ventanaMs: null` → `emitidoEn: null` | hasta la compra (P-3) |
+| `localStorage` | `epicalcos.welcomeCoupon` (existente) | `{ code, emitidoEn }`; con `ventanaMs: null` → `emitidoEn: null` | sin vencimiento; sigue después de comprar (P-3) |
 | `localStorage` | `epicalcos.welcomePopup.seen` (existente) | se **lee** para migrar, no se borra (ver §8) | — |
-| `localStorage` | `epicalcos.tamano.v1` (existente) | `'4cm'` al elegir Celular | — |
 
 `productos` guarda slugs de ruta (`/producto/:slug/:num`), sin PII. Se guardan
 hasta 2 distintos: con eso alcanza para decidir.
@@ -254,15 +264,15 @@ hasta 2 distintos: con eso alcanza para decidir.
 
 ```js
 // lib/popupReglas.js — firmas
-rutaPermitida(pathname) → boolean               // fuera de FLUJO_COMPRA y SIN_DESCUENTO
+popupPermitido(pathname) → boolean              // solo RUTAS_POPUP ('/'), P-6
+accesoVisible(pathname, tipo) → boolean         // 'oferta': solo '/'; 'activo': fuera de FLUJO_COMPRA y SIN_DESCUENTO
 puedeAbrirSolo({ estado, sesion, cuponActivo, storageOk, ahora }) → boolean
   // !storageOk → false · sesion.autoAbierto → false · compradoEn → false · cuponActivo → false
   // convertidoEn + 30 d > ahora → false · max(cerradoEn, vistoEn) + 7 d > ahora → false
 disparoCumplido({ variante, esMovil, msEnSitio, msEnPagina, scrollPct, sesion, salida }) → null | 'time' | 'scroll' | 'product_views' | 'search' | 'category' | 'exit_intent'
   // msEnPagina < minMsEnPagina → null siempre (RF-5)
 porcentajeScroll({ scrollY, alto, altoVentana }) → number | null   // null si la página no scrollea
-destinoInteres(interesId) → { to, tamano? }
-destinoCta(pathname) → 'catalog' | 'stay'       // stay en /categoria/*, /producto/*, landings de uso, /categorias
+destinoInteres(interesId) → to                  // el CTA principal siempre va a /categorias
 tipoVisitante(estado, sesion) → 'new' | 'returning'
 migrarEstadoViejo({ seen, cupon, ahora }) → estado | null
 ```
@@ -337,7 +347,7 @@ Ninguna.
 | Riesgo | Mitigación |
 |---|---|
 | Alguien edita `epicalcos.popup.v1` para ver el popup de nuevo | Sin costo: el cupón ya se puede escribir a mano |
-| Con P-2, un EPICA10 sin vencimiento en el navegador | Se olvida después de comprar (P-3). El código ya circulaba sin ventana por mail |
+| EPICA10 sin vencimiento y que sigue después de comprar (P-2, P-3) | Decisión comercial de Mariano. El código ya circulaba sin ventana por mail. Se mide con `cupon_aplicado_en_promo` y con `purchase` por `coupon` |
 | Margen: más pedidos con 10% encima del 3x2 | Se mide con `cupon_aplicado_en_promo`; el tope del 20% no cambia |
 
 ---
@@ -366,8 +376,8 @@ Ninguna.
   - La clave vieja **no se borra**: si se revierte el deploy, el popup viejo la
     sigue respetando.
 - **Cupones guardados con `emitidoEn`**: quedan como están. Si la ventana ya se
-  cerró, siguen cerrados (se les prometió eso). El acceso manual les ofrece
-  activarlo de nuevo, y el nuevo se emite sin ventana.
+  cerró, siguen cerrados (se les prometió eso). Si vuelven a dejar el mail en
+  el Home, el nuevo se emite sin ventana.
 - **Carritos guardados**: no cambian.
 - **Pedidos en Blobs**: no cambian.
 - **Visitantes con el bundle viejo abierto**: siguen con el popup viejo hasta
@@ -381,18 +391,18 @@ Ninguna.
 ## 9. Tests
 
 `frontend/src/lib/popupReglas.test.js`
-- `rutaPermitida`: falso en las 6 rutas del flujo de compra y las 7 sin descuento; verdadero en `/`, `/categorias`, `/categoria/boca`, `/producto/boca/3`, `/calcos-termo`
+- `popupPermitido`: verdadero solo en `/`; falso en `/categorias`, `/categoria/boca`, `/producto/boca/3`, `/calcos-termo`, `/checkout`
+- `accesoVisible`: `oferta` solo en `/`; `activo` falso en las 6 rutas del flujo de compra y las 7 sin descuento, verdadero en `/`, `/categorias`, `/categoria/boca`, `/producto/boca/3`, `/calcos-termo`
 - `puedeAbrirSolo`: storage bloqueado, ya abierto en la sesión, comprado, cupón activo, cerrado hace 6 d (no) y 8 d (sí), visto sin cerrar hace 6 d (no), convertido hace 29 d (no) y 31 d (sí)
 - `disparoCumplido`: nada antes de 5 s en la página aunque se cumpla todo; 12 s compu / 15 s celular; 30% / 50%; 2 productos distintos (el mismo dos veces no); categoría de entrada no cuenta; `c_scroll` no dispara por tiempo; salida solo en compu y con ≥ 5 s en el sitio
 - `porcentajeScroll`: página sin scroll → `null`
-- `destinoInteres`: los 4 destinos existen como ruta en `App.jsx` o en `LANDING_SLUGS`; `celular` trae `tamano: '4cm'` y ese id existe en `SIZES`
-- `destinoCta`: `stay` en catálogo/ficha/landing, `catalog` en `/` y `/contacto`
+- `destinoInteres`: mate → `/categorias`, termo → `/calcos-termo`, notebook → `/calcos-notebook`, celular → `/categorias`; los 4 destinos existen como ruta en `App.jsx` o en `LANDING_SLUGS`
 - `migrarEstadoViejo`: `seen` + cupón → convertido; `seen` sin cupón → cerrado; sin `seen` → `null`
 - **Paridad**: `POPUP_OFERTA.codigo === WELCOME_COUPON_CODE` (de `capture-lead.js`), existe en `COUPONS` del front y del servidor, y el % que muestra el copy es `COUPONS[codigo].discount * 100`
 - `POPUP_VARIANTES` tiene exactamente las variantes de `EXPERIMENTS.popup_disparo`, con `variants[0] === 'b_12s'` igual a `POPUP_CONFIG`
 
 `frontend/src/lib/popupEstado.test.js`
-- con `localStorage` simulado (mismo patrón que `cuponVentana.test.js`): registrar visto/cerrado/convertido/compra persiste; storage que tira no rompe y queda en memoria; `registrarCompra` borra `epicalcos.welcomeCoupon`
+- con `localStorage` simulado (mismo patrón que `cuponVentana.test.js`): registrar visto/cerrado/convertido/compra persiste; storage que tira no rompe y queda en memoria; `registrarCompra` **no** toca `epicalcos.welcomeCoupon` (P-3)
 - `emitirCupon(code, { conVentana: false })` guarda `emitidoEn: null` y `msRestantes` da `Infinity`
 
 Manual (acceptance): disparos reales, teclado en iPhone y Android, foco y
@@ -404,6 +414,7 @@ lector de pantalla, carrito con y sin productos elegibles.
 
 | Semana | Mirar | Decisión |
 |---|---|---|
+| 1 | `popup_view` / sesiones que pasan por el Home | Dice qué parte del tráfico llega a ver el popup con P-6. Si es baja porque los anuncios entran por categorías, es el dato para revisar dónde aparece |
 | 1 | `popup_view` por `popup_trigger` y `device_type`; `popup_close / popup_view` | Si el cierre en celular supera el 85%, revisar el 15 s / 50% |
 | 1 | `popup_email_submit − generate_lead` | Si falla más del 5%, hay un problema de red o del endpoint |
 | 2-4 | Revenue por sesión y CVR de sesiones con `popup_converted` vs sin | El dato que decide si el popup suma |

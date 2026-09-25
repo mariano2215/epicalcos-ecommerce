@@ -39,14 +39,14 @@ Instagram) y un Android real (Chrome). Escritorio: Chrome y Safari.
 ### Disparo
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
-| AC-1 *(RF-1)* | En compu, sin tocar nada, abre a los 12 s (±1 s) | Estado limpio, cronómetro | ⬜ |
-| AC-2 *(RF-1)* | En compu, al 30% de scroll de una página larga, abre antes de los 12 s (y después de los 5 s) | Scrollear a los 6 s | ⬜ |
-| AC-3 *(RF-2)* | En celular abre a los 15 s, o al 50% de scroll | Dos pruebas | ⬜ |
-| AC-4 *(RF-3)* | Abre al ver una 2ª ficha de producto distinta, antes de los 12/15 s | Ficha A, ficha B a los 6 s | ⬜ |
-| AC-5 *(RF-3)* | Abre después de una búsqueda, al salir del campo (+3 s) | Buscar "boca" a los 6 s | ⬜ |
-| AC-6 *(RF-3)* | Entrar directo a `/categoria/x` **no** cuenta como intención; navegar a otra categoría sí | Dos pruebas | ⬜ |
-| AC-7 *(RF-4)* | En compu, sacar el mouse por arriba de la ventana a los 6 s lo abre; a los 3 s no | Dos pruebas | ⬜ |
-| AC-8 *(RF-5)* | Ningún disparo abre antes de 5 s de cargada la página | Entrar a una ficha con 1 ficha vista en la sesión y hacer scroll al 60% enseguida | ⬜ |
+| AC-1 *(RF-1)* | En compu, en el Home, sin tocar nada, abre a los 12 s (±1 s) | Estado limpio, cronómetro | ⬜ |
+| AC-2 *(RF-1)* | En compu, al 30% de scroll del Home, abre antes de los 12 s (y después de los 5 s) | Scrollear a los 6 s | ⬜ |
+| AC-3 *(RF-2)* | En celular, en el Home, abre a los 15 s, o al 50% de scroll | Dos pruebas | ⬜ |
+| AC-4 *(RF-3)* | Ver 2 fichas distintas y volver al Home: abre a los 5 s de llegar, aunque no se cumplan los 12/15 s | Entrar por el Home, ficha A, ficha B, volver | ⬜ |
+| AC-5 *(RF-3)* | Abre después de una búsqueda en el Home, al salir del campo (+3 s) | Buscar "boca" a los 6 s | ⬜ |
+| AC-6 *(RF-3)* | Entrar directo a `/categoria/x` y volver al Home **no** cuenta como intención; entrar por el Home, abrir una categoría y volver, sí | Dos pruebas | ⬜ |
+| AC-7 *(RF-4)* | En compu, en el Home, sacar el mouse por arriba de la ventana a los 6 s lo abre; a los 3 s no | Dos pruebas | ⬜ |
+| AC-8 *(RF-5)* | Ningún disparo abre antes de 5 s de llegar al Home | Ver 2 fichas, volver al Home y scrollear al 60% enseguida | ⬜ |
 | AC-9 *(RF-6)* | Cambiar `POPUP_CONFIG.escritorio.demoraMs` a 3000 (en dev) cambia el disparo sin tocar otro archivo | `npm run dev` | ⬜ |
 
 ### Anti-interrupción
@@ -56,13 +56,13 @@ Instagram) y un Android real (Chrome). Escritorio: Chrome y Safari.
 | AC-11 *(RF-7)* | Con el carrito lateral abierto no abre; abre 3 s después de cerrarlo | Agregar un calco a los 10 s y esperar | ⬜ |
 | AC-12 *(RF-7)* | Con el buscador modal o el menú del celular abiertos no abre | Abrirlos a los 10 s | ⬜ |
 | AC-13 *(RF-7)* | Con la pestaña en segundo plano no abre; abre 3 s después de volver | Cambiar de pestaña 20 s | ⬜ |
-| AC-14 *(RF-8)* | Si se cumple el disparo y entra a `/checkout`, no abre ahí; al volver al catálogo en la misma sesión, abre | Prueba | ⬜ |
+| AC-14 *(RF-8)* | Si el disparo se cumple con el carrito abierto y la persona va al checkout, no abre fuera del Home; al volver al Home en la misma sesión, abre | Prueba | ⬜ |
 
-### Dónde no aparece
+### Dónde aparece
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
-| AC-15 *(RF-9)* | Ni popup ni acceso fijo en `/carrito`, `/checkout`, `/pago-exitoso`, `/pago-transferencia`, `/pago-pendiente`, `/pago-error` | Recorrer las 6 con estado limpio, 30 s cada una | ⬜ |
-| AC-16 *(RF-10)* | Ni popup ni acceso fijo en `/personalizados`, `/mayorista`, `/negocio`, `/polaroid`, `/tatuajes` | Recorrerlas | ⬜ |
+| AC-15 *(RF-9)* | En `/categorias`, `/categoria/x`, `/producto/x/1`, `/calcos-termo`, `/contacto` y `/checkout`, con estado limpio, 30 s y scroll al 80%: el popup **no** abre | Recorrerlas | ⬜ |
+| AC-16 *(RF-10)* | Con el 10% activo, el acceso fijo **no** se ve en `/carrito`, `/checkout`, `/pago-*`, `/personalizados`, `/mayorista`, `/negocio`, `/polaroid`, `/tatuajes` | Recorrerlas | ⬜ |
 
 ### Frecuencia
 | ID | Criterio | Cómo se verifica | Resultado |
@@ -91,18 +91,19 @@ Instagram) y un Android real (Chrome). Escritorio: Chrome y Safari.
 | AC-30 *(RF-24)* | Al enviar, el popup no se cierra y muestra "🎉 ¡Listo! Tu 10% OFF ya está activo" con el código | Prueba | ⬜ |
 | AC-31 *(RF-25)* | "Copiar" pone el código en el portapapeles; donde no se puede, lo deja seleccionado | Chrome + navegador de Instagram | ⬜ |
 | AC-32 *(RF-26)* | Se ve la línea "Se aplica solo en el checkout. Vale para las calcos del catálogo." | Leer | ⬜ |
-| AC-33 *(RF-27, RF-28)* | Mate → `/calcos-termo`; Termo → `/calcos-termo`; Notebook → `/calcos-notebook`; Celular → `/categorias` con la grilla en 4 cm. Las 4 cierran el popup | 4 pruebas | ⬜ |
-| AC-34 *(RF-29)* | "Elegir mis calcos" en el Home va a `/categorias`; en una ficha cierra y se queda en la ficha | Dos pruebas | ⬜ |
+| AC-33 *(RF-27, RF-28)* | Mate → `/categorias`; Termo → `/calcos-termo`; Notebook → `/calcos-notebook`; Celular → `/categorias`. El tamaño elegido de la grilla no cambia. Las 4 cierran el popup | 4 pruebas | ⬜ |
+| AC-34 *(RF-29)* | "Elegir mis calcos" va a `/categorias` y cierra el popup | Prueba | ⬜ |
 | AC-35 *(RF-30)* | Con productos en el carrito aparece "ir a pagar" y lleva a `/checkout`; con el carrito vacío no aparece | Dos pruebas | ⬜ |
 | AC-36 *(RF-31)* | La ✕ está en los dos pasos y el botón principal es visualmente más fuerte | Captura de pantalla | ⬜ |
 
 ### Beneficio activo
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
-| AC-37 *(RF-32)* | Con el 10% activo, el checkout lo aplica solo y **sin contador** (con `ventanaMs: null`) | Entrar al checkout con 3 calcos | ⬜ |
-| AC-38 *(RF-33)* | El acceso "🎁 10% OFF activo" se ve en Home, catálogo, ficha y landing; tocarlo abre el paso 2 | Recorrer | ⬜ |
+| AC-37 *(RF-32)* | Con el 10% activo, el checkout lo aplica solo y **sin contador**, también 20 minutos después de dejar el mail | Esperar 20 min, entrar al checkout con 3 calcos | ⬜ |
+| AC-59 *(RF-32)* | Con 10 calcos, el 3x2 corriendo y transferencia, el descuento es el 3x2 + 10% por transferencia + 10% de EPICA10 con tope del 20%, **igual que hoy en `main`** | Mismo carrito en `main` y en la rama, comparar totales | ⬜ |
+| AC-38 *(RF-33)* | El acceso "🎁 10% OFF activo" se ve en Home, catálogo, ficha y landing; tocarlo despliega el código y Copiar, **sin** abrir el popup | Recorrer | ⬜ |
 | AC-39 *(RF-33)* | A 375 px, el acceso no tapa el botón de WhatsApp ni la barra fija de la ficha | Captura en `/producto/*` | ⬜ |
-| AC-40 *(RF-34)* | Después de cerrar sin mail, aparece "🎁 10% OFF" y abre el paso 1 solo al tocarlo | Prueba | ⬜ |
+| AC-40 *(RF-34)* | Después de cerrar sin mail, en el Home aparece "🎁 10% OFF" y abre el paso 1 solo al tocarlo; en `/categorias` no aparece | Prueba | ⬜ |
 | AC-41 *(RF-35)* | Con 3 calcos del catálogo y el 10% activo, el carrito lateral y `/carrito` muestran "🎁 Tu 10% OFF está activo" y la línea con el monto; el Total es **igual** al del checkout con Mercado Pago | Comparar los dos números | ⬜ |
 | AC-42 *(RF-35)* | Con 10 calcos, "Con transferencia" en `/carrito` es igual al total del checkout por transferencia | Comparar | ⬜ |
 | AC-43 *(RF-36)* | Con el carrito solo de personalizados, se ve el aviso sin monto | Prueba | ⬜ |
@@ -110,8 +111,8 @@ Instagram) y un Android real (Chrome). Escritorio: Chrome y Safari.
 ### Después de comprar
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
-| AC-44 *(RF-37)* | Después de un pedido por transferencia (el de prueba), no hay popup ni acceso fijo en ninguna página | Pedido real de prueba, cancelarlo después | ⬜ |
-| AC-45 *(RF-38)* | Después de ese pedido, el checkout no autocompleta EPICA10; escrito a mano, descuenta | Prueba | ⬜ |
+| AC-44 *(RF-37)* | Después de un pedido por transferencia de prueba **sin** haber dejado el mail: no hay popup ni acceso "🎁 10% OFF" | Pedido real de prueba, cancelarlo después | ⬜ |
+| AC-45 *(RF-37, RF-38)* | Con el 10% activo, después de un pedido de prueba el acceso "10% OFF activo" sigue y el checkout vuelve a aplicar EPICA10 solo | Pedido real de prueba, cancelarlo después | ⬜ |
 
 ### Interruptor y A/B
 | ID | Criterio | Cómo se verifica | Resultado |
@@ -150,7 +151,7 @@ Instagram) y un Android real (Chrome). Escritorio: Chrome y Safari.
 | Página más corta que la pantalla: abre por tiempo | ⬜ |
 | Mail inválido del lado del servidor (400) → mensaje de mail inválido | ⬜ |
 | Chunk del diálogo bloqueado (DevTools → bloquear la URL): no abre y **no** queda marcado como visto | ⬜ |
-| EPICA10 guardado con ventana vencida de antes del deploy: sigue vencido; el acceso ofrece activarlo de nuevo | ⬜ |
+| EPICA10 guardado con ventana vencida de antes del deploy: sigue vencido; dejar el mail de nuevo en el Home entrega uno sin ventana | ⬜ |
 | Bundle viejo abierto al deployar: el popup viejo sigue funcionando contra el endpoint | ⬜ |
 
 ---

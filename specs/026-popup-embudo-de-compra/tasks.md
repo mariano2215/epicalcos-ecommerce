@@ -15,8 +15,8 @@
 La implementación arranca solo cuando Mariano dice *"Implementá la spec 026"*.
 
 - [x] Los tres documentos anteriores están completos
-- [ ] Mariano respondió o aceptó las propuestas de `requirements.md` §12 (P-1 a P-7)
-- [ ] Mariano decidió qué pasa con la spec 025 (P-1)
+- [x] Mariano respondió P-2 a P-7 (25/09/2026, ver `requirements.md` §0)
+- [ ] P-1 (spec 025) sin respuesta: rige la propuesta, la 026 la reemplaza
 - [ ] Mariano aprobó el diseño
 - [ ] **Mariano pidió explícitamente la implementación**
 
@@ -49,7 +49,7 @@ primero, tracking y A/B al final. Cada fase deja la suite en verde.
 ## Fase 2 — Estado y frecuencia
 
 - [ ] **2.1** `frontend/src/lib/popupEstado.js`: `epicalcos.popup.v1` y `epicalcos.popup.sesion.v1`, todo acceso en `try/catch`, copia en memoria, `storageOk()`, `suscribir` + `usePopupEstado()` (mismo patrón que `lib/tamanoElegido.js`)
-- [ ] **2.2** `registrarVisto`, `registrarCerrado`, `registrarConvertido`, `registrarCompra` (esta última también llama `olvidarCupon()`), `registrarSenal`
+- [ ] **2.2** `registrarVisto`, `registrarCerrado`, `registrarConvertido`, `registrarCompra` (esta **no** toca el cupón guardado, P-3), `registrarSenal`
 - [ ] **2.3** Migración de `epicalcos.welcomePopup.seen` con `migrarEstadoViejo`, sin borrar la clave vieja
 - [ ] **2.4** `emitirCupon(code, { conVentana = true } = {})` en `lib/cuponVentana.js`
   - *Verificación*: los tests existentes de `cuponVentana.test.js` pasan sin tocarlos
@@ -59,7 +59,8 @@ primero, tracking y A/B al final. Cada fase deja la suite en verde.
 
 - [ ] **3.1** `components/popup/usePopupDisparo.js`: timer de sesión, scroll con `requestAnimationFrame` y `passive`, salida con `mousemove` previo (se conserva el comentario de `WelcomePopup.jsx:88-100`), intención por `pathname` (`/producto/*`, `/categoria/*` que no sea la de entrada) y por `registrarSenal('search')`
 - [ ] **3.2** `bloqueado()` (design §3) + sondeo cada 1 s + gracia de 3 s; `ultimoCambioCarrito` a partir de `items.length` de `useCart()`
-- [ ] **3.3** El hook se re-arma al navegar (a diferencia de hoy, que solo evalúa al montar) y nunca abre en rutas no permitidas
+- [ ] **3.3** El hook se re-arma al navegar (a diferencia de hoy, que solo evalúa al montar), junta señales en cualquier página y solo abre en `/` (`popupPermitido`)
+  - *Verificación*: con todos los disparos cumplidos en `/categorias`, no abre; al volver a `/`, abre
 - [ ] **3.4** Exposición del A/B: `trackExperimentView` solo si `EXPERIMENTS.popup_disparo.active`, cuando el disparo se arma para alguien elegible
 - [ ] **3.5** `data-popup-bloqueo` en el contenedor del menú del celular de `Header.jsx` cuando `open`
 - [ ] **3.6** `registrarSenal('search')` junto a los dos `trackSearch` de `BuscadorCalcos.jsx`
@@ -70,17 +71,17 @@ primero, tracking y A/B al final. Cada fase deja la suite en verde.
 - [ ] **4.2** `PopupCaptura.jsx`: copy de RF-18, porcentaje desde `COUPONS[POPUP_OFERTA.codigo].discount`, `<form noValidate>`, input `type="email" inputMode="email" autoComplete="email"`, **`text-base`** (16 px) y 48 px de alto, label `sr-only`, botón de 48 px, errores de RF-20/RF-21 con `role="alert"`
 - [ ] **4.3** `leadService.captureLead`: `err.status` y timeout de 10 s con `AbortController`
 - [ ] **4.4** Reducer de estados (design §1): nada de `visible` + `status` + `code` sueltos
-- [ ] **4.5** `PopupExito.jsx`: título, código, **Copiar** (`navigator.clipboard` en `try/catch`, si falla selecciona el texto), línea de P-5, selector de 4 intereses (botones de 44 px, grilla 2×2), CTA "Elegir mis calcos →" según `destinoCta`, link "Ya tengo calcos en el carrito: ir a pagar" si `items.length > 0`. Con `POPUP_OFERTA.ventanaMs` definido, muestra `CuponCountdown`
-- [ ] **4.6** Interés Celular llama `setTamano('4cm')` antes de navegar
+- [ ] **4.5** `PopupExito.jsx`: título, código, **Copiar** (`navigator.clipboard` en `try/catch`, si falla selecciona el texto), línea de P-5, selector de 4 intereses (botones de 44 px, grilla 2×2), CTA "Elegir mis calcos →" a `/categorias`, link "Ya tengo calcos en el carrito: ir a pagar" si `items.length > 0`. Con `POPUP_OFERTA.ventanaMs` definido, muestra `CuponCountdown`
+- [ ] **4.6** Los 4 intereses navegan con `destinoInteres` (mate y celular a `/categorias`, sin tocar el tamaño de la grilla) y cierran el popup
 - [ ] **4.7** ✕ de 44 × 44 px con `aria-label="Cerrar"`, con menos peso visual que el CTA
 - [ ] **4.8** `WelcomePopup.jsx` reescrito como orquestador: `lazy(() => import('./popup/PopupDialogo.jsx'))` precargado cuando el disparo se arma, `Suspense` con `fallback={null}`; si el `import()` falla, no marca visto
-- [ ] **4.9** El comentario de `WelcomePopup.jsx:14-24` se reescribe con la historia (600 px → 2.600 px y 20 s → spec 026) y la mitigación elegida
-  - *Verificación*: el archivo nuevo explica por qué el disparo es "o" y no "y"
+- [ ] **4.9** El comentario de `WelcomePopup.jsx:14-24` se reescribe con la historia (600 px → 2.600 px y 20 s → spec 026: solo en el Home)
+  - *Verificación*: el archivo nuevo explica por qué el popup solo se abre en el Home y por qué ahí el disparo puede ser "o"
 
 ## Fase 5 — Beneficio activo
 
 - [ ] **5.1** Al convertir: `emitirCupon(code, { conVentana: POPUP_OFERTA.ventanaMs != null })`, `registrarConvertido()`
-- [ ] **5.2** `AccesoBeneficio.jsx`: abajo a la izquierda, `z-40`, alto 44 px, `bottom` igual a `WhatsAppButton` (elevado en `/producto/*` y `/personalizados`; el comentario apunta a `WhatsAppButton.jsx` para que no se desincronicen). Estado `activo` → abre paso 2; estado `oferta` (cerrado, sin cupón) → abre paso 1 con `popup_trigger: 'manual'`. Oculto en rutas no permitidas, con `activo: false`, y después de comprar
+- [ ] **5.2** `AccesoBeneficio.jsx`: abajo a la izquierda, `z-40`, alto 44 px, `bottom` igual a `WhatsAppButton` (elevado en `/producto/*` y `/personalizados`; el comentario apunta a `WhatsAppButton.jsx` para que no se desincronicen). Estado `activo` (con `accesoVisible`) → al tocarlo despliega código + Copiar + "Se aplica solo en el checkout" (`aria-expanded`), **sin abrir el popup**; sigue después de comprar. Estado `oferta` (cerrado, sin cupón, sin compra) → solo en `/`, abre el paso 1 con `popup_trigger: 'manual'`. Nada con `POPUP_CONFIG.activo: false`
   - *Verificación*: a 375 px no se superpone con WhatsApp ni con la `StickyMobileBar`
 - [ ] **5.3** `CuponEnCarrito.jsx`: `useCuponEnCarrito({ totalActual, totalTransferActual })` con la guardia de identidad (design §1) y `CuponEnCarritoLinea`
 - [ ] **5.4** `CartDrawer.jsx`: línea arriba del Total y Total con cupón cuando `mostrarMonto`
@@ -88,7 +89,7 @@ primero, tracking y A/B al final. Cada fase deja la suite en verde.
 - [ ] **5.5** `Cart.jsx`: lo mismo, incluida la caja "Con transferencia" con `pricedItems('transferencia', code, …)`
   - *Verificación*: con 10 calcos, "Con transferencia" coincide con el checkout por transferencia
 - [ ] **5.6** `registrarCompra()` al montar `PaymentSuccess.jsx` y `PaymentTransfer.jsx`
-  - *Verificación*: después de comprar, `epicalcos.welcomeCoupon` no existe y el acceso fijo no aparece
+  - *Verificación*: después de comprar, el popup no se abre solo, el acceso "🎁 10% OFF" no aparece y `epicalcos.welcomeCoupon` **sigue** guardado
 
 ## Fase 6 — Tracking
 
@@ -112,7 +113,7 @@ primero, tracking y A/B al final. Cada fase deja la suite en verde.
 
 ## Fase 8 — Documentación
 
-- [ ] **8.1** `docs/business-rules.md` "Popup de bienvenida": disparo, frecuencia, rutas, qué pasa después de comprar, y P-2 si se aceptó
+- [ ] **8.1** `docs/business-rules.md` "Popup de bienvenida": solo en el Home, disparo, frecuencia, sin ventana (P-2), el cupón sigue después de comprar (P-3), acumulación con 3x2 y transferencia confirmada el 25/9. En §3.4 anotar que el popup ya no arranca la ventana
 - [ ] **8.2** `docs/analytics.md`: sección de la spec 026 con los eventos, las propiedades de usuario, cómo leer el funnel y el sesgo de `new_vs_returning` en la primera semana
 - [ ] **8.3** `docs/database.md` §3: `epicalcos.popup.v1`, `epicalcos.popup.sesion.v1`, y que `welcomeCoupon` puede tener `emitidoEn: null`
 - [ ] **8.4** `specs/025-popup-pack-sorpresa/requirements.md`: estado según P-1, con el motivo
