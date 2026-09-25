@@ -10,7 +10,7 @@ import ShippingInfo from '../components/ShippingInfo.jsx';
 import SocialProof from '../components/SocialProof.jsx';
 import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { useCuponEnCarrito, CuponEnCarritoLinea } from '../components/popup/CuponEnCarrito.jsx';
-import { BULK_THRESHOLD } from '../config/pricing.js';
+import { BULK_THRESHOLD, BULK_DISCOUNT_PAYMENT_METHOD } from '../config/pricing.js';
 
 // `custom` = una línea por diseño personalizado: la cantidad son las copias de
 // ESE diseño, así que se edita como cualquier calco del catálogo.
@@ -25,11 +25,19 @@ const esRecargoMaterial = (id) => String(id).startsWith('fixed:material-holograf
 export default function Cart() {
   const {
     items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkSavings,
-    promoActive, promo2x1Active, algunaPromoNxM, promoSavings, digitalOnly
+    promoActive, promo2x1Active, algunaPromoNxM, promoSavings, digitalOnly, pricedItems
   } = useCart();
   const navigate = useNavigate();
   const totalSinCupon = algunaPromoNxM ? subtotal - promoSavings : subtotal;
-  const transferSinCupon = (promoActive ? subtotal - promoSavings : subtotal) - bulkSavings;
+  // "Con transferencia" es lo que cobra el checkout con ese medio, al peso:
+  // sale de `pricedItems`, igual que allá. Hasta el 25/9/2026 era
+  // `subtotal − promoSavings − bulkSavings`, con el 10 % calculado sobre el
+  // precio de lista: con el 3x2 corriendo mostraba $ 9.600 donde el checkout
+  // cobraba $ 10.080 (ver `bulkSavings` en CartContext).
+  const transferSinCupon =
+    bulkSavings > 0
+      ? pricedItems(BULK_DISCOUNT_PAYMENT_METHOD, '', null).reduce((a, i) => a + i.price * i.quantity, 0)
+      : totalSinCupon;
   // El 10% del popup (spec 026). Hook: va antes del `return` del carrito vacío.
   const cupon = useCuponEnCarrito({
     totalActual: totalSinCupon,
@@ -221,7 +229,12 @@ export default function Cart() {
                   <span>{formatPrice(cupon.activo ? cupon.totalTransfer : transferSinCupon)}</span>
                 </div>
                 <p className="text-[11px] text-emerald-400/80 mt-0.5">
-                  Ahorrás {formatPrice(cupon.activo && cupon.mostrarMonto ? cupon.total - cupon.totalTransfer : bulkSavings)} (10% off). Elegís el medio de pago en el checkout.
+                  {/* La resta de los dos números de arriba, así la caja cierra sola. */}
+                  Ahorrás {formatPrice(
+                    cupon.activo && cupon.mostrarMonto
+                      ? cupon.total - cupon.totalTransfer
+                      : totalSinCupon - transferSinCupon
+                  )} (10% off). Elegís el medio de pago en el checkout.
                 </p>
               </div>
             )}

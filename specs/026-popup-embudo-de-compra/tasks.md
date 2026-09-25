@@ -139,7 +139,8 @@ primero, tracking y A/B al final. Cada fase deja la suite en verde.
 | No hay landing de mate ni de celular | `config/landings.js` | Decidir con `popup_interest_selected` después de 4 semanas |
 | El mail del cupón no tiene link de baja | `notify.js` `sendLeadCouponEmail` | Link de baja firmado, como el del carrito abandonado |
 | `CLAUDE.md` y `specs/README.md` dicen "210 tests" | — | Actualizado en 8.5 (682) |
-| **`/carrito` con 10+ calcos y el 3x2: la caja "Con transferencia" muestra menos de lo que cobra el checkout** ($9.600 vs $10.080 con 10 calcos de 6 cm). Resta el 10 % sobre el precio de lista en vez de sobre el precio con 3x2. Bug previo a esta spec | `routes/Cart.jsx` | Calcularla con `pricedItems('transferencia', '', null)`. Mientras tanto, `CuponEnCarrito` lo detecta y muestra el 10 % sin números en ese caso |
+| **`/carrito` con 10+ calcos y el 3x2: la caja "Con transferencia" muestra menos de lo que cobra el checkout** ($9.600 vs $10.080 con 10 calcos de 6 cm). Resta el 10 % sobre el precio de lista en vez de sobre el precio con 3x2. Bug previo a esta spec | `routes/Cart.jsx` | ✅ **Arreglado el 25/9/2026** (a pedido de Mariano): `bulkSavings` del CartContext y la caja salen de `pricedItems`. Test `T-5b` en `promoPricing.test.js` |
+| **El Total de `/carrito` y del carrito lateral puede quedar unos pesos abajo del checkout** con el 3x2 y cantidades no múltiplo de 3 (12 calcos de 6 cm: $ 12.800 vs $ 12.804). El carrito resta el ahorro exacto; el checkout redondea el precio de cada calco. Bug previo | `CartDrawer.jsx`, `Cart.jsx` | Calcular el Total con `pricedItems('mercadopago', '', null)`, igual que "Con transferencia" |
 | La línea "Vale para las calcos del catálogo" se queda corta: con el 3x2 corriendo, EPICA10 también descuenta personalizados (`PROMO_ELIGIBLE_TYPES`) | `PopupExito.jsx`, `AccesoBeneficio.jsx` | Es el copy aprobado (P-5) y promete de menos, no de más. Revisar si se quiere nombrar los personalizados |
 
 ---
@@ -160,3 +161,4 @@ primero, tracking y A/B al final. Cada fase deja la suite en verde.
 | 25/09 | Acceso "🎁 10% OFF" visible en el Home también con storage bloqueado | RF-15: sin storage el popup no abre solo, y sin este acceso esa gente no tenía cómo llegar a la oferta |
 | 25/09 | Título en celular con `pt-5 px-1` en vez de `px-6` | A 375 px "Tenés 10% OFF" se partía en dos renglones (visto en captura) |
 | 25/09 | `/carrito` con 10+ calcos muestra el 10 % sin monto | La guardia detectó el bug previo de la caja "Con transferencia" (hallazgo). En el carrito lateral y con menos de 10 calcos se ve el monto |
+| 25/09 | Arreglado el bug de "Con transferencia" (fuera de la spec, pedido de Mariano). Desde ahí `/carrito` con 10+ calcos muestra el 10 % con monto | La guardia ya no se dispara: la caja coincide con el checkout |

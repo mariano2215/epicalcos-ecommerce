@@ -342,12 +342,8 @@ export function CartProvider({ children }) {
 
     const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
     const totalItems = items.reduce((a, i) => a + i.quantity, 0);
-    const bulkSavings = bulkEligible
-      ? stickerLines.reduce(
-          (a, i) => a + (i.basePrice - round(i.basePrice * (1 - BULK_DISCOUNT))) * i.quantity,
-          0
-        )
-      : 0;
+    // `bulkSavings` (cuánto se ahorra pagando por transferencia) ya NO se calcula
+    // acá: ver el comentario junto a `pricedItems`, más abajo.
     const unitsToBulk = bulkEligible ? 0 : BULK_THRESHOLD - bulkUnits;
 
     // Bolsa común de calcos elegibles (catálogo + personalizados) para las
@@ -426,7 +422,6 @@ export function CartProvider({ children }) {
       totalItems,
       bulkUnits,
       bulkEligible,
-      bulkSavings,
       unitsToBulk,
       eligibleUnitBasePrices,
       unidadesCategoria,
@@ -578,8 +573,33 @@ export function CartProvider({ children }) {
     [derived]
   );
 
+  /**
+   * Cuánto se ahorra pagando por transferencia (sin cupón): la diferencia entre
+   * lo que cobra el checkout con cada medio, sacada de `pricedItems`.
+   *
+   * ⚠️ BUG QUE ARREGLA (25/9/2026). Se calculaba en `derived` como el 10 % del
+   * precio de LISTA de cada calco. Eso solo es cierto sin promo N x M: con el
+   * 3x2 el checkout aplica el 10 % DESPUÉS de la agrupación (`basePrice × keep ×
+   * 0,9`), así que el ahorro real es menor. Con 10 calcos de 6 cm, /carrito
+   * decía "Con transferencia $ 9.600 · ahorrás $ 1.600" y el checkout cobraba
+   * $ 10.080: el carrito prometía un precio que la tienda no cobra. Como el 3x2
+   * no tiene fecha de fin, pasaba con todo carrito de 10+ calcos.
+   *
+   * Sale de la misma función que usa el checkout para que no pueda volver a
+   * separarse: si cambia una regla de precios, cambia sola acá también.
+   */
+  const bulkSavings = useMemo(() => {
+    if (!derived.bulkEligible) return 0;
+    const total = (lineas) => lineas.reduce((a, i) => a + i.price * i.quantity, 0);
+    return (
+      total(pricedItems('mercadopago', '', null)) -
+      total(pricedItems(BULK_DISCOUNT_PAYMENT_METHOD, '', null))
+    );
+  }, [derived.bulkEligible, pricedItems]);
+
   const value = {
     ...derived,
+    bulkSavings,
     pricedItems,
     drawerOpen: state.drawerOpen,
     addSticker,

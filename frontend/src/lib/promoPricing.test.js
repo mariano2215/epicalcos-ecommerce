@@ -1092,6 +1092,41 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
     expect(esperado).toBe(round(l.basePrice * (1 - (ARGENTINA_DISCOUNT + BULK_DISCOUNT))));
   });
 
+  /**
+   * Bug del 25/9/2026: /carrito decía "Con transferencia $ 9.600 · ahorrás
+   * $ 1.600" con 10 calcos de 6 cm, y el checkout cobraba $ 10.080.
+   *
+   * T-5 vale porque ahí los % se SUMAN (50 % de Argentina + 10 %). Con el 3x2
+   * no: la agrupación MULTIPLICA (`basePrice × keep × 0,9`), y el 10 % del
+   * precio de lista deja de ser lo que se ahorra. Por eso `bulkSavings` del
+   * CartContext pasó a ser la resta de lo que se cobra con cada medio.
+   */
+  it('T-5b · con el 3x2, lo que ahorra la transferencia es la resta de los dos cobros, no el 10 % de lista', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    const carrito = [
+      { id: 'sticker:goku:6cm', title: 'Goku', type: 'sticker', basePrice: priceForSize('6cm'), quantity: 10 }
+    ];
+    const cobro = (paymentMethod) => {
+      const res = validateAndPriceOrder({
+        items: clientItems(carrito, { paymentMethod }),
+        shipping: retiro,
+        paymentMethod
+      });
+      expect(res.ok, paymentMethod).toBe(true);
+      return res.items.reduce((a, i) => a + i.unit_price * i.quantity, 0);
+    };
+    const conMP = cobro('mercadopago');
+    const conTransferencia = cobro('transferencia');
+
+    // Lo que calculaba el carrito antes del arreglo: 10 % sobre el precio de lista.
+    const formulaVieja = carrito[0].quantity * (carrito[0].basePrice - round(carrito[0].basePrice * (1 - BULK_DISCOUNT)));
+    expect(conMP - conTransferencia).toBeLessThan(formulaVieja);
+    // La que usa ahora (bulkSavings = cobro MP − cobro transferencia): con 3x2
+    // el 10 % corre sobre lo que queda después de la agrupación.
+    expect(conMP - conTransferencia).toBe(round(conMP * BULK_DISCOUNT));
+  });
+
   it('T-6 · cupón + transferencia + promo acumulan 70% y quedan bajo el tope', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);

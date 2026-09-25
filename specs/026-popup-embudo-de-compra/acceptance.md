@@ -5,7 +5,7 @@
 | **Spec** | `026-popup-embudo-de-compra` |
 | **Requirements** | [`requirements.md`](requirements.md) |
 | **Validado el** | 25/09/2026 (Chromium automatizado contra `vite preview`) |
-| **Resultado** | ⚠️ implementada; falta QA en dispositivos reales y AC-42 no se cumple por un bug anterior |
+| **Resultado** | ⚠️ implementada; falta QA en dispositivos reales |
 
 > Se recorre punto por punto al terminar (`CLAUDE.md` regla 15). No se marca ✅
 > nada que no se haya verificado; lo que no se pudo probar se dice.
@@ -105,7 +105,7 @@ Instagram) y un Android real (Chrome). Escritorio: Chrome y Safari.
 | AC-39 *(RF-33)* | A 375 px, el acceso no tapa el botón de WhatsApp ni la barra fija de la ficha | Captura en `/producto/*` | ✅ sin solaparse en `/producto/*` a 375 px |
 | AC-40 *(RF-34)* | Después de cerrar sin mail, en el Home aparece "🎁 10% OFF" y abre el paso 1 solo al tocarlo; en `/categorias` no aparece | Prueba | ✅ |
 | AC-41 *(RF-35)* | Con 3 calcos del catálogo y el 10% activo, el carrito lateral y `/carrito` muestran "🎁 Tu 10% OFF está activo" y la línea con el monto; el Total es **igual** al del checkout con Mercado Pago | Comparar los dos números | ✅ 3 calcos: carrito lateral y `/carrito` $ 2.880 = checkout con Mercado Pago |
-| AC-42 *(RF-35)* | Con 10 calcos, "Con transferencia" en `/carrito` es igual al total del checkout por transferencia | Comparar | ❌ **no se cumple, por un bug anterior**: con 10 calcos, "Con transferencia" en `/carrito` ya mostraba $9.600 contra $10.080 del checkout **sin cupón**. La guardia lo detecta y muestra el 10 % sin números (RF-36). Ver hallazgo en `tasks.md` |
+| AC-42 *(RF-35)* | Con 10 calcos, "Con transferencia" en `/carrito` es igual al total del checkout por transferencia | Comparar | ✅ desde el arreglo del 25/9/2026 (ver `tasks.md`, hallazgos): con 10 calcos, $ 10.080 sin cupón y $ 8.960 con EPICA10, igual que el checkout. Antes del arreglo no se cumplía por un bug previo a esta spec |
 | AC-43 *(RF-36)* | Con el carrito solo de personalizados, se ve el aviso sin monto | Prueba | ⚠️ por lectura de código (sin calcos elegibles `conCupon === totalActual` → aviso sin monto); no se armó un carrito solo de personalizados en el navegador |
 
 ### Después de comprar
@@ -163,7 +163,7 @@ Instagram) y un Android real (Chrome). Escritorio: Chrome y Safari.
 | `npm test` en verde (623 + nuevos) | ✅ 682 / 682 |
 | Un cupón escrito a mano (EPICA10, EPI50) se aplica igual en el checkout | ✅ por lectura: `Checkout.jsx` no cambió |
 | `?cupon=EPICA10` en la URL del checkout sigue funcionando | ✅ por lectura: `Checkout.jsx` no cambió |
-| El 3x2 y el 10% por transferencia calculan igual en carrito y checkout | ⚠️ ningún cálculo cambió, pero **ya no coincidían** en la caja "Con transferencia" de `/carrito` (AC-42) |
+| El 3x2 y el 10% por transferencia calculan igual en carrito y checkout | ✅ "Con transferencia" arreglado el 25/9. ⚠️ Queda una diferencia de redondeo en el Total con cantidades no múltiplo de 3 (hallazgo en `tasks.md`) |
 | Un pedido por Mercado Pago y uno por transferencia con EPICA10 pasan sin `price_mismatch` | ⚠️ `promoPricing.test.js` en verde y el servidor no cambió; **no se hizo un pedido real** (no hay functions en este entorno) |
 | El formulario de contacto sigue mandando `generate_lead` con `lead_source: 'contacto_form'` y nada más | ✅ por lectura: no pasa el 2º parámetro |
 | El buscador y el menú del celular funcionan igual | ✅ usados en las pruebas |
@@ -241,10 +241,9 @@ La spec **no toca** ningún `pricing.js`. Se verifica igual:
 
 ### Criterios no cumplidos
 
-- **AC-42**: la caja "Con transferencia" de `/carrito` ya calculaba mal antes
-  de esta spec (resta el 10 % sobre el precio de lista). Con el 10 % del popup
-  activo y 10+ calcos, la guardia muestra el aviso sin monto en vez de un número
-  equivocado. El arreglo es otra spec (hallazgo en `tasks.md`).
+- Ninguno. **AC-42** no se cumplía por un bug anterior a esta spec (la caja
+  "Con transferencia" de `/carrito` restaba el 10 % sobre el precio de lista);
+  se arregló el 25/9/2026 a pedido de Mariano y ahora se cumple.
 
 ### Pendiente de verificar (no se pudo desde este entorno)
 
