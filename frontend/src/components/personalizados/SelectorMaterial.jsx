@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { MATERIALES, MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO } from '../../config/personalizados.js';
+import { MATERIALES, MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO, PACK_HOLOGRAFICO } from '../../config/personalizados.js';
 import { MATERIAL_COPY } from '../../config/personalizadosLanding.js';
 import { formatPrice } from '../../lib/formato.js';
 import { trackPersonalizedMaterialSelected } from '../../lib/analytics.js';
@@ -12,7 +12,9 @@ import { Swatch } from './swatches.jsx';
  *
  * El recargo del Vinilo Holográfico se muestra en LA CARD, no escondido en el
  * total de más abajo (RF-MAT5): quien elige tiene que ver el "+$15.000" en el
- * momento de elegir, no descubrirlo recién en el total.
+ * momento de elegir, no descubrirlo recién en el total. Lo mismo el pack de
+ * 100 (enmienda 26/9/2026, RF-MAT15): quien quería 10 holográficas se tiene
+ * que enterar acá, no en el total.
  */
 export default function SelectorMaterial({ valor, onElegir }) {
   const refs = useRef([]);
@@ -59,7 +61,10 @@ export default function SelectorMaterial({ valor, onElegir }) {
               <Swatch kind="material" id={m.id} />
               <span className="font-display font-extrabold text-base mt-1">{m.label}</span>
               {esHolografico ? (
-                <span className="text-[11px] text-brand-fuchsia font-semibold">+{formatPrice(RECARGO_HOLOGRAFICO.precio)}</span>
+                <>
+                  <span className="text-[11px] text-brand-fuchsia font-semibold">+{formatPrice(RECARGO_HOLOGRAFICO.precio)}</span>
+                  <span className="text-[10px] text-white/45 leading-tight mt-0.5">Pack de {PACK_HOLOGRAFICO.qty} calcos</span>
+                </>
               ) : (
                 <span className="text-[11px] text-white/45">Sin recargo</span>
               )}

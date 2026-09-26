@@ -3,7 +3,7 @@ import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
 import { usePromoActive, use2x1PromoActive } from '../lib/promo.js';
 import { useAvisoDesbloqueo } from '../lib/promoUnlock.js';
 import { META_LINE_SKU, FIXED_SKU, DIGITAL_SKU } from '../config/metaCatalog.js';
-import { getTamano } from '../config/personalizados.js';
+import { getTamano, MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO } from '../config/personalizados.js';
 import {
   priceForSize,
   sizeLabel,
@@ -61,13 +61,45 @@ export const esCustomViejo = (id) => {
   return !getTamano(s.split(':')[1]);
 };
 
+/**
+ * Calcos holográficas SUELTAS (`custom:{tamano}:{corte}:vinilo-holografico:{id}`),
+ * de entre el 22 y el 26/9/2026. Desde la enmienda del 26/9 el holográfico va
+ * solo en packs de 100 y el servidor rechaza esta línea: igual que con
+ * `esCustomViejo`, si sobrevivió en el localStorage de alguien le trabaría el
+ * checkout entero con un "recargá la página" que recargando no se arregla.
+ */
+export const esCustomHolografico = (id) => {
+  const parts = String(id).split(':');
+  return parts[0] === 'custom' && parts.length >= 5 && parts[3] === MATERIAL_HOLOGRAFICO_ID;
+};
+
+/**
+ * Lo que se descarta al hidratar: las líneas que el servidor ya no acepta y,
+ * con cada `custom:` holográfica, SU recargo (`fixed:material-holografico:{id}`,
+ * ligado por el último segmento). Sin eso el recargo quedaría solo y el
+ * servidor lo rechazaría como huérfano. Los recargos de un pack `negocio:`
+ * holográfico no se tocan: ese pedido sigue siendo válido.
+ */
+export function purgarLineasRetiradas(items) {
+  if (!Array.isArray(items)) return [];
+  const retiradas = new Set();
+  const recargos = new Set();
+  for (const i of items) {
+    if (esCustomViejo(i?.id) || esCustomHolografico(i?.id)) {
+      retiradas.add(i.id);
+      if (esCustomHolografico(i.id)) recargos.add(`fixed:${RECARGO_HOLOGRAFICO.id}:${String(i.id).split(':').at(-1)}`);
+    }
+  }
+  return items.filter((i) => !retiradas.has(i?.id) && !recargos.has(i?.id));
+}
+
 /** Hidratación síncrona desde localStorage en el primer render (evita el race con el persist). */
 function initState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const items = raw ? JSON.parse(raw) : [];
     return {
-      items: Array.isArray(items) ? items.filter((i) => !esCustomViejo(i?.id)) : [],
+      items: purgarLineasRetiradas(items),
       drawerOpen: false
     };
   } catch {
@@ -274,8 +306,8 @@ export function CartProvider({ children }) {
       const item = state.items.find((i) => i.id === id);
       if (item) trackRemoveFromCart({ ...item, price: precioVidrieraLinea(item) });
       dispatch({ type: 'REMOVE', id });
-      // Enmienda 22/9/2026: sacar un diseño en Vinilo Holográfico —o la línea de
-      // Negocio a la que el configurador lo haya topeado, ver precioEfectivoTanda—
+      // Enmienda 22/9/2026: sacar un diseño en Vinilo Holográfico —hoy, el pack
+      // `negocio:vinilo-holografico:…` (enmienda 26/9/2026)—
       // saca también su línea de recargo (`fixed:material-holografico:{id}`) — sin
       // esto quedaría cobrándose sola, sin lo que la originó (RF-MAT7 solo cubre
       // que NO falte; esto cubre que no sobre). En los dos casos el id que liga

@@ -86,6 +86,55 @@ describe('nota del pedido con personalizados', () => {
     expect(nota).not.toContain('(x10)');
   });
 
+  it('el pack holográfico dice material, tamaño, corte, x100 entre N diseños, links y notas (enmienda 26/9/2026)', () => {
+    const nota = buildDesignSummary([
+      {
+        id: 'negocio:vinilo-holografico:4cm:1',
+        type: 'negocio',
+        name: 'Holográfico · 100u 4 cm',
+        quantity: 1,
+        meta: {
+          qty: 100,
+          size: '4cm',
+          tamanoLabel: '4 cm',
+          material: 'vinilo-holografico',
+          materialLabel: 'Vinilo Holográfico',
+          corte: 'circulo',
+          corteLabel: 'Círculo',
+          disenos: 2,
+          instrucciones: '70 del logo',
+          archivos: [
+            { nombre: 'logo.png', url: 'https://cdn/logo.png' },
+            { nombre: 'gato.png', url: 'https://cdn/gato.png' }
+          ]
+        }
+      },
+      { id: 'fixed:material-holografico:1', type: 'fixed', name: 'Recargo · Vinilo Holográfico', quantity: 1 }
+    ]);
+    expect(nota).toBe(
+      'PEDIDO: Vinilo Holográfico (4 cm, corte Círculo, x100 entre 2 diseños) | diseños (2): https://cdn/logo.png , https://cdn/gato.png | notas: 70 del logo'
+    );
+  });
+
+  it('el pack holográfico de un diseño no dice "entre 1 diseños", y sin Cloudinary avisa WhatsApp', () => {
+    const nota = buildDesignSummary([
+      {
+        type: 'negocio',
+        name: 'Holográfico · 100u 6 cm',
+        meta: {
+          qty: 100,
+          tamanoLabel: '6 cm',
+          material: 'vinilo-holografico',
+          materialLabel: 'Vinilo Holográfico',
+          corteLabel: 'Silueta',
+          instrucciones: null,
+          archivos: [{ nombre: 'logo.png', url: null }]
+        }
+      }
+    ]);
+    expect(nota).toBe('PEDIDO: Vinilo Holográfico (6 cm, corte Silueta, x100) | diseños (1): logo.png — se envían por WhatsApp');
+  });
+
   it('no toca packs, negocio ni productos fijos', () => {
     const nota = buildDesignSummary([
       { type: 'fixed', name: 'Polaroid x10', meta: { archivos: [{ nombre: 'foto.jpg', url: 'https://cdn/foto.jpg' }] } }

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useCart } from '../../context/CartContext.jsx';
 import { usePromoActive } from '../../lib/promo.js';
 import { formatPrice } from '../../lib/formato.js';
-import { estadoCta, construirLineas, disenosListos } from '../../lib/borradorPersonalizado.js';
+import { estadoCta, construirLineas, construirLineaHolografica, disenosListos } from '../../lib/borradorPersonalizado.js';
 import { precioEfectivoTanda, convieneNegocio } from '../../lib/precioPersonalizados.js';
 import { trackPersonalizedAddToCart } from '../../lib/analytics.js';
 import { CTA } from '../../config/personalizadosLanding.js';
@@ -12,11 +12,11 @@ import { customImageDataUri } from './swatches.jsx';
 import { borrador } from './useBorrador.js';
 import { IDS, abrirSelector, irA } from './acciones.js';
 
-/** Agrega la línea de recargo del Vinilo Holográfico, ligada por id a `disenoId` (RF-MAT3). */
-function agregarRecargoHolografico(addFixed, disenoId) {
+/** Agrega la línea de recargo del pack holográfico, ligada por el último segmento del id del pack. */
+function agregarRecargoHolografico(addFixed, idLigado) {
   addFixed(
     {
-      id: `${RECARGO_HOLOGRAFICO.id}:${disenoId}`,
+      id: `${RECARGO_HOLOGRAFICO.id}:${idLigado}`,
       name: 'Recargo · Vinilo Holográfico',
       categoryLabel: 'Personalizados',
       price: RECARGO_HOLOGRAFICO.precio
@@ -36,6 +36,10 @@ function agregarRecargoHolografico(addFixed, disenoId) {
  * como calcos `custom:` sueltos — así el total nunca queda por encima de lo
  * que cuesta tomar la promo. Con más de un diseño no aplica: Negocio es
  * específicamente "100 de UN diseño" (ver precioPersonalizados.js).
+ *
+ * Enmienda 26/9/2026: Vinilo Holográfico va SIEMPRE como pack de 100 (una
+ * línea para toda la tanda + su recargo), antes que cualquier otra cuenta —
+ * `construirLineas()` ni siquiera emite líneas holográficas sueltas.
  */
 export function useAgregarAlCarrito() {
   const { addCustom, addFixed, addNegocio, openDrawer } = useCart();
@@ -45,7 +49,9 @@ export function useAgregarAlCarrito() {
     const e = store.leer();
     if (estadoCta(e).tipo !== 'agregar') return;
     const disenos = disenosListos(e);
+    const esHolografico = e.material === MATERIAL_HOLOGRAFICO_ID;
     const esNegocio =
+      !esHolografico &&
       disenos.length === 1 &&
       e.tamano === NEGOCIO.size &&
       convieneNegocio({ tamano: e.tamano, copias: e.copias, promoActiva });
@@ -53,12 +59,19 @@ export function useAgregarAlCarrito() {
     const c = precioEfectivoTanda({ tamano: e.tamano, copias: e.copias, disenos: disenos.length, promoActiva, material: e.material });
     let itemsParaTrack; // lo que en verdad quedó en el carrito, para GA4/Meta (nunca una línea fantasma)
 
-    if (esNegocio) {
+    if (esHolografico) {
+      const ts = Date.now();
+      const pack = construirLineaHolografica(e, { imagenGenerica: customImageDataUri(), ts });
+      if (!pack) return;
+      addNegocio(pack);
+      agregarRecargoHolografico(addFixed, ts);
+      itemsParaTrack = [{ ...pack, price: pack.basePrice }];
+    } else if (esNegocio) {
       const [d] = disenos;
       const [previa] = construirLineas(e, { imagenGenerica: customImageDataUri() }); // solo para la imagen del archivo
       const ts = Date.now();
       const lineaNegocio = {
-        id: e.material === MATERIAL_HOLOGRAFICO_ID ? `negocio:${MATERIAL_HOLOGRAFICO_ID}:${ts}` : `negocio:${ts}`,
+        id: `negocio:${ts}`,
         // Sin el nombre del archivo (a diferencia de una línea `custom:`): acá
         // el cliente tiene UNA sola línea de Negocio, no hace falta distinguirla
         // de otras, y `nombreParaAnalytics()` no sabe limpiar un `negocio:` —
@@ -72,18 +85,11 @@ export function useAgregarAlCarrito() {
         meta: { qty: NEGOCIO.qty, size: NEGOCIO.size, archivos: [{ nombre: d.nombre, pesoMB: d.pesoMB, url: d.url || null }] }
       };
       addNegocio(lineaNegocio);
-      if (e.material === MATERIAL_HOLOGRAFICO_ID) agregarRecargoHolografico(addFixed, ts);
       itemsParaTrack = [{ ...lineaNegocio, price: NEGOCIO.price }];
     } else {
       const lineas = construirLineas(e, { imagenGenerica: customImageDataUri() });
       if (!lineas.length) return;
-      for (const l of lineas) {
-        addCustom(l, { openDrawer: false, silent: true });
-        // Recargo fijo por diseño del Vinilo Holográfico (enmienda 22/9/2026,
-        // RF-MAT3): línea aparte, quantity 1, nunca mezclada con el unitario de
-        // `l` — ver el comentario de `construirLineas()` sobre por qué.
-        if (e.material === MATERIAL_HOLOGRAFICO_ID) agregarRecargoHolografico(addFixed, l.id.split(':').at(-1));
-      }
+      for (const l of lineas) addCustom(l, { openDrawer: false, silent: true });
       itemsParaTrack = lineas.map((l) => ({ ...l, price: c.unitario }));
     }
 

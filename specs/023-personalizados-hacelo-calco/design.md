@@ -429,6 +429,58 @@ regla de §3.5 (sacar el diseño saca su recargo) se extiende a
 funciona sin cambios para las dos formas (`negocio:{ts}` → ningún recargo que
 encontrar, no-op; `negocio:{material}:{ts}` → lo encuentra y lo saca).
 
+### 3.7 Holográfico en packs de 100 (enmienda 26/9/2026, RF-MAT11…15)
+
+**La regla**: todo pedido holográfico es un pack de 100 calcos en 4 o 6 cm,
+repartidas entre los diseños de la tanda, a `NEGOCIO.price` ($39.999) +
+`RECARGO_HOLOGRAFICO.precio` ($15.000). Ya no existe la calco holográfica
+suelta: el precio por unidad del holográfico no está definido.
+
+**Reutiliza la línea que ya existe y ya se valida** (`negocio:{material}:…` de
+§3.6 + `fixed:material-holografico:{ts}`), en vez de un tipo de línea nuevo.
+El servidor ya sabe cobrarla a $39.999, exigir su recargo y rechazar un
+recargo huérfano; `removeItem` ya las acopla; `Cart.jsx` ya no la hace
+editable. Lo que cambia es el alcance: deja de ser "1 diseño en 6 cm que
+topeó" y pasa a ser **el único camino** del holográfico.
+
+| Pieza | Cambio |
+|---|---|
+| Id de la línea | `negocio:vinilo-holografico:{tamano}:{ts}` — gana el TAMAÑO como tercer segmento para que el servidor valide 4/6 cm (el precio es el mismo en los dos, pero sin el tamaño en el id el servidor no podría rechazar un 9 cm). El id ligado sigue siendo el último segmento. La forma de 3 segmentos de §3.6 (`negocio:vinilo-holografico:{ts}`, 6 cm implícito) se sigue aceptando: es exactamente un pack de 100 y puede haber carritos guardados con ella |
+| `meta` | `{ qty: 100, size, tamanoLabel, material, materialLabel, corte, corteLabel, disenos, instrucciones, archivos: [todos los diseños] }` — lo que el taller necesita para producir. `name` = `Holográfico · 100u {tamaño}`, sin nombre de archivo (PII, mismo criterio que §3.6) |
+| `config/personalizados.js` | `PACK_HOLOGRAFICO = { qty: NEGOCIO.qty, precio: NEGOCIO.price, tamanos: ['4cm','6cm'] }` y `tamanoPermitido(tamano, material)`. El precio SALE de `NEGOCIO` a propósito: la línea es `negocio:` y el servidor la cobra con `NEGOCIO_PRICE`; una constante propia podría desincronizarse de lo que el servidor cobra |
+| `lib/precioPersonalizados.js` | `cotizarTanda()` pierde `material`/`disenos` (ya no hay recargo por unidad; `recargo` queda en 0 en la forma). `precioEfectivoTanda()` con holográfico devuelve `cotizarPackHolografico()`: `{ total: 54.999, unidades: 100, recargo: 15.000, esHolografico: true, ahorro: 0 }`, sin importar copias, diseños ni 3x2. 9 cm → `configuracionCompleta: false`. **Sin "ahorrás"**: no hay un precio de lista holográfico contra el cual comparar, y un % inventado sería una promesa sin respaldo |
+| `lib/borradorPersonalizado.js` | `construirLineaHolografica(e, { ts })` (pura, testeable en Node). `construirLineas()` devuelve `[]` con holográfico: nunca emite una `custom:` holográfica. `setMaterial(holo)` con 9 cm → `tamano: null`; `setTamano('9cm')` con holo → se ignora; `hidratar` hace lo mismo con un borrador guardado |
+| `BotonCta.jsx` | Rama holográfica PRIMERO: `addNegocio(linea)` + recargo ligado por `ts`. La rama de Negocio pierde su caso holográfico (ya no puede llegar ahí) |
+| `SelectorMaterial.jsx` | La card dice "+$15.000" y "Pack de 100 calcos" |
+| `SelectorTamano.jsx` | Recibe `material`: con holo, 9 cm queda `disabled` ("No disponible en holográfico") y las flechas lo saltean; 4/6 cm muestran el precio del pack en vez del "c/u" |
+| `SelectorCantidad.jsx` | Con holo: sin −/+ ni atajos; texto fijo "Pack de 100 calcos" (+ "repartidas entre tus N diseños" si hay más de uno); total con etiqueta "Pack holográfico" y el renglón del recargo; sin nada del 3x2 |
+| `HeroConfigurador.jsx` | Pasa `material` a `SelectorTamano`; el cartel de Negocio no aparece con holo |
+| `CartContext.jsx` | `purgarLineasRetiradas()` al hidratar: `esCustomViejo` + `custom:` holográficas + el recargo ligado a cada una. `removeItem` sin cambios |
+| `lib/resumenPedido.js` | Rama propia para el pack: `Holográfico (4 cm, corte Silueta, x100 entre 3 diseños) \| diseños (3): links \| notas: …`. La rama `Negocio "…"` de siempre imprimiría `Negocio "undefined"` y perdería corte y notas |
+| `netlify/functions/lib/pricing.js` | Rama `custom`: material holográfico → `item_invalid` ("el Vinilo Holográfico va en packs de 100"). Rama `negocio`: 4 segmentos → material tiene que ser holográfico y `parts[2]` ∈ `HOLOGRAFICO_TAMANOS` (`['4cm','6cm']`, espejo de `PACK_HOLOGRAFICO.tamanos`) |
+| `personalizadosLanding.js` | `PRECIOS.bajada` deja de decir "sin mínimo" a secas: el holográfico va en packs de 100 (la cantidad sale de `PACK_HOLOGRAFICO.qty`) |
+
+**Módulos compartidos que toca** (regla 9): `netlify/functions/lib/pricing.js`
+(lo importan `create-preference.js`, `create-order-transfer.js` y los tests
+de paridad) — el cambio es solo en las ramas `custom` y `negocio`, y solo
+para el material holográfico; `CartContext.jsx` — solo la hidratación.
+`config/pricing.js` no se toca.
+
+**Carritos guardados** (regla 11): una `custom:` holográfica del 22–26/9 no
+es un pack de 100, así que el servidor la rechaza. Se purga al hidratar junto
+con su recargo (mismo precedente que `esCustomViejo`): si no, el checkout se
+trabaría con un "recargá la página" que no se arregla recargando.
+
+**Constantes espejadas (nuevas)**:
+| Frontend | Servidor |
+|---|---|
+| `PACK_HOLOGRAFICO.tamanos = ['4cm','6cm']` | `HOLOGRAFICO_TAMANOS = ['4cm','6cm']` |
+| `PACK_HOLOGRAFICO.precio = NEGOCIO.price` | `NEGOCIO_PRICE` (ya espejado) |
+
+**Analytics**: sin eventos nuevos. `personalized_add_to_cart` manda
+`units: 100` y `value: 54999` para el pack; `items` lleva la línea `negocio:`
+real (nunca el recargo como ítem, igual que §3.6).
+
 ### Persistencia
 | Dónde | Qué | Ref. |
 |---|---|---|

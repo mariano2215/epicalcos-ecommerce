@@ -6,14 +6,15 @@
  *   unitario = precio(tamaño)   →  4 cm $1.200 · 6 cm $1.600 · 9 cm $2.000
  *   total    = unitario × cantidad
  *
- * NO hay mínimo de compra (antes eran 10). El cliente elige TAMAÑO + CORTE +
- * MATERIAL, sube su archivo y listo.
+ * NO hay mínimo de compra (antes eran 10) — salvo en Vinilo Holográfico, que
+ * va en packs de 100 (ver abajo). El cliente elige TAMAÑO + CORTE + MATERIAL,
+ * sube su archivo y listo.
  *
  * MATERIAL (enmienda 22/9/2026, spec 023 §7.9): Vinilo Blanco y DTF UV no
- * cambian el precio de arriba. Vinilo Holográfico suma `RECARGO_HOLOGRAFICO`
- * FIJO POR DISEÑO (no por copia) — ver `lib/precioPersonalizados.js` y el
- * comentario de `construirLineas()` en `lib/borradorPersonalizado.js` sobre
- * por qué es una línea de carrito aparte y no un ajuste al unitario.
+ * cambian el precio de arriba. Vinilo Holográfico NO tiene precio por unidad:
+ * desde la enmienda del 26/9/2026 se vende SOLO en packs de 100
+ * (`PACK_HOLOGRAFICO`, más abajo) + `RECARGO_HOLOGRAFICO` por pack — ver
+ * `cotizarPackHolografico()` en `lib/precioPersonalizados.js`.
  *
  * ⚠️ ESPEJO OBLIGATORIO: la rama `custom` de `netlify/functions/lib/pricing.js`
  * re-precia con el MISMO SIZE_PRICES, y `FIXED_PRICES['material-holografico']`
@@ -22,7 +23,7 @@
  * el checkout se rechaza con `price_mismatch`. El test
  * `src/lib/precioPersonalizados.test.js` verifica que ambos lados coincidan.
  */
-import { SIZES } from './pricing.js';
+import { SIZES, NEGOCIO } from './pricing.js';
 
 /**
  * Tamaños: se derivan de SIZES (`config/pricing.js`) para no duplicar la lista de
@@ -45,8 +46,8 @@ export const CORTES = [
 
 /**
  * Materiales (enmienda 22/9/2026, spec 023 §7.9). Vinilo Blanco y DTF UV NO
- * cambian el precio (valen lo mismo que el tamaño); Vinilo Holográfico suma
- * `RECARGO_HOLOGRAFICO` FIJO POR DISEÑO, no por copia — ver `precioPersonalizados.js`.
+ * cambian el precio (valen lo mismo que el tamaño); Vinilo Holográfico va en
+ * packs de 100 (`PACK_HOLOGRAFICO`) + `RECARGO_HOLOGRAFICO` — ver `precioPersonalizados.js`.
  *
  * ⚠️ ESPEJO OBLIGATORIO: `RECARGO_HOLOGRAFICO.precio` está espejado en
  * `netlify/functions/lib/pricing.js` (`FIXED_PRICES['material-holografico']`).
@@ -63,13 +64,30 @@ export const MATERIAL_POR_DEFECTO = 'vinilo-blanco';
 export const MATERIAL_HOLOGRAFICO_ID = 'vinilo-holografico';
 
 /**
- * Recargo fijo por diseño (no por copia) del Vinilo Holográfico. `id` es el id
- * del producto de precio fijo (línea `fixed:material-holografico:{disenoId}`),
- * NO el id del material (`MATERIAL_HOLOGRAFICO_ID`) — son dos ids distintos a
+ * Recargo del Vinilo Holográfico: UNO por pack de 100 (enmienda 26/9/2026 —
+ * hasta entonces era uno por diseño, con cualquier cantidad). `id` es el id
+ * del producto de precio fijo (línea `fixed:material-holografico:{ts}`), NO el
+ * id del material (`MATERIAL_HOLOGRAFICO_ID`) — son dos ids distintos a
  * propósito: uno identifica el material que elige el cliente, el otro la
  * línea de cobro que ese material dispara.
  */
 export const RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 15000 };
+
+/**
+ * Pack holográfico (enmienda 26/9/2026, spec 023 RF-MAT11…15). Mariano: "el
+ * recargo holográfico de $15.000 es por 100 calcos en el pedido de $39.999,
+ * no por cada sticker. La compra mínima para HOLOGRÁFICOS es de 100 calcos."
+ * Solo en 4 y 6 cm, y con varios diseños las 100 son EN TOTAL, repartidas.
+ *
+ * `qty` y `precio` salen de `NEGOCIO` a propósito, no de un número propio: el
+ * pack viaja como una línea `negocio:vinilo-holografico:{tamano}:{ts}` y el
+ * servidor la cobra con NEGOCIO_PRICE. Un precio escrito acá aparte podría
+ * quedar distinto del que cobra el servidor y trabar el checkout.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO: `tamanos` = `HOLOGRAFICO_TAMANOS` en
+ * `netlify/functions/lib/pricing.js` (lo verifica `precioPersonalizados.test.js`).
+ */
+export const PACK_HOLOGRAFICO = { qty: NEGOCIO.qty, precio: NEGOCIO.price, tamanos: ['4cm', '6cm'] };
 
 /** Cantidad: SIN mínimo de compra. El tope espeja MAX_QTY_PER_LINE del backend. */
 export const CANTIDAD = { min: 1, max: 1000, default: 1 };
@@ -153,6 +171,10 @@ export const extension = (nombre) => {
 export const getTamano = (id) => TAMANOS.find((t) => t.id === id) || null;
 export const getCorte = (id) => CORTES.find((c) => c.id === id) || null;
 export const getMaterial = (id) => MATERIALES.find((m) => m.id === id) || null;
+
+/** ¿Se puede pedir este tamaño en este material? El holográfico, solo 4 y 6 cm. */
+export const tamanoPermitido = (tamano, material) =>
+  Boolean(getTamano(tamano)) && (material !== MATERIAL_HOLOGRAFICO_ID || PACK_HOLOGRAFICO.tamanos.includes(tamano));
 
 /** Cantidad saneada dentro de los límites (entero, sin mínimo comercial). */
 export const clampCantidad = (n) =>

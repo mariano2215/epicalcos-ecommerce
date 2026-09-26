@@ -32,6 +32,16 @@
 > volumen) que se sacó por completo antes de esta spec — este cambio es
 > deliberadamente más chico que aquel.
 
+> **Enmienda del 26/9/2026 — Holográfico en packs de 100** (§7.9, RF-MAT11…15):
+> Mariano corrigió la regla del holográfico: *"el recargo holográfico de
+> $15.000 es por 100 calcos en el pedido de $39.999, no por cada sticker. La
+> compra mínima para HOLOGRÁFICOS es de 100 calcos."* Respuestas a las dos
+> dudas que dejaba abiertas (26/9/2026): se puede pedir en **4 y 6 cm**, y con
+> varios diseños las **100 calcos son en total**, repartidas entre ellos — se
+> cobra una sola vez. Esto **reemplaza** RF-MAT3 (recargo fijo por diseño,
+> con cualquier cantidad) y deja sin efecto RF-MAT10 como caso aparte: todo
+> pedido holográfico es ahora un pack de 100.
+
 ---
 
 ## 1. Problema
@@ -315,14 +325,19 @@ Organizado por prioridad (la del brief).
 |---|---|---|
 | RF-MAT1 | Selector de material con tres opciones: **Vinilo Blanco**, **DTF UV**, **Vinilo Holográfico**, cada una con su propio ícono SVG (mismo lenguaje visual que los swatches de tamaño y corte) | 🔴 must |
 | RF-MAT2 | Vinilo Blanco y DTF UV valen lo mismo que hoy (precio de lista por tamaño, sin recargo) | 🔴 must |
-| RF-MAT3 | Vinilo Holográfico suma un recargo **fijo de $15.000 por diseño**, sin importar la cantidad de copias: el unitario por copia NO cambia, se agrega una vez por diseño | 🔴 must |
+| ~~RF-MAT3~~ | ~~Vinilo Holográfico suma un recargo **fijo de $15.000 por diseño**, sin importar la cantidad de copias~~ — **reemplazado por RF-MAT11…15** (enmienda 26/9/2026) | — |
 | RF-MAT4 | Sin preselección forzada de material: arranca en Vinilo Blanco (D-4 ya establece "sin preselección" para tamaño; acá el default es explícito porque no hay un material "sin elegir" que tenga sentido mostrar) | 🟡 should |
 | RF-MAT5 | El total del configurador (RF-Q2) incluye el recargo cuando corresponde, y el recargo se ve como su propio concepto (no diluido en el "unitario") | 🔴 must |
 | RF-MAT6 | El recargo **no** participa de ningún descuento: ni 3x2, ni cupón, ni 10 % por transferencia | 🔴 must |
 | RF-MAT7 | Un carrito manipulado para quedarse con un diseño en Vinilo Holográfico sin su recargo se **rechaza** en el checkout, igual que un `price_mismatch` | 🔴 must |
 | RF-MAT8 *(enmienda 22/9/2026, "topear el precio en $39.999")* | Un solo diseño en 6 cm cuyas copias ya cuestan lo mismo o más que la Promo Negocio se cobra al precio de Negocio ($39.999), nunca al del 3x2 puro — el total mostrado y el que se agrega al carrito son siempre el mismo, y nunca superan lo que cuesta tomar la promo | 🔴 must |
 | RF-MAT9 *(enmienda 22/9/2026)* | Con más de un diseño, o en un tamaño que no sea 6 cm, RF-MAT8 no aplica: sigue siendo una recomendación con link a `/negocio` (Negocio entrega específicamente 6 cm) | 🔴 must |
-| RF-MAT10 *(enmienda 22/9/2026, Mariano)* | Si RF-MAT8 aplica y el material es Vinilo Holográfico, el recargo de $15.000 se suma arriba del precio de Negocio ($54.999 en total), nunca lo reemplaza | 🔴 must |
+| RF-MAT10 *(enmienda 22/9/2026, Mariano)* | Si RF-MAT8 aplica y el material es Vinilo Holográfico, el recargo de $15.000 se suma arriba del precio de Negocio ($54.999 en total), nunca lo reemplaza — *desde el 26/9 lo cubre RF-MAT11 para todo pedido holográfico* | 🔴 must |
+| RF-MAT11 *(enmienda 26/9/2026, Mariano)* | Vinilo Holográfico se vende **solo en packs de 100 calcos**: el pedido de $39.999 más el recargo de $15.000 = **$54.999 por pack**. El recargo es por pack de 100, no por diseño ni por copia | 🔴 must |
+| RF-MAT12 *(enmienda 26/9/2026)* | Compra mínima holográfica: **100 calcos**. No se puede agregar al carrito una cantidad menor en holográfico, y el checkout rechaza un pedido holográfico que no sea un pack de 100 | 🔴 must |
+| RF-MAT13 *(enmienda 26/9/2026, Mariano)* | Holográfico solo en **4 y 6 cm**. Con Vinilo Holográfico elegido, 9 cm no se puede elegir; si el cliente ya tenía 9 cm y pasa a holográfico, tiene que volver a elegir el tamaño (D-4: el tamaño es una decisión que el cliente ve, no un default que se le pasa) | 🔴 must |
+| RF-MAT14 *(enmienda 26/9/2026, Mariano)* | Con varios diseños, las 100 calcos son **en total**, repartidas entre ellos, y se cobra un solo pack. El cliente puede indicar cómo repartirlas en las instrucciones | 🔴 must |
+| RF-MAT15 *(enmienda 26/9/2026)* | Con holográfico elegido, el configurador muestra que es un pack de 100 (en la card del material, en la cantidad y en el total) y no muestra ni el selector de copias ni nada del 3x2 (el pack no participa) | 🔴 must |
 
 ### 7.6 Secciones de la landing
 
@@ -394,8 +409,9 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 | Regla | Ref. | ¿Se modifica? |
 |---|---|---|
 | Un personalizado vale lo mismo que un calco de catálogo del mismo tamaño | `business-rules.md` §1 "Calcos personalizados" | no |
-| Sin mínimo de compra | ídem | no |
+| Sin mínimo de compra | ídem | **sí** (enmienda 26/9/2026) — sigue sin mínimo en Vinilo Blanco y DTF UV; el holográfico tiene mínimo de 100 |
 | Vinilo Blanco y DTF UV sin recargo; Vinilo Holográfico +$15.000 **fijo por diseño** (enmienda 22/9/2026) | `business-rules.md` §1 "Calcos personalizados" | **sí** — antes era "sin recargo por material" |
+| Vinilo Holográfico: solo packs de 100 calcos en 4 o 6 cm, repartidas entre los diseños, a $39.999 + $15.000 = $54.999 por pack (enmienda 26/9/2026, Mariano) | `business-rules.md` §1 "Calcos personalizados" | **sí** — reemplaza el "+$15.000 fijo por diseño" de la fila de arriba |
 | El recargo del holográfico no entra en el 3x2, el cupón ni el 10 % por transferencia | ídem | **sí** — regla nueva |
 | Cortes (silueta, cuadrado, círculo) no cambian el precio | ídem | no |
 | Una línea del carrito = un diseño | `business-rules.md` §7 "Configurador" | no |
@@ -490,6 +506,11 @@ es la única foto real y hoy ya está arriba de todo (RF-L14).
 | *(enmienda)* Cliente cambia de holográfico a blanco después de agregar el diseño al carrito | No hay edición post-alta (como tamaño/corte hoy): tiene que quitar la línea y volver a cargarla |
 | *(enmienda)* Alguien manipula el carrito (devtools/localStorage) para borrar la línea del recargo y quedarse con el diseño en holográfico | El checkout lo rechaza (mismo mecanismo que `price_mismatch`) — RF-MAT7 |
 | *(enmienda)* Cliente quita del carrito un diseño en Vinilo Holográfico | Se quita también su línea de recargo, sin dejar un cargo huérfano |
+| *(enmienda 26/9/2026)* Carrito guardado entre el 22 y el 26/9 con calcos holográficas sueltas (menos de 100, recargo por diseño) | Ya no se pueden pagar (RF-MAT12): se sacan del carrito al abrir la página, junto con su recargo, igual que las líneas del configurador viejo. Sin esto el checkout quedaría trabado con un error que el cliente no puede resolver |
+| *(enmienda 26/9/2026)* Carrito guardado con el pack holográfico de 1 diseño en 6 cm de la enmienda del 22/9 ($39.999 + $15.000) | Se sigue pagando igual: ya es exactamente un pack de 100 |
+| *(enmienda 26/9/2026)* Cliente tenía 9 cm y elige holográfico | El tamaño se deselecciona y 9 cm queda deshabilitado; el CTA vuelve a "Crear mi calco" hasta que elija 4 o 6 cm |
+| *(enmienda 26/9/2026)* Cliente quiere más de 100 holográficas | Agrega otro pack (otra tanda). Cada pack es de 100 y lleva su propio recargo |
+| *(enmienda 26/9/2026)* 3 diseños en holográfico (100 no se divide exacto) | Se cobra un pack de 100; el reparto lo indica el cliente en las instrucciones o lo acuerda el taller |
 
 ---
 

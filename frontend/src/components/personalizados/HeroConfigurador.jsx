@@ -47,7 +47,11 @@ export default function HeroConfigurador() {
   // configurador NO puede topear solo (más de un diseño, u otro tamaño que no
   // sea el de Negocio): si `cotizacion.esNegocio` ya topeó el precio acá mismo,
   // mostrar el cartel además sería redundante — el total de arriba ya lo tiene.
-  const conviene = convieneNegocio({ tamano: estado.tamano, copias: estado.copias, promoActiva }) && !cotizacion.esNegocio;
+  // Con holográfico tampoco: /negocio no lo ofrece, y el pack ya es de 100.
+  const conviene =
+    convieneNegocio({ tamano: estado.tamano, copias: estado.copias, promoActiva }) &&
+    !cotizacion.esNegocio &&
+    !cotizacion.esHolografico;
   const cta = estadoCta(estado);
   const enCarrito = items.filter((i) => i.type === 'custom').length;
 
@@ -93,7 +97,7 @@ export default function HeroConfigurador() {
 
         {/* C · configuración */}
         <div className="lg:col-start-2 lg:row-start-2 min-w-0 space-y-5">
-          <SelectorTamano valor={estado.tamano} onElegir={(id) => store.setTamano(id)} />
+          <SelectorTamano valor={estado.tamano} material={estado.material} onElegir={(id) => store.setTamano(id)} />
           <SelectorMaterial valor={estado.material} onElegir={(id) => store.setMaterial(id)} />
           <SelectorCantidad
             copias={estado.copias}

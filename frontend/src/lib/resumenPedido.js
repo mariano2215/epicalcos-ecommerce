@@ -78,6 +78,24 @@ export function buildDesignSummary(items) {
           : ` | archivos (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
       }
       parts.push(`${it.name} → ${designs || 'sin catálogo'}${custom}${arch}`);
+    } else if (it.type === 'negocio' && it.meta?.material) {
+      // Pack holográfico de /personalizados (enmienda 26/9/2026): 100 calcos
+      // EN TOTAL repartidas entre los diseños. La rama de Negocio de abajo
+      // imprimiría `Negocio "undefined"` y perdería material, corte y notas —
+      // justo lo que el taller necesita para producirlo.
+      const m = it.meta;
+      const files = m.archivos || [];
+      let arch;
+      if (files.length === 0) {
+        arch = 'diseños: se envían por WhatsApp';
+      } else if (files.some((f) => f.url)) {
+        arch = `diseños (${files.length}): ${files.map((f) => f.url || `${f.nombre} (por WhatsApp)`).join(' , ')}`;
+      } else {
+        arch = `diseños (${files.length}): ${files.map((f) => f.nombre).join(', ')} — se envían por WhatsApp`;
+      }
+      const reparto = files.length > 1 ? ` entre ${files.length} diseños` : '';
+      const notas = m.instrucciones ? ` | notas: ${m.instrucciones}` : '';
+      parts.push(`${m.materialLabel} (${m.tamanoLabel}, corte ${m.corteLabel}, x${m.qty}${reparto}) | ${arch}${notas}`);
     } else if (it.type === 'negocio' && it.meta) {
       const files = it.meta.archivos || [];
       let logo;

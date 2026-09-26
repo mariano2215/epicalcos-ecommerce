@@ -88,9 +88,9 @@
 |---|---|---|---|
 | AC-MAT1 | *(RF-MAT1)* Tres opciones — Vinilo Blanco, DTF UV, Vinilo Holográfico — cada una con su propio ícono SVG, mismo lenguaje visual que tamaño/corte | inspección | ⬜ |
 | AC-MAT2 | *(RF-MAT2)* Vinilo Blanco y DTF UV: mismo precio de lista que hoy por tamaño | test de paridad | ⬜ |
-| AC-MAT3 | *(RF-MAT3)* Vinilo Holográfico, 1 diseño × 10 copias en 6 cm: total = $16.000 (10 × $1.600) + $15.000 = **$31.000**; el unitario mostrado sigue en $1.600 | recorrido + test | ⬜ |
+| ~~AC-MAT3~~ | ~~*(RF-MAT3)* Vinilo Holográfico, 1 diseño × 10 copias en 6 cm: $31.000~~ — reemplazado por AC-HOLO1 (enmienda 26/9/2026) | — | — |
 | AC-MAT4 | *(RF-MAT5)* El recargo se ve como su propio renglón/concepto, no mezclado en el "unitario" | inspección | ⬜ |
-| AC-MAT5 | *(RF-MAT6)* Con el 3x2 vivo y un diseño holográfico: el 3x2 descuenta el precio por tamaño, **no** el recargo de $15.000 | test | ⬜ |
+| ~~AC-MAT5~~ | ~~*(RF-MAT6)* Con el 3x2 vivo, el 3x2 descuenta el precio por tamaño y no el recargo~~ — reemplazado por AC-HOLO1: el pack holográfico no participa del 3x2 (enmienda 26/9/2026) | — | — |
 | AC-MAT6 | *(RF-MAT7)* Un pedido armado a mano (test) con una línea `custom:...vinilo-holografico...` y sin su línea `fixed:material-holografico:*` es rechazado por el servidor | test | ⬜ |
 | AC-MAT7 | Sacar del carrito un diseño en Vinilo Holográfico saca también su línea de recargo (sin dejarla huérfana) | recorrido + test | ⬜ |
 | AC-MAT8 | La línea de recargo no tiene selector de cantidad propio en `/carrito` | inspección | ⬜ |
@@ -108,6 +108,21 @@
 | AC-NEG7 | El servidor rechaza un `negocio:{material}:{ts}` holográfico sin su recargo, igual que un `custom:` | test | ✅ |
 | AC-NEG8 | El formulario estándar de `/negocio` (con nombre de negocio) sigue funcionando idéntico — `negocio:{ts}` de 2 segmentos, sin cambios | recorrido + test | ✅ |
 | AC-NEG9 | `HeroConfigurador.jsx` y `BarraFijaMovil.jsx` muestran siempre el MISMO total (una sola función, `precioEfectivoTanda`, decide el precio) | recorrido | ✅ |
+
+### Holográfico en packs de 100 *(enmienda 26/9/2026 — reemplaza AC-MAT3 y AC-MAT5)*
+| ID | Criterio | Cómo se verifica | Resultado |
+|---|---|---|---|
+| AC-HOLO1 | *(RF-MAT11)* Holográfico, 1 diseño en 6 cm: total **$54.999** por 100 calcos, con cualquier número de copias elegido antes y con o sin 3x2 | test + recorrido | ✅ |
+| AC-HOLO2 | *(RF-MAT11, MAT14)* Holográfico, 3 diseños en 4 cm: total **$54.999** (un solo pack de 100, no 3) | test + recorrido | ✅ |
+| AC-HOLO3 | *(RF-MAT12)* El servidor rechaza una línea `custom:` holográfica, aun con 100 copias | test | ✅ |
+| AC-HOLO4 | *(RF-MAT13)* Con holográfico, 9 cm está deshabilitado; si estaba elegido, se deselecciona y el CTA pide elegir tamaño | recorrido + test del borrador | ✅ |
+| AC-HOLO5 | *(RF-MAT13)* El servidor rechaza el pack holográfico en 9 cm | test | ✅ |
+| AC-HOLO6 | El carrito recibe UNA línea `Holográfico · 100u {tamaño}` + UNA línea de recargo; el servidor las acepta y cobra $54.999 | test de paridad + recorrido | ✅ |
+| AC-HOLO7 | Sacar el pack del carrito saca también su recargo | recorrido (mecanismo ya cubierto por AC-NEG6) | ✅ |
+| AC-HOLO8 | *(RF-MAT15)* Con holográfico no hay −/+ ni atajos de cantidad, ni "ahorrás", ni textos del 3x2; se lee "Pack de 100 calcos" en la card y en la cantidad | recorrido | ✅ |
+| AC-HOLO9 | Un carrito guardado con una `custom:` holográfica + su recargo se limpia al abrir la página; uno con el pack de 1 diseño en 6 cm del 22/9 se sigue pagando | test | ✅ |
+| AC-HOLO10 | La nota del pedido (mail/CRM) dice holográfico, tamaño, corte, x100, cantidad de diseños, los links y las notas del cliente | test | ✅ |
+| AC-HOLO11 | `npm test` en verde | `npm test` | ✅ |
 
 ### Secciones
 | ID | Criterio | Cómo se verifica | Resultado |
