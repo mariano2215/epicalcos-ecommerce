@@ -11,6 +11,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { handler } from '../../../netlify/functions/create-order-transfer.js';
+import { SIZE_PRICES, TRANSFER_DISCOUNT } from '../../../netlify/functions/lib/pricing.js';
 
 const respuesta = (body, status = 200) => ({
   ok: status >= 200 && status < 300,
@@ -30,7 +31,17 @@ const pedido = () => ({
     // (el server esperaría $800) y 3 de cualquier categoría son un 3x2 — el
     // pedido se caía con price_mismatch y el test fallaba por el motivo
     // equivocado, tapando lo que de verdad mira.
-    items: [{ id: 'sticker:marvel-3:6cm', title: 'Marvel #3 · 6 cm', quantity: 2, unit_price: 1600 }],
+    // Por transferencia, con el % que corre desde 1 calco (spec 027). Sale de las
+    // constantes del servidor: escrito a mano, un cambio de precios tira este
+    // test por price_mismatch, que no es lo que mira.
+    items: [
+      {
+        id: 'sticker:marvel-3:6cm',
+        title: 'Marvel #3 · 6 cm',
+        quantity: 2,
+        unit_price: Math.round(SIZE_PRICES['6cm'] * (1 - TRANSFER_DISCOUNT))
+      }
+    ],
     payer: {
       name: 'Manuel Vallejos',
       email: 'manuelvjos20@gmail.com',
@@ -69,7 +80,7 @@ describe('un pedido por transferencia avisa siempre', () => {
 
     expect(res.statusCode).toBe(200);
     expect(body.orderId).toMatch(/^EPI-/);
-    expect(body.total).toBe(3200);
+    expect(body.total).toBe(2 * Math.round(SIZE_PRICES['6cm'] * (1 - TRANSFER_DISCOUNT))); // retiro: sin envío
     expect(body.notified).toEqual({ interno: true, cliente: true });
 
     const enviados = mails();

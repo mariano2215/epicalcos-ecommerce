@@ -3,8 +3,7 @@ import { formatPrice } from '../context/CartContext.jsx';
 import {
   priceForSize,
   sizeLabel,
-  BULK_THRESHOLD,
-  BULK_DISCOUNT,
+  TRANSFER_DISCOUNT,
   round
 } from '../config/pricing.js';
 import { shipping } from '../config/site.js';
@@ -15,7 +14,7 @@ import { useExperiment } from '../lib/experiments.js';
  *
  * TODOS los números salen de config/pricing.js — no hay ni un precio escrito a
  * mano acá. Los packs de catálogo NO son una regla de precio nueva: son el
- * precio de lista más el 10 % por transferencia que ya existe desde 10 calcos.
+ * precio de lista más el % por transferencia (15 % desde la spec 027, sin mínimo).
  * Por eso el card muestra las dos cifras y dice de dónde sale el descuento, en
  * vez de inventar un "precio de pack".
  *
@@ -32,11 +31,9 @@ export default function PackCard({
   const unitLista = priceForSize(size);
   const lista = unitLista * qty;
 
-  // Con precio fijo (mayorista/promo) manda ese; si no, el 10 % por
-  // transferencia — que solo corre a partir de BULK_THRESHOLD calcos.
-  const aplicaVolumen = qty >= BULK_THRESHOLD;
-  const conDescuento =
-    precioFijo ?? (aplicaVolumen ? round(unitLista * (1 - BULK_DISCOUNT)) * qty : lista);
+  // Con precio fijo (mayorista/promo) manda ese; si no, el % por
+  // transferencia, que desde la spec 027 corre con cualquier cantidad.
+  const conDescuento = precioFijo ?? round(unitLista * (1 - TRANSFER_DISCOUNT)) * qty;
 
   const ahorro = lista - conDescuento;
   // El % SIEMPRE se deriva del ahorro real. Tomarlo de una constante hacía que
@@ -47,7 +44,7 @@ export default function PackCard({
 
   // El badge sale del PRECIO del pack contra los umbrales, y de nada más: es la
   // única forma de que prometa exactamente lo que el checkout después cobra.
-  // Ojo con el x100 a precio de promo ($39.999): no llega al umbral nacional, y
+  // Ojo con el x100 a precio de promo: no llega al umbral nacional, y
   // el card tiene que decir eso — antes decía "envío gratis incluido" y el
   // pedido viajaba gratis a Buenos Aires a pérdida.
   const envioGratisPais = conDescuento >= shipping.freeShippingThresholdNational;
@@ -93,7 +90,7 @@ export default function PackCard({
         {/* La condición SIEMPRE al lado del número: es el error que ya cometía
             "10% off automático" en /categorias. */}
         <p className="text-[11px] text-white/45 mt-2">
-          {nota || (aplicaVolumen ? 'Pagando por transferencia bancaria.' : 'Sin descuento por volumen todavía.')}
+          {nota || 'Pagando por transferencia bancaria.'}
         </p>
 
         {(envioGratisPais || envioGratisRosario) && (

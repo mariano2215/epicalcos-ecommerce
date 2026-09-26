@@ -2,12 +2,14 @@ import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
 import NegocioForm from '../components/NegocioForm.jsx';
 import { useSeo } from '../lib/seo.js';
+import { formatPrice } from '../lib/formato.js';
+import { NEGOCIO } from '../config/pricing.js';
 
 export default function Negocio() {
   useSeo({
     title: 'Negocio',
-    description:
-      'Promo Negocio: 100 calcos de tu logo en 6 cm por $39.999 (antes $96.999). Ideal para bares, kioscos, marcas y emprendimientos. Pagás online con Mercado Pago.'
+    // Los precios salen de NEGOCIO: escritos a mano quedaron viejos con la spec 027.
+    description: `Promo Negocio: ${NEGOCIO.qty} calcos de tu logo en 6 cm por ${formatPrice(NEGOCIO.price)} (antes ${formatPrice(NEGOCIO.listPrice)}). Ideal para bares, kioscos, marcas y emprendimientos. Pagás online con Mercado Pago.`
   });
 
   return (

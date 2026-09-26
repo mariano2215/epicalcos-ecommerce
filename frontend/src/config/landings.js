@@ -1,4 +1,4 @@
-import { DEFAULT_SIZE } from './pricing.js';
+import { DEFAULT_SIZE, TRANSFER_PCT } from './pricing.js';
 
 /**
  * Landings por CASO DE USO, para el tráfico de anuncios.
@@ -50,7 +50,7 @@ export const LANDINGS = [
       },
       {
         q: '¿Puedo poner varios?',
-        a: 'Sí, y es lo que más nos piden. Desde 10 calcos tenés 10% off pagando por transferencia bancaria, y podés mezclar diseños y tamaños como quieras.'
+        a: `Sí, y es lo que más nos piden. Podés mezclar diseños y tamaños como quieras, y pagando por transferencia bancaria tenés ${TRANSFER_PCT}% off en todo el pedido.`
       }
     ]
   },
@@ -75,7 +75,7 @@ export const LANDINGS = [
       },
       {
         q: '¿Cuántos entran en una tapa?',
-        a: 'En una notebook de 14" entran cómodos entre 6 y 10 calcos de 6 cm, según cómo los distribuyas. Desde 10 calcos tenés 10% off pagando por transferencia.'
+        a: `En una notebook de 14" entran cómodos entre 6 y 10 calcos de 6 cm, según cómo los distribuyas. Pagando por transferencia tenés ${TRANSFER_PCT}% off.`
       },
       {
         q: '¿Se arruinan con el calor de la notebook?',

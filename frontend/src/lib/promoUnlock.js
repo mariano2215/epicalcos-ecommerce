@@ -3,7 +3,8 @@ import { trackPromoUnlock } from './analytics.js';
 
 /**
  * Avisa a analytics UNA vez que el carrito cruzó un umbral y desbloqueó un
- * beneficio (el 10 % por transferencia, el envío gratis).
+ * beneficio (el envío gratis, las promos N x M). El `transferencia_10` (10 %
+ * desde 10 calcos) dejó de existir con la spec 027: el 15 % no tiene umbral.
  *
  * ⚠️ POR QUÉ EL REGISTRO ES DE MÓDULO Y NO DE COMPONENTE: los medidores viven a
  * la vez en el carrito lateral y en /carrito. Estando en /carrito con el drawer

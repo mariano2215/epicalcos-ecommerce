@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { shipping, devoluciones } from '../config/site.js';
 import { formatPrice } from '../lib/formato.js';
+import { TRANSFER_PCT } from '../config/pricing.js';
 
 const faqs = [
   {
@@ -26,12 +27,12 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Cómo pago?',
-    a: 'Elegís el medio en el checkout: Mercado Pago (tarjeta de crédito, débito, dinero en cuenta, Rapipago o Pago Fácil) o transferencia bancaria directa. Pagando por transferencia, desde 10 calcos totales (podés combinar tamaños) tenés 10% off.'
+    a: `Elegís el medio en el checkout: Mercado Pago (tarjeta de crédito, débito, dinero en cuenta, Rapipago o Pago Fácil) o transferencia bancaria directa. Pagando por transferencia tenés ${TRANSFER_PCT}% off en todo el pedido, desde 1 calco.`
   },
   {
     tag: 'general',
-    q: '¿Cómo funciona exactamente el 10% OFF?',
-    a: 'Se activa solo cuando llegás a 10 calcos en el carrito —podés mezclar diseños, categorías y tamaños— Y elegís pagar por transferencia bancaria. Con Mercado Pago el precio es el de vidriera, sin descuento. Lo vas a ver aplicado en el resumen del checkout antes de confirmar nada.'
+    q: `¿Cómo funciona exactamente el ${TRANSFER_PCT}% OFF?`,
+    a: `Se activa cuando elegís pagar por transferencia bancaria, en cualquier compra y desde 1 calco: calcos, personalizados, packs, Polaroid, tatuajes o archivos (el envío no se descuenta). Con Mercado Pago el precio es el de vidriera, sin descuento. Lo vas a ver aplicado en el resumen del checkout antes de confirmar nada.`
   },
   {
     tag: 'general',
@@ -41,7 +42,7 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Puedo repetir el mismo diseño varias veces?',
-    a: 'Sí, todas las veces que quieras. En la ficha de cada calco elegís la cantidad, y en el armador de packs podés poner el número exacto de copias de cada diseño. Las repeticiones cuentan igual para el descuento desde 10 calcos.'
+    a: 'Sí, todas las veces que quieras. En la ficha de cada calco elegís la cantidad, y en el armador de packs podés poner el número exacto de copias de cada diseño.'
   },
   {
     tag: 'general',

@@ -3,7 +3,7 @@
  *
  * Modelo de precio (simple a propósito): un calco personalizado vale lo MISMO
  * que uno del catálogo, según su tamaño.
- *   unitario = precio(tamaño)   →  4 cm $1.200 · 6 cm $1.600 · 9 cm $2.000
+ *   unitario = precio(tamaño)   →  4 cm $1.450 · 6 cm $1.900 · 9 cm $2.400 (spec 027)
  *   total    = unitario × cantidad
  *
  * NO hay mínimo de compra (antes eran 10) — salvo en Vinilo Holográfico, que
@@ -71,13 +71,14 @@ export const MATERIAL_HOLOGRAFICO_ID = 'vinilo-holografico';
  * propósito: uno identifica el material que elige el cliente, el otro la
  * línea de cobro que ese material dispara.
  */
-export const RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 15000 };
+export const RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 18000 };
 
 /**
  * Pack holográfico (enmienda 26/9/2026, spec 023 RF-MAT11…15). Mariano: "el
  * recargo holográfico de $15.000 es por 100 calcos en el pedido de $39.999,
  * no por cada sticker. La compra mínima para HOLOGRÁFICOS es de 100 calcos."
  * Solo en 4 y 6 cm, y con varios diseños las 100 son EN TOTAL, repartidas.
+ * (Spec 027, 26/9/2026: con el +20 % el pack pasó a $47.999 + $18.000.)
  *
  * `qty` y `precio` salen de `NEGOCIO` a propósito, no de un número propio: el
  * pack viaja como una línea `negocio:vinilo-holografico:{tamano}:{ts}` y el

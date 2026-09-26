@@ -7,8 +7,9 @@ import ShippingInfo from '../components/ShippingInfo.jsx';
 import { formatPrice } from '../context/CartContext.jsx';
 import {
   DEFAULT_SIZE,
-  BULK_THRESHOLD,
-  BULK_DISCOUNT,
+  TRANSFER_DISCOUNT,
+  TRANSFER_PCT,
+  TRANSFER_OFF,
   WHOLESALE_QTY,
   WHOLESALE_DISCOUNT,
   PROMO_MAYORISTA_100,
@@ -26,8 +27,8 @@ import { useSeo } from '../lib/seo.js';
  *
  * DECISIÓN IMPORTANTE: los packs x10/x20/x50 NO son una regla de precio nueva.
  * Son una forma guiada de elegir varios diseños de una, y van al carrito como
- * calcos SUELTAS (`emit="stickers"`). El descuento que muestran es el 10 % por
- * transferencia desde 10 calcos que YA existe. Inventar un "precio de pack"
+ * calcos SUELTAS (`emit="stickers"`). El descuento que muestran es el % por
+ * transferencia que YA existe (15 % sin mínimo desde la spec 027). Inventar un "precio de pack"
  * habría obligado a agregar un tipo de línea al espejo
  * frontend/src/config/pricing.js ↔ netlify/functions/lib/pricing.js — y a
  * inventar porcentajes que nadie definió.
@@ -48,7 +49,7 @@ export default function ArmaTuPack() {
   const packElegido = CATALOG_PACK_QTYS.includes(n) ? n : null;
 
   const unit = priceForSize(DEFAULT_SIZE);
-  const unitConDescuento = round(unit * (1 - BULK_DISCOUNT));
+  const unitConDescuento = round(unit * (1 - TRANSFER_DISCOUNT));
 
   // Los escalones de catálogo visibles + el x100, que siempre está.
   const packsVisibles = visibleCatalogPacks(promoMayorista);
@@ -63,8 +64,8 @@ export default function ArmaTuPack() {
   useSeo({
     title: packElegido ? `Armá tu pack x${packElegido}` : 'Armá tu pack',
     description: packElegido
-      ? `Elegí ${packElegido} calcos del catálogo en un solo tamaño y pagalas juntas. Desde ${BULK_THRESHOLD} calcos, 10% off pagando por transferencia. Envíos a todo el país.`
-      : `Elegí de a ${listaCantidades} calcos y armá tu pack con los diseños que quieras. Desde ${BULK_THRESHOLD} calcos, 10% off pagando por transferencia.`
+      ? `Elegí ${packElegido} calcos del catálogo en un solo tamaño y pagalas juntas. ${TRANSFER_OFF}. Envíos a todo el país.`
+      : `Elegí de a ${listaCantidades} calcos y armá tu pack con los diseños que quieras. ${TRANSFER_OFF}.`
   });
 
   // ?n=100 no tiene armador propio: el pack de 100 vive en /mayorista, que ya
@@ -89,9 +90,9 @@ export default function ArmaTuPack() {
               emit="stickers"
               packSizeLabel={`x${packElegido}`}
               target={packElegido}
-              discount={BULK_DISCOUNT}
+              discount={TRANSFER_DISCOUNT}
               title={`Armá tu pack x${packElegido}`}
-              subtitle={`Elegí ${packElegido} calcos del catálogo —podés repetir diseños— en un solo tamaño. Pagando por transferencia bancaria te llevás un 10% off.`}
+              subtitle={`Elegí ${packElegido} calcos del catálogo —podés repetir diseños— en un solo tamaño. Pagando por transferencia bancaria te llevás un ${TRANSFER_PCT}% off.`}
             />
           </div>
         </div>
@@ -111,8 +112,8 @@ export default function ArmaTuPack() {
           </h1>
           <p className="text-white/80 mt-3">
             Elegí cuántas calcos querés, después los diseños. Podés mezclar categorías y repetir el
-            mismo diseño las veces que quieras. Desde {BULK_THRESHOLD} calcos,{' '}
-            <strong className="text-white">10% off pagando por transferencia bancaria</strong>.
+            mismo diseño las veces que quieras.{' '}
+            <strong className="text-white">{TRANSFER_PCT}% off pagando por transferencia bancaria</strong>, desde 1 calco.
           </p>
         </header>
 
@@ -142,8 +143,8 @@ export default function ArmaTuPack() {
             to="/mayorista"
             // El x100 no tiene envío regalado: paga por umbral como todo el
             // resto. El card lo deriva de `precioFijo`, así que con la promo
-            // ($39.999) muestra "gratis en Rosario" y no promete el país.
-            // Sin promo, el mayorista NO es el 10 % por volumen: es 50 % off, y
+            // muestra "gratis en Rosario" y no promete el país.
+            // Sin promo, el mayorista NO es el % por transferencia: es 50 % off, y
             // el precio se arma igual que en el servidor
             // (netlify/functions/lib/pricing.js → pack:mayorista).
             precioFijo={
@@ -153,8 +154,8 @@ export default function ArmaTuPack() {
             }
             nota={
               promoMayorista
-                ? 'Precio fijo de la promo, sin condición de medio de pago.'
-                : 'Descuento mayorista, sin condición de medio de pago.'
+                ? `Precio fijo de la promo · ${TRANSFER_PCT}% off más pagando por transferencia.`
+                : `Descuento mayorista · ${TRANSFER_PCT}% off más pagando por transferencia.`
             }
           />
         </div>
@@ -170,7 +171,7 @@ export default function ArmaTuPack() {
             catálogo completo
           </a>
           . El precio por calco suelto es {formatPrice(unit)} en {DEFAULT_SIZE.replace('cm', ' cm')} —
-          y desde {BULK_THRESHOLD}, {formatPrice(unitConDescuento)} pagando por transferencia.
+          y {formatPrice(unitConDescuento)} pagando por transferencia.
         </p>
       </div>
     </div>

@@ -7,7 +7,7 @@ import {
   CLAVE_BORRADOR,
   MENSAJES
 } from './borradorPersonalizado.js';
-import { ARCHIVO } from '../config/personalizados.js';
+import { ARCHIVO, getTamano } from '../config/personalizados.js';
 
 /** Un "archivo" alcanza con nombre, peso y fecha: el store no lee los bytes. */
 const archivo = (name, size = 200_000, lastModified = 1) => ({ name, size, lastModified });
@@ -248,7 +248,7 @@ describe('construirLineas — UNA línea por diseño, con la forma de siempre (D
       name: 'Personalizado · 6 cm · Silueta · a.png',
       categoryLabel: 'Personalizados',
       image: 'https://res.cloudinary.com/x/a.png',
-      basePrice: 1600,
+      basePrice: getTamano('6cm').precio, // el de lista, de config (spec 027 los subió)
       quantity: 2,
       meta: {
         tipo: 'calcos',

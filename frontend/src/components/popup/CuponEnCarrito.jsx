@@ -27,7 +27,7 @@ const sumar = (items) => items.reduce((a, i) => a + i.price * i.quantity, 0);
  *
  * @param {{ totalActual: number, totalTransferActual?: number }} args
  *   `totalTransferActual` solo cuando el carrito muestra la caja "Con
- *   transferencia" (/carrito con 10+ calcos).
+ *   transferencia" (/carrito, con cualquier carrito desde la spec 027).
  */
 export function useCuponEnCarrito({ totalActual, totalTransferActual }) {
   const { pricedItems, totalItems } = useCart();

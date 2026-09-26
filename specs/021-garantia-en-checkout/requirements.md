@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `021-garantia-en-checkout` |
-| **Estado** | ✅ `IMPLEMENTADA` — 14/09/2026 (aprobada con las opciones recomendadas de §12; ver `acceptance.md`) |
+| **Estado** | ⛔ `RETIRADA` — 26/09/2026: Mariano pidió sacar el bloque del checkout ("eso SACARLO del checkout"). Estuvo `IMPLEMENTADA` del 14 al 26/09/2026. Se borró `GarantiaCheckout.jsx`; `lib/garantia.js` (+ tests) y `trackGarantiaCondiciones` quedan sin uso, por si vuelve |
 | **Fecha** | 14/09/2026 |
 | **Autor** | Mariano (request) · Claude (redacción) |
 

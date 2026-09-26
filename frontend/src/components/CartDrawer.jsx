@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import FreeShippingProgress from './FreeShippingProgress.jsx';
-import BulkProgress from './BulkProgress.jsx';
+import AvisoTransferencia from './AvisoTransferencia.jsx';
 import OrderBump from './OrderBump.jsx';
 import { useCuponEnCarrito, CuponEnCarritoLinea } from './popup/CuponEnCarrito.jsx';
 
@@ -153,7 +153,7 @@ export default function CartDrawer() {
                     archivos digitales no viajan en la caja y no acercan a nadie
                     al umbral (mismo criterio que Cart.jsx). */}
                 <FreeShippingProgress subtotal={physicalSubtotal} compacto />
-                <BulkProgress compacto />
+                <AvisoTransferencia compacto />
               </>
             )}
             <div className="flex justify-between text-white/70 text-sm">

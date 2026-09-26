@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import { SIZES, DEFAULT_SIZE, priceForSize, round, BULK_THRESHOLD, BULK_DISCOUNT } from '../config/pricing.js';
+import { SIZES, DEFAULT_SIZE, priceForSize, round, TRANSFER_DISCOUNT, TRANSFER_PCT } from '../config/pricing.js';
 import { categoryName } from '../data/categories.js';
 import { trackPackBuilderStart, trackPackCompleted } from '../lib/analytics.js';
 import CategoryMenu from './CategoryMenu.jsx';
@@ -30,9 +30,9 @@ const CUSTOM_IMG =
  *   'stickers'            → una línea `sticker:…` POR DISEÑO, al precio normal
  *                          del catálogo. Sirve para los packs x10/x20/x50, que
  *                          NO son una regla de precio nueva sino una forma
- *                          guiada de elegir: el 10 % por transferencia desde 10
- *                          calcos les aplica solo, sin inventar descuentos ni
- *                          tocar el espejo de precios del servidor.
+ *                          guiada de elegir: el % por transferencia les
+ *                          aplica solo, sin inventar descuentos ni tocar el
+ *                          espejo de precios del servidor.
  *
  * @param {{ packType:'mayorista'|'personalizados'|'catalogo', target?:number, min?:number,
  *           discount:number, title:string, subtitle:string, allowCustom?:boolean,
@@ -109,7 +109,7 @@ export default function PackBuilder({
 
   /**
    * Pack de catálogo (`emit="stickers"`): al carrito van calcos SUELTAS al
-   * precio de lista, y el 10 % recién se aplica en el checkout si el cliente
+   * precio de lista, y el % por transferencia recién se aplica en el checkout si el cliente
    * elige transferencia. Así que acá se muestra el precio de lista como total
    * —que es lo que va a ver en el carrito— y el de transferencia al lado, con
    * su condición. Mostrar solo el precio con descuento haría que el armador
@@ -126,10 +126,14 @@ export default function PackBuilder({
     : round(listUnit * (1 - discount));
   const totalPrice = promoOn ? promo.price : unit * totalSelected;
 
-  // Precio con el 10 % por transferencia, solo si ya llegó al umbral.
-  const aplicaTransferencia = esCatalogo && totalSelected >= BULK_THRESHOLD;
-  const unitTransferencia = round(listUnit * (1 - BULK_DISCOUNT));
-  const totalTransferencia = unitTransferencia * totalSelected;
+  // Precio pagando por transferencia (spec 027): 15 % sobre TODO pack, desde 1
+  // calco — el de catálogo, el mayorista y el de personalizados. Por calco en
+  // los que se cobran por calco (así redondea el servidor); la promo de precio
+  // fijo es UNA línea, así que se descuenta entera.
+  const unitTransferencia = promoOn ? null : round(unit * (1 - TRANSFER_DISCOUNT));
+  const totalTransferencia = promoOn
+    ? round(promo.price * (1 - TRANSFER_DISCOUNT))
+    : unitTransferencia * totalSelected;
   /** % off real de la promo contra el precio de lista de ESTE tamaño (67% en 4cm, 75% en 6cm). */
   const promoOff = promoOn ? Math.round((1 - promo.price / (listUnit * promo.qty)) * 100) : 0;
   const offLabel = promoOn ? promoOff : Math.round(discount * 100);
@@ -183,7 +187,7 @@ export default function PackBuilder({
     });
 
     // Pack de catálogo: van calcos SUELTAS al carrito, al precio de lista. El
-    // descuento por volumen (10 % desde 10, por transferencia) lo aplica solo
+    // descuento por transferencia lo aplica solo
     // el CartContext, y el servidor las valida con la regla `sticker:` de
     // siempre — sin tipo de línea nuevo que espejar.
     if (emit === 'stickers') {
@@ -235,7 +239,7 @@ export default function PackBuilder({
       {/* Panel de armado */}
       <div className="lg:col-span-2 min-w-0 space-y-6">
         <header>
-          {/* El pack de catálogo no tiene un % propio: su descuento es el 10 %
+          {/* El pack de catálogo no tiene un % propio: su descuento es el %
               por transferencia, con condición. Prometerlo suelto en un badge
               sería la misma trampa que el viejo "10% off automático". */}
           <span className="badge badge-hot mb-3">
@@ -253,7 +257,7 @@ export default function PackBuilder({
               const active = s.id === size;
               const enPromo = !!promo?.active && promo.sizes.includes(s.id);
               // En un pack de catálogo el precio del selector es el de LISTA:
-              // el 10 % depende del medio de pago y se aclara abajo, en el total.
+              // el % por transferencia depende del medio de pago y se aclara abajo, en el total.
               const u = esCatalogo ? s.price : round(s.price * (1 - discount));
               return (
                 <button
@@ -491,23 +495,21 @@ export default function PackBuilder({
               <span>{formatPrice(totalPrice)}</span>
             </span>
           </div>
-          {esCatalogo ? (
-            aplicaTransferencia ? (
-              <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-2">
-                <div className="flex justify-between text-sm text-emerald-400 font-semibold">
-                  <span>Pagando por transferencia</span>
-                  <span>{formatPrice(totalTransferencia)}</span>
-                </div>
-                <p className="text-[11px] text-emerald-400/80 mt-0.5">
-                  {formatPrice(unitTransferencia)} por calco · 10% off. Elegís el medio de pago en el checkout.
-                </p>
+          {totalSelected > 0 ? (
+            <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-2">
+              <div className="flex justify-between text-sm text-emerald-400 font-semibold">
+                <span>Pagando por transferencia</span>
+                <span>{formatPrice(totalTransferencia)}</span>
               </div>
-            ) : (
-              <p className="text-xs text-white/50 mt-1">
-                Desde {BULK_THRESHOLD} calcos, 10% off pagando por transferencia bancaria.
+              <p className="text-[11px] text-emerald-400/80 mt-0.5">
+                {promoOn ? `${TRANSFER_PCT}% off sobre el precio de la promo` : `${formatPrice(unitTransferencia)} por calco · ${TRANSFER_PCT}% off`}.
+                {' '}Elegís el medio de pago en el checkout.
               </p>
-            )
+            </div>
           ) : (
+            <p className="text-xs text-white/50 mt-1">{TRANSFER_PCT}% off pagando por transferencia bancaria, desde 1 calco.</p>
+          )}
+          {!esCatalogo && (
             <p className="text-xs text-emerald-400 mt-1">
               {promoOn
                 ? `Precio fijo de la promo · ${promoOff}% de descuento`

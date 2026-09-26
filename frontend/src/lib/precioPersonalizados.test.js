@@ -23,6 +23,8 @@ import { SIZE_PRICES, HOLOGRAFICO_TAMANOS, validateAndPriceOrder } from '../../.
 /** Instantes fijos: sin promos por fecha y con el 3x2 vivo (arranca el 7/9/2026). */
 const SIN_PROMO = new Date('2026-08-29T12:00:00-03:00');
 const CON_3X2 = new Date('2026-09-15T12:00:00-03:00');
+/** Pack holográfico completo: el pedido de 100 + su recargo (enmienda 26/9/2026). */
+const PACK_HOLO = NEGOCIO.price + RECARGO_HOLOGRAFICO.precio;
 
 describe('cotizarTanda — precio de lista (mismo que el catálogo, sin mínimo)', () => {
   it('sin tamaño la configuración está incompleta y no hay precio', () => {
@@ -32,7 +34,7 @@ describe('cotizarTanda — precio de lista (mismo que el catálogo, sin mínimo)
     expect(cotizarTanda({ tamano: 'no-existe' }).configuracionCompleta).toBe(false);
   });
 
-  it('el unitario es el precio de lista del tamaño (4cm 1200 · 6cm 1600 · 9cm 2000)', () => {
+  it('el unitario es el precio de lista del tamaño (4cm 1450 · 6cm 1900 · 9cm 2400 desde la spec 027)', () => {
     for (const s of SIZES) {
       const r = cotizarTanda({ tamano: s.id, unidades: 1 });
       expect(r.configuracionCompleta).toBe(true);
@@ -43,15 +45,15 @@ describe('cotizarTanda — precio de lista (mismo que el catálogo, sin mínimo)
 
   it('NO hay mínimo: una sola unidad es válida, y sin unidades se asume 1', () => {
     expect(CANTIDAD.min).toBe(1);
-    expect(cotizarTanda({ tamano: '9cm', unidades: 1 }).total).toBe(2000);
+    expect(cotizarTanda({ tamano: '9cm', unidades: 1 }).total).toBe(SIZE_PRICES['9cm']);
     expect(cotizarTanda({ tamano: '4cm' }).unidades).toBe(1);
   });
 
   it('sin promo el total escala lineal y no hay ningún "ahorrás" (RF-Q4)', () => {
     for (const unidades of [1, 3, 10, 57, 250]) {
       const r = cotizarTanda({ tamano: '6cm', unidades, promoActiva: false });
-      expect(r.unitario).toBe(1600);
-      expect(r.total).toBe(1600 * unidades);
+      expect(r.unitario).toBe(SIZE_PRICES['6cm']);
+      expect(r.total).toBe(SIZE_PRICES['6cm'] * unidades);
       expect(r.ahorro).toBe(0);
       expect(r.beneficio).toBeNull();
     }
@@ -71,9 +73,10 @@ describe('cotizarTanda — precio de lista (mismo que el catálogo, sin mínimo)
 });
 
 describe('cotizarTanda — con el 3x2 (RF-Q3, Q5)', () => {
-  it('10 × 6 cm: $1.120 por unidad, $11.200 en total, ahorrás 30 % (AC-Q2)', () => {
+  it('10 × 6 cm: 3 gratis, se paga el 70 %, ahorrás 30 % (AC-Q2)', () => {
     const r = cotizarTanda({ tamano: '6cm', unidades: 10, promoActiva: true });
-    expect(r).toMatchObject({ unitario: 1120, total: 11200, totalLista: 16000, ahorro: 4800, ahorroPct: 30, gratis: 3, beneficio: '3x2' });
+    const p = SIZE_PRICES['6cm']; // 3 de 10 gratis: se paga el 70 %, redondeado POR UNIDAD como el servidor
+    expect(r).toMatchObject({ unitario: Math.round(p * 0.7), total: Math.round(p * 0.7) * 10, totalLista: p * 10, ahorro: p * 10 - Math.round(p * 0.7) * 10, ahorroPct: 30, gratis: 3, beneficio: '3x2' });
   });
 
   it('con 1 o 2 no hay ninguna gratis todavía, y dice cuántas faltan', () => {
@@ -90,9 +93,9 @@ describe('convieneNegocio — la recomendación de Negocio sale de las reglas (P
     return null;
   };
 
-  it('con el 3x2: 38 copias en 6 cm, 31 en 9 cm, 50 en 4 cm', () => {
+  it('con el 3x2: 38 copias en 6 cm, 30 en 9 cm, 50 en 4 cm (precios de la spec 027)', () => {
     expect(umbral('6cm', true)).toBe(38);
-    expect(umbral('9cm', true)).toBe(31);
+    expect(umbral('9cm', true)).toBe(30);
     expect(umbral('4cm', true)).toBe(50);
   });
 
@@ -246,7 +249,7 @@ describe('paridad con el 3x2 vivo — lo que muestra el configurador es lo que c
       paymentMethod: 'mercadopago'
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(2000 * 8);
+    expect(res.itemsTotal).toBe(SIZE_PRICES['9cm'] * 8);
   });
 });
 
@@ -272,7 +275,7 @@ describe('material — Vinilo Blanco / DTF UV (enmienda 22/9/2026)', () => {
     for (const m of MATERIALES.filter((x) => x.id !== MATERIAL_HOLOGRAFICO_ID)) {
       const r = precioEfectivoTanda({ tamano: '6cm', copias: 10, material: m.id });
       expect(r.recargo).toBe(0);
-      expect(r.total).toBe(16000);
+      expect(r.total).toBe(SIZE_PRICES['6cm'] * 10);
       expect(r.esHolografico).toBe(false);
     }
   });
@@ -287,17 +290,17 @@ describe('material — Vinilo Blanco / DTF UV (enmienda 22/9/2026)', () => {
     const [linea] = construirLineas(tanda({ material: 'dtf-uv', copias: 2 }));
     expect(linea.id).toBe('custom:6cm:silueta:dtf-uv:fabc0');
     expect(linea.meta.material).toBe('dtf-uv');
-    expect(linea.basePrice).toBe(1600); // el material no toca basePrice de la línea
+    expect(linea.basePrice).toBe(SIZE_PRICES['6cm']); // el material no toca basePrice de la línea
   });
 });
 
 describe('Vinilo Holográfico — packs de 100 (enmienda 26/9/2026, RF-MAT11…15)', () => {
   const PACK = NEGOCIO.price + RECARGO_HOLOGRAFICO.precio;
 
-  it('el pack es el pedido de $39.999 + $15.000 de recargo = $54.999 por 100 calcos', () => {
-    expect(PACK_HOLOGRAFICO).toMatchObject({ qty: 100, precio: 39999 });
-    expect(RECARGO_HOLOGRAFICO.precio).toBe(15000);
-    expect(PACK).toBe(54999);
+  it('el pack es el pedido de 100 (precio de Negocio) + el recargo = $65.999 por 100 calcos (spec 027)', () => {
+    expect(PACK_HOLOGRAFICO).toMatchObject({ qty: 100, precio: NEGOCIO.price });
+    expect(RECARGO_HOLOGRAFICO.precio).toBe(18000) // spec 027 (antes $15.000);
+    expect(PACK).toBe(65999) // $47.999 + $18.000 (spec 027; antes $54.999);
   });
 
   it('1 diseño en 6 cm: $54.999 por 100, con cualquier número de copias y con o sin 3x2 (AC-HOLO1)', () => {
@@ -412,7 +415,7 @@ describe('validateAndPriceOrder — pack holográfico (enmienda 26/9/2026)', () 
           const res = validateAndPriceOrder({ ...base, items: [aPayload(linea), recargo(555)] });
           expect(res.ok, `${tamano} × ${disenos}: ${res.error} ${res.detail || ''}`).toBe(true);
           expect(res.itemsTotal).toBe(c.total);
-          expect(res.itemsTotal).toBe(54999);
+          expect(res.itemsTotal).toBe(PACK_HOLO);
         }
       }
     }
@@ -430,7 +433,7 @@ describe('validateAndPriceOrder — pack holográfico (enmienda 26/9/2026)', () 
       ]
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(54999 + sueltas.total);
+    expect(res.itemsTotal).toBe(PACK_HOLO + sueltas.total);
   });
 
   it('rechaza el pack en 9 cm (AC-HOLO5)', () => {
@@ -461,7 +464,7 @@ describe('validateAndPriceOrder — pack holográfico (enmienda 26/9/2026)', () 
   it('rechaza un recargo huérfano (sin su pack holográfico)', () => {
     const res = validateAndPriceOrder({
       ...base,
-      items: [{ id: 'custom:6cm:silueta:vinilo-blanco:f1', title: 'Personalizado', quantity: 10, unit_price: 1600 }, recargo('f1')]
+      items: [{ id: 'custom:6cm:silueta:vinilo-blanco:f1', title: 'Personalizado', quantity: 10, unit_price: SIZE_PRICES['6cm'] }, recargo('f1')]
     });
     expect(res).toMatchObject({ ok: false, error: 'item_invalid', detail: expect.stringMatching(/recargo de material sin/) });
   });
@@ -489,7 +492,7 @@ describe('validateAndPriceOrder — pack holográfico (enmienda 26/9/2026)', () 
       ]
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(54999);
+    expect(res.itemsTotal).toBe(PACK_HOLO);
   });
 
   it('…y lo rechaza sin su recargo, igual que al pack de hoy', () => {
@@ -504,10 +507,10 @@ describe('validateAndPriceOrder — pack holográfico (enmienda 26/9/2026)', () 
   it('una línea `custom:` de 4 segmentos (formato de antes del material) sigue aceptándose como Vinilo Blanco (ANF-4)', () => {
     const res = validateAndPriceOrder({
       ...base,
-      items: [{ id: 'custom:6cm:silueta:f1', title: 'Personalizado 6 cm Silueta', quantity: 10, unit_price: 1600 }]
+      items: [{ id: 'custom:6cm:silueta:f1', title: 'Personalizado 6 cm Silueta', quantity: 10, unit_price: SIZE_PRICES['6cm'] }]
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(16000);
+    expect(res.itemsTotal).toBe(SIZE_PRICES['6cm'] * 10);
   });
 
   it('rechaza un material desconocido en el id', () => {
@@ -753,7 +756,7 @@ describe('purgarLineasRetiradas — carritos guardados (enmienda 26/9/2026)', ()
       paymentMethod: 'mercadopago'
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(54999);
+    expect(res.itemsTotal).toBe(PACK_HOLO);
   });
 });
 

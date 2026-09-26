@@ -1,11 +1,12 @@
 import FixedProductPage from '../components/FixedProductPage.jsx';
 import { TATUAJES } from '../config/pricing.js';
 import { useSeo } from '../lib/seo.js';
+import { formatPrice } from '../lib/formato.js';
 
 export default function Tatuajes() {
   useSeo({
     title: 'Tatuajes temporales',
-    description: 'Tatuajes temporales por hoja a $12.000. Pagás online con Mercado Pago.'
+    description: `Tatuajes temporales por hoja a ${formatPrice(TATUAJES.price)}. Pagás online con Mercado Pago.`
   });
 
   return (

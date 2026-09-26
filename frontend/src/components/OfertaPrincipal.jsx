@@ -5,7 +5,7 @@ import { SPECIALS } from '../data/categories.js';
 import {
   WHOLESALE_QTY,
   WHOLESALE_DISCOUNT,
-  BULK_THRESHOLD,
+  TRANSFER_OFF,
   PROMO_MAYORISTA_100
 } from '../config/pricing.js';
 import { useMayoristaPromoActive } from '../lib/promo.js';
@@ -26,9 +26,9 @@ const OTROS = ['tatuajes', 'polaroid', 'archivos-imprimibles'];
  * se satura y sigue de largo.
  *
  * Ahora hay una sola oferta dominante —el pack mayorista, que es el de mayor
- * ticket— y el 10 % por transferencia baja a una línea de apoyo, que es el
+ * ticket— y el % por transferencia baja a una línea de apoyo, que es el
  * lugar que le corresponde: es un beneficio del CARRITO, no un motivo para
- * entrar. Donde de verdad empuja es en el carrito, y ahí ya vive (`BulkProgress`).
+ * entrar. Donde de verdad empuja es en el carrito, y ahí ya vive (`AvisoTransferencia`).
  *
  * Los otros productos (tatuajes, polaroid, imprimibles) no desaparecen: quedan
  * como links de texto. No son promociones y no tienen por qué competir con una.
@@ -86,12 +86,12 @@ export default function OfertaPrincipal() {
               </Link>
             </div>
 
-            {/* El 10 % NUNCA a secas: siempre con sus dos condiciones. Es el
-                error que ya se cometió en /categorias con "10% off automático",
-                que el cliente descubría recién al elegir medio de pago. */}
+            {/* El % NUNCA a secas: siempre con su condición. Es el error que ya
+                se cometió en /categorias con "10% off automático", que el cliente
+                descubría recién al elegir medio de pago. */}
             <p className="mt-6 text-sm text-white/55">
-              ¿Menos cantidad? Desde {BULK_THRESHOLD} calcos tenés{' '}
-              <strong className="text-white/80">10% OFF pagando por transferencia</strong>.
+              ¿Menos cantidad? Desde 1 calco tenés{' '}
+              <strong className="text-white/80">{TRANSFER_OFF}</strong>.
             </p>
           </div>
         </Reveal>

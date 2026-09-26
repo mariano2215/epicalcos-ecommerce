@@ -156,7 +156,7 @@ Sin PII: ni el mail ni nada del lead. `page_path` es la ruta sin query.
 
 | Evento | Cuándo | Parámetros |
 |---|---|---|
-| `garantia_condiciones_ver` | se **abre** "Ver condiciones", arriba del botón de pagar (cerrarlo no dispara nada) | `tipo`: `devolucion` · `mixto` · `falla` |
+| `garantia_condiciones_ver` | ⛔ **Sin datos desde el 26/9/2026**: el bloque de garantía se sacó del checkout (Mariano). Hasta ahí: se **abre** "Ver condiciones", arriba del botón de pagar | `tipo`: `devolucion` · `mixto` · `falla` |
 
 `tipo` es la garantía que le tocaba a ese carrito (`lib/garantia.js`): catálogo
 → `devolucion`, catálogo + hecho con archivo → `mixto`, solo hecho con archivo
@@ -173,6 +173,18 @@ Sin PII: ni el mail ni nada del lead. `page_path` es la ruta sin query.
   la garantía; si se abre mucho, la duda es real y el texto tiene que ser claro.
 
 Sin PII ni valor: solo el tipo.
+
+---
+
+## Precios +20 % y 15 % por transferencia (spec 027, 26/9/2026)
+
+- **`promo_unlock` con `promo: 'transferencia_10'` deja de dispararse**: el
+  descuento por transferencia ya no tiene umbral (15 % desde 1 calco), así que
+  no hay nada que "desbloquear". Los `promo_unlock` de `envio_gratis`,
+  `nxm_3x2` y `nxm_2x1` siguen igual.
+- Desde el 26/9 los `value` (`add_to_cart`, `begin_checkout`, `purchase`) van
+  con los precios nuevos: al comparar contra semanas anteriores, el ticket sube
+  ~20 % solo por el cambio de precios, sin que haya cambiado nada del funnel.
 
 ---
 

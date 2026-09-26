@@ -14,7 +14,7 @@ import { isSectionHidden } from '../config/site.js';
 import { categoryName } from '../data/categories.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { formatPrice } from '../context/CartContext.jsx';
-import { priceForSize, sizeLabel, BULK_THRESHOLD } from '../config/pricing.js';
+import { priceForSize, sizeLabel, TRANSFER_PCT } from '../config/pricing.js';
 import { useSeo } from '../lib/seo.js';
 import { trackViewItemList } from '../lib/analytics.js';
 
@@ -122,7 +122,7 @@ export default function LandingUso({ slug }) {
           <p className="text-white/80 mt-3 text-lg">{landing.promesa}</p>
           <p className="text-white/80 mt-2">
             Desde <strong className="text-white">{formatPrice(unit)}</strong> por calco.{' '}
-            {BULK_THRESHOLD} o más, 10% off pagando por transferencia bancaria.
+            {TRANSFER_PCT}% off pagando por transferencia bancaria, desde 1 calco.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <a href="#disenos" className="btn-primary">Ver diseños</a>
@@ -208,7 +208,7 @@ export default function LandingUso({ slug }) {
             {[
               ['1', 'Elegí tus diseños', 'Y el tamaño de cada uno.'],
               ['2', 'Sumalos al carrito', 'Podés mezclar categorías y tamaños.'],
-              ['3', 'Pagá', `Mercado Pago o transferencia (10% off desde ${BULK_THRESHOLD} calcos).`],
+              ['3', 'Pagá', `Mercado Pago o transferencia (${TRANSFER_PCT}% off).`],
               ['4', 'Te llega', 'Envíos a todo el país o retiro en Rosario.']
             ].map(([n, t, d]) => (
               <li key={n}>
@@ -247,7 +247,7 @@ export default function LandingUso({ slug }) {
             Armá tu pedido de {landing.h1.toLowerCase()}
           </h2>
           <p className="text-white/80 mt-2 max-w-xl mx-auto">
-            Desde una sola calco. {BULK_THRESHOLD} o más, 10% off pagando por transferencia bancaria.
+            Desde una sola calco, y {TRANSFER_PCT}% off pagando por transferencia bancaria.
           </p>
           {/* El CTA a /armar-pack se esconde solo si la sección está despublicada.
               HIDDEN_SECTIONS cierra el nav, el footer, el Home, el buscador y el
