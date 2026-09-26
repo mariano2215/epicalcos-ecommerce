@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `027-precios-mas-20-y-transferencia-15` |
-| **Estado** | `IN PROGRESS` — Mariano lo pidió el 26/09/2026; la tabla de precios redondeados (§9.1) espera su OK antes de publicar |
+| **Estado** | ✅ `DONE` — Mariano aprobó la tabla de precios (§9.1) el 26/09/2026 |
 | **Fecha** | 26/09/2026 |
 | **Autor** | Claude Code, a partir del pedido de Mariano |
 
@@ -169,4 +169,4 @@ Sin eventos nuevos. Cambia:
 
 | ID | Pregunta | Estado |
 |---|---|---|
-| P-1 | ¿Aprobás la tabla de §9.1? | ⏳ esperando a Mariano antes de publicar |
+| P-1 | ¿Aprobás la tabla de §9.1? | ✅ aprobada por Mariano el 26/09/2026 |

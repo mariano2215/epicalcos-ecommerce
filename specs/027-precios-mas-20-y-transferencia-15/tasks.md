@@ -20,5 +20,7 @@
 - [x] **8** `npm test`, `vite build`, recorrido a 375 px (carrito, checkout con los dos medios de pago)
   - *Verificación*: `npm test` → 731/731 ✅, `vite build` ✅ (26/9/2026). Recorrido con Playwright contra `vite preview` a 375 px ✅: un carrito guardado con los precios viejos (calco 6 cm $1.600, tatuajes $12.000) se refrescó solo a $1.900 / $14.500; /carrito: $16.400, "Con transferencia $13.940 · ahorrás $2.460 (15% off)", aviso "15% OFF pagando por transferencia · ahorrás $2.460"; checkout: MP $20.900 (con $4.500 de envío), transferencia $18.440 (el envío no se descuenta), "Tu pedido tiene 15% off por transferencia"; ticker "15% OFF pagando por transferencia, en cualquier compra". Sin errores de la app en consola
   - ⚠️ *Hallazgo, fuera de scope*: la línea de descuento del checkout dice "3x2 + …" siempre que la promo está vigente, aunque el carrito no tenga 3 calcos (ya pasaba antes)
-- [ ] **9** Tabla de precios aprobada por Mariano → recién ahí merge a `main`
-- [ ] **10** Mariano: regenerar el feed de Meta (`scripts/build-meta-feed.mjs`)
+- [x] **9** Tabla de precios aprobada por Mariano → recién ahí merge a `main`
+  - *Verificación*: aprobada el 26/09/2026 ("Excelente, todo aprobado")
+- [x] **10** Regenerar el feed de Meta (`scripts/build-meta-feed.mjs`)
+  - *Verificación*: `frontend/public/data/meta-catalog.csv` regenerado y commiteado: 6.680 filas, solo cambian `price` (calco $1.600 → $1.900, mayorista $80.000 → $95.000, Negocio $47.999, tatuajes $14.500) y las 5 descripciones con precio; SKUs idénticos (`skus.json` solo cambia la fecha). Commerce Manager lo toma en su próxima lectura programada de https://epicalcos.com/data/meta-catalog.csv

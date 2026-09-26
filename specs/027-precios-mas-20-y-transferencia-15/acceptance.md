@@ -5,7 +5,7 @@
 | **Spec** | `027-precios-mas-20-y-transferencia-15` |
 | **Requirements** | [`requirements.md`](requirements.md) |
 | **Validado el** | 26/09/2026 |
-| **Resultado** | ⬜ pendiente del OK de Mariano a la tabla de precios (AC-13) — todo lo demás ✅ |
+| **Resultado** | ✅ aceptada — Mariano aprobó la tabla el 26/09/2026 ("todo aprobado") |
 
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
@@ -21,4 +21,4 @@
 | AC-10 | *(RF-9)* Paridad: lo que calcula el carrito con transferencia lo acepta el servidor | test | ✅ `promoPricing.test.js` (`clientItems` ↔ servidor) + recorrido |
 | AC-11 | *(RF-10)* Carrito guardado con precios viejos: se cobra al precio nuevo, sin `price_mismatch` | test | ✅ test + recorrido (carrito viejo refrescado solo) |
 | AC-12 | `npm test` en verde, `vite build` OK | CI local | ✅ 731/731, build OK |
-| AC-13 | Mariano aprobó la tabla de §9.1 | conversación | ⬜ esperando a Mariano |
+| AC-13 | Mariano aprobó la tabla de §9.1 | conversación | ✅ 26/09/2026: "Excelente, todo aprobado" |
