@@ -176,6 +176,18 @@ Sin PII ni valor: solo el tipo.
 
 ---
 
+## Precios +20 % y 15 % por transferencia (spec 027, 26/9/2026)
+
+- **`promo_unlock` con `promo: 'transferencia_10'` deja de dispararse**: el
+  descuento por transferencia ya no tiene umbral (15 % desde 1 calco), así que
+  no hay nada que "desbloquear". Los `promo_unlock` de `envio_gratis`,
+  `nxm_3x2` y `nxm_2x1` siguen igual.
+- Desde el 26/9 los `value` (`add_to_cart`, `begin_checkout`, `purchase`) van
+  con los precios nuevos: al comparar contra semanas anteriores, el ticket sube
+  ~20 % solo por el cambio de precios, sin que haya cambiado nada del funnel.
+
+---
+
 `search` · `search_no_results` · `catalogo_orden` · `generate_lead` ·
 `whatsapp_click` (con la ruta de origen) · `instagram_click` ·
 `contacto_form_error` · `shipping_calculated` (zona + costo) ·

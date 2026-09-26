@@ -630,9 +630,11 @@ export function trackWholesaleClick(origen = 'home') {
 /**
  * El carrito cruzó un umbral y desbloqueó un beneficio.
  *
- * ⚠️ `promo` es SIEMPRE el nombre del beneficio real ('transferencia_10' /
- * 'envio_gratis'), nunca un texto de marketing: el que lee el informe tiene que
- * poder cruzarlo con la regla de `config/pricing.js` que lo produce.
+ * ⚠️ `promo` es SIEMPRE el nombre del beneficio real ('envio_gratis' /
+ * 'nxm_3x2' / 'nxm_2x1'), nunca un texto de marketing: el que lee el informe
+ * tiene que poder cruzarlo con la regla de `config/pricing.js` que lo produce.
+ * 'transferencia_10' (10 % desde 10 calcos) dejó de dispararse el 26/9/2026:
+ * con la spec 027 el % por transferencia no tiene umbral que desbloquear.
  */
 export function trackPromoUnlock(promo, umbral) {
   pushDataLayer({ event: 'promo_unlock', promo, umbral });

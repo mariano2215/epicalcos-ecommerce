@@ -6,7 +6,9 @@ import {
   calculateShipping as beShipping,
   FREE_SHIPPING_THRESHOLD_ROSARIO as BE_UMBRAL_ROSARIO,
   FREE_SHIPPING_THRESHOLD_NATIONAL as BE_UMBRAL_NACIONAL,
-  validateAndPriceOrder
+  validateAndPriceOrder,
+  MAYORISTA100_PRICE,
+  SIZE_PRICES
 } from '../../../netlify/functions/lib/pricing.js';
 
 const UMBRAL_ROSARIO = shipping.freeShippingThresholdRosario;
@@ -84,19 +86,19 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
   };
   const datos = (dest) => ({ name: 'A', address: 'B', zip: '1000', ...dest });
 
-  it('REGRESIÓN: la promo de 100 calcos a $39.999 PAGA envío a Buenos Aires', () => {
+  it('REGRESIÓN: la promo de 100 calcos a precio fijo PAGA envío a Buenos Aires', () => {
     // El caso real que se cobró mal: $39.999 no llega al umbral nacional
     // ($50.000), así que el pedido paga los $8.500 de Correo Argentino. Antes
     // viajaba gratis porque la línea `pack:mayorista100` traía el envío puesto.
     conLaPromoViva();
     const pedido = validateAndPriceOrder({
-      items: [{ id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: 39999 }],
+      items: [{ id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: MAYORISTA100_PRICE }],
       shipping: { methodValue: 'envio', ...datos({ city: 'La Plata', province: 'Buenos Aires' }) },
       paymentMethod: 'mercadopago'
     });
     expect(pedido.ok).toBe(true);
     expect(pedido.shippingCost).toBe(shipping.costInterior);
-    expect(pedido.itemsTotal + pedido.shippingCost).toBe(39999 + shipping.costInterior);
+    expect(pedido.itemsTotal + pedido.shippingCost).toBe(MAYORISTA100_PRICE + shipping.costInterior);
   });
 
   it('la misma promo paga el envío donde no llega al umbral, y solo ahí', () => {
@@ -112,7 +114,7 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
     ];
     for (const [dest, costo] of esperado) {
       const pedido = validateAndPriceOrder({
-        items: [{ id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: 39999 }],
+        items: [{ id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: MAYORISTA100_PRICE }],
         shipping: { methodValue: 'envio', ...datos(dest) },
         paymentMethod: 'mercadopago'
       });
@@ -123,14 +125,15 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
 
   it('el pack mayorista sí viaja gratis cuando su PRECIO cruza el umbral', () => {
     // Control de que el fix no apagó el envío gratis legítimo: 100 calcos de
-    // 6 cm al 50 % off son $80.000, arriba del umbral nacional.
+    // 6 cm al 50 % off quedan arriba del umbral nacional ($95.000 desde la spec 027).
+    const unit = Math.round(SIZE_PRICES['6cm'] * 0.5);
     const pedido = validateAndPriceOrder({
-      items: [{ id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista x100', quantity: 100, unit_price: 800 }],
+      items: [{ id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista x100', quantity: 100, unit_price: unit }],
       shipping: { methodValue: 'envio', ...datos(interior) },
       paymentMethod: 'mercadopago'
     });
     expect(pedido.ok).toBe(true);
-    expect(pedido.itemsTotal).toBe(80000);
+    expect(pedido.itemsTotal).toBe(unit * 100);
     expect(pedido.itemsTotal).toBeGreaterThanOrEqual(UMBRAL_NACIONAL);
     expect(pedido.shippingCost).toBe(0);
   });
@@ -141,7 +144,7 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
     conLaPromoViva();
     const pedido = validateAndPriceOrder({
       items: [
-        { id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: 39999, envioGratis: true }
+        { id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: MAYORISTA100_PRICE, envioGratis: true }
       ],
       shipping: { methodValue: 'envio', cost: 0, envioGratis: true, ...datos(interior) },
       paymentMethod: 'mercadopago'

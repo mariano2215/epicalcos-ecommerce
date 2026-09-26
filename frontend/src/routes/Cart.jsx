@@ -5,12 +5,12 @@ import { trackViewCart } from '../lib/analytics.js';
 import { useSeo } from '../lib/seo.js';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import FreeShippingProgress from '../components/FreeShippingProgress.jsx';
-import BulkProgress from '../components/BulkProgress.jsx';
+import AvisoTransferencia from '../components/AvisoTransferencia.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
 import SocialProof from '../components/SocialProof.jsx';
 import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { useCuponEnCarrito, CuponEnCarritoLinea } from '../components/popup/CuponEnCarrito.jsx';
-import { BULK_THRESHOLD, BULK_DISCOUNT_PAYMENT_METHOD } from '../config/pricing.js';
+import { TRANSFER_PAYMENT_METHOD, TRANSFER_PCT, PROMO_3X2 } from '../config/pricing.js';
 
 // `custom` = una línea por diseño personalizado: la cantidad son las copias de
 // ESE diseño, así que se edita como cualquier calco del catálogo.
@@ -24,7 +24,7 @@ const esRecargoMaterial = (id) => String(id).startsWith('fixed:material-holograf
 
 export default function Cart() {
   const {
-    items, setQty, removeItem, subtotal, physicalSubtotal, clear, bulkSavings,
+    items, setQty, removeItem, subtotal, physicalSubtotal, clear, transferSavings,
     promoActive, promo2x1Active, algunaPromoNxM, promoSavings, digitalOnly, pricedItems
   } = useCart();
   const navigate = useNavigate();
@@ -33,15 +33,15 @@ export default function Cart() {
   // sale de `pricedItems`, igual que allá. Hasta el 25/9/2026 era
   // `subtotal − promoSavings − bulkSavings`, con el 10 % calculado sobre el
   // precio de lista: con el 3x2 corriendo mostraba $ 9.600 donde el checkout
-  // cobraba $ 10.080 (ver `bulkSavings` en CartContext).
+  // cobraba $ 10.080 (ver `transferSavings` en CartContext).
   const transferSinCupon =
-    bulkSavings > 0
-      ? pricedItems(BULK_DISCOUNT_PAYMENT_METHOD, '', null).reduce((a, i) => a + i.price * i.quantity, 0)
+    transferSavings > 0
+      ? pricedItems(TRANSFER_PAYMENT_METHOD, '', null).reduce((a, i) => a + i.price * i.quantity, 0)
       : totalSinCupon;
   // El 10% del popup (spec 026). Hook: va antes del `return` del carrito vacío.
   const cupon = useCuponEnCarrito({
     totalActual: totalSinCupon,
-    totalTransferActual: bulkSavings > 0 ? transferSinCupon : undefined
+    totalTransferActual: transferSavings > 0 ? transferSinCupon : undefined
   });
 
   useSeo({ title: 'Carrito', description: 'Revisá tu pedido antes de pagar con Mercado Pago.' });
@@ -70,11 +70,11 @@ export default function Cart() {
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Carrito' }]} />
         <h1 className="font-display font-extrabold text-3xl md:text-4xl">Tu carrito</h1>
 
-        {/* Banner de la promo 3x2 (o del descuento por volumen fuera de la promo).
-            Con un carrito 100 % digital no va ninguno: la línea es de precio fijo
-            y "sumá 10 calcos y tenés 10% off" ahí se lee como que el descuento
-            le aplicaría al archivo, que es justo lo que no pasa. */}
-        {digitalOnly ? null : algunaPromoNxM ? (
+        {/* Banner de la promo 3x2. Con un carrito 100 % digital no va: la línea
+            es de precio fijo y el 3x2 no la toca. El de la transferencia va
+            SIEMPRE, abajo: desde la spec 027 alcanza a todo producto, también
+            a los archivos. */}
+        {!digitalOnly && algunaPromoNxM && (
           <div className="mt-4 rounded-xl p-3 text-sm border border-brand-fuchsia/30 bg-brand-fuchsia/10 text-white/85 space-y-1">
             {promoActive && (
               <div>
@@ -87,14 +87,10 @@ export default function Cart() {
               </div>
             )}
           </div>
-        ) : (
-          /* Los dos estados del 10 % (ya lo tiene / le faltan N) ahora los
-             cuenta BulkProgress, con medidor en vez de un párrafo: el mensaje
-             es el mismo, pero se ve cuán cerca está. El mismo componente va en
-             el carrito lateral, así las dos pantallas no pueden decir cosas
-             distintas. */
-          <BulkProgress className="mt-4" />
         )}
+        {/* El mismo componente va en el carrito lateral, así las dos pantallas
+            no pueden decir cosas distintas. */}
+        <AvisoTransferencia className="mt-4" />
 
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-4">
@@ -200,7 +196,7 @@ export default function Cart() {
               <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
             </div>
             {/* La promo 3x2 SÍ se descuenta del total: no depende del medio de
-                pago. El 10 % por transferencia, en cambio, es condicional —
+                pago. El % por transferencia, en cambio, es condicional —
                 mostrarlo como una resta arriba de un total que no lo restaba
                 daba un resumen que no cerraba. Ahora el Total es lo que se paga
                 con Mercado Pago y la alternativa va abajo, con su condición. */}
@@ -222,7 +218,7 @@ export default function Cart() {
             <div className="flex justify-between font-display font-extrabold text-lg">
               <span>Total</span><span>{formatPrice(cupon.activo ? cupon.total : totalSinCupon)}</span>
             </div>
-            {bulkSavings > 0 && (
+            {transferSavings > 0 && (
               <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2">
                 <div className="flex justify-between text-sm text-emerald-400 font-semibold">
                   <span>Con transferencia</span>
@@ -234,13 +230,13 @@ export default function Cart() {
                     cupon.activo && cupon.mostrarMonto
                       ? cupon.total - cupon.totalTransfer
                       : totalSinCupon - transferSinCupon
-                  )} (10% off). Elegís el medio de pago en el checkout.
+                  )} ({TRANSFER_PCT}% off). Elegís el medio de pago en el checkout.
                 </p>
               </div>
             )}
             {algunaPromoNxM && (
               <p className="text-xs text-white/50 mt-2">
-                El 10% por transferencia y tu cupón (si tenés uno) se suman en el checkout (tope 20%).
+                El {TRANSFER_PCT}% por transferencia y tu cupón (si tenés uno) se suman en el checkout (tope {Math.round(PROMO_3X2.percentCap * 100)}%).
               </p>
             )}
 
@@ -255,7 +251,7 @@ export default function Cart() {
               Ir al checkout →
             </button>
 
-            {/* Los medios de pago y el 10% por transferencia, ANTES de entrar al
+            {/* Los medios de pago y el % por transferencia, ANTES de entrar al
                 checkout: el beneficio estaba escondido detrás de una tarjeta que
                 se ve recién al final del formulario. */}
             <div className="mt-4 border-t border-white/10 pt-4">
@@ -269,7 +265,7 @@ export default function Cart() {
                   <span aria-hidden>🏦</span>
                   <span>
                     Transferencia bancaria —{' '}
-                    <strong className="text-emerald-400">10% off desde {BULK_THRESHOLD} calcos</strong>.
+                    <strong className="text-emerald-400">{TRANSFER_PCT}% off en cualquier compra</strong>.
                   </span>
                 </li>
               </ul>

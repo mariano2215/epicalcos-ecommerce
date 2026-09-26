@@ -5,37 +5,47 @@ import { formatPrice } from '../lib/formato.js';
 
 /** Tamaños disponibles por calco y su precio unitario (ARS). Precio de vidriera = Mercado Pago (sin descuento). */
 export const SIZES = [
-  { id: '4cm', label: '4 cm', price: 1200 },
-  { id: '6cm', label: '6 cm', price: 1600 },
-  { id: '9cm', label: '9 cm', price: 2000 }
+  { id: '4cm', label: '4 cm', price: 1450 },
+  { id: '6cm', label: '6 cm', price: 1900 },
+  { id: '9cm', label: '9 cm', price: 2400 }
 ];
 
 export const DEFAULT_SIZE = '6cm';
 
 /**
- * Descuento por volumen en calcos sueltos: desde 10 calcos TOTALES (se pueden
- * combinar tamaños), 10 % off — pero SOLO pagando por transferencia bancaria.
- * Pagando con Mercado Pago el precio es siempre el de vidriera (sin descuento).
+ * Descuento por transferencia bancaria (spec 027, 26/9/2026): 15 % a TODO
+ * producto del pedido —calcos, personalizados, packs, Negocio, holográfico,
+ * Polaroid, tatuajes, imprimibles—, desde 1 unidad. No toca el envío. Pagando
+ * con Mercado Pago el precio es siempre el de vidriera.
+ *
+ * Hasta el 26/9/2026 era un 10 % "por volumen": solo calcos de catálogo y
+ * desde 10 (BULK_THRESHOLD). Todo texto del sitio sale de acá
+ * (`TRANSFER_PCT`, `TRANSFER_OFF`): no se escribe "15 %" a mano en ningún lado,
+ * para que no vuelva a pasar lo del 10 % desparramado en 16 archivos.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO: TRANSFER_DISCOUNT en netlify/functions/lib/pricing.js.
  */
-export const BULK_THRESHOLD = 10;
-export const BULK_DISCOUNT = 0.10;
-export const BULK_DISCOUNT_PAYMENT_METHOD = 'transferencia';
+export const TRANSFER_DISCOUNT = 0.15;
+export const TRANSFER_PAYMENT_METHOD = 'transferencia';
+/** El % para mostrar: `15`. */
+export const TRANSFER_PCT = Math.round(TRANSFER_DISCOUNT * 100);
+/** El beneficio en una frase corta, con la condición adentro (nunca "15% off" a secas). */
+export const TRANSFER_OFF = `${TRANSFER_PCT}% OFF pagando por transferencia`;
 
 /**
- * Cupones de descuento sobre calcos sueltos (mismo alcance que el descuento por
- * volumen: solo type === 'sticker'). Un cupón de % es ACUMULABLE con el
- * descuento por transferencia: los descuentos se SUMAN (ej. transferencia 10 %
- * + EPICA10 10 % = 20 % off), con un tope de seguridad (MAX_STICKER_DISCOUNT).
+ * Cupones de descuento sobre calcos sueltos (type === 'sticker'). Un cupón de %
+ * es ACUMULABLE con el descuento por transferencia: los descuentos se SUMAN (ej.
+ * transferencia 15 % + EPICA10 10 % = 25 % off), con un tope de seguridad
+ * (MAX_STICKER_DISCOUNT).
  *
  * Un cupón con `bundle` NO es de %: aplica un "N x M" (cada `buy` unidades
  * elegibles, las `buy - pay` más baratas gratis) sobre calcos de catálogo +
  * personalizados, y NO es acumulable con NINGÚN %: mientras esté aplicado no
- * corren ni el 10 % por transferencia ni el 10 % por volumen (+10 calcos) ni
- * otro cupón.
+ * corren ni el % por transferencia ni otro cupón.
  *
  * `exclusivo: true` = un cupón de % que NO se acumula con nada, igual que un
- * bundle: mientras esté aplicado no corren el 10 % por transferencia, el 10 %
- * por volumen, el % de una promo por categoría ni la agrupación N x M de una
+ * bundle: mientras esté aplicado no corren el % por transferencia (en ninguna
+ * línea), el % de una promo por categoría ni la agrupación N x M de una
  * promo por fecha. Su % es el descuento final y no depende del medio de pago
  * ni de la cantidad.
  *
@@ -129,8 +139,8 @@ export function couponBundle(code, now = Date.now()) {
  * ¿Este cupón anula TODOS los demás descuentos?
  *
  * Es el predicado que decide, en un solo lugar, los tres puntos donde el
- * carrito y el servidor se preguntan lo mismo: si corre el 10 % por
- * transferencia/volumen, si corre la agrupación N x M de una promo por fecha y
+ * carrito y el servidor se preguntan lo mismo: si corre el % por
+ * transferencia, si corre la agrupación N x M de una promo por fecha y
  * si corre el % de una promo por categoría. Antes el código preguntaba
  * `!bundle` en los tres; ahora un cupón `exclusivo` entra por la misma puerta.
  */
@@ -169,7 +179,7 @@ export function couponIncluyeCustom(code, now = Date.now()) {
  * borrarlo) porque el predicado sigue soportando fecha de inicio: la próxima
  * promo programada solo tiene que llenarlo.
  *
- * ACUMULA con el 10 % por transferencia Y con los cupones de %.
+ * ACUMULA con el % por transferencia Y con los cupones de %.
  *
  * ⚠️ ESTO CAMBIÓ EL 7/9/2026 y revierte la decisión del 20/8/2026, que era la
  * contraria: hasta esta spec, mientras la promo corría un cupón como EPICA10
@@ -177,7 +187,7 @@ export function couponIncluyeCustom(code, now = Date.now()) {
  * bienvenida ahora entrega EPICA10 con un contador de 10 minutos, y un contador
  * sobre un cupón que descuenta $0 es una promesa rota a la vista del cliente.
  * Por eso `percentCap` pasó de 0.10 a 0.20 — el techo tiene que dar lugar al
- * 10 % por transferencia MÁS el 10 % del cupón.
+ * % por transferencia MÁS el 10 % del cupón (0.25 desde la spec 027: 15 + 10).
  *
  * EPI50 es la excepción, y no por un caso especial: es `exclusivo`, así que
  * anula la agrupación N x M entera y corre solo su 50 %. Quien tiene ese código
@@ -207,10 +217,11 @@ export const PROMO_3X2 = {
   pay: 2,
   /**
    * Tope del descuento en % que corre ENCIMA de la agrupación N x M.
-   * 0.20 = el 10 % por transferencia + el 10 % de EPICA10, que es el máximo
-   * que se puede acumular hoy. Era 0.10 hasta el 7/9/2026 (ver arriba).
+   * 0.25 = el 15 % por transferencia + el 10 % de EPICA10, que es el máximo
+   * que se puede acumular hoy (spec 027, 26/9/2026). Era 0.10 hasta el 7/9/2026
+   * y 0.20 hasta el 26/9/2026.
    */
-  percentCap: 0.20
+  percentCap: 0.25
   // Ojo: NO agregar acá el código de un cupón para mostrarlo en el banner —
   // los cupones son ocultos (ver COUPONS arriba).
 };
@@ -487,8 +498,9 @@ export const WHOLESALE_QTY = 100;
 export const WHOLESALE_DISCOUNT = 0.5;
 
 /**
- * ─── PROMO MAYORISTA: 100 CALCOS A $39.999 (por tiempo limitado) ──────────────
- * En /mayorista, un pack de EXACTAMENTE 100 calcos a precio fijo $39.999. Los
+ * ─── PROMO MAYORISTA: 100 CALCOS A PRECIO FIJO (por tiempo limitado) ──────────
+ * En /mayorista, un pack de EXACTAMENTE 100 calcos a precio fijo ($47.999 desde
+ * la spec 027, 26/9/2026; antes $39.999). Los
  * 100 pueden ser 100 diseños DISTINTOS (catálogo) y/o diseños propios subidos
  * en el mismo armador.
  *
@@ -500,7 +512,8 @@ export const WHOLESALE_DISCOUNT = 0.5;
  *
  * La línea que viaja al carrito es `pack:mayorista100:{size}:{ts}` con
  * quantity = 1 (1 línea = 1 pack de 100) y basePrice = `price`. No participa de
- * cupones, del 10 % por transferencia ni de promos N x M (como todo pack).
+ * cupones ni de promos N x M (como todo pack); sí del % por transferencia,
+ * que desde la spec 027 corre sobre todo producto.
  *
  * Se auto-desactiva por fecha (sin cron): pasado `endsAt` el armador vuelve al
  * pack normal, el banner y el contador desaparecen y el servidor deja de
@@ -510,7 +523,7 @@ export const WHOLESALE_DISCOUNT = 0.5;
  * El test `src/lib/promoPricing.test.js` verifica que ambos lados coincidan.
  */
 const MAYORISTA100_QTY = 100;
-const MAYORISTA100_PRICE = 39999;
+const MAYORISTA100_PRICE = 47999;
 
 /**
  * EL objeto de la promo: economía (qty/price/sizes/endsAt), interruptor
@@ -596,9 +609,9 @@ export function mayoristaPromoOffMax() {
  * arrancan al deployarse. Por eso `isArgentinaPromoActive()` mira las dos
  * puntas: antes del lunes el precio tiene que seguir siendo el de lista.
  *
- * ACUMULA con el resto de los %: se SUMA al 10 % por transferencia y al cupón,
+ * ACUMULA con el resto de los %: se SUMA al % por transferencia y al cupón,
  * con el tope de seguridad MAX_STICKER_DISCOUNT (decisión de Mariano, 11/8/2026
- * — un calco de Argentina puede terminar 60 % off pagando por transferencia con
+ * — un calco de Argentina puede terminar 75 % off pagando por transferencia con
  * EPICA10). Los packs, negocio y fijos quedan afuera: ya traen su precio final.
  *
  * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js
@@ -674,10 +687,10 @@ export function esPromoArgentina(lineId, now = Date.now()) {
  * Precio de VIDRIERA de un calco del catálogo: el de lista, o la mitad si está
  * en la promo de Argentina.
  *
- * "Vidriera" = lo que se muestra en la grilla y en la ficha. NO incluye el 10 %
+ * "Vidriera" = lo que se muestra en la grilla y en la ficha. NO incluye el %
  * por transferencia ni el cupón: esos dependen del carrito entero (medio de
- * pago, cantidad total) y se resuelven en `pricedItems`. Mostrarlos acá daría
- * un precio que después no se puede sostener con un solo calco en el carrito.
+ * pago, cupón) y se resuelven en `pricedItems`. Mostrarlos acá daría un precio
+ * que después no se sostiene pagando con Mercado Pago.
  *
  * Devuelve también el precio tachado, para poder mostrar el antes/después sin
  * que cada pantalla lo calcule por su cuenta.
@@ -711,8 +724,8 @@ export function precioVidriera(stickerId, sizeId, now = Date.now()) {
  * envío gratis prometía un umbral que el checkout no reconocía y `add_to_cart`
  * le reportaba el doble a GA4 y a Meta.
  *
- * ⚠️ NO incluye el 10 % por volumen, el cupón ni el 10 % por transferencia: esos
- * dependen del carrito ENTERO (cantidad, medio de pago) y se resuelven en
+ * ⚠️ NO incluye el cupón ni el % por transferencia: esos dependen del carrito
+ * ENTERO (medio de pago, cupón) y se resuelven en
  * `pricedItems`. Mismo criterio que `precioVidriera` — ver su comentario. La
  * promo por categoría es distinta: depende SOLO del diseño, así que se puede
  * mostrar desde que el calco entra al carrito.
@@ -782,7 +795,7 @@ export const CATALOG_PACKS = [
   {
     qty: 10,
     label: 'Para empezar',
-    tagline: 'El mínimo para que arranque el descuento por volumen.'
+    tagline: 'Para probar varios diseños de una.'
   },
   {
     qty: 20,
@@ -820,10 +833,10 @@ export const PERSONALIZADOS_DISCOUNT = 0.10;
  * `listPrice` es el precio de lista tachado (solo display, no se cobra);
  * `price` es el que viaja al checkout y está espejado en netlify/functions/lib/pricing.js.
  */
-export const NEGOCIO = { qty: 100, size: '6cm', price: 39999, listPrice: 96999 };
+export const NEGOCIO = { qty: 100, size: '6cm', price: 47999, listPrice: 115999 };
 
 /** Productos de precio fijo. */
-export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 12000 };
+export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 14500 };
 /**
  * ─── FOTOS POLAROID (spec 019) ────────────────────────────────────────────────
  * Pack de 10 fotos, en 3 tamaños × 2 materiales. El id que viaja al carrito es
@@ -831,7 +844,7 @@ export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x h
  * (imantadas). `POLAROID.price` queda como precio de referencia para el feed de
  * Meta (mediana de las comunes).
  *
- * `priceIman` es el MISMO pack imantado: $600 por foto, o sea $6.000 por pack,
+ * `priceIman` es el MISMO pack imantado: $700 por foto, o sea $7.000 por pack (spec 027; antes $600),
  * igual en los tres tamaños — el imán cuesta lo mismo atrás de una foto chica
  * que de una grande.
  *
@@ -842,20 +855,20 @@ export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x h
  * sentidos: ningún id de un lado que le falte al otro.
  */
 export const POLAROID_SIZES = [
-  { id: '5x8',  label: '5 × 8 cm',  tag: 'Mini',                        price: 9000,  priceIman: 15000 },
-  { id: '7x10', label: '7 × 10 cm', tag: 'Medianas',                    price: 12000, priceIman: 18000 },
-  { id: '9x13', label: '9 × 13 cm', tag: 'Grandes · Polaroid original', price: 15000, priceIman: 21000 }
+  { id: '5x8',  label: '5 × 8 cm',  tag: 'Mini',                        price: 11000, priceIman: 18000 },
+  { id: '7x10', label: '7 × 10 cm', tag: 'Medianas',                    price: 14500, priceIman: 21500 },
+  { id: '9x13', label: '9 × 13 cm', tag: 'Grandes · Polaroid original', price: 18000, priceIman: 25000 }
 ];
-export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 12000 };
+export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 14500 };
 
 /** Fotos por pack. El precio se cobra POR PACK; el "por foto" es solo para contarlo. */
 export const POLAROID_FOTOS_POR_PACK = 10;
 /** Recargo del imantado por foto. Es display: el precio que se cobra sale de `priceIman`. */
-export const POLAROID_IMAN_POR_FOTO = 600;
+export const POLAROID_IMAN_POR_FOTO = 700;
 /** Desde 2 packs (20 fotos) corre el descuento por volumen. */
 export const POLAROID_VOLUMEN_MIN_PACKS = 2;
 /** Cuánto baja el precio de cada foto a partir de ese mínimo. */
-export const POLAROID_VOLUMEN_OFF_POR_FOTO = 200;
+export const POLAROID_VOLUMEN_OFF_POR_FOTO = 250;
 /**
  * Lo mismo, por pack — que es la unidad que se cobra. Escrito como producto y no
  * como 2000 a mano para que cambiar el "por foto" no deje los dos números
@@ -898,7 +911,7 @@ export function precioPolaroidLista(productId) {
 
 /**
  * Descuento POR PACK según cuántos packs lleva la línea: $0 abajo de 20 fotos,
- * $2.000 desde ahí.
+ * $2.500 desde ahí (POLAROID_VOLUMEN_OFF_PACK).
  *
  * NO es un escalón único de 20: 3 packs también lo cobran, y así hacia arriba
  * (decisión de Mariano, 13/09/2026). Corre igual en comunes y en imantadas.
@@ -922,9 +935,9 @@ export function precioPolaroidPack(sizeId, imantada = false, packs = 1) {
  * Packs de archivos listos para imprimir. NO se produce, NO se envía y NO se
  * entrega en mano: llega POR MAIL a la casilla que el cliente deja en el checkout.
  *
- * Precio FIJO SIEMPRE: la línea `digital:{id}` no participa de NINGÚN descuento
- * —ni cupones, ni el 10 % por transferencia, ni el 10 % por volumen, ni las
- * promos N x M (3x2 / 2x1)— ni suma para el envío gratis. Un archivo no tiene
+ * Precio FIJO: la línea `digital:{id}` no participa de cupones ni de las promos
+ * N x M (3x2 / 2x1) ni suma para el envío gratis. Sí del % por transferencia
+ * (spec 027: corre sobre todo producto). Un archivo no tiene
  * costo marginal ni logística, así que regalarlo dentro de un 3x2 o usarlo para
  * cruzar el umbral de envío gratis sería plata perdida.
  *
@@ -940,7 +953,7 @@ export const IMPRIMIBLES = [
     id: 'pack-stickers',
     /** Nombre que ve el cliente (carrito, checkout, mail y CRM). */
     name: 'Pack de stickers imprimibles',
-    price: 9999,
+    price: 11999,
     /**
      * Precio de lista TACHADO — solo display, no se cobra ni se manda al
      * servidor: el checkout cobra `price` y nada más. Mismo criterio que
@@ -949,7 +962,7 @@ export const IMPRIMIBLES = [
      * ⚠️ Si lo cambiás, el % del cartel se recalcula solo — sale de
      * `imprimibleOff()`, no está escrito a mano en ninguna pantalla.
      */
-    listPrice: 39999,
+    listPrice: 47999,
     /**
      * Cantidad de diseños del pack — es EL argumento de venta de la card.
      * ⚠️ Poné acá el número real: se muestra en la página, en el Home y en el

@@ -11,6 +11,7 @@ import {
 } from '../config/pricing.js';
 import { trackPolaroidMaterial } from '../lib/analytics.js';
 import { useSeo } from '../lib/seo.js';
+import { formatPrice } from '../lib/formato.js';
 
 /**
  * Id de la opción imantada del selector de material. Es el valor que viaja al
@@ -28,7 +29,7 @@ export default function Polaroid() {
   useSeo({
     title: 'Fotos Polaroid x10',
     description:
-      'Pack de 10 fotos estilo Polaroid desde $9.000, en 3 tamaños y con opción imantadas. Desde 20 fotos, más barato. Pagás online con Mercado Pago.'
+      `Pack de ${POLAROID_FOTOS_POR_PACK} fotos estilo Polaroid desde ${formatPrice(Math.min(...POLAROID_SIZES.map((s) => s.price)))}, en 3 tamaños y con opción imantadas. Desde ${FOTOS_MIN_VOLUMEN} fotos, más barato. Pagás online con Mercado Pago.`
   });
 
   // `pricing` le pasa a la ficha las cuatro cosas que necesita saber del precio,

@@ -3,7 +3,7 @@
  * Todos los datos comerciales viven acá — un solo lugar para editar.
  */
 import { formatPrice } from '../lib/formato.js';
-import { BULK_THRESHOLD, esCategoriaEn2x1 } from './pricing.js';
+import { TRANSFER_OFF, esCategoriaEn2x1 } from './pricing.js';
 
 export const site = {
   name: 'EPICALCOS',
@@ -241,14 +241,14 @@ export const devoluciones = {
  * apagada. `now` se inyecta para testear los bordes sin mockear el reloj (mismo
  * criterio que `esActiva()` en config/pricing.js).
  *
- * ⚠️ Los montos, el umbral del 10 % y los días de garantía SALEN DEL CONFIG.
+ * ⚠️ Los montos, el % por transferencia y los días de garantía SALEN DEL CONFIG.
  * Escritos a mano, un cambio dejaba la barra prometiendo un número y el
  * checkout cobrando otro.
  *
- * ⚠️ El 10 % NUNCA se anuncia a secas: siempre con sus dos condiciones (desde
- * `BULK_THRESHOLD` calcos Y pagando por transferencia). Es el error que ya se
- * cometió en /categorias con "10% off automático" y que el cliente descubría
- * recién al elegir medio de pago.
+ * ⚠️ El % por transferencia NUNCA se anuncia a secas: siempre con su condición
+ * (`TRANSFER_OFF` la trae adentro). Es el error que ya se cometió en
+ * /categorias con "10% off automático" y que el cliente descubría recién al
+ * elegir medio de pago. Desde la spec 027 no hay mínimo de calcos.
  *
  * ⚠️ Argentina se anuncia por el 2x1, NO por un %. La promo ARGENTINA 50 %
  * venció el 19/8/2026, y reactivarla la ACUMULARÍA con el 2x1: un par saldría
@@ -263,7 +263,7 @@ export function anunciosVigentes(now = Date.now()) {
       `y desde ${formatPrice(shipping.freeShippingThresholdNational)} al resto del país`,
     esCategoriaEn2x1('argentina', now) && '🇦🇷 2x1 en calcos de Argentina',
     `🔄 ${devoluciones.dias} días de garantía y devolución`,
-    `💸 10% OFF desde ${BULK_THRESHOLD} calcos pagando por transferencia`
+    `💸 ${TRANSFER_OFF}, en cualquier compra`
   ].filter(Boolean);
 }
 

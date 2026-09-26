@@ -7,11 +7,11 @@ import {
   shippingMethodLabel,
   contact
 } from '../config/site.js';
-import { useCart } from '../context/CartContext.jsx';
+import { TRANSFER_PCT } from '../config/pricing.js';
 
 const paymentMethods = [
   { value: 'mercadopago', label: 'Mercado Pago', icon: '💳', blurb: 'Tarjetas, dinero en cuenta, Rapipago o Pago Fácil.' },
-  { value: 'transferencia', label: 'Transferencia bancaria', icon: '🏦', blurb: '10% off desde 10 calcos totales.' }
+  { value: 'transferencia', label: 'Transferencia bancaria', icon: '🏦', blurb: `${TRANSFER_PCT}% off en todo el pedido.` }
 ];
 
 const initial = {
@@ -47,9 +47,9 @@ function validate(form, digitalOnly = false) {
 }
 
 /**
- * `percentBlocked` = hay un cupón de bundle (2x1) aplicado, que NO se acumula
- * con el 10 % por transferencia ni con el 10 % por volumen: con eso en true no
- * se promete ningún % acá adentro.
+ * `percentBlocked` = hay un cupón que anula todo (bundle o exclusivo) aplicado,
+ * que NO se acumula con el % por transferencia: con eso en true no se promete
+ * ningún % acá adentro.
  *
  * `digitalOnly` = el pedido son solo archivos imprimibles. Desaparece toda la
  * sección de entrega (método, dirección, ciudad, CP y plazos): no hay nada que
@@ -60,7 +60,6 @@ function validate(form, digitalOnly = false) {
 export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false, digitalOnly = false }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
-  const { bulkEligible, unitsToBulk } = useCart();
   const shippingMethod = digitalOnly ? 'digital' : form.shippingMethod;
 
   // Notificar al parent método + destino (ciudad/provincia) para recalcular el envío automático.
@@ -68,7 +67,7 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
     onShippingChange?.({ method: shippingMethod, city: form.city, province: form.province });
   }, [shippingMethod, form.city, form.province, onShippingChange]);
 
-  // Notificar al parent el medio de pago elegido para recalcular el total (10% off por transferencia).
+  // Notificar al parent el medio de pago elegido para recalcular el total (% off por transferencia).
   useEffect(() => {
     onPaymentMethodChange?.(form.paymentMethod);
   }, [form.paymentMethod, onPaymentMethodChange]);
@@ -274,13 +273,13 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
               <div className="flex items-center gap-2 font-semibold">
                 <span aria-hidden>{m.icon}</span> {m.label}
               </div>
-              {/* En un pedido de solo archivos, el blurb de transferencia
-                  prometería un 10 % que no aplica; lo útil ahí es CUÁNDO llega
-                  cada uno (MP es automático, la transferencia espera el comprobante). */}
+              {/* En un pedido de solo archivos, lo útil además es CUÁNDO llega
+                  cada uno (MP es automático, la transferencia espera el
+                  comprobante). El % por transferencia sí aplica desde la spec 027. */}
               <div className="text-xs text-white/50 mt-1">
                 {digitalOnly
                   ? m.value === 'transferencia'
-                    ? 'Te mandamos los archivos cuando recibimos el comprobante.'
+                    ? `${m.blurb} Te mandamos los archivos cuando recibimos el comprobante.`
                     : 'Los archivos te llegan apenas se acredita el pago.'
                   : m.blurb}
               </div>
@@ -291,15 +290,13 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
 
       {isTransfer && (
         <div className="rounded-xl p-4 border border-white/10 bg-white/5 space-y-2 text-sm">
-          {/* Con un pedido 100 % digital el 10 % no existe: la línea es de
-              precio fijo, así que no se promete nada que no vaya a pasar. */}
-          {digitalOnly ? null : percentBlocked ? (
-            <div className="text-white/60">Ya tenés un cupón aplicado: no se le suma el 10% por transferencia.</div>
-          ) : bulkEligible ? (
-            <div className="text-emerald-400 font-semibold">🎉 Tu pedido ya tiene 10% off por transferencia.</div>
-          ) : unitsToBulk > 0 ? (
-            <div className="text-white/60">Sumá {unitsToBulk} calco{unitsToBulk === 1 ? '' : 's'} más para el 10% off.</div>
-          ) : null}
+          {/* Spec 027: el % corre con cualquier pedido, desde 1 calco y también
+              con archivos — ya no hay un "te faltan N calcos". */}
+          {percentBlocked ? (
+            <div className="text-white/60">Ya tenés un cupón aplicado: no se le suma el {TRANSFER_PCT}% por transferencia.</div>
+          ) : (
+            <div className="text-emerald-400 font-semibold">🎉 Tu pedido tiene {TRANSFER_PCT}% off por transferencia.</div>
+          )}
           {/* Acá estaban el CVU, el alias y el titular, con un "Transferí el total
               del pedido a:" arriba. Es la fuga que dejó pedidos sin registrar:
               el cliente leía la instrucción, se iba al homebanking, transfería y

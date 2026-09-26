@@ -4,13 +4,13 @@ import { usePromoActive, use2x1PromoActive } from '../lib/promo.js';
 import { useAvisoDesbloqueo } from '../lib/promoUnlock.js';
 import { META_LINE_SKU, FIXED_SKU, DIGITAL_SKU } from '../config/metaCatalog.js';
 import { getTamano, MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO } from '../config/personalizados.js';
+import { conPrecioVigente } from '../lib/precioVigente.js';
 import {
   priceForSize,
   sizeLabel,
   round,
-  BULK_THRESHOLD,
-  BULK_DISCOUNT,
-  BULK_DISCOUNT_PAYMENT_METHOD,
+  TRANSFER_DISCOUNT,
+  TRANSFER_PAYMENT_METHOD,
   findCoupon,
   couponBundle,
   couponAnulaTodo,
@@ -99,7 +99,10 @@ function initState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     const items = raw ? JSON.parse(raw) : [];
     return {
-      items: purgarLineasRetiradas(items),
+      // Al día con los precios vigentes (spec 027): un carrito guardado antes de
+      // un cambio de precios mandaría el viejo y el checkout se trabaría con
+      // `price_mismatch`. Ver lib/precioVigente.js.
+      items: purgarLineasRetiradas(items).map(conPrecioVigente),
       drawerOpen: false
     };
   } catch {
@@ -351,10 +354,10 @@ export function CartProvider({ children }) {
    * Precios derivados. Hay que distinguir DOS tipos de descuento, porque se
    * muestran en momentos distintos:
    *
-   *  1. Los que dependen del CARRITO ENTERO — el 10 % por volumen en calcos
-   *     sueltos, el cupón y el 10 % por transferencia. Estos NO se pueden
-   *     mostrar acá: dependen de la cantidad total y del medio de pago, que se
-   *     eligen en el checkout. Se aplican en `pricedItems`.
+   *  1. Los que dependen del CARRITO ENTERO — el cupón y el % por
+   *     transferencia. Estos NO se pueden mostrar acá: dependen del cupón y
+   *     del medio de pago, que se eligen en el checkout. Se aplican en
+   *     `pricedItems`.
    *
    *  2. Los que dependen SOLO DEL DISEÑO — las promos por categoría (ver
    *     `precioVidrieraLinea`). Estos sí se muestran desde acá: la grilla y la
@@ -366,17 +369,12 @@ export function CartProvider({ children }) {
    * suman como cualquier cosa que viaje en la caja: es plata del pedido.
    */
   const derived = useMemo(() => {
-    const stickerLines = state.items.filter((i) => i.type === 'sticker');
-    const bulkUnits = stickerLines.reduce((a, i) => a + i.quantity, 0);
-    const bulkEligible = bulkUnits >= BULK_THRESHOLD;
-
     const items = state.items.map((i) => ({ ...i, price: precioVidrieraLinea(i) }));
 
     const subtotal = items.reduce((a, i) => a + i.price * i.quantity, 0);
     const totalItems = items.reduce((a, i) => a + i.quantity, 0);
-    // `bulkSavings` (cuánto se ahorra pagando por transferencia) ya NO se calcula
-    // acá: ver el comentario junto a `pricedItems`, más abajo.
-    const unitsToBulk = bulkEligible ? 0 : BULK_THRESHOLD - bulkUnits;
+    // `transferSavings` (cuánto se ahorra pagando por transferencia) NO se
+    // calcula acá: ver el comentario junto a `pricedItems`, más abajo.
 
     // Bolsa común de calcos elegibles (catálogo + personalizados) para las
     // promos N x M. La usan la promo 3x2 por fecha (acá abajo, para mostrarla
@@ -452,9 +450,6 @@ export function CartProvider({ children }) {
       hasDigital,
       digitalOnly,
       totalItems,
-      bulkUnits,
-      bulkEligible,
-      unitsToBulk,
       eligibleUnitBasePrices,
       unidadesCategoria,
       unidadesResto,
@@ -479,8 +474,13 @@ export function CartProvider({ children }) {
    * Recalcula los items con el precio real según el medio de pago y el cupón
    * aplicado en el checkout.
    *
-   * FUERA de la promo: a los calcos sueltos se les SUMA el 10 % por volumen
-   * (solo transferencia y desde el umbral) MÁS el cupón (acumulables, tope 90 %).
+   * TRANSFERENCIA (spec 027, 26/9/2026): 15 % a TODO producto, desde 1 unidad
+   * — packs, negocio, fijos y digitales incluidos, que no tienen ningún otro %.
+   * Hasta el 26/9 era 10 % y solo en calcos de catálogo desde 10.
+   *
+   * FUERA de la promo: a los calcos sueltos se les SUMA la transferencia MÁS el
+   * cupón (acumulables, tope 90 %); a un personalizado suelto, solo la
+   * transferencia (salvo cupón `incluyeCustom`).
    *
    * DURANTE las promos N x M (3x2 general y 2x1 por categoría): a los calcos
    * elegibles se les aplica primero el reparto (uniforme vía keepFraction) y
@@ -490,16 +490,16 @@ export function CartProvider({ children }) {
    * promo. Hasta entonces `couponRate` quedaba en 0 mientras la promo corría
    * (decisión del 20/8/2026). Cambió porque el popup ahora entrega EPICA10 con
    * un contador de 10 minutos, y un contador sobre un cupón que descuenta $0 es
-   * una promesa rota. Por eso `percentCap` pasó de 0.10 a 0.20: tiene que
-   * entrar el 10 % de transferencia MÁS el 10 % del cupón.
+   * una promesa rota. Por eso `percentCap` pasó de 0.10 a 0.20 — y a 0.25 con
+   * la spec 027: tiene que entrar el 15 % de transferencia MÁS el 10 % del cupón.
    * Espejado en netlify/functions/lib/pricing.js.
    *
    * Con un CUPÓN DE BUNDLE (N x M): manda el bundle del cupón — cada N,
-   * la más barata gratis y NINGÚN % (ni transferencia, ni volumen, ni otro
-   * cupón), y reemplaza a la promo 3x2 si estuviera vigente.
+   * la más barata gratis y NINGÚN % (ni transferencia, en ninguna línea, ni
+   * otro cupón), y reemplaza a la promo 3x2 si estuviera vigente.
    *
    * Con un CUPÓN EXCLUSIVO (EPI50): corre SOLO el % del cupón. No se le suma el
-   * 10 % por transferencia ni el de volumen, no corre el % de la promo por
+   * % por transferencia (en ninguna línea), no corre el % de la promo por
    * categoría y no se aplica la agrupación N x M por fecha. Si además trae
    * `incluyeCustom`, el % alcanza a los personalizados sueltos.
    *
@@ -550,8 +550,11 @@ export function CartProvider({ children }) {
       // ¿El cupón es el único descuento que corre? (bundle o `exclusivo`).
       const anulaTodo = couponAnulaTodo(codigo);
       const incluyeCustom = couponIncluyeCustom(codigo);
-      const bulkRate =
-        !anulaTodo && derived.bulkEligible && paymentMethod === BULK_DISCOUNT_PAYMENT_METHOD ? BULK_DISCOUNT : 0;
+      // Transferencia (spec 027): sin umbral, a todo producto. Un cupón que anula
+      // todo también la anula: ese cupón es el único descuento.
+      const transferRate = !anulaTodo && paymentMethod === TRANSFER_PAYMENT_METHOD ? TRANSFER_DISCOUNT : 0;
+      const conTransferencia = (i) =>
+        transferRate ? { ...i, price: round(i.price * (1 - transferRate)) } : i;
       // El cupón de % ahora SÍ suma con la promo (ver el aviso del bloque de
       // arriba). Solo lo anula un cupón de bundle, que no es de %.
       // EPI50 no cae acá — es `exclusivo`, así que ya anuló la promo entera
@@ -561,7 +564,7 @@ export function CartProvider({ children }) {
       // al pedido sin agrupación, así que tampoco corre su tope.
       const cap =
         derived.algunaPromoNxM && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
-      const percentRate = Math.min(bulkRate + couponRate, cap);
+      const percentRate = Math.min(transferRate + couponRate, cap);
 
       // Agrupación N x M vigente: el cupón de bundle pisa a las promos por
       // fecha, y un cupón exclusivo las anula (su % es el descuento final).
@@ -587,19 +590,23 @@ export function CartProvider({ children }) {
       // que el cupón traiga `incluyeCustom`, que suma los personalizados sueltos.
       const alcanza = (i) => i.type === 'sticker' || (incluyeCustom && i.type === 'custom');
 
+      // Lo que el % de arriba no alcanza (packs, negocio, fijos, digitales y el
+      // personalizado suelto sin `incluyeCustom`) igual tiene la transferencia
+      // (spec 027), sobre su precio de vidriera — que para esas líneas es el
+      // mismo `base` que usa el servidor (Polaroid: con el descuento por volumen).
       if (!grouping) {
         return derived.items.map((i) => {
-          if (!alcanza(i)) return i;
+          if (!alcanza(i)) return conTransferencia(i);
           const rate = rateDe(i);
           return rate === 0 ? i : { ...i, price: round(i.basePrice * (1 - rate)) };
         });
       }
 
-      // N x M + % (con tope) a los elegibles; el resto intacto.
+      // N x M + % (con tope) a los elegibles; el resto, solo la transferencia.
       return derived.items.map((i) =>
         PROMO_ELIGIBLE_TYPES.has(i.type)
           ? { ...i, price: round(i.basePrice * keep * (1 - rateDe(i))) }
-          : i
+          : conTransferencia(i)
       );
     },
     [derived]
@@ -607,7 +614,8 @@ export function CartProvider({ children }) {
 
   /**
    * Cuánto se ahorra pagando por transferencia (sin cupón): la diferencia entre
-   * lo que cobra el checkout con cada medio, sacada de `pricedItems`.
+   * lo que cobra el checkout con cada medio, sacada de `pricedItems`. Desde la
+   * spec 027 corre con cualquier carrito (antes, solo desde 10 calcos).
    *
    * ⚠️ BUG QUE ARREGLA (25/9/2026). Se calculaba en `derived` como el 10 % del
    * precio de LISTA de cada calco. Eso solo es cierto sin promo N x M: con el
@@ -620,18 +628,18 @@ export function CartProvider({ children }) {
    * Sale de la misma función que usa el checkout para que no pueda volver a
    * separarse: si cambia una regla de precios, cambia sola acá también.
    */
-  const bulkSavings = useMemo(() => {
-    if (!derived.bulkEligible) return 0;
+  const transferSavings = useMemo(() => {
+    if (!derived.items.length) return 0;
     const total = (lineas) => lineas.reduce((a, i) => a + i.price * i.quantity, 0);
     return (
       total(pricedItems('mercadopago', '', null)) -
-      total(pricedItems(BULK_DISCOUNT_PAYMENT_METHOD, '', null))
+      total(pricedItems(TRANSFER_PAYMENT_METHOD, '', null))
     );
-  }, [derived.bulkEligible, pricedItems]);
+  }, [derived.items.length, pricedItems]);
 
   const value = {
     ...derived,
-    bulkSavings,
+    transferSavings,
     pricedItems,
     drawerOpen: state.drawerOpen,
     addSticker,

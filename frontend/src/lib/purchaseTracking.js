@@ -4,7 +4,7 @@
  * EL PROBLEMA QUE RESUELVE
  * /pago-exitoso disparaba `purchase` con `subtotal` del CartContext, que se
  * calcula con `basePrice` — el precio de LISTA. Los descuentos (3x2, cupón,
- * 10 % por transferencia) se aplican en `pricedItems()`, que vive solo dentro
+ * % por transferencia) se aplican en `pricedItems()`, que vive solo dentro
  * del checkout y no sobrevive al redirect a Mercado Pago. Resultado: GA4 y el
  * Píxel reportaban un `value` inflado y `shipping: 0` siempre, mientras la API
  * de conversiones (server) mandaba el monto correcto. Dos números distintos

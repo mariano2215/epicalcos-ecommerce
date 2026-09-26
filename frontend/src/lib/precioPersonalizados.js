@@ -151,7 +151,7 @@ export function cotizarPackHolografico({ tamano } = {}) {
  * se puede tomar aunque el cliente quiera menos de 100 — no baja el ticket.
  *
  * El umbral NO se escribe en ningún lado: sale de NEGOCIO y del 3x2. Con los
- * precios de hoy, 38 copias en 6 cm, 31 en 9 cm y 50 en 4 cm (lo fija el test).
+ * precios de hoy, 38 copias en 6 cm, 30 en 9 cm y 50 en 4 cm (lo fija el test).
  */
 export function convieneNegocio({ tamano, copias, promoActiva = false }) {
   const c = cotizarTanda({ tamano, unidades: copias, promoActiva });

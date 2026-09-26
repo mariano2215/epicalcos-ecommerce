@@ -13,6 +13,8 @@ import {
   couponAnulaTodo,
   esPromoArgentina,
   PROMO_ARGENTINA,
+  TRANSFER_PCT,
+  TRANSFER_OFF,
   CUSTOM_SPEC_STORAGE_KEY
 } from '../config/pricing.js';
 import {
@@ -174,7 +176,7 @@ export default function Checkout() {
   }, [appliedCoupon]);
 
   // Precios reales según el medio de pago y el cupón aplicado. Un cupón de %
-  // normal (EPICA10) se SUMA al 10% por transferencia; uno de bundle o uno
+  // normal (EPICA10) se SUMA al % por transferencia; uno de bundle o uno
   // `exclusivo` (EPI50) no se acumula con nada. Ver CartContext.pricedItems.
   const items = pricedItems(paymentMethod, appliedCoupon, couponIssuedAt);
   // Cupón de bundle (2x1): no se acumula con ningún % — ni transferencia, ni volumen.
@@ -200,7 +202,9 @@ export default function Checkout() {
     // El texto sale del config, no escrito a mano.
     if (tienePromoCategoria) parts.push(PROMO_ARGENTINA.titulo);
     if (appliedCoupon) parts.push(appliedCoupon);
-    if (isTransfer && !appliedCoupon) parts.push('10% transf.');
+    // Transferencia + cupón de % se suman desde la spec 017; solo un cupón que
+    // anula todo (bundle, que ya salió arriba, o exclusivo) la deja afuera.
+    if (isTransfer && !couponAnulaTodo(appliedCoupon)) parts.push(`${TRANSFER_PCT}% transf.`);
     return parts.length ? parts.join(' + ') : 'Descuento';
   })();
   // Los archivos digitales no viajan: se descuentan del subtotal que decide el
@@ -517,9 +521,9 @@ export default function Checkout() {
               ) : (
                 <div>💳 Pagás con Mercado Pago (tarjetas, dinero en cuenta, efectivo).</div>
               )}
-              {/* Con un pedido 100 % digital no corre ninguna promo: la línea
-                  es de precio fijo. En vez de prometer descuentos que el
-                  servidor va a rechazar, se explica cómo llega el archivo. */}
+              {/* Con un pedido 100 % digital no corre ninguna promo N x M ni
+                  cupón: la línea es de precio fijo (sí la transferencia, que
+                  sale en la línea de descuento). Se explica cómo llega el archivo. */}
               {digitalOnly ? (
                 <div className="text-emerald-400">
                   📩 Te mandamos los archivos al mail que dejes acá arriba, apenas se acredita el pago.
@@ -529,7 +533,7 @@ export default function Checkout() {
                   {promoActive && !appliedBundle && !cuponExclusivo && (
                     <div className="text-emerald-400">
                       🎉 Promo 3x2 en calcos y personalizados: cada 3, la más barata gratis.
-                      Se combina con el 10% por transferencia y con tu cupón.
+                      Se combina con el {TRANSFER_PCT}% por transferencia y con tu cupón.
                     </div>
                   )}
                   {promo2x1Active && !appliedBundle && !cuponExclusivo && (
@@ -539,21 +543,21 @@ export default function Checkout() {
                   )}
                   {/* ⚠️ Acá había el aviso contrario ("el cupón no se combina con
                       la promo 3x2"). La spec 017 revirtió esa regla: ahora SÍ se
-                      acumula, con tope del 20 %. */}
+                      acumula, con tope (PROMO_3X2.percentCap). */}
                   {appliedBundle ? (
                     <div className="text-emerald-400">
                       🎟️ Cupón {appliedBundle.buy}x{appliedBundle.pay} en calcos y personalizados: cada {appliedBundle.buy},
-                      la más barata gratis. No se combina con el 10% por transferencia ni con el 10% desde 10 calcos.
+                      la más barata gratis. No se combina con el {TRANSFER_PCT}% por transferencia.
                     </div>
                   ) : cuponExclusivo ? (
                     /* El % sale del config, no escrito a mano: si mañana cambia,
                        el cartel no puede quedar prometiendo otra cosa. */
                     <div className="text-emerald-400">
                       🎟️ Cupón {appliedCoupon}: {Math.round(cuponExclusivo.discount * 100)}% off en calcos y
-                      personalizados. No se combina con el 10% por transferencia ni con el 10% desde 10 calcos.
+                      personalizados. No se combina con el {TRANSFER_PCT}% por transferencia.
                     </div>
                   ) : (
-                    <div>🏷️ Desde 10 calcos sueltos, 10% off pagando por transferencia.</div>
+                    <div>🏷️ {TRANSFER_OFF}, en todo el pedido.</div>
                   )}
                 </>
               )}

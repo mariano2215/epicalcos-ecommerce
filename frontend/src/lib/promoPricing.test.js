@@ -28,8 +28,7 @@ import {
   isCouponActive as isCouponActiveFE,
   COUPONS,
   round,
-  BULK_THRESHOLD,
-  BULK_DISCOUNT,
+  TRANSFER_DISCOUNT,
   MAX_STICKER_DISCOUNT,
   PROMO_MAYORISTA_100,
   PROMO_MAYORISTA_END_MS,
@@ -40,6 +39,8 @@ import {
   mayoristaPromoOffMax,
   IMPRIMIBLES,
   IMPRIMIBLE_PRINCIPAL,
+  NEGOCIO,
+  TATUAJES,
   findImprimible,
   PROMO_ARGENTINA,
   PROMO_ARGENTINA_START_MS,
@@ -101,6 +102,8 @@ import {
   CUPONES_CON_VENTANA as BE_CUPONES_CON_VENTANA,
   ventanaCuponAbierta as beVentanaAbierta,
   FIXED_PRICES,
+  TRANSFER_DISCOUNT as BE_TRANSFER_DISCOUNT,
+  SIZE_PRICES as BE_SIZE_PRICES,
   POLAROID_VOLUMEN_MIN_PACKS as BE_POLAROID_MIN_PACKS,
   POLAROID_VOLUMEN_OFF_PACK as BE_POLAROID_OFF_PACK
 } from '../../../netlify/functions/lib/pricing.js';
@@ -132,6 +135,16 @@ const AFTER_MAYORISTA = new Date('2026-08-15T00:30:00-03:00'); // sáb 15/8: ANT
 
 afterEach(() => vi.useRealTimers());
 
+/**
+ * Precios de lista y % por transferencia, de config (spec 027). Escritos a mano
+ * —1600, 0.9, 10 calcos— este archivo se rompía con cada cambio de precio sin
+ * que hubiera cambiado ninguna regla.
+ */
+const P4 = priceForSize('4cm');
+const P6 = priceForSize('6cm');
+const P9 = priceForSize('9cm');
+const T = TRANSFER_DISCOUNT;
+
 /** Espejo de CartContext.pricedItems: arma el payload que MANDA el cliente. */
 function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) {
   const promoActive = feActive();
@@ -140,12 +153,13 @@ function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) 
   const incluyeCustom = couponIncluyeCustom(coupon);
   const promo2x1Active = fe2x1Active();
   const algunaPromoNxM = promoActive || promo2x1Active;
-  const stickerUnits = cart.filter((l) => l.type === 'sticker').reduce((a, l) => a + l.quantity, 0);
-  const bulkRate = !anulaTodo && stickerUnits >= BULK_THRESHOLD && paymentMethod === 'transferencia' ? BULK_DISCOUNT : 0;
+  // Spec 027: transferencia 15 % sin umbral, a todo producto (antes 10 % con
+  // ≥ 10 líneas sticker). Un cupón que anula todo también la anula.
+  const transferRate = !anulaTodo && paymentMethod === 'transferencia' ? TRANSFER_DISCOUNT : 0;
   // ⚠️ Spec 017: el cupón de % SÍ se acumula con la promo (antes se anulaba).
   const couponRate = bundle ? 0 : findCoupon(coupon)?.discount || 0;
   const cap = algunaPromoNxM && !anulaTodo ? PROMO_3X2.percentCap : MAX_STICKER_DISCOUNT;
-  const percentRate = Math.min(bulkRate + couponRate, cap);
+  const percentRate = Math.min(transferRate + couponRate, cap);
 
   const grouping = bundle || (!anulaTodo && algunaPromoNxM ? PROMO_3X2 : null);
   let keep = 1;
@@ -181,7 +195,10 @@ function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) 
     let price;
     if (grouping && PROMO_ELIGIBLE.has(l.type)) price = round(l.basePrice * keep * (1 - rateDe(l)));
     else if (!grouping && alcanza(l)) price = round(l.basePrice * (1 - rateDe(l)));
-    else price = l.basePrice;
+    // El resto (packs, negocio, fijos, digitales, custom sin `incluyeCustom`
+    // fuera de promo): solo la transferencia, sobre el precio de vidriera
+    // (Polaroid con su descuento por volumen), igual que CartContext.
+    else price = transferRate ? round(precioVidrieraLinea(l) * (1 - transferRate)) : precioVidrieraLinea(l);
     return { id: l.id, title: l.title, quantity: l.quantity, unit_price: price };
   });
 }
@@ -190,7 +207,7 @@ function clientItems(cart, { paymentMethod = 'mercadopago', coupon = '' } = {}) 
 const cart = [
   { id: 'sticker:goku:6cm', title: 'Goku 6cm', type: 'sticker', basePrice: priceForSize('6cm'), quantity: 2 },
   { id: 'sticker:naruto:9cm', title: 'Naruto 9cm', type: 'sticker', basePrice: priceForSize('9cm'), quantity: 1 },
-  { id: 'custom:4cm:silueta:1', title: 'Custom 4cm x10', type: 'custom', basePrice: 1200, quantity: 10 },
+  { id: 'custom:4cm:silueta:1', title: 'Custom 4cm x10', type: 'custom', basePrice: priceForSize('4cm'), quantity: 10 },
   { id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista', type: 'pack', basePrice: round(priceForSize('6cm') * 0.5), quantity: 100 }
 ];
 const retiro = { methodValue: 'retiro' };
@@ -206,8 +223,11 @@ describe('promo3x2 — mecánica y paridad frontend ↔ backend', () => {
     expect(Number.isFinite(FE_START)).toBe(true);
     expect(Number.isFinite(FE_END)).toBe(false);
     expect(Number.isFinite(BE_END)).toBe(false);
-    // El tope subió a 20 % para que EPICA10 pueda acumular sobre la promo.
-    expect(PROMO_PERCENT_CAP).toBe(0.2);
+    // El tope subió a 20 % para que EPICA10 pueda acumular sobre la promo, y a
+    // 25 % con la spec 027 (15 % de transferencia + 10 % del cupón).
+    expect(PROMO_PERCENT_CAP).toBe(0.25);
+    expect(BE_TRANSFER_DISCOUNT).toBe(TRANSFER_DISCOUNT);
+    expect(TRANSFER_DISCOUNT).toBe(0.15);
   });
 
   it('cada 3 unidades regala la MÁS BARATA', () => {
@@ -243,13 +263,14 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
   it('promo activa, sin cupón (MP): 3x2 y el server acepta', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
-    // 13 elegibles → 4 gratis (los 4 más baratos = 4×1200). eligibleBase=17200, keep=12400/17200.
-    const keep = 12400 / 17200;
+    // 13 elegibles → 4 gratis (los 4 más baratos = 4 de 4 cm).
+    const base = 2 * P6 + P9 + 10 * P4;
+    const keep = (base - 4 * P4) / base;
     const items = clientItems(cart);
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * keep));
-    expect(price(items, 'sticker:naruto:9cm')).toBe(round(2000 * keep));
-    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(1200 * keep));
-    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(1600 * 0.5)); // pack intacto
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * keep));
+    expect(price(items, 'sticker:naruto:9cm')).toBe(round(P9 * keep));
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(P4 * keep));
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(P6 * 0.5)); // pack intacto (MP: sin transferencia)
 
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
@@ -264,10 +285,8 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     // minutos, y un contador sobre un cupón que descuenta $0 es una promesa
     // rota. Ahora el 10 % del cupón corre ENCIMA del reparto N x M.
     //
-    // OJO con este carrito: tiene 3 calcos de CATÁLOGO (los 10 personalizados
-    // no cuentan para el umbral de volumen), así que no llega a los 10 y el
-    // 10 % por transferencia no corre. Lo que se ve acá es el reparto + el 10 %
-    // del cupón, nada más.
+    // Desde la spec 027 la transferencia corre sin umbral: acá corren el
+    // reparto + 15 % de transferencia + 10 % del cupón (tope 25 %).
     const items = clientItems(cart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' });
     expect(res.ok).toBe(true);
@@ -286,53 +305,52 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(resSin.itemsTotal).toBeGreaterThan(res.itemsTotal);
   });
 
-  it('fuera de la promo vuelve TODO a la normalidad (custom sin cupón, pack intacto)', () => {
+  it('fuera de la promo: calco con transferencia + cupón; custom y pack, solo la transferencia', () => {
     vi.useFakeTimers();
     vi.setSystemTime(AFTER_PROMO);
     const items = clientItems(cart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    // El carrito tiene 3 calcos de catálogo (<10): no llega al 10% por transferencia,
-    // así que el sticker solo recibe el 10% del cupón. Custom sin cupón; pack intacto.
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.9));
-    expect(price(items, 'custom:4cm:silueta:1')).toBe(1200);
-    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(1600 * 0.5));
+    // Spec 027: el calco suma transferencia + cupón (25 %); el custom, sin
+    // cupón, solo la transferencia; el pack, ningún cupón pero sí la transferencia.
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * (1 - (T + 0.1))));
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(round(P4 * (1 - T)));
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(round(P6 * 0.5) * (1 - T)));
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' });
     expect(res.ok).toBe(true);
   });
 
-  it('con ≥10 calcos: fuera de promo 20% acumulable; en promo, 3x2 con % topeado en 20%', () => {
-    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: 1600, quantity: 10 }];
+  it('fuera de promo 25 % acumulable; en promo, 3x2 con % topeado en 25 %', () => {
+    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: P6, quantity: 10 }];
 
-    // Fuera de promo: transferencia 10% + EPICA10 10% = 20% (tope 90%).
+    // Fuera de promo: transferencia 15% + EPICA10 10% = 25% (tope 90%).
     vi.useFakeTimers();
     vi.setSystemTime(AFTER_PROMO);
     let items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.8));
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.75));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
 
-    // En promo: 10 unidades → 3 gratis (keep = 0.7). ⚠️ El tope pasó a 20 % con
-    // la spec 017, así que transferencia (10 %) + EPICA10 (10 %) SÍ entran los
-    // dos encima del 3x2. Antes esto daba 0.9 porque el cupón se anulaba.
+    // En promo: 10 unidades → 3 gratis (keep = 0.7). El tope es 25 % desde la
+    // spec 027, así que transferencia (15 %) + EPICA10 (10 %) entran los dos
+    // encima del 3x2.
     vi.setSystemTime(DURING_PROMO);
     items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.7 * 0.8));
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.7 * 0.75));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
-  it('promo activa + transferencia con 12 calcos: el 3x2 SÍ se combina con el 10%', () => {
+  it('promo activa + transferencia con 12 calcos: el 3x2 SÍ se combina con el 15%', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
-    // 12 calcos de catálogo de 6cm: pasa el umbral de volumen (10) y va por
-    // transferencia, así que corre el 3x2 y encima el 10%.
-    const doce = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', type: 'sticker', basePrice: 1600, quantity: 12 }];
+    // 12 calcos de catálogo de 6cm por transferencia: corre el 3x2 y encima el 15%.
+    const doce = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', type: 'sticker', basePrice: P6, quantity: 12 }];
     const keep = (12 - 4) / 12; // 12 unidades → 4 gratis, todas del mismo precio
     const items = clientItems(doce, { paymentMethod: 'transferencia' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * keep * 0.9));
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * keep * (1 - T)));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia' }).ok).toBe(true);
 
-    // ⚠️ Con un cupón encima el precio AHORA SÍ baja (spec 017): 10 % de
-    // transferencia + 10 % del cupón = 20 %, que es justo el tope.
+    // Con un cupón encima el precio baja más (spec 017): 15 % de transferencia
+    // + 10 % del cupón = 25 %, que es justo el tope (spec 027).
     const conCupon = clientItems(doce, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(conCupon, 'sticker:goku:6cm')).toBe(round(1600 * keep * 0.8));
+    expect(price(conCupon, 'sticker:goku:6cm')).toBe(round(P6 * keep * 0.75));
     expect(validateAndPriceOrder({ items: conCupon, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
@@ -361,10 +379,10 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     vi.setSystemTime(BEFORE_PROMO);
     // El deploy es antes de las 23:00: hasta esa hora el precio válido es el de lista.
     const items = clientItems(cart);
-    expect(price(items, 'sticker:goku:6cm')).toBe(1600);
+    expect(price(items, 'sticker:goku:6cm')).toBe(P6);
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' }).ok).toBe(true);
 
-    const conPromo = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 3, unit_price: round(1600 * 2 / 3) }];
+    const conPromo = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 3, unit_price: round(P6 * 2 / 3) }];
     const res = validateAndPriceOrder({ items: conPromo, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(false);
     expect(res.error).toBe('price_mismatch');
@@ -398,15 +416,15 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(findCoupon('EMOJI50')).toBeNull();
 
     // El carrito se cotiza a precio de lista aunque el cliente mande el código.
-    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: 1600, quantity: 10 }];
+    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: P6, quantity: 10 }];
     const items = clientItems(bulkCart, { coupon: 'EMOJI50' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(1600);
+    expect(price(items, 'sticker:goku:6cm')).toBe(P6);
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EMOJI50' });
     expect(res.ok).toBe(true);
     expect(res.couponApplied).toBeNull();
 
     // Y si intenta cobrarse un 2x1 con un cupón que no existe, el server lo rechaza.
-    const conBundle = bulkCart.map((l) => ({ id: l.id, title: l.title, quantity: l.quantity, unit_price: 800 }));
+    const conBundle = bulkCart.map((l) => ({ id: l.id, title: l.title, quantity: l.quantity, unit_price: round(P6 / 2) }));
     const rechazado = validateAndPriceOrder({ items: conBundle, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EMOJI50' });
     expect(rechazado.ok).toBe(false);
     expect(rechazado.error).toBe('price_mismatch');
@@ -415,7 +433,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(findCoupon('EPICA10')?.discount).toBe(0.10);
     expect(beCouponActive('EPICA10')).toBe(true);
     const conEpica = clientItems(bulkCart, { coupon: 'EPICA10' });
-    expect(price(conEpica, 'sticker:goku:6cm')).toBe(round(1600 * 0.9));
+    expect(price(conEpica, 'sticker:goku:6cm')).toBe(round(P6 * 0.9));
     expect(
       validateAndPriceOrder({ items: conEpica, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10' }).couponApplied
     ).toBe('EPICA10');
@@ -455,15 +473,15 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
 
 
     // El % que se muestra es el real contra el precio de lista de cada tamaño.
-    expect(mayoristaPromoOff('4cm')).toBe(Math.round((1 - 39999 / (1200 * 100)) * 100));
-    expect(mayoristaPromoOff('6cm')).toBe(Math.round((1 - 39999 / (1600 * 100)) * 100));
+    expect(mayoristaPromoOff('4cm')).toBe(Math.round((1 - MAYORISTA100_PRICE / (P4 * 100)) * 100));
+    expect(mayoristaPromoOff('6cm')).toBe(Math.round((1 - MAYORISTA100_PRICE / (P6 * 100)) * 100));
     // El "HASTA X% OFF" de la card del hero es el mayor de los dos, calculado.
     expect(mayoristaPromoOffMax()).toBe(Math.max(mayoristaPromoOff('4cm'), mayoristaPromoOff('6cm')));
 
     // El copy sale del config y trae el precio ya formateado.
     expect(PROMO_MAYORISTA_100.id).toBe('mayorista100');
     expect(PROMO_MAYORISTA_100.titulo).toContain(String(PROMO_MAYORISTA_100.qty));
-    expect(PROMO_MAYORISTA_100.titulo).toContain('39.999');
+    expect(PROMO_MAYORISTA_100.titulo).toContain('47.999'); // spec 027 (antes 39.999)
 
     vi.useFakeTimers();
     vi.setSystemTime(DURING_MAYORISTA);
@@ -474,42 +492,48 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(isMayorista100Active()).toBe(false);
   });
 
-  it('promo mayorista: el server acepta el pack de 100 a $39.999 en 4 y 6 cm', () => {
+  it('promo mayorista: el server acepta el pack de 100 a precio fijo en 4 y 6 cm', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_MAYORISTA);
     // 1 línea = 1 pack de 100 calcos. Convive con calcos sueltos, que siguen a precio de lista.
     const items = [
-      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100 · 4 cm', quantity: 1, unit_price: 39999 },
-      { id: 'pack:mayorista100:6cm:2', title: 'Pack Mayorista PROMO x100 · 6 cm', quantity: 1, unit_price: 39999 },
-      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 1600 }
+      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100 · 4 cm', quantity: 1, unit_price: MAYORISTA100_PRICE },
+      { id: 'pack:mayorista100:6cm:2', title: 'Pack Mayorista PROMO x100 · 6 cm', quantity: 1, unit_price: MAYORISTA100_PRICE },
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: P6 }
     ];
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(39999 * 2 + 3200);
+    expect(res.itemsTotal).toBe(MAYORISTA100_PRICE * 2 + P6 * 2);
   });
 
-  it('promo mayorista: el pack NO recibe cupón ni 10% por transferencia', () => {
+  it('promo mayorista: el pack no recibe cupón, pero SÍ el 15 % por transferencia (spec 027)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_MAYORISTA);
-    const items = [
-      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: 39999 }
+    const linea = (unit_price) => [
+      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price }
     ];
+    const conTransferencia = round(MAYORISTA100_PRICE * (1 - T));
     expect(
-      validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok
+      validateAndPriceOrder({ items: linea(conTransferencia), shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok
     ).toBe(true);
 
-    // Si el cliente le descuenta el 10% al pack, el server lo rechaza.
-    const tramposo = [{ ...items[0], unit_price: round(39999 * 0.9) }];
-    const res = validateAndPriceOrder({ items: tramposo, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' });
-    expect(res.ok).toBe(false);
-    expect(res.error).toBe('price_mismatch');
+    // Al precio de lista, pagando por transferencia, ya no pasa (le toca el 15 %)…
+    const sinDescuento = validateAndPriceOrder({ items: linea(MAYORISTA100_PRICE), shipping: retiro, paymentMethod: 'transferencia' });
+    expect(sinDescuento.error).toBe('price_mismatch');
+    // …y el cupón no se le suma: con el 25 % tampoco.
+    const conCupon = validateAndPriceOrder({
+      items: linea(round(MAYORISTA100_PRICE * 0.75)), shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10'
+    });
+    expect(conCupon.error).toBe('price_mismatch');
+    // Con Mercado Pago, precio fijo sin nada.
+    expect(validateAndPriceOrder({ items: linea(MAYORISTA100_PRICE), shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
   it('promo mayorista: el server rechaza 9 cm y rechaza la promo vencida', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_MAYORISTA);
     const nueveCm = [
-      { id: 'pack:mayorista100:9cm:1', title: 'Pack Mayorista PROMO x100 · 9 cm', quantity: 1, unit_price: 39999 }
+      { id: 'pack:mayorista100:9cm:1', title: 'Pack Mayorista PROMO x100 · 9 cm', quantity: 1, unit_price: MAYORISTA100_PRICE }
     ];
     expect(validateAndPriceOrder({ items: nueveCm, shipping: retiro, paymentMethod: 'mercadopago' }).error).toBe(
       'item_invalid'
@@ -518,7 +542,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     // Vencida: aunque quede una línea vieja en el localStorage de alguien, no se cobra.
     vi.setSystemTime(AFTER_MAYORISTA);
     const vencida = [
-      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: 39999 }
+      { id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: MAYORISTA100_PRICE }
     ];
     expect(validateAndPriceOrder({ items: vencida, shipping: retiro, paymentMethod: 'mercadopago' }).error).toBe(
       'item_invalid'
@@ -526,7 +550,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
 
     // Y el pack mayorista de siempre (50% off, sin promo) sigue funcionando.
     const normal = [
-      { id: 'pack:mayorista:4cm:1', title: 'Pack Mayorista x100 · 4 cm', quantity: 100, unit_price: 600 }
+      { id: 'pack:mayorista:4cm:1', title: 'Pack Mayorista x100 · 4 cm', quantity: 100, unit_price: round(P4 * 0.5) }
     ];
     expect(validateAndPriceOrder({ items: normal, shipping: retiro, paymentMethod: 'mercadopago' }).ok).toBe(true);
   });
@@ -584,29 +608,26 @@ describe('archivos imprimibles (producto digital)', () => {
     expect(res.methodValue).toBe('digital');
   });
 
-  it('NO acepta cupones, ni el 10% por transferencia, ni la promo 3x2', () => {
+  it('NO acepta cupones ni la promo 3x2; el 15 % por transferencia SÍ (spec 027)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO); // 3x2 vigente: igual no lo toca
 
-    // A precio de lista pasa, aunque venga con cupón y transferencia.
-    expect(
-      validateAndPriceOrder({
-        items: [linea()],
-        shipping: retiro,
-        paymentMethod: 'transferencia',
-        couponCode: 'EPICA10'
-      }).ok
-    ).toBe(true);
-
-    // Con cualquier descuento aplicado, se rechaza.
-    const conDescuento = validateAndPriceOrder({
-      items: [linea(round(pack.price * 0.9))],
-      shipping: retiro,
-      paymentMethod: 'transferencia',
-      couponCode: 'EPICA10'
+    // Con Mercado Pago, a precio de lista aunque venga con cupón.
+    expect(validateAndPriceOrder({ items: [linea()], shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10' }).ok).toBe(true);
+    const conCupon = validateAndPriceOrder({
+      items: [linea(round(pack.price * 0.9))], shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPICA10'
     });
-    expect(conDescuento.ok).toBe(false);
-    expect(conDescuento.error).toBe('price_mismatch');
+    expect(conCupon.error).toBe('price_mismatch');
+
+    // Por transferencia: el 15 %, y nada más (el cupón no se suma).
+    const conTransferencia = validateAndPriceOrder({
+      items: [linea(round(pack.price * (1 - T)))], shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10'
+    });
+    expect(conTransferencia.ok).toBe(true);
+    const conLosDos = validateAndPriceOrder({
+      items: [linea(round(pack.price * 0.75))], shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10'
+    });
+    expect(conLosDos.error).toBe('price_mismatch');
   });
 
   it('no entra en la bolsa del 3x2: no regala calcos ni se lleva un calco gratis', () => {
@@ -615,12 +636,12 @@ describe('archivos imprimibles (producto digital)', () => {
     // 2 calcos + 1 archivo: si el archivo contara como tercera unidad elegible,
     // el 3x2 regalaría uno. No cuenta, así que los dos calcos van a precio lleno.
     const items = [
-      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 1600 },
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: P6 },
       linea()
     ];
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(1600 * 2 + pack.price);
+    expect(res.itemsTotal).toBe(P6 * 2 + pack.price);
   });
 
   it('no acerca al envío gratis: el umbral mira solo lo que se despacha', () => {
@@ -628,7 +649,7 @@ describe('archivos imprimibles (producto digital)', () => {
     // y JUSTO arriba sumándole el pack digital. Los montos se derivan del umbral
     // y no se escriben a mano: con un carrito fijo, mover el umbral deja el test
     // pasando pero midiendo otra cosa.
-    const unidad = 2000; // calco de 9 cm
+    const unidad = P9; // calco de 9 cm
     const cantidad = Math.ceil((FREE_SHIPPING_THRESHOLD_ROSARIO - pack.price) / unidad);
     const fisico = unidad * cantidad;
     expect(fisico).toBeLessThan(FREE_SHIPPING_THRESHOLD_ROSARIO);
@@ -646,7 +667,7 @@ describe('archivos imprimibles (producto digital)', () => {
 
   it('con productos físicos en el carrito, el envío se cobra normal', () => {
     const items = [
-      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 1, unit_price: 1600 },
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 1, unit_price: P6 },
       linea()
     ];
     const res = validateAndPriceOrder({ items, shipping: envioRosario, paymentMethod: 'mercadopago' });
@@ -657,7 +678,7 @@ describe('archivos imprimibles (producto digital)', () => {
 
   it("un carrito con físicos que se declara 'digital' se rechaza (envío gratis trucho)", () => {
     const items = [
-      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 1, unit_price: 1600 },
+      { id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 1, unit_price: P6 },
       linea()
     ];
     const res = validateAndPriceOrder({
@@ -727,7 +748,7 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
 
   it('deja los calcos de catálogo a mitad de precio en los tres tamaños', () => {
     sinPromos();
-    for (const [size, esperado] of [['4cm', 600], ['6cm', 800], ['9cm', 1000]]) {
+    for (const [size, esperado] of [['4cm', round(P4 / 2)], ['6cm', round(P6 / 2)], ['9cm', round(P9 / 2)]]) {
       const items = cotizar([catalogo(size)], { coupon: 'EPI50' });
       expect(price(items, `sticker:goku:${size}`)).toBe(esperado);
     }
@@ -736,26 +757,26 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
   it('alcanza también a los personalizados sueltos (`custom`)', () => {
     sinPromos();
     const items = cotizar([personalizado('6cm', 3)], { coupon: 'EPI50' });
-    expect(price(items, 'custom:6cm:silueta:1')).toBe(800);
+    expect(price(items, 'custom:6cm:silueta:1')).toBe(round(P6 / 2));
   });
 
-  it('NO se acumula con el 10 % por transferencia ni con el de volumen', () => {
+  it('NO se acumula con el 15 % por transferencia', () => {
     sinPromos();
-    const carrito = [catalogo('6cm', 12)]; // 12 calcos: pasa el umbral de volumen
+    const carrito = [catalogo('6cm', 12)];
     const porTransferencia = cotizar(carrito, { coupon: 'EPI50', paymentMethod: 'transferencia' });
     const porMercadoPago = cotizar(carrito, { coupon: 'EPI50', paymentMethod: 'mercadopago' });
-    // 50 %, no 60 %: el descuento del cupón no depende del medio de pago.
-    expect(price(porTransferencia, 'sticker:goku:6cm')).toBe(800);
-    expect(price(porMercadoPago, 'sticker:goku:6cm')).toBe(800);
+    // 50 %, no 65 %: el descuento del cupón no depende del medio de pago.
+    expect(price(porTransferencia, 'sticker:goku:6cm')).toBe(round(P6 / 2));
+    expect(price(porMercadoPago, 'sticker:goku:6cm')).toBe(round(P6 / 2));
   });
 
-  it('EPICA10 sigue acumulando y sigue sin tocar los personalizados', () => {
+  it('EPICA10 sigue acumulando y sigue sin tocar los personalizados (la transferencia sí)', () => {
     sinPromos();
     // El test que protege de que los flags de EPI50 se filtren al otro cupón.
     const carrito = [catalogo('6cm', 12), personalizado('6cm', 2)];
     const items = cotizar(carrito, { coupon: 'EPICA10', paymentMethod: 'transferencia' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(1600 * 0.8)); // 10 % + 10 % = 20 %
-    expect(price(items, 'custom:6cm:silueta:1')).toBe(1600); // sin cupón que lo alcance
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.75)); // 15 % + 10 % = 25 %
+    expect(price(items, 'custom:6cm:silueta:1')).toBe(round(P6 * (1 - T))); // el cupón no, la transferencia sí
     expect(couponAnulaTodo('EPICA10')).toBe(false);
     expect(couponIncluyeCustom('EPICA10')).toBe(false);
   });
@@ -764,18 +785,18 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
     sinPromos();
     const carrito = [
       catalogo('6cm', 2),
-      { id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista', type: 'pack', basePrice: round(1600 * 0.5), quantity: 100 },
-      { id: 'pack:personalizados:6cm:1', title: 'Pack Personalizados', type: 'pack', basePrice: round(1600 * 0.9), quantity: 10 },
-      { id: 'negocio:1', title: 'Promo Negocio', type: 'negocio', basePrice: 39999, quantity: 1 },
-      { id: 'fixed:tatuajes-hoja', title: 'Tatuajes', type: 'fixed', basePrice: 12000, quantity: 1 },
+      { id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista', type: 'pack', basePrice: round(P6 * 0.5), quantity: 100 },
+      { id: 'pack:personalizados:6cm:1', title: 'Pack Personalizados', type: 'pack', basePrice: round(P6 * 0.9), quantity: 10 },
+      { id: 'negocio:1', title: 'Promo Negocio', type: 'negocio', basePrice: NEGOCIO.price, quantity: 1 },
+      { id: 'fixed:tatuajes-hoja', title: 'Tatuajes', type: 'fixed', basePrice: TATUAJES.price, quantity: 1 },
       { id: 'digital:pack-stickers', title: 'Pack imprimible', type: 'digital', basePrice: IMPRIMIBLE_PRINCIPAL.price, quantity: 1 }
     ];
     const items = cotizar(carrito, { coupon: 'EPI50' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(800); // el único descontado
-    expect(price(items, 'pack:mayorista:6cm:1')).toBe(800);
-    expect(price(items, 'pack:personalizados:6cm:1')).toBe(1440);
-    expect(price(items, 'negocio:1')).toBe(39999);
-    expect(price(items, 'fixed:tatuajes-hoja')).toBe(12000);
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 / 2)); // el único descontado
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(P6 * 0.5));
+    expect(price(items, 'pack:personalizados:6cm:1')).toBe(round(P6 * 0.9));
+    expect(price(items, 'negocio:1')).toBe(NEGOCIO.price);
+    expect(price(items, 'fixed:tatuajes-hoja')).toBe(TATUAJES.price);
     expect(price(items, 'digital:pack-stickers')).toBe(IMPRIMIBLE_PRINCIPAL.price);
   });
 
@@ -784,9 +805,9 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
     vi.setSystemTime(DURANTE_ARG);
     expect(isArgentinaPromoActive()).toBe(true);
     const items = cotizar([catalogo('6cm', 2, 'argentina-72')], { coupon: 'EPI50' });
-    // Sin cupón la promo ya lo deja en 800; con EPI50 sigue en 800 y no en 160:
-    // el cupón exclusivo REEMPLAZA a la promo, no se le suma.
-    expect(price(items, 'sticker:argentina-72:6cm')).toBe(800);
+    // Sin cupón la promo ya lo deja a mitad de precio; con EPI50 sigue ahí y no
+    // al 10 %: el cupón exclusivo REEMPLAZA a la promo, no se le suma.
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 / 2));
   });
 
   it('con la promo 3x2 viva da 50 % y no aplica el N x M', () => {
@@ -794,8 +815,8 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
     vi.setSystemTime(DURING_PROMO);
     expect(feActive()).toBe(true);
     const items = cotizar([catalogo('6cm', 3)], { coupon: 'EPI50' });
-    // Con 3x2 + tope del 10 % daría 1008; con EPI50 manda el cupón: 800.
-    expect(price(items, 'sticker:goku:6cm')).toBe(800);
+    // Con EPI50 manda el cupón: mitad de precio, sin el 3x2 encima.
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 / 2));
   });
 
   it('el interruptor `activa` lo apaga en los dos lados', () => {
@@ -815,12 +836,12 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
     BE_COUPONS.EPI50.activa = false;
     try {
       expect(beCouponActive('EPI50')).toBe(false);
-      const conDescuento = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 800 }];
+      const conDescuento = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: round(P6 / 2) }];
       const rechazado = validateAndPriceOrder({ items: conDescuento, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPI50' });
       expect(rechazado.ok).toBe(false);
       expect(rechazado.error).toBe('price_mismatch');
 
-      const aLista = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 1600 }];
+      const aLista = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: P6 }];
       const aceptado = validateAndPriceOrder({ items: aLista, shipping: retiro, paymentMethod: 'mercadopago', couponCode: 'EPI50' });
       expect(aceptado.ok).toBe(true);
       expect(aceptado.couponApplied).toBeNull();
@@ -832,7 +853,7 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
 
   it('el servidor rechaza el precio con descuento si no viene el cupón', () => {
     sinPromos();
-    const items = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: 800 }];
+    const items = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', quantity: 2, unit_price: round(P6 / 2) }];
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(false);
     expect(res.error).toBe('price_mismatch');
@@ -916,7 +937,7 @@ describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', 
     for (const t of [ANTES, DESPUES]) {
       vi.setSystemTime(t);
       const items = clientItems(carritoAr);
-      expect(price(items, 'sticker:argentina-72:6cm')).toBe(1600);
+      expect(price(items, 'sticker:argentina-72:6cm')).toBe(P6);
       const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
       expect(res.ok).toBe(true);
     }
@@ -926,29 +947,29 @@ describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', 
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
     const items = clientItems(carritoAr);
-    expect(price(items, 'sticker:argentina-72:6cm')).toBe(800);
-    expect(price(items, 'sticker:anime-3:6cm')).toBe(1600);
-    expect(price(items, 'pack:mayorista:6cm:1')).toBe(800); // el pack ya valía 800, no se toca
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 / 2));
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(P6);
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(P6 * 0.5)); // el pack ya traía su 50 %, no se toca
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
   });
 
-  it('ACUMULA: 50% + 10% por transferencia = 60% (y el resto solo 10%)', () => {
+  it('ACUMULA: 50% + 15% por transferencia = 65% (y el resto solo 15%)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
     const items = clientItems(carritoAr, { paymentMethod: 'transferencia' });
-    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(1600 * 0.4)); // 640
-    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(1600 * 0.9)); // 1440
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 * 0.35));
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(P6 * 0.85));
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia' });
     expect(res.ok).toBe(true);
   });
 
-  it('ACUMULA: 50% + transferencia + EPICA10 = 70%', () => {
+  it('ACUMULA: 50% + transferencia + EPICA10 = 75%', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
     const items = clientItems(carritoAr, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(1600 * 0.3)); // 480
-    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(1600 * 0.8)); // 1280
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 * 0.25));
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(P6 * 0.75));
     const res = validateAndPriceOrder({
       items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10'
     });
@@ -961,19 +982,19 @@ describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', 
     vi.setSystemTime(DURANTE);
     const items = clientItems(carritoAr, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
     const unit = price(items, 'sticker:argentina-72:6cm');
-    expect(unit).toBeGreaterThanOrEqual(round(1600 * (1 - MAX_STICKER_DISCOUNT)));
+    expect(unit).toBeGreaterThanOrEqual(round(P6 * (1 - MAX_STICKER_DISCOUNT)));
   });
 
   it('un precio de Argentina sin el descuento se rechaza (y con él, se acepta)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
-    const base = [{ id: 'sticker:argentina-72:6cm', title: 'Argentina #72', quantity: 2, unit_price: 1600 }];
+    const base = [{ id: 'sticker:argentina-72:6cm', title: 'Argentina #72', quantity: 2, unit_price: P6 }];
     const malo = validateAndPriceOrder({ items: base, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(malo.ok).toBe(false);
     expect(malo.error).toBe('price_mismatch');
 
     const bueno = validateAndPriceOrder({
-      items: [{ ...base[0], unit_price: 800 }], shipping: retiro, paymentMethod: 'mercadopago'
+      items: [{ ...base[0], unit_price: round(P6 / 2) }], shipping: retiro, paymentMethod: 'mercadopago'
     });
     expect(bueno.ok).toBe(true);
   });
@@ -982,7 +1003,7 @@ describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', 
     vi.useFakeTimers();
     vi.setSystemTime(DESPUES);
     const res = validateAndPriceOrder({
-      items: [{ id: 'sticker:argentina-72:6cm', title: 'Argentina #72', quantity: 2, unit_price: 800 }],
+      items: [{ id: 'sticker:argentina-72:6cm', title: 'Argentina #72', quantity: 2, unit_price: round(P6 / 2) }],
       shipping: retiro,
       paymentMethod: 'mercadopago'
     });
@@ -1035,21 +1056,21 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
   it('T-1 · un calco de la categoría en promo se muestra a mitad de precio', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
-    expect(precioVidrieraLinea(enPromo)).toBe(800);
-    expect(enPromo.basePrice).toBe(1600); // la línea NO se modificó
+    expect(precioVidrieraLinea(enPromo)).toBe(round(P6 / 2));
+    expect(enPromo.basePrice).toBe(P6); // la línea NO se modificó
   });
 
   it('T-2 · un calco de otra categoría se muestra al precio de lista', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
-    expect(precioVidrieraLinea(otraCategoria)).toBe(1600);
+    expect(precioVidrieraLinea(otraCategoria)).toBe(P6);
   });
 
   it('T-3 · fuera de la ventana (antes y después) vale el precio de lista', () => {
     vi.useFakeTimers();
     for (const t of [ANTES, DESPUES]) {
       vi.setSystemTime(t);
-      expect(precioVidrieraLinea(enPromo)).toBe(1600);
+      expect(precioVidrieraLinea(enPromo)).toBe(P6);
     }
   });
 
@@ -1074,22 +1095,22 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
     }
   });
 
-  it('T-5 · con transferencia y ≥10 unidades, vidriera − bulkSavings == lo que cobra el server', () => {
+  it('T-5 · con transferencia (desde 1 unidad), vidriera − ahorro == lo que cobra el server', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
-    const l = { ...enPromo, quantity: 10 };
-    const visto = precioVidrieraLinea(l); // 800
-    // bulkSavings del CartContext: basePrice − round(basePrice × 0,9)
-    const bulkSavings = l.basePrice - round(l.basePrice * (1 - BULK_DISCOUNT)); // 160
-    const esperado = visto - bulkSavings; // 640
+    const l = { ...enPromo, quantity: 1 };
+    const visto = precioVidrieraLinea(l); // mitad de precio
+    // Sin 3x2 los % se SUMAN: el ahorro por transferencia es el 15 % de lista.
+    const ahorro = l.basePrice - round(l.basePrice * (1 - T));
+    const esperado = visto - ahorro;
 
     const res = validateAndPriceOrder({
-      items: [{ id: l.id, title: 'x', quantity: 10, unit_price: esperado }],
+      items: [{ id: l.id, title: 'x', quantity: 1, unit_price: esperado }],
       shipping: retiro,
       paymentMethod: 'transferencia'
     });
     expect(res.ok).toBe(true);
-    expect(esperado).toBe(round(l.basePrice * (1 - (ARGENTINA_DISCOUNT + BULK_DISCOUNT))));
+    expect(esperado).toBe(round(l.basePrice * (1 - (ARGENTINA_DISCOUNT + T))));
   });
 
   /**
@@ -1119,28 +1140,32 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
     const conMP = cobro('mercadopago');
     const conTransferencia = cobro('transferencia');
 
-    // Lo que calculaba el carrito antes del arreglo: 10 % sobre el precio de lista.
-    const formulaVieja = carrito[0].quantity * (carrito[0].basePrice - round(carrito[0].basePrice * (1 - BULK_DISCOUNT)));
+    // Lo que calculaba el carrito antes del arreglo: el % sobre el precio de lista.
+    const formulaVieja = carrito[0].quantity * (carrito[0].basePrice - round(carrito[0].basePrice * (1 - T)));
     expect(conMP - conTransferencia).toBeLessThan(formulaVieja);
-    // La que usa ahora (bulkSavings = cobro MP − cobro transferencia): con 3x2
-    // el 10 % corre sobre lo que queda después de la agrupación.
-    expect(conMP - conTransferencia).toBe(round(conMP * BULK_DISCOUNT));
+    // La que usa ahora (transferSavings = cobro MP − cobro transferencia): con
+    // 3x2 el % corre sobre lo que queda después de la agrupación, y redondea
+    // POR UNIDAD — no es "el 15 % del total" (con 10 × 6 cm, difieren en $5).
+    const keep = 0.7; // 10 unidades → 3 gratis
+    const porUnidad = round(P6 * keep) - round(P6 * keep * (1 - T));
+    expect(conMP - conTransferencia).toBe(10 * porUnidad);
   });
 
-  it('T-6 · cupón + transferencia + promo acumulan 70% y quedan bajo el tope', () => {
+  it('T-6 · cupón + transferencia + promo acumulan 75% y quedan bajo el tope', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
-    const rate = ARGENTINA_DISCOUNT + BULK_DISCOUNT + COUPONS.EPICA10.discount;
+    const rate = ARGENTINA_DISCOUNT + T + COUPONS.EPICA10.discount;
+    expect(rate).toBe(0.75);
     expect(rate).toBeLessThan(MAX_STICKER_DISCOUNT);
 
     const res = validateAndPriceOrder({
-      items: [{ id: enPromo.id, title: 'x', quantity: 10, unit_price: round(1600 * (1 - rate)) }],
+      items: [{ id: enPromo.id, title: 'x', quantity: 10, unit_price: round(P6 * (1 - rate)) }],
       shipping: retiro,
       paymentMethod: 'transferencia',
       couponCode: 'EPICA10'
     });
     expect(res.ok).toBe(true);
-    expect(res.items[0].unit_price).toBe(480); // 1600 × 0,30
+    expect(res.items[0].unit_price).toBe(round(P6 * 0.25));
   });
 
   it('T-7 · packs, custom, negocio, fixed y digital NO reciben el 50%', () => {
@@ -1177,13 +1202,13 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
     // Se agrega DURANTE la promo: la línea guarda el precio de LISTA.
     vi.setSystemTime(DURANTE);
     const guardada = { ...enPromo };
-    expect(guardada.basePrice).toBe(1600);
-    expect(precioVidrieraLinea(guardada)).toBe(800);
+    expect(guardada.basePrice).toBe(P6);
+    expect(precioVidrieraLinea(guardada)).toBe(round(P6 / 2));
 
     // Vuelve DESPUÉS: el precio mostrado sube solo y el server lo acepta.
     vi.setSystemTime(DESPUES);
     const visto = precioVidrieraLinea(guardada);
-    expect(visto).toBe(1600);
+    expect(visto).toBe(P6);
 
     const res = validateAndPriceOrder({
       items: [{ id: guardada.id, title: 'x', quantity: 1, unit_price: visto }],
@@ -1305,9 +1330,9 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     expect(CATEGORIAS_2X1).toEqual(BE_CATEGORIAS_2X1);
   });
 
-  it('PP-2 · el tope de % es idéntico y vale 0.20', () => {
+  it('PP-2 · el tope de % es idéntico y vale 0.25 (spec 027)', () => {
     expect(PROMO_3X2.percentCap).toBe(PROMO_PERCENT_CAP);
-    expect(PROMO_PERCENT_CAP).toBe(0.2);
+    expect(PROMO_PERCENT_CAP).toBe(0.25);
   });
 
   it('PP-3 · los predicados de vigencia coinciden, dentro y fuera de la ventana', () => {
@@ -1397,7 +1422,7 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     const ahora = Date.now();
-    const carrito = [{ id: 'sticker:goku:6cm', title: 'Goku', type: 'sticker', basePrice: 1600, quantity: 3 }];
+    const carrito = [{ id: 'sticker:goku:6cm', title: 'Goku', type: 'sticker', basePrice: P6, quantity: 3 }];
 
     // El cliente ya no lo aplica (ventana cerrada), así que manda el precio SIN
     // cupón; el servidor tiene que aceptar ese mismo precio.
@@ -1417,7 +1442,7 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     const ahora = Date.now();
-    const carrito = [{ id: 'sticker:goku:6cm', title: 'Goku', type: 'sticker', basePrice: 1600, quantity: 3 }];
+    const carrito = [{ id: 'sticker:goku:6cm', title: 'Goku', type: 'sticker', basePrice: P6, quantity: 3 }];
     const items = clientItems(carrito, { paymentMethod: 'mercadopago', coupon: 'EPICA10' });
     const res = validateAndPriceOrder({
       items,
@@ -1434,13 +1459,13 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     const carrito = [
-      { id: 'sticker:disney-141:6cm', title: 'Disney', type: 'sticker', basePrice: 1600, quantity: 3 },
-      { id: 'sticker:marvel-3:6cm', title: 'Marvel', type: 'sticker', basePrice: 1600, quantity: 2 }
+      { id: 'sticker:disney-141:6cm', title: 'Disney', type: 'sticker', basePrice: P6, quantity: 3 },
+      { id: 'sticker:marvel-3:6cm', title: 'Marvel', type: 'sticker', basePrice: P6, quantity: 2 }
     ];
     const items = clientItems(carrito, { paymentMethod: 'mercadopago' });
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(4800); // $8.000 − $3.200
+    expect(res.itemsTotal).toBe(5 * P6 - 2 * P6); // 5 calcos, 2 gratis
   });
 });
 
@@ -1454,7 +1479,7 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
  * todos los checkouts de Polaroid con la suite en verde.
  *
  * Las Polaroid son además el ÚNICO producto de precio fijo cuyo precio depende
- * de la cantidad (desde 20 fotos baja $200 por foto), así que el escalón se
+ * de la cantidad (desde 20 fotos baja $250 por foto desde la spec 027), así que el escalón se
  * prueba en los dos lados y en su borde exacto.
  */
 describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
@@ -1479,7 +1504,7 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
     expect(BE_POLAROID_OFF_PACK).toBe(POLAROID_VOLUMEN_OFF_PACK);
   });
 
-  it('P-2 · el imán cuesta $600 por foto en los tres tamaños', () => {
+  it('P-2 · el imán cuesta lo mismo por foto en los tres tamaños ($700 desde la spec 027)', () => {
     for (const s of POLAROID_SIZES) {
       expect(s.priceIman - s.price).toBe(POLAROID_IMAN_POR_FOTO * POLAROID_FOTOS_POR_PACK);
     }
@@ -1509,9 +1534,11 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
     }
   });
 
-  it('P-4 · el caso que pidió Mariano: 20 de 7×10 imantadas = $32.000', () => {
+  // Era "$32.000" (18.000 − 2.000 por pack) hasta la spec 027: con los precios
+  // nuevos el mismo pedido es 21.500 − 2.500 = 19.000 por pack.
+  it('P-4 · el caso que pidió Mariano: 20 de 7×10 imantadas = $38.000', () => {
     const precio = precioPolaroidPack('7x10', true, 2);
-    expect(precio).toBe(16000); // 18.000 de lista − 2.000 de volumen
+    expect(precio).toBe(19000); // 21.500 de lista − 2.500 de volumen
 
     const res = validateAndPriceOrder({
       items: [
@@ -1521,18 +1548,19 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
       paymentMethod: 'mercadopago'
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(32000);
+    expect(res.itemsTotal).toBe(38000);
 
     // Las comunes del mismo tamaño, por las dudas: el volumen las alcanza también.
-    expect(precioPolaroidPack('7x10', false, 2) * 2).toBe(20000);
-    // Y 30 imantadas siguen con el descuento: $48.000, no $54.000.
-    expect(precioPolaroidPack('7x10', true, 3) * 3).toBe(48000);
+    expect(precioPolaroidPack('7x10', false, 2) * 2).toBe(24000);
+    // Y 30 imantadas siguen con el descuento: $57.000, no $64.500.
+    expect(precioPolaroidPack('7x10', true, 3) * 3).toBe(57000);
   });
 
-  it('P-5 · las Polaroid siguen FUERA de cupones, transferencia y promos N x M', () => {
+  it('P-5 · las Polaroid siguen FUERA de cupones y promos N x M; la transferencia SÍ (spec 027)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO); // 3x2 y 2x1 vivas
     const lista = precioPolaroidLista('polaroid-x10-7x10-iman');
+    // EPI50 es exclusivo: anula todo, también el 15 % — y a la Polaroid no la alcanza.
     const res = validateAndPriceOrder({
       items: [{ id: 'fixed:polaroid-x10-7x10-iman', title: 'Polaroid', quantity: 1, unit_price: lista }],
       shipping: retiro,
@@ -1540,7 +1568,16 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
       couponCode: 'EPI50'
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(lista); // ni el 50 %, ni el 10 %, ni el N x M
+    expect(res.itemsTotal).toBe(lista); // ni el 50 %, ni el 15 %, ni el N x M
+
+    // Sin cupón, por transferencia: el 15 %, encima del volumen si corre.
+    const dos = precioPolaroidPack('7x10', true, 2);
+    const conTransferencia = validateAndPriceOrder({
+      items: [{ id: 'fixed:polaroid-x10-7x10-iman', title: 'Polaroid', quantity: 2, unit_price: round(dos * (1 - T)) }],
+      shipping: retiro,
+      paymentMethod: 'transferencia'
+    });
+    expect(conTransferencia.ok).toBe(true);
   });
 
   it('P-6 · precioVidrieraLinea muestra el volumen y no toca a los demás', () => {
@@ -1549,19 +1586,19 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
 
     // Con archivos adjuntos el id lleva `:{ts}` al final — la forma que arma
     // `addFixed` en el caso normal de Polaroid. Tiene que reconocerse igual.
-    const conArchivos = { id: 'fixed:polaroid-x10-7x10-iman:1757800000000', basePrice: 18000, quantity: 2 };
+    const conArchivos = { id: 'fixed:polaroid-x10-7x10-iman:1757800000000', basePrice: 21500, quantity: 2 };
     expect(esPolaroid(conArchivos.id)).toBe(true);
-    expect(precioVidrieraLinea(conArchivos)).toBe(16000);
+    expect(precioVidrieraLinea(conArchivos)).toBe(19000);
 
-    const unPack = { id: 'fixed:polaroid-x10-7x10-iman', basePrice: 18000, quantity: 1 };
-    expect(precioVidrieraLinea(unPack)).toBe(18000);
+    const unPack = { id: 'fixed:polaroid-x10-7x10-iman', basePrice: 21500, quantity: 1 };
+    expect(precioVidrieraLinea(unPack)).toBe(21500);
 
     // Un carrito guardado ANTES de la spec: la línea existe, el precio baja y
     // el servidor espera exactamente ese número (nunca sube: nadie se encuentra
     // con un precio más caro que el que dejó en el carrito).
-    const guardada = { id: 'fixed:polaroid-x10-7x10', basePrice: 12000, quantity: 2 };
+    const guardada = { id: 'fixed:polaroid-x10-7x10', basePrice: 14500, quantity: 2 };
     const visto = precioVidrieraLinea(guardada);
-    expect(visto).toBe(10000);
+    expect(visto).toBe(12000);
     const res = validateAndPriceOrder({
       items: [{ id: guardada.id, title: 'Polaroid', quantity: 2, unit_price: visto }],
       shipping: retiro,
@@ -1571,8 +1608,8 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
 
     // Y nada que no sea Polaroid cambia de precio por tener cantidad.
     for (const l of [
-      { id: 'fixed:tatuajes-hoja', basePrice: 12000, quantity: 5 },
-      { id: 'negocio:1', basePrice: 39999, quantity: 2 },
+      { id: 'fixed:tatuajes-hoja', basePrice: TATUAJES.price, quantity: 5 },
+      { id: 'negocio:1', basePrice: NEGOCIO.price, quantity: 2 },
       { id: 'digital:pack-stickers', basePrice: IMPRIMIBLE_PRINCIPAL.price, quantity: 1 }
     ]) {
       expect(esPolaroid(l.id)).toBe(false);
@@ -1582,12 +1619,12 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
 
   it('P-7 · los tatuajes NO heredan el descuento por cantidad', () => {
     const res = validateAndPriceOrder({
-      items: [{ id: 'fixed:tatuajes-hoja', title: 'Tatuajes', quantity: 5, unit_price: 12000 }],
+      items: [{ id: 'fixed:tatuajes-hoja', title: 'Tatuajes', quantity: 5, unit_price: TATUAJES.price }],
       shipping: retiro,
       paymentMethod: 'mercadopago'
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(60000);
+    expect(res.itemsTotal).toBe(TATUAJES.price * 5);
   });
 
   it('P-8 · cada variante tiene SKU de catálogo o sus eventos matchean mal en Meta', () => {
