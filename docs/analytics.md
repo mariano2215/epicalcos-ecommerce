@@ -156,7 +156,7 @@ Sin PII: ni el mail ni nada del lead. `page_path` es la ruta sin query.
 
 | Evento | Cuándo | Parámetros |
 |---|---|---|
-| `garantia_condiciones_ver` | se **abre** "Ver condiciones", arriba del botón de pagar (cerrarlo no dispara nada) | `tipo`: `devolucion` · `mixto` · `falla` |
+| `garantia_condiciones_ver` | ⛔ **Sin datos desde el 26/9/2026**: el bloque de garantía se sacó del checkout (Mariano). Hasta ahí: se **abre** "Ver condiciones", arriba del botón de pagar | `tipo`: `devolucion` · `mixto` · `falla` |
 
 `tipo` es la garantía que le tocaba a ese carrito (`lib/garantia.js`): catálogo
 → `devolucion`, catálogo + hecho con archivo → `mixto`, solo hecho con archivo

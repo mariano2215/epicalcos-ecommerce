@@ -8,8 +8,6 @@ import {
   contact
 } from '../config/site.js';
 import { useCart } from '../context/CartContext.jsx';
-import GarantiaCheckout from './GarantiaCheckout.jsx';
-import { garantiaDelCarrito } from '../lib/garantia.js';
 
 const paymentMethods = [
   { value: 'mercadopago', label: 'Mercado Pago', icon: '💳', blurb: 'Tarjetas, dinero en cuenta, Rapipago o Pago Fácil.' },
@@ -62,7 +60,7 @@ function validate(form, digitalOnly = false) {
 export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false, digitalOnly = false }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
-  const { bulkEligible, unitsToBulk, items } = useCart();
+  const { bulkEligible, unitsToBulk } = useCart();
   const shippingMethod = digitalOnly ? 'digital' : form.shippingMethod;
 
   // Notificar al parent método + destino (ciudad/provincia) para recalcular el envío automático.
@@ -108,9 +106,6 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
   const needsAddress = !digitalOnly && form.shippingMethod !== 'retiro';
   const zone = shippingZone(form.city, form.province);
   const isTransfer = form.paymentMethod === 'transferencia';
-  // Se deriva en cada render, no se guarda: si el upsell de abajo suma un calco
-  // de catálogo a un carrito de personalizados, el mensaje pasa a "mixto" solo.
-  const garantia = garantiaDelCarrito(items);
 
   return (
     <form onSubmit={submit} className="card-glass p-6 md:p-8 space-y-5">
@@ -348,13 +343,11 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
       {/* Confianza justo antes de confirmar. Solo afirmaciones verificables:
           MP procesa el pago (nunca vemos la tarjeta), los datos van por HTTPS,
           y el envío a todo el país es real.
-          Hasta el 14/9/2026 acá decía "nada de garantías inventadas": no había
-          devoluciones. Desde la spec 020 la garantía EXISTE, y desde la 021 va
-          primera (GarantiaCheckout). El criterio de fondo no cambió —solo lo
-          verificable—, y es justamente por qué su texto sale del carrito: la
-          garantía de un personalizado no es la de un calco de catálogo. */}
+          Del 14 al 26/9/2026 la garantía del carrito iba primera acá
+          (GarantiaCheckout, spec 021). Mariano la sacó el 26/9/2026: "eso
+          SACARLO del checkout". La lógica por tipo de carrito sigue en
+          lib/garantia.js por si vuelve. */}
       <ul className="grid grid-cols-2 gap-2 text-xs text-white/60">
-        <GarantiaCheckout tipo={garantia} />
         {[
           isTransfer ? '🏦 Transferencia directa' : '🔒 Pago procesado por Mercado Pago',
           '🛡️ No guardamos datos de tarjeta',
