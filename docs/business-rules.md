@@ -67,6 +67,11 @@ carrito completo.
   solo una recomendación con link a `/negocio` (Negocio entrega
   específicamente 6 cm, no el tamaño que el cliente haya elegido). No aplica
   al Vinilo Holográfico, que siempre va como su propio pack de 100 (arriba).
+  **Más de 100 copias** (fix 26/9/2026): cada 100 son un pack de Negocio y el
+  resto va suelto (3x2 si está vivo), salvo que ya cueste lo mismo que otro
+  pack. Ej. con el 3x2: 200 copias = 2 packs ($79.998); 237 = 2 packs + 37
+  sueltas; 138 = 2 packs. Antes era siempre UN pack: con 200 copias el
+  cliente pagaba $39.999 y recibía 100.
 
 ### Productos de precio fijo
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { cotizarTanda, convieneNegocio, precioEfectivoTanda } from './precioPersonalizados.js';
-import { construirLineas, construirLineaHolografica } from './borradorPersonalizado.js';
+import { cotizarTanda, convieneNegocio, precioEfectivoTanda, repartoNegocio } from './precioPersonalizados.js';
+import { construirLineas, construirLineasNegocio, construirLineaHolografica } from './borradorPersonalizado.js';
 import {
   TAMANOS,
   CORTES,
@@ -558,6 +558,94 @@ describe('precioEfectivoTanda — topear el precio a la Promo Negocio (enmienda 
   it('en otro tamaño no topea (Negocio entrega específicamente 6 cm)', () => {
     expect(precioEfectivoTanda({ tamano: '9cm', copias: 40, disenos: 1, promoActiva: true }).esNegocio).toBe(false);
     expect(precioEfectivoTanda({ tamano: '4cm', copias: 60, disenos: 1, promoActiva: true }).esNegocio).toBe(false);
+  });
+});
+
+describe('más de 100 copias de un diseño en 6 cm — packs de Negocio + sueltas (fix 26/9/2026)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(CON_3X2);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('repartoNegocio: cada 100 es un pack; el resto, suelto salvo que ya cueste lo mismo que otro pack', () => {
+    const casos = { 10: [0, 10], 37: [0, 37], 38: [1, 0], 99: [1, 0], 100: [1, 0], 137: [1, 37], 138: [2, 0], 200: [2, 0], 237: [2, 37], 1000: [10, 0] };
+    for (const [copias, [packs, sueltas]] of Object.entries(casos)) {
+      expect(repartoNegocio({ tamano: '6cm', copias: Number(copias), promoActiva: true }), `${copias} copias`).toEqual({ packs, sueltas });
+    }
+  });
+
+  it('en otro tamaño no hay packs', () => {
+    expect(repartoNegocio({ tamano: '4cm', copias: 300, promoActiva: true })).toEqual({ packs: 0, sueltas: 300 });
+  });
+
+  it('200 copias: 2 packs, 200 calcos, $79.998 — antes se cobraba 1 pack y se llevaba 100', () => {
+    const c = precioEfectivoTanda({ tamano: '6cm', copias: 200, disenos: 1, promoActiva: true });
+    expect(c).toMatchObject({ esNegocio: true, packsNegocio: 2, sueltas: 0, unidades: 200, total: 2 * NEGOCIO.price });
+  });
+
+  it('237 copias: 2 packs + 37 sueltas al 3x2', () => {
+    const c = precioEfectivoTanda({ tamano: '6cm', copias: 237, disenos: 1, promoActiva: true });
+    const resto = cotizarTanda({ tamano: '6cm', unidades: 37, promoActiva: true });
+    expect(c).toMatchObject({ packsNegocio: 2, sueltas: 37, unidades: 237, unitarioSueltas: resto.unitario, total: 2 * NEGOCIO.price + resto.total });
+  });
+
+  it('para 1…1000 copias, con y sin 3x2: nunca menos calcos que las pedidas, nunca más caro que el 3x2 puro ni que tomar packs', () => {
+    for (const promoActiva of [false, true]) {
+      for (let copias = 1; copias <= 1000; copias++) {
+        const c = precioEfectivoTanda({ tamano: '6cm', copias, disenos: 1, promoActiva });
+        const puro = cotizarTanda({ tamano: '6cm', unidades: copias, promoActiva });
+        expect(c.unidades >= copias, `${copias}: unidades`).toBe(true);
+        expect(c.total <= puro.total, `${copias}: vs 3x2 puro`).toBe(true);
+        expect(c.total <= Math.ceil(copias / NEGOCIO.qty) * NEGOCIO.price, `${copias}: vs packs`).toBe(true);
+      }
+    }
+  });
+
+  it('construirLineasNegocio: un pack por línea (ids distintos) + la suelta, con material, corte y notas en meta', () => {
+    const lineas = construirLineasNegocio(tanda({ material: 'dtf-uv', copias: 237, instrucciones: 'sin borde' }), { packs: 2, sueltas: 37, ts: 9 });
+    expect(lineas.map((l) => [l.id, l.quantity])).toEqual([
+      ['negocio:9-1', 1],
+      ['negocio:9-2', 1],
+      ['custom:6cm:silueta:dtf-uv:fabc0', 37]
+    ]);
+    expect(lineas[0]).toMatchObject({
+      name: 'Negocio · 100u 6 cm', // sin nombre de archivo (PII)
+      basePrice: NEGOCIO.price,
+      meta: { qty: 100, size: '6cm', material: 'dtf-uv', materialLabel: 'DTF UV', corteLabel: 'Silueta', instrucciones: 'sin borde' }
+    });
+    expect(lineas[0].meta.archivos[0].url).toBe('https://res.cloudinary.com/x/d0.png');
+    expect(lineas[2].meta.cantidad).toBe(37);
+  });
+
+  it('construirLineasNegocio no arma nada con 2 diseños, en otro tamaño o sin packs', () => {
+    expect(construirLineasNegocio(tanda({ disenos: 2, copias: 100 }), { packs: 1 })).toEqual([]);
+    expect(construirLineasNegocio(tanda({ tamano: '9cm', copias: 100 }), { packs: 1 })).toEqual([]);
+    expect(construirLineasNegocio(tanda({ copias: 10 }), { packs: 0, sueltas: 10 })).toEqual([]);
+  });
+
+  it('paridad: el servidor acepta las líneas y cobra exactamente el total mostrado, con y sin 3x2', () => {
+    for (const ahora of [SIN_PROMO, CON_3X2]) {
+      vi.setSystemTime(ahora);
+      const promoActiva = ahora === CON_3X2;
+      for (const copias of [30, 38, 50, 100, 137, 138, 200, 237, 999, 1000]) {
+        const c = precioEfectivoTanda({ tamano: '6cm', copias, disenos: 1, promoActiva });
+        if (!c.esNegocio) continue;
+        const lineas = construirLineasNegocio(tanda({ copias }), { packs: c.packsNegocio, sueltas: c.sueltas, ts: 1 });
+        const res = validateAndPriceOrder({
+          items: lineas.map((l) => ({
+            id: l.id,
+            title: l.name,
+            quantity: l.quantity,
+            unit_price: l.id.startsWith('negocio:') ? l.basePrice : c.unitarioSueltas
+          })),
+          shipping: { methodValue: 'retiro' },
+          paymentMethod: 'mercadopago'
+        });
+        expect(res.ok, `${copias} copias, 3x2 ${promoActiva}: ${res.error} ${res.detail || ''}`).toBe(true);
+        expect(res.itemsTotal).toBe(c.total);
+      }
+    }
   });
 });
 

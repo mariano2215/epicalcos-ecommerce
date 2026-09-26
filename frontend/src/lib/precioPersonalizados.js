@@ -136,7 +136,10 @@ export function cotizarPackHolografico({ tamano } = {}) {
     beneficio: t ? 'holografico' : null,
     recargo: t ? recargo : 0,
     esNegocio: false,
-    esHolografico: true
+    esHolografico: true,
+    packsNegocio: 0,
+    sueltas: 0,
+    unitarioSueltas: 0
   };
 }
 
@@ -156,6 +159,38 @@ export function convieneNegocio({ tamano, copias, promoActiva = false }) {
 }
 
 /**
+ * Cómo se cobran las copias de UN diseño en `NEGOCIO.size`: cuántos packs de
+ * la Promo Negocio y cuántas calcos sueltas (fix 26/9/2026).
+ *
+ * POR QUÉ EXISTE: hasta acá, un diseño en 6 cm por encima del umbral se
+ * cobraba SIEMPRE como UN pack de Negocio. Con 200 copias el cliente pagaba
+ * $39.999 y se llevaba 100: el configurador le mostraba "100 calcos" y la
+ * mitad del pedido se perdía sin avisar.
+ *
+ * Es la misma regla de RF-MAT8, aplicada de a 100: cada 100 copias completas
+ * son un pack, y el resto se cobra como siempre (3x2 si está vivo) salvo que
+ * ya cueste lo mismo o más que otro pack — ahí es otro pack (Mariano,
+ * 14/9/2026: "la promo se puede tomar aunque el cliente quiera menos de 100").
+ * Nunca se cobra más que tomar los packs.
+ *
+ * Con 99 copias o menos da exactamente lo de antes: 0 packs (debajo del
+ * umbral) o 1 pack.
+ *
+ * @returns {{ packs: number, sueltas: number }}
+ */
+export function repartoNegocio({ tamano, copias, promoActiva = false }) {
+  const n = unidadesValidas(copias);
+  if (tamano !== NEGOCIO.size) return { packs: 0, sueltas: n };
+  let packs = Math.floor(n / NEGOCIO.qty);
+  let sueltas = n - packs * NEGOCIO.qty;
+  if (sueltas > 0 && convieneNegocio({ tamano, copias: sueltas, promoActiva })) {
+    packs += 1;
+    sueltas = 0;
+  }
+  return { packs, sueltas };
+}
+
+/**
  * Precio EFECTIVO de la tanda, para mostrar y para agregar al carrito
  * (enmienda 22/9/2026, "topear el precio en $39.999"): igual a `cotizarTanda()`,
  * salvo que UN diseño en `NEGOCIO.size` cuyas copias ya cuestan lo mismo o más
@@ -168,11 +203,17 @@ export function convieneNegocio({ tamano, copias, promoActiva = false }) {
  * así que no hay nada para topear — sigue siendo, como hasta ahora, un link a
  * /negocio (`conviene`/`NEGOCIO_COPY` en los componentes que llaman a esto).
  *
+ * Más de 100 copias: tantos packs como diga `repartoNegocio()`, más las
+ * sueltas que sobren al precio de `cotizarTanda()`. `packsNegocio` y `sueltas`
+ * viajan en el resultado porque `useAgregarAlCarrito()` arma las líneas reales
+ * con esos mismos números.
+ *
  * Vinilo Holográfico (enmienda 26/9/2026): SIEMPRE el pack de 100 de
  * `cotizarPackHolografico()`, sin importar copias ni diseños. Va primero: si
  * cayera en la cuenta de abajo, un holográfico se cotizaría por unidad.
  *
- * @returns igual que `cotizarTanda()` + `{ esNegocio: boolean, esHolografico: boolean }`
+ * @returns igual que `cotizarTanda()` + `{ esNegocio: boolean, esHolografico: boolean,
+ *   packsNegocio: number, sueltas: number, unitarioSueltas: number }`
  */
 export function precioEfectivoTanda({ tamano, copias = 1, disenos = 1, promoActiva = false, material = null } = {}) {
   if (material === MATERIAL_HOLOGRAFICO_ID) return cotizarPackHolografico({ tamano });
@@ -182,20 +223,23 @@ export function precioEfectivoTanda({ tamano, copias = 1, disenos = 1, promoActi
     unidades: n * unidadesValidas(copias),
     promoActiva
   });
-  if (n !== 1 || tamano !== NEGOCIO.size || !convieneNegocio({ tamano, copias, promoActiva })) {
-    return { ...base, esNegocio: false, esHolografico: false };
+  const { packs, sueltas } = n === 1 ? repartoNegocio({ tamano, copias, promoActiva }) : { packs: 0, sueltas: 0 };
+  if (packs === 0) {
+    return { ...base, esNegocio: false, esHolografico: false, packsNegocio: 0, sueltas: 0, unitarioSueltas: 0 };
   }
-  const total = NEGOCIO.price;
-  // Lista de referencia para el "ahorrás": la de las NEGOCIO.qty unidades que en
-  // verdad se llevan (Mariano, 14/9/2026: la promo da 100 aunque pidas menos),
-  // no la de las copias que el cliente tipeó — si no, pedir menos "ahorraba" más
-  // sin ninguna razón real.
-  const totalListaNegocio = base.unitarioLista * NEGOCIO.qty;
+  const resto = sueltas > 0 ? cotizarTanda({ tamano, unidades: sueltas, promoActiva }) : null;
+  const total = packs * NEGOCIO.price + (resto ? resto.total : 0);
+  // Lo que en verdad se llevan: 100 por pack (Mariano, 14/9/2026: la promo da
+  // 100 aunque pidas menos) + las sueltas. La lista de referencia del
+  // "ahorrás" es la de ESAS unidades, no la de las copias que el cliente tipeó
+  // — si no, pedir menos "ahorraba" más sin ninguna razón real.
+  const unidades = packs * NEGOCIO.qty + sueltas;
+  const totalListaNegocio = base.unitarioLista * unidades;
   const ahorro = totalListaNegocio - total;
   return {
     ...base,
-    unidades: NEGOCIO.qty,
-    unitario: round(NEGOCIO.price / NEGOCIO.qty),
+    unidades,
+    unitario: round(total / unidades),
     totalLista: totalListaNegocio,
     total,
     ahorro,
@@ -204,6 +248,9 @@ export function precioEfectivoTanda({ tamano, copias = 1, disenos = 1, promoActi
     faltanParaGratis: 0,
     beneficio: 'negocio',
     esNegocio: true,
-    esHolografico: false
+    esHolografico: false,
+    packsNegocio: packs,
+    sueltas,
+    unitarioSueltas: resto ? resto.unitario : 0
   };
 }

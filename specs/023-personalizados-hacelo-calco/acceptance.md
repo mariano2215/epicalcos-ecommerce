@@ -124,6 +124,17 @@
 | AC-HOLO10 | La nota del pedido (mail/CRM) dice holográfico, tamaño, corte, x100, cantidad de diseños, los links y las notas del cliente | test | ✅ |
 | AC-HOLO11 | `npm test` en verde | `npm test` | ✅ |
 
+### Fixes del 26/9/2026 *(design.md §3.8)*
+| ID | Criterio | Cómo se verifica | Resultado |
+|---|---|---|---|
+| AC-FIX1 | *(RF-MAT17)* La nota del pedido de una calco en DTF UV dice "DTF UV"; la de un pack de Negocio del configurador dice material, corte y notas, nunca `"undefined"` | test | ✅ |
+| AC-FIX2 | *(RF-MAT17)* /pago-exitoso muestra y manda por WhatsApp el material | test de `especificacionDisenos` + inspección | ✅ |
+| AC-FIX3 | *(RF-MAT16)* 1 diseño en 6 cm × 200 copias: $79.998 por 200 calcos (2 packs); × 237: 2 packs + 37 sueltas | test + recorrido | ✅ |
+| AC-FIX4 | *(RF-MAT16)* Para 1…1000 copias: nunca menos calcos que las pedidas, nunca más caro que el 3x2 puro ni que tomar packs | test | ✅ |
+| AC-FIX5 | *(RF-MAT16)* El servidor acepta las líneas de packs + sueltas y cobra exactamente el total mostrado, con y sin 3x2 | test de paridad | ✅ |
+| AC-FIX6 | El aviso "Ya tenés N calcos personalizadas en el carrito" aparece también con packs | recorrido | ✅ |
+| AC-FIX7 | `npm test` en verde | `npm test` | ✅ |
+
 ### Secciones
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|

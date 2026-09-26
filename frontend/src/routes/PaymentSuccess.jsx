@@ -45,6 +45,7 @@ function buildWhatsappMessage(spec, orderId) {
       return;
     }
     lines.push(spec.items.length > 1 ? `— Calco ${i + 1}:` : 'Configuración:');
+    if (it.material) lines.push(`• Material: ${it.material}`);
     lines.push(`• Tamaño: ${it.tamano}`);
     lines.push(`• Corte: ${it.corte}`);
     lines.push(`• Cantidad: ${it.cantidad}`);
@@ -150,7 +151,7 @@ export default function PaymentSuccess() {
                         </>
                       ) : (
                         <>
-                          {it.material} · {it.tamano} · corte {it.corte} · <strong>x{it.cantidad}</strong>
+                          {[it.material, it.tamano, `corte ${it.corte}`].filter(Boolean).join(' · ')} · <strong>x{it.cantidad}</strong>
                           {it.archivos?.length > 0 && (
                             <span className="text-white/40"> · {it.archivos.length} diseño{it.archivos.length > 1 ? 's' : ''}</span>
                           )}

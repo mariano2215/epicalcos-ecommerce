@@ -481,6 +481,32 @@ trabaría con un "recargá la página" que no se arregla recargando.
 `units: 100` y `value: 54999` para el pack; `items` lleva la línea `negocio:`
 real (nunca el recargo como ítem, igual que §3.6).
 
+### 3.8 Fixes del 26/9/2026 (hallazgos de la enmienda del holográfico)
+
+Tres errores que ya estaban en producción, encontrados al hacer §3.7:
+
+1. **El material no le llegaba al taller** (RF-MAT17). Ni el título de una
+   `custom:` ni la nota (`groupCustomItems`) decían el material, y la línea de
+   Negocio del configurador llevaba solo `{ qty, size, archivos }`: un pedido
+   en DTF UV se leía igual que uno en Vinilo Blanco, y la nota decía `Negocio
+   "undefined"` sin corte ni notas. Fix: `materialLabel` entra en la clave y en
+   la nota de `groupCustomItems`; la línea de Negocio gana la misma `meta` que
+   el pack holográfico; `groupPackItems()` agrupa los packs de /personalizados
+   (dos packs del mismo diseño = un renglón "x200"); `especificacionDisenos()`
+   (sale de `Checkout.jsx` a `lib/resumenPedido.js` para poder testearla) le
+   pasa el material a /pago-exitoso, que ya lo mostraba pero nunca le llegaba.
+2. **Más de 100 copias se cobraban como 1 pack** (RF-MAT16). `repartoNegocio()`
+   en `lib/precioPersonalizados.js` decide packs + sueltas; `precioEfectivoTanda()`
+   devuelve `packsNegocio`, `sueltas` y `unitarioSueltas`; `construirLineasNegocio()`
+   en `lib/borradorPersonalizado.js` arma una línea `negocio:{ts}-{n}` por pack
+   (el servidor exige 1 por línea; el sufijo evita que el carrito las mergee) +
+   una `custom:` con las sueltas. `BotonCta.jsx` deja de repetir la condición
+   de Negocio por su cuenta y usa `c.esNegocio`/`c.packsNegocio` de la misma
+   cotización que arma el total. Sin cambios en el servidor.
+3. **El aviso "Ya tenés N en el carrito" no contaba los packs**
+   (`HeroConfigurador.jsx`). Ahora cuenta calcos: `custom` por cantidad,
+   `negocio` por `meta.qty`.
+
 ### Persistencia
 | Dónde | Qué | Ref. |
 |---|---|---|

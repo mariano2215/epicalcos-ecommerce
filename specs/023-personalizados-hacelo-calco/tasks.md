@@ -298,3 +298,21 @@ Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
 | 14/09/2026 | Línea de base (0.3) medida con Chrome headless por CDP (375×812 @2x, Slow 4G, CPU 4×), no con el Browser pane | El pane estaba oculto (`visibilityState: hidden`): sin pintar no hay entradas de LCP. Script en el scratchpad de la sesión, sin dependencias |
 | 14/09/2026 | **Línea de base**: LCP mediana **3.292 ms** (5 corridas: 2.740 · 3.372 · 3.404 · 2.872 · 3.292); elemento LCP = `logo-1.webp` (el `SocialProof` destacado). Chunk `Personalizados-*.js` 15,8 kB + `SubidaArchivo-*.js` 9,2 kB. Suite: 524 tests | Tasks 0.2 y 0.3 |
 | 22/09/2026 | `BarraFijaMovil.jsx` tenía su PROPIO `cotizarTanda()` — no recibía `material`/`disenos` (enmienda de material) y después tampoco el tope de Negocio (enmienda "topear el precio en $39.999"): mostraba un total distinto al del CTA del hero para la MISMA tanda | Encontrado recorriendo la UI en el Browser pane, no por los tests (ninguna suite renderiza este componente). Corregido reemplazando su cálculo por `precioEfectivoTanda()`, la MISMA función que usan `HeroConfigurador.jsx` y `useAgregarAlCarrito()` — un solo lugar que decide el precio, no tres |
+
+---
+
+## Fase 15 — Fixes del 26/9/2026 (design.md §3.8)
+
+- [x] **15.1** `lib/resumenPedido.js`: material en `groupCustomItems` y en la nota; `groupPackItems()`; `Negocio` sin `"undefined"`; `especificacionDisenos()` (usada por `Checkout.jsx`)
+  - *Verificación*: tests — nota con material y grupos separados por material; 2 packs = un renglón x200; spec de WhatsApp con material
+- [x] **15.2** `routes/PaymentSuccess.jsx`: renglón y mensaje de WhatsApp con el material (y sin el " · " suelto cuando no hay)
+- [x] **15.3** `lib/precioPersonalizados.js`: `repartoNegocio()`; `precioEfectivoTanda()` con `packsNegocio`/`sueltas`/`unitarioSueltas`
+  - *Verificación*: tests — tabla de repartos (37 → sueltas, 38 → 1 pack, 137 → 1 + 37, 138 → 2, 237 → 2 + 37); para 1…1000 copias con y sin 3x2 nunca menos calcos que las pedidas ni más caro que el 3x2 puro o que tomar packs
+- [x] **15.4** `lib/borradorPersonalizado.js`: `construirLineasNegocio()` con material, corte y notas en `meta`; `BotonCta.jsx` la usa con los números de la cotización
+  - *Verificación*: test de paridad — el servidor acepta las líneas y cobra el total mostrado para 30…1000 copias, con y sin 3x2
+- [x] **15.5** `SelectorCantidad.jsx`: etiqueta "2 packs Promo Negocio + 37 sueltas"
+- [x] **15.6** `HeroConfigurador.jsx`: el aviso cuenta calcos de `custom` y `negocio`
+- [x] **15.7** `npm test` en verde + recorrido a 375 px
+  - *Verificación*: `npm test` → 717/717 ✅ (26/9/2026). Recorrido con Playwright contra `vite preview` a 375 px ✅: 1 diseño en 6 cm, DTF UV, 237 copias → "Total · 237 calcos · 2 packs Promo Negocio + 37 sueltas · $119.995"; 200 copias → "2 packs Promo Negocio · $79.998"; el carrito recibió `negocio:{ts}-1`, `negocio:{ts}-2` (DTF UV, Silueta en meta) + `custom:6cm:silueta:dtf-uv:…` × 37; el aviso dice "Ya tenés 237 calcos personalizadas en el carrito". Sin errores de la app en consola
+  - ⚠️ *Hallazgo, fuera de scope*: `/carrito` muestra el 3x2 como "unidades gratis × precio de lista" (37 sueltas: −$19.200 → $40.000), mientras el checkout y el servidor redondean por unidad (37 × $1.081 = $39.997). El carrito puede mostrar unos pesos MÁS que lo que se cobra. Pasa igual sin packs (37 calcos sueltas) — no es de este cambio
+

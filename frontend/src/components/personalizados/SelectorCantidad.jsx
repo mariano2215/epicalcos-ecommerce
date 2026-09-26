@@ -121,7 +121,11 @@ export default function SelectorCantidad({ copias, disenos, tamano, cotizacion, 
                     6 cm cuyas copias ya cuestan lo mismo o más pasa a cobrarse como la
                     Promo Negocio — nunca más caro que tomarla. Se aclara acá para que
                     no se lea como un 3x2 con un % raro. */}
-                {c.esNegocio && <span className="block text-[10px] text-white/40 normal-case">Promo Negocio</span>}
+                {c.esNegocio && (
+                  <span className="block text-[10px] text-white/40 normal-case">
+                    {CANTIDAD_COPY.etiquetaNegocio(c.packsNegocio, c.sueltas)}
+                  </span>
+                )}
                 {esPack && <span className="block text-[10px] text-white/40 normal-case">{CANTIDAD_COPY.packHolograficoEtiqueta}</span>}
               </span>
               <span className="font-display font-extrabold text-3xl tabular-nums" aria-live="polite">

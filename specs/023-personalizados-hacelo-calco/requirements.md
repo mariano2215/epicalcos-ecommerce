@@ -337,6 +337,8 @@ Organizado por prioridad (la del brief).
 | RF-MAT12 *(enmienda 26/9/2026)* | Compra mínima holográfica: **100 calcos**. No se puede agregar al carrito una cantidad menor en holográfico, y el checkout rechaza un pedido holográfico que no sea un pack de 100 | 🔴 must |
 | RF-MAT13 *(enmienda 26/9/2026, Mariano)* | Holográfico solo en **4 y 6 cm**. Con Vinilo Holográfico elegido, 9 cm no se puede elegir; si el cliente ya tenía 9 cm y pasa a holográfico, tiene que volver a elegir el tamaño (D-4: el tamaño es una decisión que el cliente ve, no un default que se le pasa) | 🔴 must |
 | RF-MAT14 *(enmienda 26/9/2026, Mariano)* | Con varios diseños, las 100 calcos son **en total**, repartidas entre ellos, y se cobra un solo pack. El cliente puede indicar cómo repartirlas en las instrucciones | 🔴 must |
+| RF-MAT16 *(fix 26/9/2026, Mariano: "arreglá todo")* | RF-MAT8 se aplica de a 100: con más de 100 copias de un diseño en 6 cm, cada 100 son un pack de Negocio y el resto se cobra como siempre (3x2 si está vivo), salvo que ya cueste lo mismo o más que otro pack — ahí es otro pack. El cliente nunca se lleva menos calcos de las que pidió (antes, con 200 copias pagaba un pack y recibía 100) | 🔴 must |
+| RF-MAT17 *(fix 26/9/2026)* | El pedido que le llega al taller (nota del mail/CRM) y la configuración de /pago-exitoso dicen el **material** de toda calco personalizada y de todo pack de /personalizados, más corte y notas en los packs de Negocio | 🔴 must |
 | RF-MAT15 *(enmienda 26/9/2026)* | Con holográfico elegido, el configurador muestra que es un pack de 100 (en la card del material, en la cantidad y en el total) y no muestra ni el selector de copias ni nada del 3x2 (el pack no participa) | 🔴 must |
 
 ### 7.6 Secciones de la landing

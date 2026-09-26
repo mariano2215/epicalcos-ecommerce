@@ -116,7 +116,12 @@ export const CANTIDAD_COPY = {
   packHolografico: (n) => `Pack de ${n} calcos holográficas.`,
   packHolograficoReparto: (disenos) =>
     `Se reparten entre tus ${disenos} diseños. ¿Querés más de uno que de otro? Contanos en “${OPCIONES.titulo}”.`,
-  packHolograficoEtiqueta: 'Pack holográfico'
+  packHolograficoEtiqueta: 'Pack holográfico',
+  // Un diseño en 6 cm que se cobra como Promo Negocio: con más de 100 copias
+  // son varios packs + las sueltas que sobren (fix 26/9/2026). Se dice acá
+  // para que "Total · 237 calcos" no se lea como un 3x2 con un % raro.
+  etiquetaNegocio: (packs, sueltas) =>
+    `${packs > 1 ? `${packs} packs ` : ''}Promo Negocio${sueltas > 0 ? ` + ${sueltas} sueltas` : ''}`
 };
 
 export const OPCIONES = {

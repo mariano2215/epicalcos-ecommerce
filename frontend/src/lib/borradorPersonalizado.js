@@ -39,6 +39,7 @@ import {
   recomendacionPx,
   formatosLegibles
 } from '../config/personalizados.js';
+import { NEGOCIO } from '../config/pricing.js';
 
 export const CLAVE_BORRADOR = 'epicalcos.personalizados.borrador.v1';
 export const CORTE_POR_DEFECTO = 'silueta';
@@ -167,6 +168,53 @@ export function construirLineas(e, { imagenGenerica = null } = {}) {
       archivos: [{ nombre: d.nombre, pesoMB: d.pesoMB, url: d.url || null }]
     }
   }));
+}
+
+/**
+ * Las líneas de UN diseño en `NEGOCIO.size` que se cobra como Promo Negocio
+ * (enmienda 22/9/2026, "topear el precio en $39.999"): `packs` líneas
+ * `negocio:` + una `custom:` con las `sueltas` que sobren, con los números de
+ * `repartoNegocio()` (fix 26/9/2026: antes era SIEMPRE un pack, y con 200
+ * copias el cliente se llevaba 100).
+ *
+ * Una línea por pack y no una con `quantity: packs`: el servidor exige 1 por
+ * línea de Negocio. Los ids llevan `-{n}` porque el carrito mergea las líneas
+ * con el mismo id.
+ *
+ * `meta` lleva material, corte y notas (fix 26/9/2026): la línea de Negocio
+ * de antes solo llevaba `{ qty, size, archivos }`, así que un pedido en DTF
+ * UV le llegaba al taller sin el material, y la nota decía `Negocio
+ * "undefined"` sin corte ni notas. `name` sigue sin el nombre del archivo
+ * (PII: `nombreParaAnalytics()` no limpia un `negocio:`).
+ *
+ * @returns las líneas, o `[]` si la tanda no es UN diseño en `NEGOCIO.size`
+ */
+export function construirLineasNegocio(e, { packs = 0, sueltas = 0, imagenGenerica = null, ts = Date.now() } = {}) {
+  const [linea, ...otras] = construirLineas(e, { imagenGenerica });
+  if (!linea || otras.length || e.tamano !== NEGOCIO.size || packs < 1) return [];
+  const m = linea.meta;
+  const lineas = Array.from({ length: packs }, (_, i) => ({
+    id: `negocio:${ts}-${i + 1}`,
+    name: `Negocio · ${NEGOCIO.qty}u ${m.tamanoLabel}`,
+    categoryLabel: 'Negocio',
+    image: linea.image,
+    basePrice: NEGOCIO.price,
+    quantity: 1,
+    meta: {
+      qty: NEGOCIO.qty,
+      size: NEGOCIO.size,
+      tamanoLabel: m.tamanoLabel,
+      material: m.material,
+      materialLabel: m.materialLabel,
+      corte: m.corte,
+      corteLabel: m.corteLabel,
+      disenos: 1,
+      instrucciones: m.instrucciones,
+      archivos: m.archivos
+    }
+  }));
+  if (sueltas > 0) lineas.push({ ...linea, quantity: sueltas, meta: { ...m, cantidad: sueltas } });
+  return lineas;
 }
 
 /**
