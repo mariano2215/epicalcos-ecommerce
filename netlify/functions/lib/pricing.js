@@ -312,13 +312,13 @@ const PERSONALIZADOS_DISCOUNT = 0.1;
 const NEGOCIO_PRICE = 39999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
 export const FIXED_PRICES = {
   'tatuajes-hoja': 12000,
-  // Recargo del Vinilo Holográfico en /personalizados (spec 023, enmienda
-  // 22/9/2026) — espejo de RECARGO_HOLOGRAFICO.precio en
-  // frontend/src/config/personalizados.js. Es un cobro FIJO POR DISEÑO, no por
-  // copia: viaja como su propia línea (`fixed:material-holografico:{disenoId}`,
-  // quantity SIEMPRE 1), nunca como parte del precio por unidad del calco. Ver
-  // el bloque "Espejo de personalizados" más abajo para la validación cruzada
-  // que exige esta línea cuando el material del diseño es holográfico.
+  // Recargo del Vinilo Holográfico en /personalizados (spec 023, enmiendas
+  // 22/9 y 26/9/2026) — espejo de RECARGO_HOLOGRAFICO.precio en
+  // frontend/src/config/personalizados.js. Es un cobro FIJO POR PACK DE 100
+  // (desde el 26/9; antes era por diseño): viaja como su propia línea
+  // (`fixed:material-holografico:{ts}`, quantity SIEMPRE 1), nunca como parte
+  // del precio del pack. Ver el bloque "Espejo de personalizados" más abajo
+  // para la validación cruzada que exige esta línea junto al pack.
   'material-holografico': 15000,
   // Fotos Polaroid x10 por tamaño Y material — espejo de POLAROID_SIZES del
   // frontend (`price` y `priceIman`). Imantadas = +$600 por foto = +$6.000 por
@@ -371,19 +371,21 @@ export function isDigitalOnly(items) {
 // frontend/src/lib/precioPersonalizados.test.js lo verifica.
 //
 // MATERIAL (enmienda 22/9/2026, spec 023 §7.9): Vinilo Blanco y DTF UV no
-// tocan el precio de arriba. Vinilo Holográfico agrega el recargo FIJO POR
-// DISEÑO de FIXED_PRICES['material-holografico'] (arriba), como una línea
-// `fixed:material-holografico:{disenoId}` APARTE — nunca como parte del
-// unit_price del calco (ver el docblock de `lineBase`, rama `custom`, y el
-// comentario de `construirLineas()` en el frontend sobre por qué: repartir un
-// monto fijo entre `quantity` copias no da un entero exacto y dispararía
-// `price_mismatch` por 1-2 pesos).
+// tocan el precio de arriba. Vinilo Holográfico NO existe como calco suelta
+// (enmienda 26/9/2026, Mariano: "la compra mínima para HOLOGRÁFICOS es de 100
+// calcos"): se vende solo como pack de 100 en 4 o 6 cm, repartidas entre los
+// diseños — una línea `negocio:vinilo-holografico:{tamano}:{ts}` a
+// NEGOCIO_PRICE + su recargo `fixed:material-holografico:{ts}` (ver la rama
+// `negocio` de `lineBase`). Por eso la rama `custom` rechaza el holográfico.
 //
 // Allowlist de materiales válidos — mismos ids que MATERIALES en el frontend.
 const CUSTOM_MATERIALES = ['vinilo-blanco', 'dtf-uv', 'vinilo-holografico'];
 const CUSTOM_MATERIAL_POR_DEFECTO = 'vinilo-blanco';
 const CUSTOM_MATERIAL_HOLOGRAFICO = 'vinilo-holografico';
 const CUSTOM_RECARGO_ID = 'material-holografico';
+// Tamaños del pack holográfico — espejo de PACK_HOLOGRAFICO.tamanos del
+// frontend (lo verifica frontend/src/lib/precioPersonalizados.test.js).
+export const HOLOGRAFICO_TAMANOS = ['4cm', '6cm'];
 
 /**
  * Material de una línea `custom:{tamano}:{corte}:{ts}` (4 segmentos, formato
@@ -469,7 +471,7 @@ export function shippingMethodLabel(method, city, province) {
  * cupón/transferencia/promo. Los ids los genera el frontend con estructura fija:
  *   sticker:{stickerId}:{size} · pack:{tipo}:{size}:{ts} · fixed:{productId}
  *   custom:{tamano}:{corte}:{ts} · custom:{tamano}:{corte}:{material}:{ts} (enmienda 22/9/2026)
- *   negocio:{ts} · negocio:{material}:{ts} (enmienda 22/9/2026, solo si el configurador topeó a Negocio con holográfico)
+ *   negocio:{ts} · negocio:{material}:{ts} (enmienda 22/9/2026) · negocio:vinilo-holografico:{tamano}:{ts} (pack holográfico, enmienda 26/9/2026)
  *
  * `discountable` marca las líneas que participan de los descuentos a calcos
  * sueltos (cupón/transferencia/promo 3x2): SOLO catálogo (sticker) y
@@ -516,13 +518,22 @@ function lineBase(id, quantity) {
 
   // negocio:{ts} — el formulario estándar de /negocio, sin material (siempre el
   // vinilo de la promo). negocio:{material}:{ts} (enmienda 22/9/2026) — cuando
-  // el configurador de /personalizados topea el precio a la Promo Negocio
-  // porque un solo diseño en 6 cm ya cuesta lo mismo o más (ver
-  // `precioEfectivoTanda` del frontend) y el material elegido es Vinilo
-  // Holográfico: el id lleva el material para poder exigir, más abajo, la
-  // misma línea de recargo que exigiría una `custom:` holográfica.
+  // el configurador de /personalizados topeó a la Promo Negocio un diseño en
+  // 6 cm con Vinilo Holográfico: el id lleva el material para poder exigir,
+  // más abajo, su línea de recargo. Sigue aceptándose: es exactamente un pack
+  // holográfico de 100 en 6 cm, y puede haber carritos guardados con esa forma.
+  // negocio:vinilo-holografico:{tamano}:{ts} (enmienda 26/9/2026) — el pack
+  // holográfico de hoy: 100 calcos en 4 o 6 cm, repartidas entre los diseños.
+  // El tamaño va en el id porque el precio es el mismo en los dos y, sin él,
+  // no habría forma de rechazar un 9 cm.
   if (kind === 'negocio') {
     if (quantity !== 1) return { error: 'promo negocio: 1 unidad por línea' };
+    if (parts.length >= 4) {
+      if (parts[1] !== CUSTOM_MATERIAL_HOLOGRAFICO) return { error: `material inválido en "${id}"` };
+      if (!HOLOGRAFICO_TAMANOS.includes(parts[2]))
+        return { error: 'el Vinilo Holográfico es solo en 4 y 6 cm — recargá la página' };
+      return { base: NEGOCIO_PRICE, kind, discountable: false, material: parts[1], disenoId: parts[parts.length - 1] };
+    }
     if (parts.length >= 3) {
       const material = parts[1];
       if (!CUSTOM_MATERIALES.includes(material)) return { error: `material inválido en "${id}"` };
@@ -533,7 +544,7 @@ function lineBase(id, quantity) {
 
   if (kind === 'fixed') {
     // Recargo de material (enmienda 22/9/2026): SIEMPRE 1 unidad — es un cobro
-    // fijo por diseño, no algo que tenga sentido pedir "×2" (ver
+    // fijo por pack, no algo que tenga sentido pedir "×2" (ver
     // `customMaterialYDiseno` y la validación cruzada de `validateAndPriceOrder`).
     if (parts[1] === CUSTOM_RECARGO_ID && quantity !== 1) {
       return { error: `recargo de material: 1 unidad por línea en "${id}"` };
@@ -564,14 +575,17 @@ function lineBase(id, quantity) {
   // custom:{tamano}:{corte}:{material}:{ts} (5, enmienda 22/9/2026) — calco
   // personalizado, al precio del catálogo. El corte (parts[2]) es
   // especificación pura y no afecta el precio, y no hay mínimo de compra:
-  // cualquier cantidad ≥ 1 es válida. El material NO cambia `base`: el
-  // recargo del holográfico viaja en su propia línea `fixed:` (ver arriba) y
-  // se exige con la validación cruzada al final de `validateAndPriceOrder`.
+  // cualquier cantidad ≥ 1 es válida. El material NO cambia `base`.
+  // Holográfico: rechazado (enmienda 26/9/2026) — va solo en el pack de 100
+  // de la rama `negocio`. Ni con 100 copias se acepta acá: $1.600 × 100 no es
+  // el precio del pack, y aceptarla sería cobrar un holográfico a otro precio.
   if (kind === 'custom') {
     const base = SIZE_PRICES[parts[1]];
     if (!base) return { error: `tamaño inválido en "${id}"` };
     const matDiseno = customMaterialYDiseno(parts);
     if (!matDiseno) return { error: `material inválido en "${id}"` };
+    if (matDiseno.material === CUSTOM_MATERIAL_HOLOGRAFICO)
+      return { error: 'el Vinilo Holográfico va en packs de 100 — recargá la página' };
     return { base, kind, discountable: true, material: matDiseno.material, disenoId: matDiseno.disenoId };
   }
 
@@ -754,12 +768,13 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   }
 
   // Validación cruzada del recargo de material (enmienda 22/9/2026, RF-MAT7):
-  // el precio de una línea `custom:` holográfica (o `negocio:` topeada a la
-  // Promo Negocio con ese mismo material, ver `lineBase` arriba) no lleva el
-  // recargo — viaja en su propia línea `fixed:material-holografico:{id}` —,
-  // así que nada de lo de arriba lo detectaría si esa línea faltara. Un
-  // carrito manipulado a mano para borrar el recargo y quedarse con el
-  // diseño en holográfico se corta acá.
+  // el precio del pack holográfico (`negocio:vinilo-holografico:…`, ver
+  // `lineBase` arriba) no lleva el recargo — viaja en su propia línea
+  // `fixed:material-holografico:{id}` —, así que nada de lo de arriba lo
+  // detectaría si esa línea faltara. Un carrito manipulado a mano para borrar
+  // el recargo y quedarse con el pack en holográfico se corta acá. (La rama
+  // `custom` de este chequeo ya no se dispara: `lineBase` rechaza antes una
+  // `custom:` holográfica. Se deja: no cuesta nada y cubre si vuelve.)
   const requierenRecargo = new Set();
   const recargosPresentes = new Set();
   clean.forEach((item, idx) => {

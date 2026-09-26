@@ -31,11 +31,15 @@ import {
   getTamano,
   getCorte,
   getMaterial,
+  tamanoPermitido,
   MATERIAL_POR_DEFECTO,
+  MATERIAL_HOLOGRAFICO_ID,
+  PACK_HOLOGRAFICO,
   clampCantidad,
   recomendacionPx,
   formatosLegibles
 } from '../config/personalizados.js';
+import { NEGOCIO } from '../config/pricing.js';
 
 export const CLAVE_BORRADOR = 'epicalcos.personalizados.borrador.v1';
 export const CORTE_POR_DEFECTO = 'silueta';
@@ -130,10 +134,11 @@ function nombreLinea(tamanoLabel, corteLabel, archivo) {
  * `esCustomViejo()` del CartContext lo siga distinguiendo de una línea
  * realmente vieja — ver el comentario largo de esa función.
  *
- * La línea de recargo del Vinilo Holográfico NO sale de acá: la agrega
- * `useAgregarAlCarrito()` (`BotonCta.jsx`) con `addFixed()`, porque es un
- * cobro fijo por diseño y no una propiedad de ESTA línea (ver
- * `precioPersonalizados.js`).
+ * Vinilo Holográfico NO sale de acá (enmienda 26/9/2026): no existe como
+ * calco suelta — va en el pack de `construirLineaHolografica()`, y el servidor
+ * rechaza una `custom:` holográfica. Devolver `[]` y no la línea hace que un
+ * llamador que se olvide de separar el caso no pueda mandar al carrito algo
+ * que el checkout después traba.
  *
  * @param {{ imagenGenerica?: string|null }} [opts] miniatura para lo que no es raster
  */
@@ -141,7 +146,7 @@ export function construirLineas(e, { imagenGenerica = null } = {}) {
   const tam = getTamano(e.tamano);
   const cor = getCorte(e.corte);
   const mat = getMaterial(e.material) || getMaterial(MATERIAL_POR_DEFECTO);
-  if (!tam || !cor || !mat) return [];
+  if (!tam || !cor || !mat || mat.id === MATERIAL_HOLOGRAFICO_ID) return [];
   const notas = e.instrucciones.trim() || null;
   return disenosListos(e).map((d) => ({
     id: `custom:${tam.id}:${cor.id}:${mat.id}:${d.id}`,
@@ -163,6 +168,99 @@ export function construirLineas(e, { imagenGenerica = null } = {}) {
       archivos: [{ nombre: d.nombre, pesoMB: d.pesoMB, url: d.url || null }]
     }
   }));
+}
+
+/**
+ * Las líneas de UN diseño en `NEGOCIO.size` que se cobra como Promo Negocio
+ * (enmienda 22/9/2026, "topear el precio en $39.999"): `packs` líneas
+ * `negocio:` + una `custom:` con las `sueltas` que sobren, con los números de
+ * `repartoNegocio()` (fix 26/9/2026: antes era SIEMPRE un pack, y con 200
+ * copias el cliente se llevaba 100).
+ *
+ * Una línea por pack y no una con `quantity: packs`: el servidor exige 1 por
+ * línea de Negocio. Los ids llevan `-{n}` porque el carrito mergea las líneas
+ * con el mismo id.
+ *
+ * `meta` lleva material, corte y notas (fix 26/9/2026): la línea de Negocio
+ * de antes solo llevaba `{ qty, size, archivos }`, así que un pedido en DTF
+ * UV le llegaba al taller sin el material, y la nota decía `Negocio
+ * "undefined"` sin corte ni notas. `name` sigue sin el nombre del archivo
+ * (PII: `nombreParaAnalytics()` no limpia un `negocio:`).
+ *
+ * @returns las líneas, o `[]` si la tanda no es UN diseño en `NEGOCIO.size`
+ */
+export function construirLineasNegocio(e, { packs = 0, sueltas = 0, imagenGenerica = null, ts = Date.now() } = {}) {
+  const [linea, ...otras] = construirLineas(e, { imagenGenerica });
+  if (!linea || otras.length || e.tamano !== NEGOCIO.size || packs < 1) return [];
+  const m = linea.meta;
+  const lineas = Array.from({ length: packs }, (_, i) => ({
+    id: `negocio:${ts}-${i + 1}`,
+    name: `Negocio · ${NEGOCIO.qty}u ${m.tamanoLabel}`,
+    categoryLabel: 'Negocio',
+    image: linea.image,
+    basePrice: NEGOCIO.price,
+    quantity: 1,
+    meta: {
+      qty: NEGOCIO.qty,
+      size: NEGOCIO.size,
+      tamanoLabel: m.tamanoLabel,
+      material: m.material,
+      materialLabel: m.materialLabel,
+      corte: m.corte,
+      corteLabel: m.corteLabel,
+      disenos: 1,
+      instrucciones: m.instrucciones,
+      archivos: m.archivos
+    }
+  }));
+  if (sueltas > 0) lineas.push({ ...linea, quantity: sueltas, meta: { ...m, cantidad: sueltas } });
+  return lineas;
+}
+
+/**
+ * La línea del pack holográfico (enmienda 26/9/2026, spec 023 design §3.7):
+ * UNA para toda la tanda, con los N diseños en `meta.archivos` — las 100
+ * calcos son en total, repartidas entre ellos (Mariano, 26/9/2026).
+ *
+ * Es una línea `negocio:` porque el servidor ya sabe cobrarla a $39.999 y
+ * exigirle su recargo (`fixed:material-holografico:{ts}`, que agrega
+ * `BotonCta.jsx` con el MISMO `ts`: ese último segmento compartido es lo que
+ * las liga en el servidor y en `removeItem`). El tamaño va en el id para que
+ * el servidor pueda rechazar un 9 cm.
+ *
+ * `name` sin el nombre del archivo (PII: `nombreParaAnalytics()` no limpia un
+ * `negocio:` — mismo criterio que la línea de Negocio de `BotonCta.jsx`).
+ *
+ * @returns la línea, o `null` si la tanda no es un pack holográfico válido
+ */
+export function construirLineaHolografica(e, { imagenGenerica = null, ts = Date.now() } = {}) {
+  if (e.material !== MATERIAL_HOLOGRAFICO_ID || !tamanoPermitido(e.tamano, e.material)) return null;
+  const tam = getTamano(e.tamano);
+  const cor = getCorte(e.corte);
+  const mat = getMaterial(e.material);
+  const listos = disenosListos(e);
+  if (!cor || !listos.length) return null;
+  const conImagen = listos.find((d) => d.url && ARCHIVO.formatosRaster.includes(d.extSubida));
+  return {
+    id: `negocio:${mat.id}:${tam.id}:${ts}`,
+    name: `Holográfico · ${PACK_HOLOGRAFICO.qty}u ${tam.label}`,
+    categoryLabel: 'Personalizados',
+    image: conImagen ? conImagen.url : imagenGenerica,
+    basePrice: PACK_HOLOGRAFICO.precio,
+    quantity: 1,
+    meta: {
+      qty: PACK_HOLOGRAFICO.qty,
+      size: tam.id,
+      tamanoLabel: tam.label,
+      material: mat.id,
+      materialLabel: mat.label,
+      corte: cor.id,
+      corteLabel: cor.label,
+      disenos: listos.length,
+      instrucciones: e.instrucciones.trim() || null,
+      archivos: listos.map((d) => ({ nombre: d.nombre, pesoMB: d.pesoMB, url: d.url || null }))
+    }
+  };
 }
 
 /**
@@ -214,10 +312,13 @@ function hidratar(storage) {
             error: null
           }))
       : [];
+    const material = getMaterial(g.material) ? g.material : base.material;
     return {
       ...base,
-      tamano: getTamano(g.tamano) ? g.tamano : null,
-      material: getMaterial(g.material) ? g.material : base.material,
+      // Un borrador guardado en holográfico + 9 cm (antes del 26/9/2026 se
+      // podía) vuelve sin tamaño: el cliente lo elige de nuevo (D-4).
+      tamano: tamanoPermitido(g.tamano, material) ? g.tamano : null,
+      material,
       corte: getCorte(g.corte) ? g.corte : base.corte,
       copias: clampCantidad(g.copias),
       instrucciones: String(g.instrucciones || '').slice(0, MAX_INSTRUCCIONES),
@@ -494,7 +595,9 @@ export function crearBorrador({
     },
 
     setTamano(tamano) {
-      if (!getTamano(tamano)) return;
+      // Con holográfico, 9 cm no existe (RF-MAT13): la card está deshabilitada,
+      // esto es la red por si algo la llama igual.
+      if (!tamanoPermitido(tamano, estado.material)) return;
       // El momento de "creación" (RF-P4): la primera vez que se elige el tamaño
       // con un diseño cargado, la vista pasa sola a la calco.
       const vista = !estado.tamano && estado.disenos.length && estado.vista === 'original' ? 'calco' : estado.vista;
@@ -504,7 +607,13 @@ export function crearBorrador({
       if (getCorte(corte)) set({ corte });
     },
     setMaterial(material) {
-      if (getMaterial(material)) set({ material });
+      if (!getMaterial(material)) return;
+      // Pasar a holográfico con 9 cm elegido deselecciona el tamaño en vez de
+      // cambiarlo solo a 6 cm (RF-MAT13): el tamaño es una decisión que el
+      // cliente ve, no un default que se le pasa (D-4 — un personalizado solo
+      // se devuelve por falla).
+      const tamano = tamanoPermitido(estado.tamano, material) ? estado.tamano : null;
+      set({ material, tamano });
     },
     setCopias(n) {
       set({ copias: clampCantidad(n) });
@@ -525,7 +634,9 @@ export function crearBorrador({
      */
     marcarAgregado() {
       const listos = disenosListos(estado);
-      const unidades = listos.length * estado.copias;
+      // El pack holográfico son 100 en total, no diseños × copias (26/9/2026).
+      const unidades =
+        estado.material === MATERIAL_HOLOGRAFICO_ID ? PACK_HOLOGRAFICO.qty : listos.length * estado.copias;
       listos.forEach(soltar);
       set({
         disenos: estado.disenos.filter((d) => !LISTOS.includes(d.estado)),

@@ -286,6 +286,13 @@ chequeo de `esCustomViejo()` dejó de contar tramos y pasa a validar que
 El Vinilo Holográfico agrega, además, una línea propia `fixed:material-holografico:{ts}`
 (recargo fijo por diseño, quantity 1) — no es parte de la línea `custom:`.
 
+⚠️ **Enmienda 26/9/2026** (spec 023, holográfico en packs de 100): ya no hay
+`custom:` holográficas. El holográfico es UNA línea por tanda,
+`negocio:vinilo-holografico:{tamano}:{ts}` (quantity 1, `meta.archivos` con
+todos los diseños), + su `fixed:material-holografico:{ts}`. Al hidratar,
+`purgarLineasRetiradas()` descarta las `custom:` holográficas del 22–26/9
+junto con su recargo (mismo precedente que `esCustomViejo()`).
+
 ---
 
 ## 4. Entidades y relaciones

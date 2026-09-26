@@ -27,7 +27,7 @@
  */
 import { shipping } from './site.js';
 import { SIZES, NEGOCIO, DEFAULT_SIZE } from './pricing.js';
-import { ARCHIVO, CANTIDAD, formatosLegibles, recomendacionPx, getTamano } from './personalizados.js';
+import { ARCHIVO, CANTIDAD, PACK_HOLOGRAFICO, formatosLegibles, recomendacionPx, getTamano } from './personalizados.js';
 import { brandStats } from './brandStats.js';
 import { USOS_POR_TAMANO } from '../lib/usosPorTamano.js';
 import { formatPrice } from '../lib/formato.js';
@@ -110,7 +110,18 @@ export const MATERIAL_COPY = {
 
 export const CANTIDAD_COPY = {
   titulo: '¿Cuántas querés?',
-  atajos: [1, 5, 10, 25, 50, 100].filter((n) => n >= CANTIDAD.min && n <= CANTIDAD.max)
+  atajos: [1, 5, 10, 25, 50, 100].filter((n) => n >= CANTIDAD.min && n <= CANTIDAD.max),
+  // Vinilo Holográfico (enmienda 26/9/2026): pack de 100 en total, sin cantidad
+  // que elegir. `n` sale de PACK_HOLOGRAFICO.qty (vía la cotización), no de acá.
+  packHolografico: (n) => `Pack de ${n} calcos holográficas.`,
+  packHolograficoReparto: (disenos) =>
+    `Se reparten entre tus ${disenos} diseños. ¿Querés más de uno que de otro? Contanos en “${OPCIONES.titulo}”.`,
+  packHolograficoEtiqueta: 'Pack holográfico',
+  // Un diseño en 6 cm que se cobra como Promo Negocio: con más de 100 copias
+  // son varios packs + las sueltas que sobren (fix 26/9/2026). Se dice acá
+  // para que "Total · 237 calcos" no se lea como un 3x2 con un % raro.
+  etiquetaNegocio: (packs, sueltas) =>
+    `${packs > 1 ? `${packs} packs ` : ''}Promo Negocio${sueltas > 0 ? ` + ${sueltas} sueltas` : ''}`
 };
 
 export const OPCIONES = {
@@ -180,7 +191,8 @@ export const PROCESO = {
 
 export const PRECIOS = {
   titulo: 'Precios claros, desde una calco.',
-  bajada: 'Sin mínimo de compra. El precio es por calco y depende del tamaño.',
+  // "Sin mínimo" dejó de ser verdad para el holográfico (enmienda 26/9/2026).
+  bajada: `Sin mínimo de compra: el precio es por calco y depende del tamaño. El Vinilo Holográfico va en packs de ${PACK_HOLOGRAFICO.qty}.`,
   /** Solo se muestra si el 3x2 está vivo (lo decide la página, no este módulo). */
   promo: 'Con el 3x2, cada 3 calcos la más barata te sale gratis.',
   cantidadesEjemplo: [10, 25, 50, 100]

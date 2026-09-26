@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDesignSummary, groupCustomItems } from './resumenPedido.js';
+import { buildDesignSummary, groupCustomItems, especificacionDisenos } from './resumenPedido.js';
 
 /** Línea de personalizado como la emite el configurador: UN diseño por línea. */
 const linea = (archivo, { url = null, copias = 1, tamanoLabel = '4 cm', corteLabel = 'Silueta', instrucciones = null } = {}) => ({
@@ -84,6 +84,133 @@ describe('nota del pedido con personalizados', () => {
     expect(nota).toContain('x10)');
     expect(nota).toContain('https://cdn/a.png , https://cdn/b.png');
     expect(nota).not.toContain('(x10)');
+  });
+
+  it('el pack holográfico dice material, tamaño, corte, x100 entre N diseños, links y notas (enmienda 26/9/2026)', () => {
+    const nota = buildDesignSummary([
+      {
+        id: 'negocio:vinilo-holografico:4cm:1',
+        type: 'negocio',
+        name: 'Holográfico · 100u 4 cm',
+        quantity: 1,
+        meta: {
+          qty: 100,
+          size: '4cm',
+          tamanoLabel: '4 cm',
+          material: 'vinilo-holografico',
+          materialLabel: 'Vinilo Holográfico',
+          corte: 'circulo',
+          corteLabel: 'Círculo',
+          disenos: 2,
+          instrucciones: '70 del logo',
+          archivos: [
+            { nombre: 'logo.png', url: 'https://cdn/logo.png' },
+            { nombre: 'gato.png', url: 'https://cdn/gato.png' }
+          ]
+        }
+      },
+      { id: 'fixed:material-holografico:1', type: 'fixed', name: 'Recargo · Vinilo Holográfico', quantity: 1 }
+    ]);
+    expect(nota).toBe(
+      'PEDIDO: Vinilo Holográfico (4 cm, corte Círculo, x100 entre 2 diseños) | diseños (2): https://cdn/logo.png , https://cdn/gato.png | notas: 70 del logo'
+    );
+  });
+
+  it('el pack holográfico de un diseño no dice "entre 1 diseños", y sin Cloudinary avisa WhatsApp', () => {
+    const nota = buildDesignSummary([
+      {
+        type: 'negocio',
+        name: 'Holográfico · 100u 6 cm',
+        meta: {
+          qty: 100,
+          tamanoLabel: '6 cm',
+          material: 'vinilo-holografico',
+          materialLabel: 'Vinilo Holográfico',
+          corteLabel: 'Silueta',
+          instrucciones: null,
+          archivos: [{ nombre: 'logo.png', url: null }]
+        }
+      }
+    ]);
+    expect(nota).toBe('PEDIDO: Vinilo Holográfico (6 cm, corte Silueta, x100) | diseños (1): logo.png — se envían por WhatsApp');
+  });
+
+  it('la nota dice el material, y separa los grupos por material (fix 26/9/2026)', () => {
+    const conMaterial = (archivo, materialLabel) => {
+      const l = linea(archivo, { url: `https://cdn/${archivo}`, copias: 10 });
+      return { ...l, meta: { ...l.meta, materialLabel } };
+    };
+    const nota = buildDesignSummary([conMaterial('a.png', 'DTF UV'), conMaterial('b.png', 'Vinilo Blanco')]);
+    expect(nota).toBe(
+      'PEDIDO: Personalizado DTF UV (4 cm, corte Silueta, x10) | diseños (1): https://cdn/a.png (x10) ; ' +
+        'Personalizado Vinilo Blanco (4 cm, corte Silueta, x10) | diseños (1): https://cdn/b.png (x10)'
+    );
+  });
+
+  it('Promo Negocio del configurador: 2 packs del mismo diseño son UN renglón de x200, con material, corte y notas', () => {
+    const pack = (n) => ({
+      id: `negocio:9-${n}`,
+      type: 'negocio',
+      name: 'Negocio · 100u 6 cm',
+      quantity: 1,
+      meta: {
+        qty: 100,
+        size: '6cm',
+        tamanoLabel: '6 cm',
+        material: 'dtf-uv',
+        materialLabel: 'DTF UV',
+        corteLabel: 'Silueta',
+        instrucciones: 'sin borde',
+        archivos: [{ nombre: 'logo.png', url: 'https://cdn/logo.png' }]
+      }
+    });
+    expect(buildDesignSummary([pack(1), pack(2)])).toBe(
+      'PEDIDO: DTF UV (6 cm, corte Silueta, x200) | diseños (1): https://cdn/logo.png | notas: sin borde'
+    );
+  });
+
+  it('una línea de Negocio del configurador de antes (sin nombre de negocio) no dice "undefined"', () => {
+    const nota = buildDesignSummary([
+      { type: 'negocio', name: 'Negocio · 100u 6 cm', meta: { qty: 100, size: '6cm', archivos: [{ nombre: 'l.png', url: 'https://cdn/l.png' }] } }
+    ]);
+    expect(nota).toBe('PEDIDO: Negocio: 100u 6cm (logo (1): https://cdn/l.png)');
+  });
+
+  it('especificacionDisenos (WhatsApp de /pago-exitoso): material en personalizados y packs; Negocio de /negocio como adjunto', () => {
+    const suelta = { ...linea('a.png', { url: 'https://cdn/a.png', copias: 3 }) };
+    suelta.meta = { ...suelta.meta, materialLabel: 'DTF UV' };
+    const spec = especificacionDisenos([
+      suelta,
+      {
+        type: 'negocio',
+        name: 'Holográfico · 100u 4 cm',
+        quantity: 1,
+        meta: {
+          qty: 100,
+          tamanoLabel: '4 cm',
+          material: 'vinilo-holografico',
+          materialLabel: 'Vinilo Holográfico',
+          corteLabel: 'Círculo',
+          instrucciones: null,
+          archivos: [{ nombre: 'x.png', url: 'https://cdn/x.png' }, { nombre: 'y.png', url: null }]
+        }
+      },
+      { type: 'negocio', name: 'Negocio · Bar · 100u 6 cm', quantity: 1, meta: { business: 'Bar', qty: 100, size: '6cm', archivos: [{ nombre: 'l.png', url: 'https://cdn/l.png' }] } },
+      { type: 'fixed', name: 'Recargo · Vinilo Holográfico', quantity: 1 }
+    ]);
+    expect(spec).toEqual([
+      { tipo: 'custom', material: 'DTF UV', tamano: '4 cm', corte: 'Silueta', cantidad: 3, archivos: [{ nombre: 'a.png', subido: true }], instrucciones: null },
+      {
+        tipo: 'custom',
+        material: 'Vinilo Holográfico',
+        tamano: '4 cm',
+        corte: 'Círculo',
+        cantidad: 100,
+        archivos: [{ nombre: 'x.png', subido: true }, { nombre: 'y.png', subido: false }],
+        instrucciones: null
+      },
+      { tipo: 'fixed', nombre: 'Negocio · Bar · 100u 6 cm', cantidad: 1, archivos: [{ nombre: 'l.png', subido: true }] }
+    ]);
   });
 
   it('no toca packs, negocio ni productos fijos', () => {

@@ -335,6 +335,51 @@ describe('borrador — sobrevive a navegar y a refrescar (RF-U9)', () => {
   });
 });
 
+describe('borrador — Vinilo Holográfico solo en 4 y 6 cm (enmienda 26/9/2026, RF-MAT13)', () => {
+  it('pasar a holográfico con 9 cm deselecciona el tamaño (no lo cambia solo: D-4)', async () => {
+    const b = crearBorrador({ subir: async () => 'https://x/a.png' });
+    await b.agregarArchivos([archivo('a.png')]);
+    b.setTamano('9cm');
+    b.setMaterial('vinilo-holografico');
+    expect(b.leer()).toMatchObject({ material: 'vinilo-holografico', tamano: null });
+    expect(estadoCta(b.leer()).tipo).toBe('crear');
+  });
+
+  it('con 4 o 6 cm elegido, pasar a holográfico no toca el tamaño', () => {
+    const b = crearBorrador();
+    b.setTamano('4cm');
+    b.setMaterial('vinilo-holografico');
+    expect(b.leer().tamano).toBe('4cm');
+  });
+
+  it('con holográfico, 9 cm no se puede elegir; con otro material sí', () => {
+    const b = crearBorrador();
+    b.setMaterial('vinilo-holografico');
+    b.setTamano('9cm');
+    expect(b.leer().tamano).toBeNull();
+    b.setMaterial('dtf-uv');
+    b.setTamano('9cm');
+    expect(b.leer().tamano).toBe('9cm');
+  });
+
+  it('un borrador guardado en holográfico + 9 cm vuelve sin tamaño', () => {
+    const storage = memoria();
+    storage.setItem(CLAVE_BORRADOR, JSON.stringify({ tamano: '9cm', material: 'vinilo-holografico', corte: 'silueta', copias: 3, disenos: [] }));
+    expect(crearBorrador({ storage }).leer()).toMatchObject({ tamano: null, material: 'vinilo-holografico' });
+  });
+
+  it('el pack agregado cuenta 100 calcos, no diseños × copias', async () => {
+    const b = crearBorrador({ subir: async (f) => `https://x/${f.name}` });
+    await b.agregarArchivos([archivo('a.png'), archivo('b.png')]);
+    b.setTamano('6cm');
+    b.setMaterial('vinilo-holografico');
+    b.setCopias(3);
+    await esperar(() => estadoCta(b.leer()).tipo === 'agregar');
+    b.marcarAgregado();
+    expect(b.leer().agregado).toEqual({ disenos: 2, unidades: 100 });
+  });
+});
+
 describe('avisoResolucion — avisa sin bloquear (RF-U13)', () => {
   it('una imagen chica para 9 cm avisa; para 4 cm no', () => {
     const d = { ancho: 300, alto: 300 };

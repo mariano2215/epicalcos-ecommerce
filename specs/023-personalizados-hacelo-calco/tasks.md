@@ -261,6 +261,27 @@ está vacía (RF-L2).
 
 ---
 
+## Fase 14 — Holográfico en packs de 100 (enmienda 26/9/2026, design.md §3.7)
+
+- [x] **14.1** `config/personalizados.js`: `PACK_HOLOGRAFICO` (qty y precio de `NEGOCIO`, tamaños 4/6 cm) y `tamanoPermitido()`
+- [x] **14.2** `netlify/functions/lib/pricing.js`: `HOLOGRAFICO_TAMANOS`; rama `custom` rechaza el holográfico; rama `negocio` acepta `negocio:vinilo-holografico:{tamano}:{ts}` solo en 4/6 cm
+  - *Verificación*: test — `custom:` holográfica rechazada (aun con 100 copias); pack en 4 y 6 cm aceptado a $54.999; 9 cm rechazado; la forma de 3 segmentos del 22/9 sigue aceptada
+- [x] **14.3** `lib/precioPersonalizados.js`: `cotizarPackHolografico()`; `precioEfectivoTanda()` la usa con holo; `cotizarTanda()` sin recargo
+  - *Verificación*: test — $54.999 y 100 unidades con 1, 10 o 500 copias, 1 o 3 diseños, con y sin 3x2; 9 cm sin precio
+- [x] **14.4** `lib/borradorPersonalizado.js`: `construirLineaHolografica()`; `construirLineas()` → `[]` con holo; `setMaterial`/`setTamano`/`hidratar` no dejan holo + 9 cm
+  - *Verificación*: test — la línea del pack la acepta `validateAndPriceOrder` con su recargo, y el total es el mismo que muestra `precioEfectivoTanda()`
+- [x] **14.5** `BotonCta.jsx`: rama holográfica (una línea `negocio:` + un recargo por tanda); la rama Negocio pierde el caso holo
+- [x] **14.6** `SelectorMaterial.jsx`, `SelectorTamano.jsx`, `SelectorCantidad.jsx`, `HeroConfigurador.jsx`: RF-MAT13 y RF-MAT15
+- [x] **14.7** `CartContext.jsx`: `purgarLineasRetiradas()` al hidratar
+  - *Verificación*: test — saca la `custom:` holográfica y SU recargo; deja el pack `negocio:` holo con su recargo y las `custom:` de otros materiales
+- [x] **14.8** `lib/resumenPedido.js`: rama del pack holográfico
+  - *Verificación*: test — la nota dice holográfico, tamaño, corte, x100, cantidad de diseños, links y notas
+- [x] **14.9** `personalizadosLanding.js` (`PRECIOS.bajada`) y `docs/business-rules.md`
+- [x] **14.10** `npm test` en verde; recorrido del configurador a 375 px (holo con 1 y 3 diseños, 9 cm deshabilitado, carrito con el pack + recargo, sacar el pack saca el recargo)
+  - *Verificación*: `npm test` → 705/705 ✅ (26/9/2026). Recorrido con Playwright contra `vite preview` a 375 px ✅: un carrito guardado con `custom:` holográfica + recargo se limpió al abrir la página (quedó solo la de vinilo blanco); 9 cm → holográfico deseleccionó el tamaño, 9 cm quedó deshabilitado ("No disponible en holográfico") y el CTA volvió a "Crear mi calco"; en 4 cm con 3 diseños: sin −/+, "Pack de 100 calcos holográficas. Se reparten entre tus 3 diseños…", total $54.999 con el renglón del recargo; el carrito recibió `negocio:vinilo-holografico:4cm:{ts}` ($39.999, 3 archivos) + `fixed:material-holografico:{ts}` ($15.000), subtotal $54.999; quitar el pack en `/carrito` dejó el carrito vacío. Sin errores de la app en consola (solo recursos externos bloqueados por el sandbox)
+
+---
+
 ## Hallazgos fuera de scope
 
 Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
@@ -277,3 +298,21 @@ Ver `design.md` §12. Lo nuevo que aparezca durante la implementación va acá:
 | 14/09/2026 | Línea de base (0.3) medida con Chrome headless por CDP (375×812 @2x, Slow 4G, CPU 4×), no con el Browser pane | El pane estaba oculto (`visibilityState: hidden`): sin pintar no hay entradas de LCP. Script en el scratchpad de la sesión, sin dependencias |
 | 14/09/2026 | **Línea de base**: LCP mediana **3.292 ms** (5 corridas: 2.740 · 3.372 · 3.404 · 2.872 · 3.292); elemento LCP = `logo-1.webp` (el `SocialProof` destacado). Chunk `Personalizados-*.js` 15,8 kB + `SubidaArchivo-*.js` 9,2 kB. Suite: 524 tests | Tasks 0.2 y 0.3 |
 | 22/09/2026 | `BarraFijaMovil.jsx` tenía su PROPIO `cotizarTanda()` — no recibía `material`/`disenos` (enmienda de material) y después tampoco el tope de Negocio (enmienda "topear el precio en $39.999"): mostraba un total distinto al del CTA del hero para la MISMA tanda | Encontrado recorriendo la UI en el Browser pane, no por los tests (ninguna suite renderiza este componente). Corregido reemplazando su cálculo por `precioEfectivoTanda()`, la MISMA función que usan `HeroConfigurador.jsx` y `useAgregarAlCarrito()` — un solo lugar que decide el precio, no tres |
+
+---
+
+## Fase 15 — Fixes del 26/9/2026 (design.md §3.8)
+
+- [x] **15.1** `lib/resumenPedido.js`: material en `groupCustomItems` y en la nota; `groupPackItems()`; `Negocio` sin `"undefined"`; `especificacionDisenos()` (usada por `Checkout.jsx`)
+  - *Verificación*: tests — nota con material y grupos separados por material; 2 packs = un renglón x200; spec de WhatsApp con material
+- [x] **15.2** `routes/PaymentSuccess.jsx`: renglón y mensaje de WhatsApp con el material (y sin el " · " suelto cuando no hay)
+- [x] **15.3** `lib/precioPersonalizados.js`: `repartoNegocio()`; `precioEfectivoTanda()` con `packsNegocio`/`sueltas`/`unitarioSueltas`
+  - *Verificación*: tests — tabla de repartos (37 → sueltas, 38 → 1 pack, 137 → 1 + 37, 138 → 2, 237 → 2 + 37); para 1…1000 copias con y sin 3x2 nunca menos calcos que las pedidas ni más caro que el 3x2 puro o que tomar packs
+- [x] **15.4** `lib/borradorPersonalizado.js`: `construirLineasNegocio()` con material, corte y notas en `meta`; `BotonCta.jsx` la usa con los números de la cotización
+  - *Verificación*: test de paridad — el servidor acepta las líneas y cobra el total mostrado para 30…1000 copias, con y sin 3x2
+- [x] **15.5** `SelectorCantidad.jsx`: etiqueta "2 packs Promo Negocio + 37 sueltas"
+- [x] **15.6** `HeroConfigurador.jsx`: el aviso cuenta calcos de `custom` y `negocio`
+- [x] **15.7** `npm test` en verde + recorrido a 375 px
+  - *Verificación*: `npm test` → 717/717 ✅ (26/9/2026). Recorrido con Playwright contra `vite preview` a 375 px ✅: 1 diseño en 6 cm, DTF UV, 237 copias → "Total · 237 calcos · 2 packs Promo Negocio + 37 sueltas · $119.995"; 200 copias → "2 packs Promo Negocio · $79.998"; el carrito recibió `negocio:{ts}-1`, `negocio:{ts}-2` (DTF UV, Silueta en meta) + `custom:6cm:silueta:dtf-uv:…` × 37; el aviso dice "Ya tenés 237 calcos personalizadas en el carrito". Sin errores de la app en consola
+  - ⚠️ *Hallazgo, fuera de scope*: `/carrito` muestra el 3x2 como "unidades gratis × precio de lista" (37 sueltas: −$19.200 → $40.000), mientras el checkout y el servidor redondean por unidad (37 × $1.081 = $39.997). El carrito puede mostrar unos pesos MÁS que lo que se cobra. Pasa igual sin packs (37 calcos sueltas) — no es de este cambio
+

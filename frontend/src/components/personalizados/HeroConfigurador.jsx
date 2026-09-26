@@ -47,9 +47,22 @@ export default function HeroConfigurador() {
   // configurador NO puede topear solo (más de un diseño, u otro tamaño que no
   // sea el de Negocio): si `cotizacion.esNegocio` ya topeó el precio acá mismo,
   // mostrar el cartel además sería redundante — el total de arriba ya lo tiene.
-  const conviene = convieneNegocio({ tamano: estado.tamano, copias: estado.copias, promoActiva }) && !cotizacion.esNegocio;
+  // Con holográfico tampoco: /negocio no lo ofrece, y el pack ya es de 100.
+  const conviene =
+    convieneNegocio({ tamano: estado.tamano, copias: estado.copias, promoActiva }) &&
+    !cotizacion.esNegocio &&
+    !cotizacion.esHolografico;
   const cta = estadoCta(estado);
-  const enCarrito = items.filter((i) => i.type === 'custom').length;
+  // Calcos personalizadas ya en el carrito: las sueltas (`custom`) Y las de los
+  // packs (`negocio`: Promo Negocio y pack holográfico, 100 cada uno). Hasta el
+  // 26/9/2026 contaba solo líneas `custom`, así que quien agregaba un pack no
+  // veía el aviso. Cuenta calcos y no líneas: un diseño con 237 copias son 2
+  // packs + 1 línea suelta, y "3 personalizadas" no le diría nada a nadie.
+  const enCarrito = items.reduce((a, i) => {
+    if (i.type === 'custom') return a + (Number(i.quantity) || 0);
+    if (i.type === 'negocio') return a + (Number(i.meta?.qty) || 0) * (Number(i.quantity) || 1);
+    return a;
+  }, 0);
 
   // `personalized_configuration_complete`: una vez por tanda, la primera vez que
   // hay diseño subido y tamaño (el paso intermedio del funnel).
@@ -93,7 +106,7 @@ export default function HeroConfigurador() {
 
         {/* C · configuración */}
         <div className="lg:col-start-2 lg:row-start-2 min-w-0 space-y-5">
-          <SelectorTamano valor={estado.tamano} onElegir={(id) => store.setTamano(id)} />
+          <SelectorTamano valor={estado.tamano} material={estado.material} onElegir={(id) => store.setTamano(id)} />
           <SelectorMaterial valor={estado.material} onElegir={(id) => store.setMaterial(id)} />
           <SelectorCantidad
             copias={estado.copias}
@@ -115,7 +128,7 @@ export default function HeroConfigurador() {
             <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-sm">
               {enCarrito > 0 ? (
                 <Link to="/carrito" className="text-white/70 hover:text-white underline decoration-white/30 underline-offset-2 min-h-[44px] inline-flex items-center">
-                  Ya tenés {enCarrito} personalizada{enCarrito === 1 ? '' : 's'} en el carrito · Ver carrito
+                  Ya tenés {enCarrito} calco{enCarrito === 1 ? '' : 's'} personalizada{enCarrito === 1 ? '' : 's'} en el carrito · Ver carrito
                 </Link>
               ) : (
                 <span />

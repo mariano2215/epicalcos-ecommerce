@@ -33,12 +33,20 @@ carrito completo.
 `config/personalizados.js`
 
 - Valen **lo mismo que uno de catálogo**, según tamaño, en **Vinilo Blanco** o
-  **DTF UV**. **Vinilo Holográfico** suma un recargo **fijo de $15.000 por
-  diseño** (spec 023, enmienda 22/9/2026) — no por copia: el unitario no
-  cambia, se cobra una vez por diseño como una línea aparte del carrito
-  (`fixed:material-holografico:{id}`). No entra en el 3x2, el cupón ni el 10 %
-  por transferencia.
-- **Sin mínimo de compra** (antes eran 10 unidades).
+  **DTF UV**.
+- **Vinilo Holográfico: solo en packs de 100 calcos** (spec 023, enmienda
+  26/9/2026 — Mariano: *"el recargo holográfico de $15.000 es por 100 calcos
+  en el pedido de $39.999, no por cada sticker. La compra mínima para
+  HOLOGRÁFICOS es de 100 calcos"*). Cada pack: **$39.999 + $15.000 de recargo
+  = $54.999**, en **4 o 6 cm** (9 cm no), y con varios diseños las 100 son
+  **en total**, repartidas entre ellos — se cobra un solo pack. No existe la
+  calco holográfica suelta. Viaja como `negocio:vinilo-holografico:{tamano}:{ts}`
+  (a `NEGOCIO.price`) + su recargo `fixed:material-holografico:{ts}`; ninguna
+  de las dos entra en el 3x2, el cupón ni el 10 % por transferencia. El
+  servidor rechaza una `custom:` holográfica y un pack en 9 cm. (Del 22 al
+  26/9/2026 el recargo era de $15.000 **por diseño** con cualquier cantidad:
+  esas líneas se sacan solas de los carritos guardados.)
+- **Sin mínimo de compra** en Vinilo Blanco y DTF UV (antes eran 10 unidades).
 - El cliente sube su archivo, elige **tamaño** (sin preselección: un
   personalizado solo se devuelve por falla) y cantidad; el corte va plegado, con
   **silueta** por defecto (spec 023).
@@ -57,10 +65,13 @@ carrito completo.
   vez de calcos `custom:` sueltos — el total nunca queda por encima de lo que
   cuesta tomar la promo. Con más de un diseño, o en otro tamaño, sigue siendo
   solo una recomendación con link a `/negocio` (Negocio entrega
-  específicamente 6 cm, no el tamaño que el cliente haya elegido). Si el
-  material es **Vinilo Holográfico**, el recargo de $15.000 se suma arriba de
-  los $39.999 (Mariano, 22/9/2026): $54.999 en total, con su propia línea de
-  recargo, igual que con un `custom:`.
+  específicamente 6 cm, no el tamaño que el cliente haya elegido). No aplica
+  al Vinilo Holográfico, que siempre va como su propio pack de 100 (arriba).
+  **Más de 100 copias** (fix 26/9/2026): cada 100 son un pack de Negocio y el
+  resto va suelto (3x2 si está vivo), salvo que ya cueste lo mismo que otro
+  pack. Ej. con el 3x2: 200 copias = 2 packs ($79.998); 237 = 2 packs + 37
+  sueltas; 138 = 2 packs. Antes era siempre UN pack: con 200 copias el
+  cliente pagaba $39.999 y recibía 100.
 
 ### Productos de precio fijo
 

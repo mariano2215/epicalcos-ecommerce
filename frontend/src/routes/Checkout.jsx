@@ -27,41 +27,22 @@ import CuponCountdown from '../components/CuponCountdown.jsx';
 import { stashPurchase } from '../lib/purchaseTracking.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
-import { buildDesignSummary, groupCustomItems } from '../lib/resumenPedido.js';
+import { buildDesignSummary, especificacionDisenos } from '../lib/resumenPedido.js';
 
 /**
  * Guarda la especificación de los ítems con diseño/fotos (+ nombre del comprador) en
  * sessionStorage para que /pago-exitoso arme el CTA de WhatsApp pre-cargado. Cubre los
- * personalizados (`custom`) y los productos fijos con fotos adjuntas (`fixed`, ej.
- * Polaroid). El blob del archivo NO se serializa; el cliente lo adjunta en WhatsApp.
+ * personalizados (`custom`), los packs de /personalizados y Negocio (`negocio`) y los
+ * productos fijos con fotos adjuntas (`fixed`, ej. Polaroid). El blob del archivo NO se
+ * serializa; el cliente lo adjunta en WhatsApp.
  * Sobrevive al redirect a Mercado Pago (mismo tab).
  */
 function stashDesignSpec(items, payerName) {
   try {
-    const spec = [];
-    // Personalizados agrupados por especificación: una entrada por tamaño+corte,
-    // no una por diseño (ver groupCustomItems).
-    for (const g of groupCustomItems(items)) {
-      spec.push({
-        tipo: 'custom',
-        tamano: g.tamanoLabel,
-        corte: g.corteLabel,
-        cantidad: g.unidades,
-        archivos: g.archivos.map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) })),
-        instrucciones: g.instrucciones
-      });
-    }
-    for (const it of items) {
-      if ((it.type === 'fixed' || it.type === 'negocio') && it.meta?.archivos?.length) {
-        // `fixed` y `negocio` comparten forma: nombre + adjuntos (fotos, diseños, logo).
-        spec.push({
-          tipo: 'fixed',
-          nombre: it.name,
-          cantidad: it.quantity,
-          archivos: it.meta.archivos.map((f) => ({ nombre: f.nombre, subido: Boolean(f.url) }))
-        });
-      }
-    }
+    // Personalizados agrupados por especificación (una entrada por material +
+    // tamaño + corte, no una por diseño), packs de /personalizados y productos
+    // fijos con adjuntos: ver `especificacionDisenos` en lib/resumenPedido.js.
+    const spec = especificacionDisenos(items);
     if (spec.length) {
       sessionStorage.setItem(CUSTOM_SPEC_STORAGE_KEY, JSON.stringify({ nombre: payerName || '', items: spec }));
     } else {
