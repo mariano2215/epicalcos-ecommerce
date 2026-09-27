@@ -407,75 +407,22 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Con el hero fuera de pantalla, su fondo no corre. `data-pausado` lo pone un
-   IntersectionObserver en Hero.jsx. Incluye el aurora y las calcos flotantes de
-   ESTE hero, que ya se movían sin que nadie las viera: esta spec suma 5 capas y
-   ésta es la compensación. */
+   IntersectionObserver en Hero.jsx. Incluye el aurora y la flotación de las
+   calcos del termo (spec 028), que si no seguirían moviéndose sin que nadie las
+   vea. */
 .hero-gradient--vivo[data-pausado] .hero-malla__mancha,
 .hero-gradient--vivo[data-pausado] .hero-aurora,
-.hero-gradient--vivo[data-pausado] .sticker-float {
+.hero-gradient--vivo[data-pausado] .hero-calco__img {
   animation-play-state: paused;
-}
-
-/* El saludo: todas las frases están en el DOM a la vez, apiladas en la MISMA
-   celda de grid. La caja mide lo que la frase más alta desde el primer cuadro,
-   así que rotar no empuja al titular ni un píxel. Sin posiciones absolutas ni
-   alturas escritas a mano.
-   Más chico y más apagado que el H1 a propósito: es un saludo, no el titular. */
-.hero-saludo {
-  display: grid;
-  justify-items: center;
-  margin: 0 auto 1rem;
-  font-family: var(--fuente-titulos);
-  font-weight: 600;
-  font-size: 0.8rem;
-  line-height: 1.3;
-  letter-spacing: 0.28em;
-  /* El letter-spacing deja aire DESPUÉS de la última letra y el texto centrado
-     queda corrido a la izquierda: esto lo compensa. */
-  padding-left: 0.28em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.8);
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
-}
-@media (min-width: 768px) {
-  .hero-saludo { font-size: 0.95rem; margin-bottom: 1.25rem; }
-}
-.hero-saludo__frase { grid-area: 1 / 1; opacity: 0; }
-/* Estado quieto: solo la última. Es lo que ve quien vuelve al Home navegando y
-   quien tiene "reducir movimiento" — y donde termina la animación. */
-.hero-saludo__frase--final { opacity: 1; }
-
-/* Los tiempos NO están acá: llegan de lib/heroSaludo.js como custom properties
-   (`--i` en cada frase, `--saludo-dur` y `--saludo-entrada` en el <p>), porque
-   el tope de 5 s lo verifica un test y el CSS no sabe cuántas frases hay.
-   - Las frases de paso: `both`, invisibles antes de su turno y después.
-   - La última: `backwards`, y al terminar manda el estilo base (visible). */
-.hero--entrada .hero-saludo__frase {
-  animation: saludo-pasa var(--saludo-dur) ease-in-out both;
-  animation-delay: calc(var(--i) * var(--saludo-dur));
-}
-.hero--entrada .hero-saludo__frase--final {
-  animation: saludo-queda var(--saludo-entrada) cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-  animation-delay: calc(var(--i) * var(--saludo-dur));
-}
-@keyframes saludo-pasa {
-  0%   { opacity: 0; transform: translateY(0.7em); }
-  15%  { opacity: 1; transform: none; }
-  82%  { opacity: 1; transform: none; }
-  100% { opacity: 0; transform: translateY(-0.7em); }
-}
-@keyframes saludo-queda {
-  from { opacity: 0; transform: translateY(0.7em); }
-  to   { opacity: 1; transform: none; }
 }
 
 /* La entrada escalonada. Tres reglas que no son de estilo:
 
-   1. El retraso va POR ROL, no por posición. Con un nth-child, en la variante
-      `en_hero` de `hero_buscador` los botones serían la 4.ª pieza y en `debajo`
-      la 3.ª: aparecerían en momentos distintos según la celda, y eso es una
-      segunda variable colada en el experimento. Así salen a los 450 ms en las
-      cuatro celdas, y terminan antes de los 1,2 s.
+   1. El retraso va POR ROL, no por posición: con o sin buscador arriba (el
+      experimento `hero_buscador`), los botones salen siempre a los 200 ms. Con
+      un nth-child serían la 3.ª o la 4.ª pieza según el caso. 200 ms y no más
+      porque el pedido de la spec 028 es que el CTA aparezca "inmediatamente";
+      de todos modos se puede tocar desde el primer cuadro (ver 2).
 
    2. El titular y el subtítulo SUBEN pero no aparecen: `hero-sube` no toca la
       opacidad. Chrome no cuenta como candidato a LCP a un elemento invisible, y
@@ -500,9 +447,165 @@ a { color: inherit; text-decoration: none; }
 }
 .hero--entrada .hero-pieza--aparece { animation-name: hero-aparece; }
 .hero-pieza--titular   { --retraso: 0ms; }
-.hero-pieza--subtitulo { --retraso: 120ms; }
-.hero-pieza--buscador  { --retraso: 300ms; }
-.hero-pieza--botones   { --retraso: 450ms; }
+.hero-pieza--subtitulo { --retraso: 100ms; }
+.hero-pieza--buscador  { --retraso: 150ms; }
+.hero-pieza--botones   { --retraso: 200ms; }
+
+/* ============================================================
+   Hero del termo (spec 028) — ver Hero.jsx y lib/heroTermo.js
+   ============================================================ */
+
+/* Una columna centrada: copy → botones → escena. La escena va DEBAJO de los
+   botones en el flujo, así que ninguna calco puede tapar el texto: es
+   estructural, no depende de afinar porcentajes. */
+.hero-termo__grilla {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: 2.5rem;
+  padding-bottom: 1.25rem;
+}
+
+/* La escena mide lo que dice el CSS, no lo que midan las imágenes: cargar el
+   termo o las calcos no corre nada (RNF-1). Sin `z-index` ni `transform` a
+   propósito: no arma contexto de apilamiento, y así el termo (20) y cada calco
+   (15 o 30) se ordenan entre sí — es lo que deja pasar una por detrás.
+
+   `--medio-termo` es la mitad del ancho con que se dibuja el termo: su alto
+   (el de la escena) por su proporción, que llega de lib/heroTermo.js vía
+   Hero.jsx. Las calcos se ubican contra ESE borde y no con porcentajes del
+   ancho: el termo escala con el alto y la escena con el ancho, y con
+   porcentajes la calco que "pasa por delante" quedaba lejos en un ancho y
+   encima del termo en otro. */
+.hero-termo__escena {
+  --alto-escena: clamp(280px, 82vw, 360px);
+  --medio-termo: calc(var(--alto-escena) * var(--proporcion-termo, 0.33) / 2);
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  height: var(--alto-escena);
+  margin-top: 1.75rem;
+}
+
+/* El termo: centrado, del alto de la escena y con el ancho que dé su proporción
+   (la reservan `width`/`height` del <img>). `max-width: none` y `height: 100%`
+   pisan el `img { max-width: 100%; height: auto }` del reset de Tailwind. */
+.hero-termo__producto {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 20;
+  width: auto;
+  max-width: none;
+  height: 100%;
+  translate: -50% 0;
+  object-fit: contain;
+  /* Más marcada que el 0,12 del pedido: sobre un fondo casi negro, 0,12 no se ve. */
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.45));
+}
+/* Si falta el archivo: la caja sigue ahí, sin ícono de imagen rota. */
+.hero-termo__producto--falta { visibility: hidden; }
+
+/* Entra agrandándose y queda QUIETO. Solo `scale`, sin opacidad: es el LCP del
+   Home (ver Hero.jsx). Propiedad individual para no pisar el `translate` del
+   centrado. `backwards`, por lo mismo que las piezas de texto. */
+.hero--entrada .hero-termo__producto {
+  animation: hero-termo-entra 0.7s cubic-bezier(0.22, 1, 0.36, 1) 200ms backwards;
+}
+@keyframes hero-termo-entra {
+  from { scale: 0.92; }
+}
+
+/* Las calcos. `.hero-calco` es el <div> que lleva el parallax y el hover
+   (Framer Motion le escribe `transform`); `.hero-calco__img` lleva la entrada y
+   la flotación. Ver HeroCalcos.jsx.
+   `pointer-events: none` por defecto: una calco nunca se come un toque. Solo
+   con mouse se vuelven "tocables", para el hover (RF-21, RF-22). */
+.hero-calcos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hero-calco {
+  position: absolute;
+  pointer-events: none;
+}
+.hero-calco--delante { z-index: 30; }
+.hero-calco--detras  { z-index: 15; }
+@media (hover: hover) and (pointer: fine) {
+  .hero-calco { pointer-events: auto; }
+}
+.hero-calco__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.35));
+  user-select: none;
+}
+
+/* La flotación: CSS y no Framer Motion. Así la corre el compositor, se pausa con
+   `data-pausado` y "reducir movimiento" la apaga sola. Va sobre `translate`, que
+   es otra propiedad que el `transform` con el que Framer Motion hace la entrada:
+   las dos conviven sin pisarse (la lección de `.grid-rise`, spec 024).
+   Amplitud, duración y retraso llegan de lib/heroTermo.js como custom
+   properties. `alternate`: vuelve por el mismo camino, sin salto. */
+.hero-calco__img--flota {
+  animation: hero-calco-flota var(--flota-dur) ease-in-out var(--flota-retraso) infinite alternate;
+}
+@keyframes hero-calco-flota {
+  from { translate: 0 0; }
+  to   { translate: 0 var(--flota); }
+}
+
+/* Dónde va cada una, contra el borde del termo. MOBILE: las cuatro pegadas a
+   él y adentro de la escena (nada se sale de la pantalla). La 2 se mete 1,25
+   rem por detrás del termo y la 4 pasa 1,25 rem por delante: la profundidad. */
+.hero-calco--1 { top: 6%;     right: calc(50% + var(--medio-termo) + 0.75rem); width: clamp(70px, 21vw, 100px); }
+.hero-calco--2 { bottom: 14%; right: calc(50% + var(--medio-termo) - 1.25rem); width: clamp(64px, 18vw, 90px); }
+.hero-calco--3 { top: 0;      left:  calc(50% + var(--medio-termo) + 0.75rem); width: clamp(60px, 17vw, 84px); }
+.hero-calco--4 { bottom: 5%;  left:  calc(50% + var(--medio-termo) - 1.25rem); width: clamp(70px, 21vw, 100px); }
+
+@media (min-width: 768px) {
+  .hero-termo__grilla { padding-top: 3.5rem; padding-bottom: 1.5rem; }
+  .hero-termo__escena { --alto-escena: clamp(320px, 42vw, 400px); margin-top: 2.25rem; }
+  .hero-calco--1 { top: 4%;     right: calc(50% + var(--medio-termo) + 3rem);    width: clamp(104px, 11vw, 150px); }
+  .hero-calco--2 { bottom: 12%; right: calc(50% + var(--medio-termo) - 1.75rem); width: clamp(92px, 9.5vw, 130px); }
+  .hero-calco--3 { top: 0;      left:  calc(50% + var(--medio-termo) + 3rem);    width: clamp(90px, 9vw, 128px); }
+  .hero-calco--4 { bottom: 4%;  left:  calc(50% + var(--medio-termo) - 1.75rem); width: clamp(100px, 10.5vw, 150px); }
+}
+
+/* DESKTOP: el hero ocupa la primera pantalla (menos la barra de promo, el header
+   y el ticker, ~10,5 rem). `svh` y no solo `vh`: en iOS `100vh` incluye la barra
+   de direcciones. Se declara `vh` antes para los navegadores sin `svh`. */
+@media (min-width: 1024px) {
+  .hero-termo {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 10.5rem);
+    min-height: calc(100svh - 10.5rem);
+  }
+  .hero-termo__grilla { flex: 1; justify-content: center; padding-top: 2.5rem; }
+  /* 40 % del alto: en 1440×900 el hero entero (titular, botones y termo) entra
+     en la primera pantalla. */
+  .hero-termo__escena { --alto-escena: clamp(300px, 40svh, 440px); }
+}
+
+/* Desde 1280 px, a cada lado del titular queda lugar: las calcos de arriba
+   suben a ese margen, a la altura del texto, como en la composición del pedido.
+   Medido con Montserrat: la línea más ancha del H1 ("PIDIENDO CALCOS.") llega a
+   300 px del centro, y los botones y el buscador a menos. A 360 px del centro
+   quedan 60 px de aire, y a 1280 la calco 1 todavía entra entera (130-280 px).
+   Más angosto no hay lugar y se quedan en la escena, contra el termo.
+   ⚠️ El `top` es negativo y en px: sube desde la escena hasta la altura del H1,
+   que a partir de `lg` tiene tamaño fijo. Si cambia el tamaño del titular o el
+   espacio entre el copy y la escena, rehacer esta cuenta. */
+@media (min-width: 1280px) {
+  .hero-calco--1 { top: -290px; right: calc(50% + 360px); left: auto; width: 150px; }
+  .hero-calco--3 { top: -250px; left: calc(50% + 360px); right: auto; width: 128px; }
+}
 
 /* ============================================================
    Buscador (components/BuscadorCalcos.jsx)
@@ -1278,13 +1381,15 @@ a { color: inherit; text-decoration: none; }
   .sticker-card { transition: box-shadow 0.25s ease, border-color 0.25s ease; }
   .sticker-card:hover { scale: none; }
   .sticker-card:has(:focus-visible) { scale: none; }
-  /* Hero del Home (spec 024): fondo quieto con los colores de siempre, sin
-     entrada y con el saludo fijo en su frase final. Hero.jsx ya no pone
-     `.hero--entrada` con reduced-motion; esto es la segunda guarda, por si la
-     preferencia cambia con la página abierta. */
+  /* Hero del Home (specs 024 y 028): fondo quieto con los colores de siempre,
+     sin entrada, termo quieto y calcos sin flotar (el parallax ni se engancha,
+     ver HeroCalcos.jsx). Hero.jsx ya no pone `.hero--entrada` con
+     reduced-motion; esto es la segunda guarda, por si la preferencia cambia con
+     la página abierta. */
   .hero-malla__mancha,
   .hero--entrada .hero-pieza,
-  .hero--entrada .hero-saludo__frase {
+  .hero--entrada .hero-termo__producto,
+  .hero-calco__img {
     animation: none !important;
   }
 }

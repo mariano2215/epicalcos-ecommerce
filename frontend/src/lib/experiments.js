@@ -48,9 +48,15 @@ export const EXPERIMENTS = {
    * terminado ("Tu termo. Pero más vos.") que la promesa de catálogo.
    * KPI: search + view_item_list por variante. Secundario: add_to_cart, purchase.
    * El copy de cada variante está en lib/heroVariantes.js.
+   *
+   * ⛔ CERRADO con la spec 028 (hero del termo): el H1 pasó a ser fijo ("Tu
+   * termo está pidiendo calcos.") y `Hero.jsx` ya no lee este experimento.
+   * Prenderlo de nuevo NO cambia nada: nadie llama a `useExperiment` con este
+   * id, así que ni siquiera se registra la exposición. Se lee con los datos del
+   * 18/9 al 2/10/2026 (ver docs/CRO-EXPERIMENTS.md).
    */
   hero_titular: {
-    active: true,
+    active: false,
     variants: ['catalogo', 'objeto'],
     descripcion: 'Hero: titular de amplitud de catálogo (control) vs de objeto personalizado'
   },
@@ -70,6 +76,10 @@ export const EXPERIMENTS = {
    * Con `active: false` todo el mundo ve el control (`ver_disenos`), aunque
    * tenga la otra variante guardada y aunque fuerce el override por URL: el
    * kill switch se chequea ANTES que todo lo demás en `getVariant`.
+   *
+   * ⛔ Desde la spec 028 el hero ya no lee este experimento (el botón dice
+   * "Ver calcos" fijo): reanudarlo no cambia nada. Lo que sigue quedó como
+   * registro.
    *
    * PARA REANUDARLO: `active: true`. Los que ya tenían variante asignada la
    * recuperan tal cual —queda guardada en `epicalcos.exp.v1`—, así que el test
@@ -97,9 +107,17 @@ export const EXPERIMENTS = {
    * mismo que el campo de búsqueda que tiene tres centímetros arriba. Por eso
    * `hero_cta` quedó PAUSADO el 4/9/2026 mientras corre éste. Vivos hoy:
    * `hero_titular` y `hero_buscador`, cuatro celdas.
+   *
+   * ⛔ CERRADO con la spec 028: el hero cambió entero, y un efecto medido con
+   * el hero viejo no vale para el nuevo (mismo criterio que el corte del
+   * 18/9). Se lee con los datos del 18/9 al 2/10/2026. Todo el mundo ve el
+   * control (`debajo`, la sección propia).
+   * A diferencia de `hero_titular`, éste SÍ sigue cableado: `Hero.jsx` todavía
+   * respeta `conBuscador`, así que prenderlo vuelve a mostrar el buscador en el
+   * hero —y `Home` apaga la sección en el mismo movimiento—.
    */
   hero_buscador: {
-    active: true,
+    active: false,
     variants: ['debajo', 'en_hero'],
     descripcion: 'Buscador: sección propia debajo del hero (control) vs dentro del hero'
   },
