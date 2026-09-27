@@ -102,6 +102,31 @@ con el hero viejo no vale para el nuevo.
 
 ---
 
+## ⛔ Spec 028 — `hero_titular` y `hero_buscador` SE CIERRAN
+
+La spec 028 reemplaza el hero del Home por uno nuevo: un termo en el centro con
+cuatro calcos animadas y el titular fijo **"Tu termo está pidiendo calcos."**.
+El H1 deja de ser una variante, así que `hero_titular` termina; y el buscador
+dentro del hero se estaba midiendo en un hero que ya no existe, así que
+`hero_buscador` también. Los dos quedan en `active: false` (todos a control).
+
+**Qué hacer**:
+- **Leer los dos tests con la ventana del 18/9 al 2/10/2026** (dos semanas
+  completas desde el corte de la spec 024). Es la última lectura: no hay más
+  datos después.
+- El deploy de la spec 028 se hace **después** de esa lectura (acordado:
+  desde el sábado 3/10/2026). Fecha real del deploy: **completar al publicar**.
+- Desde el deploy, `view_item_list` y `custom_sticker_click` (`origen: 'hero'`)
+  del Home arrancan una **serie nueva** — el hero es otro. La comparación del
+  hero nuevo es antes/después contra las dos semanas previas, no un A/B.
+- ⚠️ `experiment_view` de `hero_buscador` **sigue llegando** después del deploy,
+  todo con la variante `debajo`: `Home` todavía lee el experimento (para que la
+  Home nunca quede con dos buscadores ni con ninguno) y `useExperiment` reporta
+  la exposición aunque el experimento esté apagado. No es un test: no leerlo.
+  `hero_titular` y `hero_cta`, en cambio, dejan de llegar (nadie los lee).
+
+---
+
 ## ⚠️ Regla dura: nunca testear un PRECIO
 
 Los experimentos son **solo de presentación**.
