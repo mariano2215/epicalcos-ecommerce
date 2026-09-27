@@ -25,8 +25,8 @@ const HeroCalcos = lazy(() => import('./hero/HeroCalcos.jsx'));
  * DESDE LA SPEC 028: el elemento dominante es un TERMO, y el titular le habla a
  * él ("Tu termo está pidiendo calcos."). El hero anterior decía "calcos" pero no
  * mostraba ningún objeto con calcos hasta Antes/Después, varias pantallas más
- * abajo. El termo es la mitad de esa misma foto: mitad liso, mitad con calcos.
- * Alrededor, cuatro calcos llegan de a una y cada una se mueve distinto
+ * abajo. El termo va liso a propósito —es el que "pide calcos"— y alrededor,
+ * cuatro calcos llegan de a una y cada una se mueve distinto
  * (ver lib/heroTermo.js). Abajo del texto, los mismos dos caminos de siempre:
  * el catálogo y los personalizados.
  *

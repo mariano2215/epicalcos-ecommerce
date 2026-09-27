@@ -34,16 +34,17 @@ export const COPY_HERO = {
 };
 
 /**
- * El termo sale de la foto de Antes/Después (`antes-despues-termo.webp`),
- * recortado y sin el fondo claro. Mitad liso y mitad con calcos: es literalmente
- * el titular. Las medidas son las del archivo, para que el navegador reserve
- * la proporción antes de bajarlo.
+ * El termo va LISO a propósito: es el que "está pidiendo calcos", y las cuatro
+ * de alrededor son las que le faltan. Foto provista por Mariano, recortada y sin
+ * el fondo blanco (la manija queda del lado derecho). Las medidas son las del
+ * archivo, para que el navegador reserve la proporción antes de bajarlo; el CSS
+ * también las usa para ubicar las calcos contra el borde del termo.
  */
 export const TERMO = {
   src: '/images/hero/termo.webp',
-  ancho: 248,
-  alto: 761,
-  alt: 'Termo personalizado con calcos EPICALCOS'
+  ancho: 172,
+  alto: 516,
+  alt: 'Termo liso, listo para personalizar con calcos'
 };
 
 /** La curva del pedido: sale rápido y frena largo. Sin sobrepaso, sin rebote. */

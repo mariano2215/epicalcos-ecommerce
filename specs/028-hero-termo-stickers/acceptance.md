@@ -55,8 +55,8 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
 | ANF-1 | *(RNF-1)* CLS del Home ≤ 0,05 a 375 px. | Arnés, CPU ×4, 5 corridas | ✅ CLS máx. 0,0126-0,0133 (7 corridas), igual que antes (0,0118-0,0132). Viene de otra parte de la página. |
-| ANF-2 | *(RNF-2)* LCP a 375 px no empeora más de 200 ms (mediana, mismas condiciones que el antes). | Arnés, antes vs. después | ✅ **Mejoró**: LCP a 375 px con CPU ×4 y red 4G: antes 1480-1696 ms (mediana según la corrida), después **1232-1236 ms**. El elemento LCP pasó a ser el termo, siempre el mismo. |
-| ANF-3 | *(RNF-3)* Termo ≤ 120 kB, cada calco ≤ 30 kB; el chunk principal no crece más de 1 kB gzip; `framer-motion` solo en un chunk aparte. | `ls -l`, salida de `vite build` | ✅ Termo 51 kB; calcos 9,9 / 12,1 / 27,3 / 15,0 kB. Chunk principal +0,4 kB gzip (97.607 → 98.004 B). `framer-motion` solo en `HeroCalcos-*.js` (30 kB gzip). |
+| ANF-2 | *(RNF-2)* LCP a 375 px no empeora más de 200 ms (mediana, mismas condiciones que el antes). | Arnés, antes vs. después | ✅ **Mejoró**: LCP a 375 px con CPU ×4 y red 4G: antes 1480-1696 ms (mediana según la corrida), después **1232-1268 ms** (con el termo final, 1268). El elemento LCP pasó a ser el termo, siempre el mismo. |
+| ANF-3 | *(RNF-3)* Termo ≤ 120 kB, cada calco ≤ 30 kB; el chunk principal no crece más de 1 kB gzip; `framer-motion` solo en un chunk aparte. | `ls -l`, salida de `vite build` | ✅ Termo 7,8 kB; calcos 9,9 / 12,1 / 27,3 / 15,0 kB. Chunk principal +0,4 kB gzip (97.607 → 98.004 B). `framer-motion` solo en `HeroCalcos-*.js` (30 kB gzip). |
 | ANF-4 | *(RNF-4)* Sin tareas largas (> 50 ms) causadas por el hero al scrollear con CPU ×4. | Perfil de rendimiento | ✅ 0 tareas largas scrolleando (antes y después). FPS al scrollear con CPU ×4: mobile ~38 → ~58, desktop ~22 → ~33. En la carga, mobile suma una tarea larga (+~70 ms en total): el chunk de las calcos. |
 | ANF-5 | *(RNF-5)* Calcos con `alt=""` y ocultas para lectores de pantalla; termo con `alt` descriptivo; botones ≥ 44 px de alto y con foco visible; contraste AA. | DOM + árbol de accesibilidad (CDP) + medición | ✅ Contenedor de calcos `aria-hidden="true"`, `alt=""` en las 4; termo con alt descriptivo; botones de 51 y 53 px; foco de teclado con `outline: auto`; contraste de la bajada ≈ 10:1 sobre el fondo real (el H1 es blanco o degradado sobre la franja oscura). |
 | ANF-6 | *(RNF-6)* Chrome, Safari, Firefox, iOS Safari y Chrome Android: misma composición. | Chrome: arnés. **El resto, Mariano en dispositivos reales** | ⬜ Chrome: ✅ (arnés). **Safari, Firefox, iOS Safari y Chrome Android: no se pueden probar desde el contenedor.** Pendiente de Mariano en dispositivos reales antes del merge. |
@@ -160,5 +160,5 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 - **Antes de mergear**: Mariano mira el hero en su iPhone/Android (ANF-6) y el
   merge va desde el 3/10, después de leer `hero_titular` y `hero_buscador`.
 - **Al publicar**: completar la fecha real en `docs/CRO-EXPERIMENTS.md` (AN-3).
-- El LCP **mejoró** (~1,6 s → 1,23 s): el termo es un candidato estable, y el
+- El LCP **mejoró** (~1,6 s → ~1,25 s): el termo es un candidato estable, y el
   anterior era una calco al azar de un JSON que se pedía después del JS.

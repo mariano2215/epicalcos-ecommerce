@@ -54,7 +54,7 @@ Ver [`specs/README.md`](../README.md).
   - *Verificación*: 4 archivos, cada uno ≤ 30 kB, con alfa (`VP8X` + `ALPH`) — ✅ 9,9 / 12,1 / 27,3 / 15,0 kB
 - [x] **1.2** Si llegó el termo: convertirlo a `termo.webp` con alfa, ≤ 120 kB y
       ≤ 900 px de alto. Anotar sus medidas reales para `width`/`height`.
-  - *Verificación*: `file termo.webp` muestra las medidas; el peso cumple RNF-3 — ✅ 248×761, 51 kB (ver bitácora)
+  - *Verificación*: `file termo.webp` muestra las medidas; el peso cumple RNF-3 — ✅ 172×516, 7,8 kB (ver bitácora)
 
 ---
 
@@ -169,7 +169,6 @@ Ver [`specs/README.md`](../README.md).
 | `useExperiment` manda `experiment_view` aunque el experimento esté apagado (con la variante de control). Infla las exposiciones de los tests pausados. | `lib/experiments.js` | Decidir si un test apagado debe reportar exposición. Documentado en `CRO-EXPERIMENTS.md`. |
 | `heroVariantes.js` ya solo se usa por `ubicacionBuscador`; `TITULARES` y `CTA_PRINCIPAL` quedan como registro. | `lib/heroVariantes.js` | Limpiar cuando se decida que `hero_titular` no vuelve. |
 | La prop `eagerFirst` de `StickerField` quedó sin uso (solo la pasaba el hero). | `components/StickerField.jsx` | Sacarla en otro cambio. |
-| Antes/Después, más abajo en la Home, muestra la misma foto del termo que ahora está en el hero. | `components/AntesDespues.jsx` | Mirarlo después de publicar; si se siente repetido, cambiar esa foto. |
 | El `sitemap.xml` commiteado está desactualizado (faltan 11 categorías); Netlify lo regenera en cada build. | `frontend/public/sitemap.xml` | Commitear el regenerado en un cambio aparte. |
 
 ---
@@ -179,6 +178,7 @@ Ver [`specs/README.md`](../README.md).
 | Fecha | Qué cambió respecto al diseño | Motivo |
 |---|---|---|
 | 27/9 | **El termo sale de `antes-despues-termo.webp`**, recortado a solo el termo (sin "ANTES"/"DESPUÉS", emojis ni logo) y sin el fondo claro. Mitad liso, mitad con calcos. | Pedido de Mariano. El fondo se sacó con un mate por píxel (alfa por proyección contra el color del termo más cercano): con un umbral fijo quedaba un filo claro de 1 px en la tapa y la base, que sobre el fondo oscuro del hero se veía. |
+| 27/9 | **Termo reemplazado por la foto que mandó Mariano**: un termo liso con manija, 388×516 sobre blanco → recortado a 172×516, 7,8 kB. Mismo mate por píxel; los brillos casi blancos de la tapa y la base no se tocan porque están encerrados (no se conectan con el fondo del borde). Alt: "Termo liso, listo para personalizar con calcos". | Liso le va mejor al titular: es el termo que "pide calcos", y las cuatro de alrededor son las que le faltan. De paso deja de repetirse la foto de Antes/Después. ⚠️ La foto es chica: en pantallas retina se ve un poco suave; si hay una versión más grande, conviene cambiarla. |
 | 27/9 | **Calcos: `bandera-1` → `pumas-1` y `fernet-1` → `ruta-40-1`.** Se quedan `mate-1` y `carpincho-1`. | Mirándolas: la bandera es un rectángulo liso que no se lee como calco, y el fernet (vaso oscuro) se pierde contra el fondo oscuro. |
 | 27/9 | **Calco 3: arranca a 250 px** (el valor del pedido), no 320/160. | En un celular ya arranca fuera de la pantalla; en desktop entra desde el costado mientras aparece. Un solo valor, sin ramas por ancho. |
 | 27/9 | **Posiciones contra el borde del termo** (`--medio-termo`, calculado con la proporción del termo) en vez de porcentajes del ancho de la escena. | Primera captura: en 1440 las calcos 2 y 4 quedaban lejos del termo y no daban profundidad. El termo escala con el alto y la escena con el ancho: con porcentajes no se pueden acompañar. |
