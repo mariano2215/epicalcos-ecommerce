@@ -110,6 +110,33 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 
 ---
 
+## 7. Ampliación A — Pegar las calcos en el termo
+
+> Se valida cuando la ampliación esté implementada (`requirements.md` §13).
+
+| ID | Criterio | Cómo se verifica | Resultado |
+|---|---|---|---|
+| AC-A1 | *(RF-A1)* Cursor `grab` sobre una calco y `grabbing` al arrastrar. | `getComputedStyle().cursor` | ⬜ |
+| AC-A2 | *(RF-A2)* Arrastrando, el centro de la calco queda a ± 1 px del cursor en todo el recorrido; no flota ni hace parallax. | Arnés: `page.mouse` en 20 pasos | ⬜ |
+| AC-A3 | *(RF-A3)* Soltada sobre el cuerpo: queda pegada ahí, más chica, y la parte fuera de la silueta no se ve. Sobre la tapa, la base o la manija: no se pega. | Arnés + captura | ⬜ |
+| AC-A4 | *(RF-A4)* Soltada afuera: vuelve a su lugar (± 1 px) en < 1 s. | Arnés | ⬜ |
+| AC-A5 | *(RF-A5)* Clic en las cuatro: todas pegadas, cada una en su destino, sin taparse. | Arnés + captura | ⬜ |
+| AC-A6 | *(RF-A6, RF-A8)* Pegada: sin animaciones, sin parallax; por delante del termo y por detrás de una que se arrastra. | Arnés | ⬜ |
+| AC-A7 | *(RF-A7)* Agarrar una pegada la despega bajo el cursor; clic en una pegada la manda a su lugar. | Arnés | ⬜ |
+| AC-A8 | *(RF-A9)* Arrastrar y soltar sobre "VER CALCOS" no navega. | Arnés | ⬜ |
+| AC-A9 | *(RF-A5, Q4)* Táctil: un toque pega la calco. | Arnés con touch emulado | ⬜ |
+| AC-A10 | *(RF-A10)* Táctil: un gesto de scroll que empieza sobre una calco scrollea la página y no la pega. | Arnés: `Input.dispatchTouchEvent` | ⬜ |
+| AC-A11 | *(RF-A11)* La pista aparece al terminar la entrada, con el texto según el puntero, y se va al pegar la primera; si el chunk no cargó, no aparece. | Arnés | ⬜ |
+| AC-A12 | *(RF-A12)* Recargar o volver al Home navegando: todas en su lugar. | Arnés | ⬜ |
+| ANF-A1 | *(RNF-A1)* Chunk de calcos ≤ +3 kB gzip; chunk principal sin cambios. | Salida del build | ⬜ |
+| ANF-A2 | *(RNF-A2)* ≥ 50 fps arrastrando en desktop. | Arnés con `requestAnimationFrame` | ⬜ |
+| ANF-A3 | *(RNF-A3)* Movimiento reducido: el arrastre funciona; vuelo y vuelta instantáneos. | Arnés | ⬜ |
+| ANF-A4 | *(RNF-A4)* Pegar, despegar o arrastrar no cambia la altura del hero. | Arnés | ⬜ |
+| AN-A1 | `hero_sticker_stick` con `slot` y `metodo` correctos, una vez por pegada; no al mover una pegada dentro del termo. | `dataLayer` | ⬜ |
+| REG-A1 | Todo §1-§5 sigue en verde (barrido de geometría incluido). | Arnés completo | ⬜ |
+
+---
+
 ## Definition of Done
 
 ### Código

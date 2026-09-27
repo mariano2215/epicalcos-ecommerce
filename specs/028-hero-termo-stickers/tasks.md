@@ -160,6 +160,43 @@ Ver [`specs/README.md`](../README.md).
 
 ---
 
+## Ampliación A — Pegar las calcos en el termo
+
+> ⛔ Se ejecuta solo cuando Mariano apruebe la ampliación y lo pida
+> explícitamente. Mismo PR, antes del merge. Diseño: `design.md` §12.
+
+- [ ] **A.0** Mariano contestó Q4 (táctil), Q5 (guardar) y Q6 (pista), y pidió la implementación
+
+### Fase A1 — Datos y tests
+- [ ] **A1.1** Tests nuevos en `heroTermo.test.js` (destinos, cuerpo, `ajustarAlCuerpo`); tienen que fallar
+  - *Verificación*: fallan por lo que falta, no por otra cosa
+- [ ] **A1.2** `TERMO.cuerpo`, `DESTINOS_PEGADO`, `ANCHO_PEGADA`, `dentroDelCuerpo`, `ajustarAlCuerpo` en `heroTermo.js`
+  - *Verificación*: `npm test` en verde
+
+### Fase A2 — Interacción (`HeroCalcos.jsx`)
+- [ ] **A2.1** Estados por calco en `HeroCalcos`; `data-juego` en la sección al montar
+- [ ] **A2.2** Arrastre con mouse: umbral 4 px, captura del puntero, parallax congelado, `jump()`
+  - *Verificación*: arrastrada, la calco queda exactamente bajo el cursor (± 1 px)
+- [ ] **A2.3** Soltar: pegar si el centro cae en el cuerpo; si no, vuelve con resorte
+- [ ] **A2.4** Clic / toque: vuelo al destino y pegado al terminar
+  - *Verificación*: scroll con el dedo empezando sobre una calco → la página scrollea y no se pega
+- [ ] **A2.5** Capa de pegadas con máscara y apretón; agarrar una pegada; clic en una pegada la despega
+- [ ] **A2.6** `data-pegada` + `trackHeroStickerStick` al pegar
+
+### Fase A3 — Hero, CSS y analytics
+- [ ] **A3.1** La pista en `Hero.jsx` (lugar reservado, dos textos por CSS)
+- [ ] **A3.2** CSS: `.hero-termo__pegadas`, `.hero-calco-pegada`, `[data-arrastrando]`, cursores, `pointer-events` en táctil, pista, reduced-motion
+- [ ] **A3.3** `trackHeroStickerStick` en `lib/analytics.js` (solo se suma) + `docs/analytics.md`
+  - *Verificación*: `git diff lib/analytics.js` solo agrega líneas
+
+### Fase A4 — Verificación y cierre
+- [ ] **A4.1** `npm test`, build; chunk de calcos ≤ +3 kB gzip; chunk principal sin cambios
+- [ ] **A4.2** Arnés: arrastrar adentro / afuera / sobre un botón, clic, toque, scroll táctil, re-arrastre, despegar, movimiento reducido, `dataLayer`, fps arrastrando
+- [ ] **A4.3** Barrido de geometría de nuevo (la pista suma altura): nada tapa el texto
+- [ ] **A4.4** `acceptance.md` §7 con resultados reales; commit + push al PR
+
+---
+
 ## Hallazgos fuera de scope
 
 | Hallazgo | Archivo | Propuesta |

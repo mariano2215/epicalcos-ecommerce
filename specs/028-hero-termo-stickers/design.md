@@ -491,3 +491,195 @@ No aplica: no toca precios.
   Netlify lo regenera en cada build, así que producción está bien.
 - **Antes/Después también muestra un termo**, más abajo en la Home. Con el termo
   en el hero, puede sentirse repetido. Mirarlo después de publicar.
+
+---
+
+## 12. Ampliación A — Pegar las calcos en el termo
+
+> Requisitos en `requirements.md` §13. **Estado: `READY FOR REVIEW`.**
+
+### 12.0 Hallazgos del discovery
+
+| Pregunta | Hallazgo |
+|---|---|
+| ¿Cuánto cuesta el arrastre de Framer Motion? | `drag` necesita `domMax` en vez de `domAnimation`: el chunk de las calcos pasa de **29,3 a 43,2 kB gzip (+14 kB)**. El `animate()` imperativo suma 4,3 kB. |
+| ¿Hace falta? | **No.** El arrastre acá es solo con mouse (Q4), sin inercia ni límites. Con eventos de puntero y los `MotionValue` que ya se usan alcanza: `useSpring` + `.jump()` (seguir al cursor sin resorte) + `.set()` (volver con resorte) + el evento `animationComplete`. Verificados en los tipos de `motion-dom` 13.4. Costo: código propio, < 2 kB. |
+| ¿Dónde se puede pegar? | Medido en `termo.webp` (172×516): el **cuerpo** va de 4 % a 82 % del ancho (desde 83 % está la manija) y de 29 % a 89 % del alto (arriba la tapa y el aro negro, abajo la base de acero). El logo de Stanley está a 33-41 % del alto: una calco pegada ahí lo tapa, y está bien. |
+| ¿Qué choca con lo que ya está? | (1) En táctil las calcos tienen `pointer-events: none` → para tocar hay que prenderlo; nada clickeable queda debajo (RF-22 se sigue cumpliendo). (2) El `div` de cada calco ya lleva el parallax: mientras se arrastra hay que **congelarlo**, si no la calco se corre del cursor hasta 12 px. (3) La flotación es CSS sobre `translate`: se pausa con un atributo, no se apaga (apagarla haría saltar la calco hasta 15 px). |
+| ¿Toca precios, carrito o checkout? | **No.** |
+
+### 12.1 Estados de cada calco
+
+```
+          clic / toque                    llega (animationComplete)
+  libre ───────────────► volando ───────────────────────────► pegada
+    │  ▲                                                        │  │
+    │  │ suelta afuera (vuelve con resorte)       clic / toque  │  │ agarrarla
+    │  │                                         (vuelve a su   │  │ con el mouse
+    ▼  │                                          lugar)        │  │
+ arrastrando ──── suelta sobre el cuerpo ──────────────────────►│  │
+    ▲                                                           │  │
+    └───────────────────────────────────────────────────────────┴──┘
+```
+
+El estado vive en `HeroCalcos` (`{ [slot]: { estado, fx, fy, rot } }`). No se
+guarda en ningún lado (Q5): desmontar el Home lo borra.
+
+### 12.2 Capas
+
+```
+.hero-termo__escena
+  ├─ img.hero-termo__producto                     z 20
+  ├─ .hero-termo__pegadas  (NUEVA)                z 25   ← encima del termo, con máscara
+  │    └─ m.img.hero-calco-pegada × n             (left/top en %, ancho 42 % del termo)
+  └─ .hero-calcos
+       └─ .hero-calco × 4                         z 15 / 30; 40 mientras se arrastra
+```
+
+- **`.hero-termo__pegadas`** ocupa exactamente la caja del termo (mismo `left:
+  50%`, `translate`, alto de la escena y ancho `alto × proporción`, con las
+  variables que ya existen) y lleva **`mask-image: url(termo.webp)`** con
+  `mask-size: 100% 100%`: una calco pegada solo se ve donde hay termo. El borde
+  que se pasa de la silueta queda "doblado" hacia atrás, como una calco de
+  verdad en un cilindro. Sin JS y sin medir nada.
+- La calco **libre** no se desmonta al pegarse: queda con `visibility: hidden`.
+  Así, despegarla es mostrarla de nuevo y moverla, sin volver a montar ni a
+  cargar nada.
+
+### 12.3 Arrastre con mouse (código propio)
+
+En el `div` de cada calco libre, con `pointerType === 'mouse'`:
+
+1. **`pointerdown`**: guarda el punto, `setPointerCapture` y `preventDefault`
+   (sin esto el navegador selecciona texto de la página mientras se arrastra).
+2. **`pointermove`**: pasados **4 px**, empieza el arrastre. Congela el parallax
+   (un `ref` con el valor del momento, que el `useTransform` del `x`/`y` usa en
+   vez del cursor), marca `data-arrastrando` (pausa la flotación, `z-index` 40,
+   sombra de "levantada", cursor `grabbing`) y mueve con `arrastreX.jump(dx)`:
+   sin resorte, pegada al cursor (RF-A2).
+3. **`pointerup`**:
+   - sin haber pasado los 4 px → **clic** → vuela (12.4).
+   - con el centro de la calco sobre el cuerpo del termo → **pegada** en esa
+     posición, llevada hacia adentro si hace falta (`ajustarAlCuerpo`).
+   - si no → `arrastreX.set(0)`: vuelve con resorte a su lugar y se descongela
+     el parallax.
+
+`arrastreX`/`arrastreY` son `useSpring(0, …)`: `.jump()` para seguir al cursor y
+`.set()` para volver con resorte. Se suman al parallax en el `useTransform` que
+ya da el `x`/`y` del `div`.
+
+Con `setPointerCapture`, el `pointerup` y el `click` siguientes caen en la calco
+aunque el cursor esté sobre un botón: soltar sobre "VER CALCOS" no navega
+(RF-A9).
+
+### 12.4 Clic o toque: la calco vuela
+
+- Cada calco tiene su **destino** en el termo (`DESTINOS_PEGADO` en
+  `lib/heroTermo.js`, en fracciones de la caja del termo, con su rotación), para
+  que las cuatro con clic queden repartidas y sin taparse (RF-A5).
+- Se calcula el desplazamiento desde el centro actual hasta el destino y se hace
+  `arrastreX.set(dx)`: el mismo resorte de la vuelta. Al terminar
+  (`animationComplete`) pasa a **pegada**.
+- **Táctil (Q4)**: solo toque, sin arrastre. `touch-action` queda en `auto`, así
+  que si el dedo se mueve, el navegador scrollea y manda `pointercancel`: no
+  cuenta como toque (RF-A10). Toque = `pointerup` sin `pointercancel` y con
+  menos de 8 px de movimiento.
+
+### 12.5 Pegada
+
+- Se monta `m.img.hero-calco-pegada` en `.hero-termo__pegadas`, en `left: fx%`,
+  `top: fy%`, ancho **42 % del termo**, rotada según su destino (o la rotación
+  que traía si se soltó arrastrando).
+- **Apretón** (RF-A3): `initial={{ scale: r }}` → `animate={{ scale: [r, 0.94, 1] }}`,
+  donde `r` es el ancho libre sobre el ancho pegado. Arranca del mismo tamaño que
+  tenía en la mano y se achica "apretándose" contra el termo; no hay salto.
+- Sin flotación, sin parallax, sin hover que la agrande (RF-A6).
+- **Agarrarla con el mouse** (RF-A7): al pasar los 4 px, sale de las pegadas y la
+  calco libre aparece **debajo del cursor** (el desplazamiento se calcula para
+  eso) y sigue como un arrastre normal. Crece de 1/r a 1 con el mismo resorte.
+- **Clic o toque sobre una pegada**: se despega y vuelve volando a su lugar
+  original (el vuelo del 12.4, al revés).
+
+### 12.6 La pista (Q6)
+
+- Un `<p class="hero-termo__pista" aria-hidden="true">` en `Hero.jsx`, **entre
+  los botones y la escena y siempre en el DOM**: su lugar está reservado desde el
+  primer cuadro, así que aparecer o irse no mueve nada (RNF-A4).
+- Dos textos, y el CSS muestra uno según el puntero (`@media (hover: hover) and
+  (pointer: fine)`): *"Arrastrá una calco al termo"* / *"Tocá una calco para
+  pegarla"*. Sin JS para elegir.
+- Solo se ve si el juego cargó y todavía no se pegó nada: `HeroCalcos` pone
+  `data-juego` en la sección al montar y `data-pegada` al pegar la primera
+  (atributos, por el mismo motivo que `data-pausado`). Si el chunk no llega, no
+  hay pista de un juego que no existe.
+- `0.8rem`, blanco al 55 %: más chica y apagada que la bajada (RN-A1). Aparece
+  con un fundido al terminar la entrada.
+
+### 12.7 Movimiento reducido
+
+- El arrastre sigue igual: es movimiento que hace la persona, no una animación.
+- `MotionConfig reducedMotion="user"` ya hace instantáneos los resortes de
+  `transform`; además, con `reducido` se usa `.jump()` en vez de `.set()` para el
+  vuelo y la vuelta, y el apretón no se reproduce.
+
+### 12.8 Accesibilidad (RN-A3)
+
+Las calcos siguen con `aria-hidden` y sin `tabindex`: son un juego de 5 segundos
+sin contenido ni función de compra, y cuatro botones "pegar calco" en el orden
+de tabulación le agregarían ruido al hero a quien navega con teclado o lector,
+justo antes de los productos. El clic/toque cubre WCAG 2.5.7 (alternativa de un
+solo puntero al arrastre). *Alternativa descartada*: hacerlas botones
+focuseables — se puede sumar después si Mariano lo pide.
+
+### 12.9 Analytics
+
+`lib/analytics.js` suma:
+
+```js
+/** Una calco del hero quedó pegada en el termo (spec 028, ampliación A). */
+export function trackHeroStickerStick({ slot, metodo }) {
+  pushDataLayer({ event: 'hero_sticker_stick', slot, metodo });
+  debug('hero_sticker_stick', slot, metodo);
+}
+```
+
+`pushDataLayer` ya tiene su `try/catch` y ya reenvía a GA4. Sin Píxel de Meta.
+Se llama solo al pasar a **pegada** (no al moverla dentro del termo).
+`docs/analytics.md` suma el evento.
+
+### 12.10 Archivos
+
+| Archivo | Cambio |
+|---|---|
+| `components/hero/HeroCalcos.jsx` | Estados, arrastre, vuelo, capa de pegadas, `data-juego`/`data-pegada` |
+| `lib/heroTermo.js` | `TERMO.cuerpo`, `DESTINOS_PEGADO`, `ANCHO_PEGADA`, `dentroDelCuerpo()`, `ajustarAlCuerpo()` |
+| `lib/heroTermo.test.js` | Destinos dentro del cuerpo y sin taparse; `ajustarAlCuerpo` |
+| `components/Hero.jsx` | La pista |
+| `styles/index.css` | `.hero-termo__pegadas` (máscara), `.hero-calco-pegada`, `[data-arrastrando]`, cursores, `pointer-events` en táctil, `.hero-termo__pista` |
+| `lib/analytics.js` ⚠️ compartido | Solo **suma** `trackHeroStickerStick`; no cambia nada existente |
+| `docs/analytics.md` | El evento nuevo |
+
+### 12.11 Manejo de errores
+
+| Falla | Qué pasa |
+|---|---|
+| Navegador sin `mask-image` | Las pegadas se ven enteras aunque pasen el borde del termo. Se declara también `-webkit-mask-image` (Safari y Chrome < 120): hoy lo soportan todos los navegadores actuales. |
+| Sin `setPointerCapture` | Si el cursor sale de la calco muy rápido, se pierde el arrastre y vuelve a su lugar. |
+| Falla el tracking | `pushDataLayer` lo atrapa; la calco se pega igual. |
+
+### 12.12 Testing
+
+- `heroTermo.test.js`: cada destino cae dentro del cuerpo; dos destinos no están
+  más cerca que medio ancho de calco pegada; `ajustarAlCuerpo` deja adentro un
+  punto de afuera y no toca uno de adentro; `dentroDelCuerpo` excluye tapa, base
+  y manija.
+- Arnés de Chrome (el de la spec): arrastre con `page.mouse` (soltar adentro,
+  afuera, sobre un botón), clic, toque emulado, scroll con el dedo encima de una
+  calco, re-arrastre de una pegada, movimiento reducido, `dataLayer`, fps
+  arrastrando, tamaño del chunk.
+
+### 12.13 Dependencias
+
+Ninguna nueva y **sin `domMax`**: +14 kB por algo que se resuelve con ~150 líneas
+propias sobre lo que ya se carga.
+

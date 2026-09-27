@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `028-hero-termo-stickers` |
-| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10 (ver `acceptance.md`) |
+| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliación A (§13): `READY FOR REVIEW`**, con 3 preguntas (Q4-Q6) |
 | **Fecha** | 27/09/2026 |
 | **Autor** | Mariano (pedido) · Claude (redacción) |
 
@@ -247,3 +247,118 @@ Ninguno.
 | **Q1** | ¿Cuándo se publica? Publicar antes del 2/10 tira las dos semanas de `hero_titular` y `hero_buscador` (RN-1). | **Implementar ya en la rama y publicar desde el sábado 3/10**, después de leer los dos tests. — ✅ *Aprobada (27/9, "Implementá la spec 028").* |
 | **Q2** | ¿De dónde sale la foto del termo? No existe ningún termo recortado en el repo (solo la foto cuadrada de Antes/Después, con fondo). | **Mariano provee** un PNG con fondo transparente, ≥ 800 px de alto, termo con calcos puestas. Sin eso **no se publica**: el hero pierde su protagonista. Las 4 calcos salen del catálogo (hay 60 recortes transparentes de ~12 kB); Mariano elige cuáles o se usan las propuestas en `design.md` §0. — ✅ *Mariano mandó la foto de un termo liso (27/9). Recortado y sin el fondo blanco: 172×516, 7,8 kB. (Una primera versión usó la foto de Antes/Después; ver bitácora de `tasks.md`.)* |
 | **Q3** | ¿Se publica como reemplazo o como A/B contra el hero actual? | **Reemplazo**, con corte en la serie de `CRO-EXPERIMENTS.md`. Un A/B obliga a cargar los dos heroes (y la librería de animación) a todo el mundo durante semanas. Si Mariano quiere medirlo, va en una spec aparte. — ✅ *Aprobada.* |
+
+---
+
+## 13. Ampliación A — Pegar las calcos en el termo (27/09/2026)
+
+> **Estado de la ampliación: `READY FOR REVIEW`.** No autoriza a implementarla
+> (ver `specs/README.md`). Se implementa en el mismo PR, antes del merge.
+
+### 13.1 Pedido
+
+> *"Que los calcos los puedas seleccionar / clickear con el cursor, pegar en el
+> termo y que queden pegados."*
+
+### 13.2 Problema y objetivo
+
+Hoy las cuatro calcos son decoración: se mueven solas, pero no se pueden
+agarrar. El hero dice "Tu termo está pidiendo calcos" y muestra un termo liso
+con calcos alrededor, pero la persona no puede hacer lo que el titular propone.
+
+**Objetivo**: que la persona pueda **ponerle las calcos al termo** con sus
+propias manos, en el primer segundo de la visita. Es la propuesta del negocio
+—personalizar objetos con calcos— hecha gesto.
+
+**Cómo se sabrá que funcionó**: `hero_sticker_stick` (§13.8) sobre vistas del
+Home dice cuánta gente juega. El KPI de negocio no cambia: `view_item_list` y
+`custom_sticker_click` del hero no bajan.
+
+### 13.3 Scope
+
+- [ ] Con mouse: agarrar una calco, arrastrarla y soltarla sobre el termo → queda
+      pegada donde se soltó.
+- [ ] Con mouse, un clic sin arrastrar → la calco vuela sola al termo y se pega.
+- [ ] En pantallas táctiles: tocar una calco → vuela al termo y se pega (Q4).
+- [ ] Una calco pegada se ve "puesta" sobre el termo: más chica, apoyada en la
+      superficie, sin salirse de la silueta.
+- [ ] Una calco pegada se puede volver a arrastrar: a otro lugar del termo, o
+      afuera para despegarla (vuelve a su lugar).
+- [ ] Una pista corta que diga que se puede hacer (Q6).
+
+### 13.4 Fuera de scope
+
+- [ ] Guardar las calcos pegadas entre visitas (Q5).
+- [ ] Elegir otras calcos, subir una propia, cambiarles el tamaño o rotarlas: eso
+      es el configurador de personalizados, no el hero.
+- [ ] Un botón o mensaje de venta que aparezca al pegar ("¿Te gustó? Comprala").
+      Si se quiere, va en otra ampliación.
+- [ ] Teclado: ver RN-A3.
+
+### 13.5 Requisitos funcionales
+
+| ID | Requisito |
+|---|---|
+| RF-A1 | Con mouse, el cursor sobre una calco muestra que se puede agarrar (mano abierta), y mientras se arrastra, mano cerrada. |
+| RF-A2 | Mientras se arrastra, la calco sigue al cursor exactamente (sin retraso ni resorte), se ve levantada (un poco más grande y con más sombra) y deja de flotar y de hacer parallax. |
+| RF-A3 | Soltada con su centro sobre el cuerpo del termo (no sobre la tapa, la base ni la manija), queda pegada ahí: se achica al tamaño de una calco real sobre ese termo con un pequeño "apretón", y la parte que pase el borde de la silueta no se ve. |
+| RF-A4 | Soltada fuera del termo, vuelve sola a su lugar original. |
+| RF-A5 | Un clic (mouse) o un toque (pantalla táctil) sin arrastrar hace que la calco vuele al termo y se pegue en un lugar propio de cada calco, sin taparse entre ellas. |
+| RF-A6 | Una calco pegada no flota ni hace parallax: está pegada a un termo que no se mueve. |
+| RF-A7 | Una calco pegada se puede volver a arrastrar: soltada sobre el termo, se mueve ahí; soltada afuera, se despega y vuelve a su lugar original. |
+| RF-A8 | Las calcos pegadas quedan por delante del termo y por detrás de una calco que se esté arrastrando. |
+| RF-A9 | Pegar o arrastrar nunca dispara un clic en un botón ni navega. |
+| RF-A10 | En pantallas táctiles, empezar a scrollear con el dedo encima de una calco scrollea la página (no pega la calco). |
+| RF-A11 | La pista (Q6) aparece cuando termina la entrada y desaparece al pegar la primera calco. |
+| RF-A12 | Las calcos se despegan todas al recargar o al volver al Home navegando (Q5). |
+
+### 13.6 Requisitos no funcionales
+
+| ID | Requisito | Detalle |
+|---|---|---|
+| RNF-A1 | **Peso** | Lo que se sume va en el chunk de las calcos (no en el principal) y no supera 3 kB gzip. |
+| RNF-A2 | **Fluidez** | Arrastrar no baja de 50 fps en desktop (Chrome, sin throttling de CPU). |
+| RNF-A3 | **Movimiento reducido** | Arrastrar funciona igual (es movimiento que hace la persona); el vuelo al termo y la vuelta a su lugar son instantáneos. |
+| RNF-A4 | **Sin salto de layout** | Pegar, despegar o arrastrar no cambia la altura del hero ni de nada. |
+
+### 13.7 Reglas de negocio
+
+| ID | Regla |
+|---|---|
+| RN-A1 | El juego no puede competir con los botones: la pista es más chica y más apagada que la bajada, y nada del juego se superpone a los botones. |
+| RN-A2 | Ninguna interacción con las calcos puede romper la compra: todo el tracking va por `lib/analytics.js` con `try/catch` (regla 13). |
+| RN-A3 | Las calcos siguen siendo **decorativas** para lectores de pantalla y teclado: no entran en el orden de tabulación ni se anuncian. No hay información ni función de compra que dependa de ellas. El clic/toque es la alternativa de un solo puntero al arrastre (WCAG 2.5.7). |
+
+### 13.8 Analytics
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `hero_sticker_stick` (nuevo) | Cada vez que una calco queda pegada (no al moverla dentro del termo) | `slot` (1-4), `metodo` (`arrastre` / `clic` / `toque`) |
+
+Solo a GA4 (vía `analytics.js`). No va al Píxel de Meta: no es un paso del
+embudo y ensuciaría las audiencias.
+
+Qué se quiere poder responder: ¿cuánta gente juega con el hero? ¿Los que
+juegan van más al catálogo que los que no?
+
+### 13.9 Edge cases
+
+| Caso | Qué debe pasar |
+|---|---|
+| Se suelta justo en el borde del termo | Cuenta el centro de la calco: si está en el cuerpo, se pega, corrida hacia adentro lo necesario para que su centro quede en el cuerpo. |
+| Se pegan las cuatro con clic | Cada una en su lugar propio, sin taparse. |
+| Se arrastra la calco hasta afuera de la ventana y se suelta | Vuelve a su lugar original. |
+| Se arrastra durante la entrada (antes de que termine de aparecer) | Se puede: la entrada se corta y la calco queda en la mano. |
+| El chunk de las calcos no cargó | No hay calcos ni juego; el hero sigue igual que hoy en ese caso. |
+| Falta la imagen de una calco | Esa calco no se ve ni se puede agarrar. |
+| Movimiento reducido | Arrastre normal; vuelo y vuelta instantáneos; sin pista animada. |
+| Mouse y pantalla táctil a la vez (notebook táctil) | Con el mouse, arrastre; con el dedo, toque. |
+
+### 13.10 Preguntas de la ampliación
+
+| ID | Pregunta | Propuesta |
+|---|---|---|
+| **Q4** | En el celular, ¿se arrastra con el dedo o se toca para pegar? | **Tocar para pegar.** Arrastrar con el dedo obliga a que la calco "capture" el gesto: si alguien empieza a scrollear con el dedo encima de una calco, en vez de bajar por la página arrastra la calco. En el hero, que es lo primero que se scrollea, eso se siente como un error. Con el toque, scrollear sigue funcionando siempre. |
+| **Q5** | ¿Las calcos pegadas se guardan para la próxima visita? | **No.** Al recargar vuelven a su lugar y se repite la entrada. Guardarlas agrega estado en el navegador para algo que es un juego de 5 segundos, y la próxima visita arrancaría con un hero distinto del que se diseñó. |
+| **Q6** | ¿Mostrar una pista de que se puede jugar? | **Sí**, una línea chica debajo de los botones: *"Arrastrá una calco al termo"* (con mouse) / *"Tocá una calco para pegarla"* (táctil). Aparece al terminar la entrada y se va al pegar la primera. Sin pista, casi nadie descubre que las calcos se pueden agarrar. |
+
