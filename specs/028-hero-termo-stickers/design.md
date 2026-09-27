@@ -7,6 +7,10 @@
 | **Fecha** | 27/09/2026 |
 
 > **Este documento define CÓMO se implementará.**
+>
+> Lo que cambió al implementar (calcos elegidas, posiciones contra el borde del
+> termo, retrasos anclados al inicio del hero, etc.) está en la **bitácora** de
+> [`tasks.md`](tasks.md). Este documento queda como el diseño aprobado.
 
 ---
 
