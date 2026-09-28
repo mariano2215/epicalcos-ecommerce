@@ -116,7 +116,7 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
           más barata de sacar de todo el checkout. */}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">Nombre completo *</span>
+          <span className="text-sm text-white/70 mb-1.5 block">Nombre y Apellido *</span>
           <input
             type="text"
             value={form.name}
@@ -147,13 +147,13 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
           />
           {errors.email && <span className="text-xs text-brand-pink mt-1 block">{errors.email}</span>}
         </label>
-        <label className="block">
-          <span className="text-sm text-white/70 mb-1.5 block">Teléfono *</span>
+        <label className="block sm:col-span-2">
+          <span className="text-sm text-white/70 mb-1.5 block">Teléfono de contacto (WhatsApp) *</span>
           <input
             type="tel"
             value={form.phone}
             onChange={change('phone')}
-            placeholder="3410000000"
+            placeholder="341 000 0000"
             autoComplete="tel"
             inputMode="tel"
             className="input-dark"
@@ -321,7 +321,7 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
       )}
 
       <label className="block">
-        <span className="text-sm text-white/70 mb-1.5 block">Comentarios (opcional)</span>
+        <span className="text-sm text-white/70 mb-1.5 block">Notas del pedido (opcional)</span>
         <textarea
           rows={3}
           value={form.comments}

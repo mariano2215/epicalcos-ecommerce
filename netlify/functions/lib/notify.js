@@ -285,7 +285,7 @@ function buildEmailHtml(o) {
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <tr><td style="padding:3px 0;width:140px;color:#666">Nombre</td><td><strong>${esc(o.name)}</strong></td></tr>
       <tr><td style="padding:3px 0;color:#666">Email</td><td>${esc(o.email)}</td></tr>
-      <tr><td style="padding:3px 0;color:#666">Teléfono</td><td>${esc(o.phone)}</td></tr>
+      <tr><td style="padding:3px 0;color:#666">Teléfono / WhatsApp</td><td>${esc(o.phone)}</td></tr>
     </table>
 
     <h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Entrega</h3>
@@ -370,7 +370,7 @@ ${manualDigital}${entregaTrasConfirmar}
 CLIENTE
   Nombre: ${o.name}
   Email: ${o.email}
-  Teléfono: ${o.phone}
+  Teléfono / WhatsApp: ${o.phone}
 
 ENTREGA
   Método: ${o.shippingMethod}
