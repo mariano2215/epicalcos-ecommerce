@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import StickerField from './StickerField.jsx';
 import { useCountdown } from '../lib/promo.js';
 
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -62,9 +61,15 @@ export function PromoCountdown({ endMs, label = 'Termina en' }) {
 }
 
 /**
- * Banner de promo pensado para vivir dentro del <header>: fondo de calcos
- * flotantes + titular + (si la promo tiene fecha de fin) cuenta regresiva. El
- * Header decide QUÉ promo mostrar y le pasa el texto y el link.
+ * Banner de promo pensado para vivir dentro del <header>: dorado + titular +
+ * (si la promo tiene fecha de fin) cuenta regresiva. El Header decide QUÉ promo
+ * mostrar y le pasa el texto y el link.
+ *
+ * Hasta el 28/9/2026 tenía calcos flotando de fondo (`StickerField`); se
+ * sacaron a pedido de Mariano: "queda feo".
+ *
+ * `subtitle` es opcional: el 3x2 va sin (el título ya lo dice todo). Sin él no
+ * se dibuja la línea, así el banner no guarda el alto de un renglón vacío.
  *
  * ⚠️ `endMs` es OPCIONAL desde la spec 017. Las tres promos vivas hoy no vencen,
  * así que no hay nada que contar y el contador no se renderiza. Sin esta guarda
@@ -75,17 +80,15 @@ export default function PromoBanner({ title, subtitle, endMs, to, ariaLabel }) {
   const conCountdown = Number.isFinite(endMs);
   return (
     <div className="promo-banner" role="region" aria-label={ariaLabel || title}>
-      {/* Fondo: calcos flotantes + scrim para legibilidad */}
-      <StickerField count={9} opacity={0.16} className="promo-banner__stickers" />
       <div className="promo-banner__scrim" aria-hidden="true" />
 
-      {/* z-10: por encima de los calcos (1), del scrim (2) y del barrido (3). */}
+      {/* z-10: por encima del scrim (2) y del barrido (3). */}
       <div className="container-app relative z-10 py-2.5">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-center sm:justify-between">
           <div className="min-w-0">
             <Link to={to} className="group inline-flex flex-col items-center sm:items-start">
               <span className="promo-banner__title">{title}</span>
-              <span className="promo-banner__sub">{subtitle}</span>
+              {subtitle && <span className="promo-banner__sub">{subtitle}</span>}
             </Link>
           </div>
 

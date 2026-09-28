@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
-import StickerField from '../components/StickerField.jsx';
 import { CATEGORIES } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
 import { searchCatalog, esOrdenValido, ORDEN_POR_DEFECTO } from '../lib/searchCatalog.js';
@@ -128,9 +127,11 @@ export default function Categorias() {
       <div className="container-app py-10">
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Categorías' }]} />
 
-        <header className="mb-8 relative overflow-hidden rounded-3xl">
-          <StickerField count={9} opacity={0.22} className="sticker-field--lateral" />
-          <div className="relative z-10 py-2">
+        {/* Sin calcos de fondo (28/9/2026): aun desvanecidas al costado del
+            texto, se veían como manchas cortadas contra el borde de abajo.
+            Pedido de Mariano: "queda feo". */}
+        <header className="mb-8">
+          <div className="py-2">
             <span className="badge badge-soft mb-3">Catálogo</span>
             <h1 className="font-display font-extrabold text-4xl md:text-5xl">
               <span className="gradient-text">Categorías</span>

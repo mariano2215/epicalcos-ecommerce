@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import AnnouncementBar from './AnnouncementBar.jsx';
 import BuscadorModal from './BuscadorModal.jsx';
@@ -12,8 +12,14 @@ import {
 } from '../config/pricing.js';
 import { navLinks, site } from '../config/site.js';
 
-/** Píxeles de scroll desde los que el header se compacta. */
+/** Píxeles de scroll desde los que el header se compacta (como mínimo: ver abajo). */
 const UMBRAL_COMPACTO = 80;
+/**
+ * Lo que se le suma al alto de la tira para el umbral: los 16 px de padding del
+ * nav que también se recogen (`py-4` → `py-2`) y aire para que, compensado por
+ * el navegador, el scroll no llegue a 0.
+ */
+const MARGEN_UMBRAL = 40;
 
 export default function Header() {
   const { totalItems, openDrawer } = useCart();
@@ -28,8 +34,38 @@ export default function Header() {
   // que hace falta arriba es volver al inicio, buscar y ver el carrito. Todo lo
   // demás (la barra de anuncios) se recoge para devolverle esa altura al
   // producto.
+  //
+  // ⚠️ NO ES `scrollY > 80` A SECAS: así la tira TITILABA. El header es sticky
+  // y está en el flujo, así que al compactarse toda la página sube lo que él
+  // pierde (51 px: la tira y el padding). Chrome —y con él Android y el
+  // navegador de Instagram en Android— lo compensa con el scroll anchoring:
+  // baja `scrollY` esos mismos 51 px para que el contenido no salte. Con un solo
+  // umbral, 85 pasaba a 34, quedaba debajo de 80, la tira volvía, el scroll
+  // volvía a 85… y así sin fin: 30 a 80 veces por segundo mientras el dedo
+  // quedara en esa franja (medido el 28/9/2026, en todas las páginas). Por eso
+  // son dos umbrales:
+  //  - se compacta pasado lo que el header va a perder, con aire: compensado, el
+  //    scroll sigue arriba de 0;
+  //  - se expande recién arriba de todo, donde Chrome no compensa nada (con el
+  //    scroll en 0 no ancla: medido).
+  // El umbral crece con la tira porque con movimiento reducido ocupa varias
+  // líneas (143 px a 375): con 80 fijo el scroll compensado caía a 0 y rebotaba
+  // igual. En Safari, que no ancla, el contenido salta al compactarse como
+  // siempre, pero tampoco hay loop.
+  const tiraRef = useRef(null);
   useEffect(() => {
-    const onScroll = () => setCompacto(window.scrollY > UMBRAL_COMPACTO);
+    let compactado = false;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (compactado) {
+        // `< 1` y no `=== 0`: con zoom, algún navegador reporta décimas arriba de todo.
+        compactado = y >= 1;
+      } else {
+        const tira = tiraRef.current?.offsetHeight ?? 0;
+        compactado = y > Math.max(UMBRAL_COMPACTO, tira + MARGEN_UMBRAL);
+      }
+      setCompacto(compactado);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -54,10 +90,12 @@ export default function Header() {
            catálogo. El 2x1 se anuncia en sus cuatro categorías y el mayorista en
            `OfertaPrincipal` del Home, así cada oferta habla donde significa algo
            en vez de tres carteles peleando arriba (spec 014). Cambiar cuál gana
-           es reordenar este if/else. */
+           es reordenar este if/else.
+           Sin subtítulo desde el 28/9/2026 ("Cada 3 calcos, la más barata
+           gratis"): "3×2" ya dice llevás 3 y pagás 2 (Mariano). La mecánica
+           exacta sigue explicada en el carrito y en el checkout. */
         <PromoBanner
           title="3×2 EN TODAS LAS CALCOS"
-          subtitle="Cada 3 calcos, la más barata gratis"
           to="/categorias"
           ariaLabel="Promoción 3x2 en todas las calcos"
         />
@@ -203,8 +241,9 @@ export default function Header() {
           color queda solo en el banner: una se lee como oferta, la otra como
           información.
           Se recoge al scrollear: pasado el primer scroll las dudas ya se leyeron
-          y esos ~35 px valen más para el producto. */}
-      {!compacto && <AnnouncementBar />}
+          y esos ~35 px valen más para el producto. El `div` es para medirla
+          (el umbral de arriba); compactado queda vacío y no ocupa nada. */}
+      <div ref={tiraRef}>{!compacto && <AnnouncementBar />}</div>
     </header>
 
     <BuscadorModal abierto={buscando} onCerrar={() => setBuscando(false)} />
