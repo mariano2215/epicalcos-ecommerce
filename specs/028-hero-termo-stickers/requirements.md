@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `028-hero-termo-stickers` |
-| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliaciones A (§13), B (§14) y C (§15): en la rama (28/09/2026)**, en el deploy preview para el OK de Mariano |
+| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliaciones A (§13), B (§14), C (§15) y D (§16): en la rama (28/09/2026)**, en el deploy preview para el OK de Mariano |
 | **Fecha** | 27/09/2026 |
 | **Autor** | Mariano (pedido) · Claude (redacción) |
 
@@ -465,4 +465,46 @@ juega, el popup no lo interrumpe.
 | D-C1 | Hay que pegar **las 4**. | Una meta clara y corta; con el contador se ve cuánto falta. |
 | D-C2 | "Jugando" = tocó una calco en los **últimos 20 s**. | Suficiente para pegar las 4 con calma sin que el popup la interrumpa, y corto para que quien dejó el juego vea el popup de siempre. |
 | D-C3 | El popup del premio abre **1,2 s** después de la cuarta. | Que se vea el termo completo girando antes de taparlo. |
+
+---
+
+## 16. Ampliación D — Muchas calcos de Argentina (28/09/2026)
+
+> **Estado de la ampliación: implementada en la rama (28/09/2026)**, en el
+> mismo deploy preview; el merge espera el OK de Mariano.
+
+### 16.1 Pedido
+
+> *"¿Se puede hacer que tengas muchas calcos para subir? De cualquier diseño de
+> Argentina que sea PNG (no tenga fondo blanco)."* — Respuesta a las propuestas:
+> *"Dale, hacelo con recarga y tope de 12."*
+
+### 16.2 Requisitos
+
+| ID | Requisito |
+|---|---|
+| RF-D1 | El juego usa **todos los diseños de la categoría Argentina que tienen fondo transparente** (hoy 58). Uno con fondo blanco no entra. |
+| RF-D2 | **Recarga**: al pegar una calco, en su lugar entra otra, al azar, sin repetir hasta que salieron todas, y nunca una que ya esté a la vista (suelta o pegada). Entra con la misma animación de su lugar. |
+| RF-D3 | Arranca con las cuatro de hoy (mate, Ruta 40, carpincho, Pumas). |
+| RF-D4 | **Tope de 12** en el termo: al pegar la 13, la más vieja se despega sola. |
+| RF-D5 | Clic o toque en una calco pegada: se despega (y deja de contar para el juego). |
+| RF-D6 | El juego y el premio no cambian: 4 calcos cualesquiera. |
+| RF-D7 | Si un diseño deja de estar en el catálogo, deja de aparecer en el juego. |
+
+### 16.3 No funcionales
+
+| ID | Requisito |
+|---|---|
+| RNF-D1 | No se bajan los 58 de entrada: cada lugar tiene lista solo la próxima calco. |
+| RNF-D2 | Cada calco del hero pesa ≤ 30 kB. |
+
+### 16.4 Analytics
+
+`hero_sticker_stick` suma `diseno` (`argentina-<n>`): qué diseños pega la gente.
+
+### 16.5 Lo que cambia de las ampliaciones anteriores
+
+- RF-A7 (volver a agarrar una pegada / despegarla con clic y que vuelva a su
+  lugar): con la recarga, su lugar ya tiene otra calco. Clic la **despega**
+  (RF-D5); ya no se reubica arrastrándola.
 

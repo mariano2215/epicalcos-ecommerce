@@ -18,7 +18,13 @@ import {
   dentroDelCuerpo,
   ajustarAlCuerpo,
   anguloEnTermo,
-  perspectivaPegada
+  perspectivaPegada,
+  DISENOS_INICIALES,
+  MAX_PEGADAS,
+  srcDiseno,
+  idDiseno,
+  disenoPorNumero,
+  siguienteDiseno
 } from '../../lib/heroTermo.js';
 import { useReducedMotion } from '../../lib/motion.js';
 import { trackHeroStickerStick } from '../../lib/analytics.js';
@@ -26,6 +32,7 @@ import { POPUP_JUEGO } from '../../config/popup.js';
 import { porcentajeOferta } from '../../lib/popupReglas.js';
 import { usePopupVersion } from '../../lib/popupEstado.js';
 import { registrarPegadas, hayPremio, yaPremiado } from '../../lib/juegoTermo.js';
+import { DISENOS_HERO } from '../../lib/disenosHero.js';
 
 /**
  * Las cuatro calcos del hero del termo (spec 028). Es el ÚNICO archivo del
@@ -74,6 +81,12 @@ import { registrarPegadas, hayPremio, yaPremiado } from '../../lib/juegoTermo.js
  * eje (`rotateY(φ) translateZ(radio)`). La anima el CSS; acá solo se lee en qué
  * ángulo va (θ) cuando hace falta pegar una: queda en φ = α − θ, donde α es
  * dónde se la ve en la pantalla.
+ *
+ * MUCHAS CALCOS (ampliación D): los cuatro lugares se RECARGAN. Al pegar una,
+ * su lugar trae otro diseño de Argentina (sin repetir hasta agotar los 58, y
+ * nunca uno que ya se vea), con el próximo ya precargado. En el termo entran
+ * 12: con la 13, la más vieja se despega sola. Un clic en una pegada la
+ * despega.
  *
  * EL JUEGO (ampliación C): "Pegá las 4 calcos y ganate 10% OFF". El progreso va
  * a lib/juegoTermo.js, que le avisa al popup de bienvenida cuando alguien gana.
@@ -221,15 +234,41 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
     Math.max(0, Math.min(performance.now() - (inicioEntrada ?? performance.now()), PRIMER_RETRASO_MS))
   );
 
-  // slot → { fx, fy, rot, rotDesde, r, vez }. Solo en memoria (Q5).
-  const [pegadas, setPegadas] = useState({});
-  const vecesPegada = useRef(0);
+  // Las pegadas, de la más vieja a la más nueva: { id, diseno, fy, phi, rot,
+  // rotDesde, r, saliendo }. Solo en memoria (Q5).
+  const [pegadas, setPegadas] = useState([]);
+  const ultimoId = useRef(0);
   // La capa de pegadas mide exactamente lo que el termo: es la referencia para
   // saber dónde cayó una calco y a dónde tiene que volar.
   const capaRef = useRef(null);
-  // Lo que cada calco suelta expone para que su versión pegada le pase un
-  // arrastre o la mande de vuelta a su lugar.
-  const controles = useRef({});
+
+  // Qué diseño muestra cada lugar y cuál sigue (ya precargado). La "bolsa" de
+  // usados vive en un ref: elegir el próximo no tiene que re-renderizar.
+  const usados = useRef(new Set(Object.values(DISENOS_INICIALES)));
+  const [lugares, setLugares] = useState(() => {
+    const visibles = new Set(Object.values(DISENOS_INICIALES));
+    const inicial = {};
+    for (const c of CALCOS) {
+      const { n, usados: u } = siguienteDiseno({ visibles, usados: usados.current, disenos: DISENOS_HERO });
+      usados.current = u;
+      visibles.add(n);
+      inicial[c.slot] = { actual: DISENOS_INICIALES[c.slot], siguiente: n };
+    }
+    return inicial;
+  });
+  // Precarga: la próxima de cada lugar ya está bajada cuando le toque entrar
+  // (una por lugar, nunca las 58: RNF-D1). Una sola vez por diseño: el efecto
+  // corre con cada recarga y, sin el registro, volvía a pedir las cuatro.
+  const precargadas = useRef(new Set());
+  useEffect(() => {
+    for (const { siguiente } of Object.values(lugares)) {
+      if (precargadas.current.has(siguiente)) continue;
+      precargadas.current.add(siguiente);
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = srcDiseno(siguiente);
+    }
+  }, [lugares]);
 
   const giroRef = useRef(null);
 
@@ -243,25 +282,47 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
     return ((t % dur) / dur) * 360;
   };
 
+  // `pegar` se llama al terminar un vuelo, ~0,6 s después del clic: con el
+  // estado de ese render podría no ver una calco pegada en el medio (y repetir
+  // un diseño a la vista o contar mal el tope). Lee siempre lo último.
+  const pegadasRef = useRef(pegadas);
+  pegadasRef.current = pegadas;
+  const lugaresRef = useRef(lugares);
+  lugaresRef.current = lugares;
+
   const pegar = (slot, datos, metodo) => {
-    vecesPegada.current += 1;
-    const total = Object.keys(pegadas).filter((k) => Number(k) !== slot).length + 1;
-    setPegadas((p) => ({ ...p, [slot]: { ...datos, vez: vecesPegada.current } }));
-    // Solo cuando pasa de suelta a pegada. Moverla dentro del termo no cuenta.
-    if (metodo) trackHeroStickerStick({ slot, metodo, pegadas: total });
+    const pegadas = pegadasRef.current;
+    const lugares = lugaresRef.current;
+    const diseno = lugares[slot].actual;
+    ultimoId.current += 1;
+    const nueva = { ...datos, id: ultimoId.current, diseno, saliendo: false };
+    const activas = pegadas.filter((p) => !p.saliendo);
+    // Con la 13, la más vieja se despega sola (RF-D4).
+    const sobran = Math.max(0, activas.length + 1 - MAX_PEGADAS);
+    const vanASalir = new Set(activas.slice(0, sobran).map((p) => p.id));
+    setPegadas((ps) => [...ps.map((p) => (vanASalir.has(p.id) ? { ...p, saliendo: true } : p)), nueva]);
+    trackHeroStickerStick({ slot, metodo, pegadas: activas.length + 1 - sobran, diseno: idDiseno(diseno) });
+
+    // El lugar se recarga: entra la que estaba esperando y se elige la próxima,
+    // que no puede ser ninguna de las que se ven.
+    const visibles = new Set([
+      ...Object.values(lugares).flatMap((l) => [l.actual, l.siguiente]),
+      ...activas.map((p) => p.diseno),
+      diseno
+    ]);
+    const { n, usados: u } = siguienteDiseno({ visibles, usados: usados.current, disenos: DISENOS_HERO });
+    usados.current = u;
+    setLugares((ls) => ({ ...ls, [slot]: { actual: ls[slot].siguiente, siguiente: n } }));
   };
-  const despegar = (slot) => {
-    setPegadas((p) => {
-      const { [slot]: _, ...resto } = p;
-      return resto;
-    });
-  };
+  // Clic en una pegada: se va con una animación y recién ahí se borra.
+  const despegar = (id) => setPegadas((ps) => ps.map((p) => (p.id === id ? { ...p, saliendo: true } : p)));
+  const borrar = (id) => setPegadas((ps) => ps.filter((p) => p.id !== id));
 
   // ── El juego (ampliación C) ────────────────────────────────────────────────
   usePopupVersion(); // si deja el mail en el popup, la pista deja de prometer
   const premio = hayPremio();
   const pct = porcentajeOferta();
-  const cantidad = Object.keys(pegadas).length;
+  const cantidad = pegadas.filter((p) => !p.saliendo).length;
   const [gano, setGano] = useState(() => yaPremiado());
   useEffect(() => {
     if (registrarPegadas(cantidad)) setGano(true);
@@ -370,16 +431,8 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
           style={{ WebkitMaskImage: `url(${TERMO.src})`, maskImage: `url(${TERMO.src})` }}
         >
           <div ref={giroRef} className="hero-termo__giro">
-            {CALCOS.filter((c) => pegadas[c.slot]).map((c) => (
-              <CalcoPegada
-                key={`${c.slot}-${pegadas[c.slot].vez}`}
-                calco={c}
-                datos={pegadas[c.slot]}
-                controles={controles}
-                onDespegar={despegar}
-                onTocar={tocar}
-                onArrastre={arrastrar}
-              />
+            {pegadas.map((p) => (
+              <CalcoPegada key={p.id} datos={p} onDespegar={despegar} onSalio={borrar} onTocar={tocar} />
             ))}
           </div>
         </div>
@@ -395,9 +448,8 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
               adelantoMs={adelantoMs}
               reducido={reducido}
               conMouse={conMouse}
-              pegada={!!pegadas[calco.slot]}
+              diseno={lugares[calco.slot].actual}
               capaRef={capaRef}
-              controles={controles}
               onPegar={pegar}
               anguloGiro={anguloGiro}
               onTocar={tocar}
@@ -418,9 +470,8 @@ function Calco({
   adelantoMs,
   reducido,
   conMouse,
-  pegada,
+  diseno,
   capaRef,
-  controles,
   onPegar,
   anguloGiro,
   onTocar,
@@ -496,19 +547,25 @@ function Calco({
     );
   };
 
-  // Ya pegada, la suelta vuelve a su lugar (oculta) para cuando la despeguen.
+  // Recarga (ampliación D): pegada la anterior, el lugar trae otro diseño. La
+  // calco vuelve a su lugar de una —el cambio de imagen hace que no se vea el
+  // salto— y la nueva entra con la animación de entrada del lugar. El primer
+  // diseño de cada lugar es el de la entrada de la página.
+  const disenoInicial = useRef(diseno);
+  const recargada = diseno !== disenoInicial.current;
   useEffect(() => {
-    if (!pegada) return;
+    if (!recargada) return;
     volando.current = false;
     congelado.current = null;
     arrastreX.jump(0);
     arrastreY.jump(0);
     escala.jump(1);
-  }, [pegada, arrastreX, arrastreY, escala]);
+    setFalta(false);
+  }, [diseno, recargada, arrastreX, arrastreY, escala]);
 
-  const iniciarArrastre = (inicio, vieneDePegada) => {
+  const iniciarArrastre = (inicio) => {
     congelar();
-    sesion.current = { cx: inicio.clientX, cy: inicio.clientY, ax: arrastreX.get(), ay: arrastreY.get(), vieneDePegada };
+    sesion.current = { cx: inicio.clientX, cy: inicio.clientY, ax: arrastreX.get(), ay: arrastreY.get() };
     setArrastrando(true);
     onArrastre(true);
   };
@@ -530,8 +587,7 @@ function Calco({
     const fx = (c.x - capa.left) / capa.width;
     const fy = (c.y - capa.top) / capa.height;
     if (!dentroDelCuerpo(fx, fy)) return volverACasa();
-    // Una que ya estaba pegada y se movió dentro del termo no vuelve a contar.
-    return pegarEn(ajustarAlCuerpo(fx, fy).fy, calco.entrada.hasta.rotate ?? 0, s.vieneDePegada ? null : 'arrastre');
+    return pegarEn(ajustarAlCuerpo(fx, fy).fy, calco.entrada.hasta.rotate ?? 0, 'arrastre');
   };
   const volar = (metodo) => {
     if (volando.current || !capaRef.current || !imgRef.current) return;
@@ -545,35 +601,8 @@ function Calco({
     alLlegar(arrastreX, arrastreY, () => pegarEn(d.fy, d.rot, metodo, 0));
   };
 
-  // Lo que la versión pegada usa para despegarse: la suelta (oculta en su
-  // lugar) se pone donde está la pegada, con su tamaño, y de ahí sigue.
-  const ponerDondeEsta = (rectPegada, puntoX, puntoY) => {
-    const c = centroDe(imgRef.current);
-    congelar();
-    arrastreX.jump(arrastreX.get() + puntoX - c.x);
-    arrastreY.jump(arrastreY.get() + puntoY - c.y);
-    escala.jump(rectPegada.width / c.ancho);
-  };
-  useEffect(() => {
-    controles.current[slot] = {
-      // Agarrada con el mouse: aparece bajo el cursor, crece y sigue arrastrándose.
-      tomar: (rectPegada, e) => {
-        ponerDondeEsta(rectPegada, e.clientX, e.clientY);
-        llevar(escala, 1);
-        iniciarArrastre(e, true);
-      },
-      seguir,
-      soltar,
-      // Clic o toque sobre la pegada: vuelve volando a su lugar, creciendo.
-      devolver: (rectPegada) => {
-        ponerDondeEsta(rectPegada, rectPegada.left + rectPegada.width / 2, rectPegada.top + rectPegada.height / 2);
-        volverACasa();
-      }
-    };
-  });
-
   const puntero = usePuntero({
-    alIniciar: (inicio) => iniciarArrastre(inicio, false),
+    alIniciar: (inicio) => iniciarArrastre(inicio),
     alMover: seguir,
     alSoltar: soltar,
     alClic: volar,
@@ -581,7 +610,8 @@ function Calco({
   });
 
   const { desde, hasta, duracionMs, rotacionMs } = calco.entrada;
-  const retrasoMs = calco.entrada.retrasoMs - adelantoMs;
+  // Una recargada entra de una: el retraso es el de la entrada de la página.
+  const retrasoMs = recargada ? 0 : calco.entrada.retrasoMs - adelantoMs;
   const transicion = {
     duration: seg(duracionMs),
     delay: seg(retrasoMs),
@@ -595,14 +625,14 @@ function Calco({
   const estiloLoop = calco.loop && {
     '--flota': `${-calco.loop.amplitudPx}px`,
     '--flota-dur': `${calco.loop.duracionMs / 2}ms`,
-    '--flota-retraso': entrada ? `${retrasoMs + duracionMs}ms` : '0ms'
+    '--flota-retraso': entrada || recargada ? `${retrasoMs + duracionMs}ms` : '0ms'
   };
 
   return (
     <m.div
       className={`hero-calco hero-calco--${slot} hero-calco--${calco.capa}`}
       data-arrastrando={arrastrando ? '' : undefined}
-      style={{ x, y, visibility: falta || pegada ? 'hidden' : undefined }}
+      style={{ x, y, visibility: falta ? 'hidden' : undefined }}
       // Hover solo con mouse: con el dedo se "pega" después del toque.
       whileHover={conMouse && !reducido ? { scale: 1.08, rotate: 2 } : undefined}
       transition={RESORTE_HOVER}
@@ -610,16 +640,18 @@ function Calco({
     >
       <m.div className="hero-calco__escala" style={{ scale: escala }}>
         <m.img
+          // El diseño es la `key`: uno nuevo es otra imagen y vuelve a entrar.
+          key={diseno}
           ref={imgRef}
-          src={calco.src}
+          src={srcDiseno(diseno)}
           alt=""
-          width={calco.ancho}
-          height={calco.alto}
+          width={disenoPorNumero(diseno, DISENOS_HERO)?.ancho}
+          height={disenoPorNumero(diseno, DISENOS_HERO)?.alto}
           decoding="async"
           draggable={false}
           className={`hero-calco__img${calco.loop ? ' hero-calco__img--flota' : ''}`}
           style={estiloLoop || undefined}
-          initial={entrada ? desde : false}
+          initial={entrada || recargada ? desde : false}
           animate={hasta}
           transition={transicion}
           // Sin la imagen no queda el ícono de imagen rota: la calco no se ve y
@@ -640,43 +672,47 @@ function Calco({
  *     achica contra el termo. Framer Motion le escribe su propio `transform`, y
  *     en el mismo elemento pisaría el del giro.
  * Sin flotación ni parallax (RF-A6): está pegada a un termo que no se mueve de
- * lugar, solo gira.
+ * lugar, solo gira. Un clic o un toque la despega (RF-D5): se infla, se
+ * desvanece y recién al terminar se borra (`onSalio`). Lo mismo cuando la
+ * despega el tope de 12.
  */
-function CalcoPegada({ calco, datos, controles, onDespegar, onTocar, onArrastre }) {
-  const ref = useRef(null);
+function CalcoPegada({ datos, onDespegar, onSalio, onTocar }) {
+  const nada = () => {};
   const puntero = usePuntero({
-    alIniciar: (inicio, e) => {
-      controles.current[calco.slot]?.tomar(ref.current.getBoundingClientRect(), e);
-      onDespegar(calco.slot);
-    },
-    alMover: (e) => controles.current[calco.slot]?.seguir(e),
-    alSoltar: (e) => controles.current[calco.slot]?.soltar(e),
-    alClic: () => {
-      controles.current[calco.slot]?.devolver(ref.current.getBoundingClientRect());
-      onDespegar(calco.slot);
-    },
+    alIniciar: nada,
+    alMover: nada,
+    alSoltar: nada,
+    alClic: () => onDespegar(datos.id),
     alTocar: onTocar
   });
+  const medidas = disenoPorNumero(datos.diseno, DISENOS_HERO);
 
   return (
     <div
-      ref={ref}
       className="hero-calco-pegada"
       style={{ top: `${datos.fy * 100}%`, width: `${ANCHO_PEGADA * 100}%`, '--angulo': `${datos.phi}deg` }}
-      {...puntero}
+      {...(datos.saliendo ? {} : puntero)}
     >
       <m.img
-        src={calco.src}
+        src={srcDiseno(datos.diseno)}
         alt=""
-        width={calco.ancho}
-        height={calco.alto}
+        width={medidas?.ancho}
+        height={medidas?.alto}
         decoding="async"
         draggable={false}
         initial={{ scale: datos.r, rotate: datos.rotDesde }}
-        animate={{ scale: [datos.r, 0.94, 1], rotate: datos.rot }}
-        transition={{
-          scale: { duration: 0.4, times: [0, 0.75, 1], ease: 'easeOut' },
-          rotate: { duration: 0.3, ease: 'easeOut' }
+        animate={
+          datos.saliendo
+            ? { scale: 1.3, opacity: 0, rotate: datos.rot + 12 }
+            : { scale: [datos.r, 0.94, 1], rotate: datos.rot }
+        }
+        transition={
+          datos.saliendo
+            ? { duration: 0.3, ease: 'easeIn' }
+            : { scale: { duration: 0.4, times: [0, 0.75, 1], ease: 'easeOut' }, rotate: { duration: 0.3, ease: 'easeOut' } }
+        }
+        onAnimationComplete={() => {
+          if (datos.saliendo) onSalio(datos.id);
         }}
       />
     </div>

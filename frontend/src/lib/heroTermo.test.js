@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import {
   COPY_HERO,
   TERMO,
@@ -11,8 +14,15 @@ import {
   perspectivaPegada,
   duracionEntradaMs,
   dentroDelCuerpo,
-  ajustarAlCuerpo
+  ajustarAlCuerpo,
+  DISENOS_INICIALES,
+  MAX_PEGADAS,
+  srcDiseno,
+  siguienteDiseno
 } from './heroTermo.js';
+import { DISENOS_HERO } from './disenosHero.js';
+
+const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
 
 /**
  * El hero del termo (spec 028). Lo que se cuida acá es lo que se rompe sin que
@@ -55,17 +65,79 @@ describe('copy del hero', () => {
 });
 
 describe('assets', () => {
-  it('todo sale de /images/hero/ y declara sus medidas (sin salto de layout)', () => {
-    for (const img of [TERMO, ...CALCOS]) {
-      expect(img.src).toMatch(/^\/images\/hero\/[\w-]+\.webp$/);
-      expect(img.ancho).toBeGreaterThan(0);
-      expect(img.alto).toBeGreaterThan(0);
-    }
+  it('el termo sale de /images/hero/ y declara sus medidas (sin salto de layout)', () => {
+    expect(TERMO.src).toMatch(/^\/images\/hero\/[\w-]+\.webp$/);
+    expect(TERMO.ancho).toBeGreaterThan(0);
+    expect(TERMO.alto).toBeGreaterThan(0);
   });
 
   it('el termo tiene texto alternativo; las calcos son decorativas', () => {
     expect(TERMO.alt.trim().length).toBeGreaterThan(10);
     for (const c of CALCOS) expect(c.alt).toBeUndefined();
+  });
+});
+
+describe('diseños de Argentina (ampliación D)', () => {
+  const catalogo = JSON.parse(readFileSync(join(PUBLIC, 'data', 'argentina.json'), 'utf8'));
+  const enCatalogo = new Set(catalogo.map((p) => p.file));
+
+  it('hay muchos, y cada uno tiene su archivo del hero, con fondo transparente', () => {
+    expect(DISENOS_HERO.length).toBeGreaterThanOrEqual(20);
+    for (const d of DISENOS_HERO) {
+      const archivo = join(PUBLIC, srcDiseno(d.n));
+      expect(existsSync(archivo), `falta ${srcDiseno(d.n)}`).toBe(true);
+      const b = readFileSync(archivo);
+      // WebP con alfa: contenedor extendido (VP8X) con el bloque ALPH, o sin pérdida (VP8L).
+      const conAlfa = b.includes(Buffer.from('ALPH')) || b.subarray(12, 16).toString() === 'VP8L';
+      expect(conAlfa, `${d.n} no tiene transparencia`).toBe(true);
+      expect(b.length, `${d.n} pesa más de 30 kB`).toBeLessThanOrEqual(30 * 1024);
+    }
+  });
+
+  it('cada diseño sigue en el catálogo: uno que se saca no puede quedar en el juego', () => {
+    for (const d of DISENOS_HERO) {
+      expect(enCatalogo.has(`/stickers/argentina/${d.n}.webp`), `argentina-${d.n} ya no está en el catálogo`).toBe(true);
+    }
+  });
+
+  it('los cuatro iniciales están entre los diseños y son distintos', () => {
+    const iniciales = Object.values(DISENOS_INICIALES);
+    expect(new Set(iniciales).size).toBe(4);
+    const nums = new Set(DISENOS_HERO.map((d) => d.n));
+    for (const n of iniciales) expect(nums.has(n)).toBe(true);
+    expect(Object.keys(DISENOS_INICIALES).map(Number).sort()).toEqual(CALCOS.map((c) => c.slot));
+  });
+
+  it('el tope del termo es 12', () => {
+    expect(MAX_PEGADAS).toBe(12);
+  });
+});
+
+describe('siguienteDiseno', () => {
+  const disenos = [1, 2, 3, 4, 5, 6].map((n) => ({ n, ancho: 10, alto: 10 }));
+
+  it('nunca devuelve uno que esté a la vista', () => {
+    const visibles = new Set([1, 2, 3, 4, 5]);
+    for (let i = 0; i < 20; i++) {
+      expect(siguienteDiseno({ visibles, usados: new Set(), disenos }).n).toBe(6);
+    }
+  });
+
+  it('recorre todos antes de repetir', () => {
+    let usados = new Set();
+    const vistos = [];
+    for (let i = 0; i < disenos.length; i++) {
+      const r = siguienteDiseno({ visibles: new Set(), usados, azar: () => 0.99, disenos });
+      usados = r.usados;
+      vistos.push(r.n);
+    }
+    expect(new Set(vistos).size).toBe(disenos.length);
+  });
+
+  it('agotada la bolsa, empieza otra vuelta sin repetir los visibles', () => {
+    const r = siguienteDiseno({ visibles: new Set([2]), usados: new Set([1, 2, 3, 4, 5, 6]), azar: () => 0, disenos });
+    expect(r.n).not.toBe(2);
+    expect([...r.usados]).toEqual([r.n]);
   });
 });
 

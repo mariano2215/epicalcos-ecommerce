@@ -122,7 +122,7 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 | AC-A4 | *(RF-A4)* Soltada afuera: vuelve a su lugar (± 1 px) en < 1 s. | Arnés | ✅ Soltada afuera: vuelve a 1,5 px de su lugar en < 1,1 s (el resto lo pone la flotación, que sigue). |
 | AC-A5 | *(RF-A5)* Clic en las cuatro: todas pegadas, cada una en su destino, sin taparse. | Arnés + captura | ✅ Clic en 2, 3 y 4: las tres en su destino (± 2 %), solape máximo 15 %. Del clic a pegada: 570 ms. |
 | AC-A6 | *(RF-A6, RF-A8)* Pegada: sin animaciones, sin parallax; por delante del termo y por detrás de una que se arrastra. | Arnés | ✅ Pegadas: 0 animaciones, 0,0 px de corrimiento con el cursor cruzando la pantalla, capa con `z-index` 25. |
-| AC-A7 | *(RF-A7)* Agarrar una pegada la despega bajo el cursor; clic en una pegada la manda a su lugar. | Arnés | ✅ Agarrar una pegada: aparece suelta en la mano y se re-pega donde se suelta, sin evento nuevo. Clic en una pegada: vuelve a 0,9 px de su lugar. |
+| AC-A7 | *(RF-A7)* Agarrar una pegada la despega bajo el cursor; clic en una pegada la manda a su lugar. | Arnés | ✅ Agarrar una pegada: aparece suelta en la mano y se re-pega donde se suelta, sin evento nuevo. Clic en una pegada: vuelve a 0,9 px de su lugar. ⏭️ *Desde la ampliación D, reemplazado por AC-D5 (RF-D5).* |
 | AC-A8 | *(RF-A9)* Arrastrar y soltar sobre "VER CALCOS" no navega. | Arnés | ✅ Soltada encima de VER CALCOS: sigue en `/`. |
 | AC-A9 | *(RF-A5, Q4)* Táctil: un toque pega la calco. | Arnés con touch emulado | ✅ Toque (touch emulado) → pegada, evento `1:toque`. Con un poco de scroll, las cuatro. ⚠️ Sin scroll, en 375×812 el botón "10% OFF" tapa el centro de la calco 2 (hallazgo en `tasks.md`). |
 | AC-A10 | *(RF-A10)* Táctil: un gesto de scroll que empieza sobre una calco scrollea la página y no la pega. | Arnés: `Input.dispatchTouchEvent` | ✅ Gesto de scroll con el dedo empezando sobre la calco 3 (eventos táctiles de CDP): la página baja 174 px, igual que empezando sobre el titular, y no se pega nada. `touch-action: auto`. |
@@ -171,12 +171,35 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 
 ---
 
+## 10. Ampliación D — Muchas calcos de Argentina
+
+> Validado el 28/09/2026 con `muchas.mjs` (nuevo: 15 clics seguidos), `cache.mjs`
+> (pedidos de imágenes por CDP), `despegar.mjs` (toque y movimiento reducido), `juego.mjs`, `giro3.mjs`, `bloqueo.mjs` y
+> `verificar.mjs` sobre el build de producción, más los tests de `heroTermo`.
+
+| ID | Criterio | Resultado |
+|---|---|---|
+| AC-D1 | *(RF-D1)* Todos los diseños de Argentina con fondo transparente, y ninguno con fondo blanco. | ✅ 58 de los 140 del catálogo. Test: cada archivo existe y es WebP con alfa. |
+| AC-D2 | *(RF-D2)* Al pegar, el lugar se recarga: al azar, sin repetir hasta agotar, nunca uno a la vista, con la animación de entrada. | ✅ Tras pegar la 1 (diseño 30), el lugar 1 muestra otro que entra con su animación. En 15 clics seguidos: 0 veces con un diseño repetido a la vista, y 14 pegadas con 14 diseños distintos. Test: `siguienteDiseno` nunca devuelve uno visible y recorre los 58 antes de repetir. |
+| AC-D3 | *(RF-D3)* Arranca con mate, Ruta 40, carpincho y Pumas. | ✅ Iniciales `30, 57, 19, 54` en cada carga. |
+| AC-D4 | *(RF-D4)* Tope de 12: al pegar la 13, la más vieja se va sola. | ✅ 14 pegadas → 12 en el termo. (15 clics: uno cayó en el popup del premio, que se abre después de la cuarta, y lo cerró.) |
+| AC-D5 | *(RF-D5)* Clic o toque en una pegada: se despega y deja de contar. | ✅ Clic: 12 → 11 (`muchas.mjs`) y 4 → 3 (`juego.mjs`), con la animación de salida. Toque (touch emulado, 375 px): 2 → 1. Movimiento reducido: 2 → 1 en 330 ms, y el tope de 12 también (`despegar.mjs`). |
+| AC-D6 | *(RF-D6)* El juego y el premio no cambian. | ✅ Con 4 pegadas cualesquiera (una ya recargada: el lugar 1 dos veces) abre el popup con `sticker_game`; `giro3.mjs` y `bloqueo.mjs` en verde, igual que en §9. |
+| AC-D7 | *(RF-D7)* Un diseño que sale del catálogo sale del juego. | ✅ Test: cada diseño de `disenosHero.js` tiene que estar en `data/argentina.json`; si se saca uno, el test falla hasta regenerar con `scripts/build-hero-argentina.py`. |
+| ANF-D1 | *(RNF-D1)* No se bajan los 58 de entrada. | ✅ Al cargar: 8 imágenes (las 4 a la vista + la próxima de cada lugar). Con 3 pegadas: 11 pedidos, 11 diseños distintos: cada uno baja una vez. *(En los arneses con `page.route` salen repetidos: Playwright apaga la caché HTTP al rutear. `cache.mjs`, sin ruteo, da uno por diseño.)* |
+| ANF-D2 | *(RNF-D2)* Cada calco ≤ 30 kB. | ✅ La más pesada, 28,1 kB; 871 kB entre las 58. El test falla si una pasa de 30 kB. |
+| ANF-D3 | Chunks. | ✅ Calcos 32,63 → 33,33 kB gzip (+0,7, con la lista de 58). Principal 99,09 → 99,21 (+0,12: `siguienteDiseno` y los iniciales); la lista no entra al principal. |
+| AN-D1 | `hero_sticker_stick` con `diseno`. | ✅ `argentina-16:11`, `argentina-49:12`, `argentina-23:12`, `argentina-32:12` (diseño:pegadas). |
+| REG-D1 | Lo de las ampliaciones A-C sigue igual. | ✅ `juego.mjs` completo en verde con la recarga (AC-A1 a AC-A12, ANF-A2 a ANF-A4); `verificar.mjs`: mismos ❌ de antes (320 px previo; `pointer-events: auto` en táctil, buscado desde A — ver AC-14; el override `?exp_hero_buscador` no aplica porque el test está cerrado). |
+
+---
+
 ## Definition of Done
 
 ### Código
 - [ ] Todos los criterios de §1, §2 y §3 en ✅ (ANF-6: con el OK de Mariano) — **todo ✅ salvo ANF-6**, que espera los dispositivos reales
 - [x] Todos los criterios de regresión (§4) en ✅
-- [x] `npm test` en verde (743)
+- [x] `npm test` en verde (743; 767 con las ampliaciones A-D)
 - [x] `framer-motion` importado en **un solo** archivo y fuera del chunk principal
 - [x] Sin refactors fuera de scope en el diff (lo encontrado va en *Hallazgos* de `tasks.md`)
 - [x] Los comentarios explican el **por qué**, con la densidad del repo

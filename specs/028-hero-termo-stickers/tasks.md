@@ -213,6 +213,17 @@ Ver [`specs/README.md`](../README.md).
 - [x] **C.5** `pegadas` en `hero_sticker_stick`; `docs/analytics.md`
 - [x] **C.6** Arneses: `giro3.mjs`, `bloqueo.mjs`, `juego.mjs` (con el giro detenido) y la regresión completa
 
+## Ampliación D — Muchas calcos de Argentina
+
+> Pedido de Mariano del 28/9: *"Dale, hacelo con recarga y tope de 12."* En el
+> mismo PR, para el deploy preview.
+
+- [x] **D.1** `scripts/build-hero-argentina.py` → 58 diseños recortados + `lib/disenosHero.js`
+- [x] **D.2** `siguienteDiseno`, `DISENOS_INICIALES`, `MAX_PEGADAS` + tests
+- [x] **D.3** `HeroCalcos`: recarga por lugar con precarga, pegadas en lista, tope de 12, clic despega
+- [x] **D.4** `diseno` en `hero_sticker_stick`; docs
+- [x] **D.5** Arneses de nuevo: `muchas.mjs` (nuevo), `juego.mjs`, `giro3.mjs`, `bloqueo.mjs`, `verificar.mjs`
+
 ---
 
 ## Hallazgos fuera de scope
@@ -255,4 +266,7 @@ Ver [`specs/README.md`](../README.md).
 | 28/9 | **La altura de la pegada se compensa por la perspectiva** (`perspectivaPegada`). | Sin eso, la calco pegada se veía hasta 8 px más arriba o más abajo de donde se soltó (medido en el arnés). Ahora: 0,3 px. |
 | 28/9 | **El vuelo pasa el ángulo (0°, el frente) en vez de medirlo.** | Con movimiento reducido el vuelo es un salto y Framer Motion dibuja la calco movida recién en el cuadro siguiente: se medía todavía en su lugar y se pegaba en el borde izquierdo. |
 | 28/9 | **"Jugando" reusa `data-popup-bloqueo`**, el mismo que el menú del celular. | Cero cambios en las reglas del popup (spec 026). |
+| 28/9 | **Los diseños del hero se recortan al dibujo** (y se regeneran con `scripts/build-hero-argentina.py`), en vez de usar las imágenes del catálogo tal cual. | Las del catálogo traen 25-40 % de margen transparente: pegadas se veían chicas, y el margen invisible se podía agarrar. Recortadas y a 320 px: 58 diseños, 871 kB en total, la más pesada 28 kB. |
+| 28/9 | **La lista de 58 diseños (`disenosHero.js`) la importa solo `HeroCalcos`**, no `heroTermo.js`. | Primera versión: `heroTermo.js` la importaba y terminaba en el chunk principal (lo marcó la salida del build). Así, el principal crece 0,12 kB y la lista viaja en el chunk de las calcos. |
+| 28/9 | **RF-A7 reemplazado por RF-D5**: clic en una pegada la despega (se va con una animación); ya no se reubica arrastrándola ni vuelve a su lugar. | Con la recarga, su lugar ya tiene otra calco. |
 | 27/9 | **AN-2 estaba mal planteado**: `experiment_view` de `hero_buscador` sigue llegando (todo `debajo`). | `Home` sigue leyendo el experimento a propósito (RN-5) y `useExperiment` reporta aunque esté apagado. Documentado en `CRO-EXPERIMENTS.md`. |

@@ -555,6 +555,11 @@ a { color: inherit; text-decoration: none; }
   display: block;
   width: 100%;
   height: auto;
+  /* Desde la ampliación D cada lugar muestra diseños de cualquier proporción
+     (una bandera apaisada, un pasaje de colectivo vertical): todos entran en
+     la misma caja cuadrada, sin deformarse. */
+  aspect-ratio: 1;
+  object-fit: contain;
   filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.35));
   user-select: none;
 }
@@ -616,6 +621,8 @@ a { color: inherit; text-decoration: none; }
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
   max-width: none;
   filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.4));
 }

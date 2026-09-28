@@ -154,8 +154,9 @@ export function ajustarAlCuerpo(fx, fy) {
 export const CURVA_SALIDA = [0.22, 1, 0.36, 1];
 
 /**
- * Cada calco del catálogo, copiada a `/images/hero/` (si mañana se renombra el
- * diseño en el catálogo, el hero no se queda sin calco).
+ * Los CUATRO LUGARES de calcos sueltas y cómo se mueve cada uno. Qué diseño
+ * muestra cada lugar lo decide el juego (ampliación D): arrancan con
+ * `DISENOS_INICIALES` y se recargan de `DISENOS_HERO` cada vez que se pega uno.
  *
  * `capa`: 'detras' pasa por detrás del termo; 'delante', por delante.
  * `entrada`: estados de Framer Motion (`desde` → `hasta`) y sus tiempos.
@@ -168,9 +169,6 @@ export const CURVA_SALIDA = [0.22, 1, 0.36, 1];
 export const CALCOS = [
   {
     slot: 1,
-    src: '/images/hero/calco-1.webp', // mate
-    ancho: 320,
-    alto: 320,
     capa: 'delante',
     entrada: {
       desde: { opacity: 0, scale: 0.8 },
@@ -183,9 +181,6 @@ export const CALCOS = [
   },
   {
     slot: 2,
-    src: '/images/hero/calco-2.webp', // Ruta 40
-    ancho: 320,
-    alto: 320,
     capa: 'detras',
     entrada: {
       desde: { opacity: 0, scale: 0.8, rotate: 0 },
@@ -199,9 +194,6 @@ export const CALCOS = [
   },
   {
     slot: 3,
-    src: '/images/hero/calco-3.webp', // carpincho
-    ancho: 320,
-    alto: 456,
     capa: 'delante',
     entrada: {
       // 250 px: en un celular arranca fuera de la pantalla; en desktop entra
@@ -217,9 +209,6 @@ export const CALCOS = [
   },
   {
     slot: 4,
-    src: '/images/hero/calco-4.webp', // Pumas
-    ancho: 320,
-    alto: 320,
     capa: 'delante',
     entrada: {
       desde: { opacity: 0, scale: 0.8, rotate: -10 },
@@ -231,6 +220,50 @@ export const CALCOS = [
     parallaxPx: 25
   }
 ];
+
+// ─── Muchas calcos de Argentina (ampliación D) ───────────────────────────────
+
+/**
+ * Con qué diseño arranca cada lugar (número de producto de Argentina): mate,
+ * Ruta 40, carpincho y Pumas, los de la primera versión del hero.
+ */
+export const DISENOS_INICIALES = { 1: 30, 2: 57, 3: 19, 4: 54 };
+
+/** Cuántas calcos entran en el termo. Con una más, la más vieja se despega. */
+export const MAX_PEGADAS = 12;
+
+/** La imagen del hero de un diseño (recortada por scripts/build-hero-argentina.py). */
+export const srcDiseno = (n) => `/images/hero/argentina/${n}.webp`;
+/** El id con que el diseño viaja en analytics: el del producto. */
+export const idDiseno = (n) => `argentina-${n}`;
+/**
+ * Medidas del archivo, para `width`/`height`. La lista (`DISENOS_HERO`, de
+ * lib/disenosHero.js) la pasa quien llama: este módulo también lo importa el
+ * hero, que va en el chunk principal, y la lista de 58 tiene que quedarse en
+ * el chunk del juego.
+ */
+export const disenoPorNumero = (n, disenos) => disenos.find((d) => d.n === n);
+
+/**
+ * El próximo diseño para un lugar. Al azar, sin repetir hasta que salieron
+ * todos ("la bolsa"), y nunca uno que esté a la vista (en otro lugar, esperando
+ * en otro lugar o pegado en el termo): dos iguales a la vez parecería un error.
+ * Pura, con el azar inyectado, para testearla.
+ *
+ * @param {{ visibles: Set<number>, usados: Set<number>, disenos: {n: number}[], azar?: () => number }} args
+ * @returns {{ n: number, usados: Set<number> }}
+ */
+export function siguienteDiseno({ visibles, usados, disenos, azar = Math.random }) {
+  let bolsa = usados;
+  let libres = disenos.filter((d) => !visibles.has(d.n) && !bolsa.has(d.n));
+  if (!libres.length) {
+    // Salieron todos: otra vuelta, menos los que están a la vista.
+    bolsa = new Set();
+    libres = disenos.filter((d) => !visibles.has(d.n));
+  }
+  const { n } = libres[Math.floor(azar() * libres.length)];
+  return { n, usados: new Set([...bolsa, n]) };
+}
 
 /** Cuándo termina de entrar la última calco, en ms desde que arranca la entrada. */
 export function duracionEntradaMs(calcos = CALCOS) {

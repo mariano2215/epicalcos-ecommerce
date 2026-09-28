@@ -178,7 +178,7 @@ Sin PII ni valor: solo el tipo.
 
 | Evento | Cuándo | Parámetros |
 |---|---|---|
-| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Moverla dentro del termo **no** lo dispara de nuevo; despegarla y volver a pegarla, sí. | `slot` (1-4: mate, Ruta 40, carpincho, Pumas) · `metodo`: `arrastre` · `clic` · `toque` · `pegadas`: cuántas hay en el termo después de esta (1-4) |
+| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Una pegada no se vuelve a mover: un clic la despega y no manda nada. | `slot` (1-4: el lugar de donde salió; el diseño de cada lugar cambia con la recarga) · `metodo`: `arrastre` · `clic` · `toque` · `pegadas`: cuántas hay en el termo después de esta (1-12) · `diseno`: `argentina-<n>` (ampliación D) |
 
 Solo GA4 (no va al Píxel: no es un paso del embudo).
 
@@ -191,12 +191,18 @@ Solo GA4 (no va al Píxel: no es un paso del embudo).
   personalizados, el juego suma; si van menos, distrae.
 - `metodo` separa mouse (`arrastre`/`clic`) de celular (`toque`), y dentro del
   mouse cuánta gente descubre el arrastre y cuánta hace solo clic.
+- `diseno` dice **qué diseños** pega la gente. Cada lugar se recarga al azar
+  entre los 58 de Argentina con fondo transparente, pero las 4 del arranque
+  (mate, Ruta 40, carpincho, Pumas) son siempre las mismas: van a salir más
+  por estar primeras, no por gustar más. Para comparar gusto, sacarlas del
+  ranking (`argentina-30`, `-57`, `-19`, `-54`).
 
-Sin PII: solo el número de calco y cómo se pegó.
+Sin PII: solo el lugar, el diseño y cómo se pegó.
 
 **El premio (ampliación C)**: pegar las 4 abre el popup de bienvenida con
 `popup_trigger: 'sticker_game'` (una vez por carga). El embudo del juego se lee:
-`hero_sticker_stick` con `pegadas: 1` (empezó) → `pegadas: 4` (completó) →
+`hero_sticker_stick` con `pegadas: 1` (empezó) → `pegadas: 4` (completó; se
+puede seguir hasta 12, y al despegar el número baja) →
 `popup_view` con `sticker_game` → `generate_lead` con `popup_trigger:
 'sticker_game'` → `purchase`. Mientras alguien juega, el popup no se abre solo:
 por eso, desde el deploy de la spec 028, los `popup_view` por `time`/`scroll`

@@ -791,3 +791,31 @@ El resto (campo, botón, éxito, cupón) es el mismo.
 ⚠️ `WelcomePopup` y `popupReglas` son de la spec 026: solo se **suma** un
 disparo y una función; ninguna regla existente cambia.
 
+---
+
+## 15. Ampliación D — Muchas calcos de Argentina
+
+- **`scripts/build-hero-argentina.py`**: de `stickers/argentina/<n>.webp`, los
+  que están en `data/argentina.json` y tienen alfa real; recorta al dibujo (los
+  originales traen 25-40 % de margen transparente: pegadas se veían chicas y con
+  un borde invisible que se podía agarrar), 320 px de lado mayor, WebP. Salida:
+  `images/hero/argentina/<n>.webp` y **`lib/disenosHero.js`** (generado: `n`,
+  `ancho`, `alto`). Hoy: 58 diseños, 871 kB en total, ≤ 29 kB cada uno.
+- **`lib/heroTermo.js`**: `DISENOS_INICIALES` (30, 57, 19, 54 = mate, Ruta 40,
+  carpincho, Pumas), `MAX_PEGADAS = 12`, y **`siguienteDiseno`** (pura, con el
+  azar inyectado para testearla): uno que no esté a la vista, sin repetir hasta
+  agotar la bolsa. Las `calco-N.webp` de la ampliación A se borran.
+- **`HeroCalcos`**:
+  - `lugares`: el diseño que muestra cada lugar y el próximo (precargado con
+    `new Image()`, RNF-D1).
+  - `pegadas` pasa de "una por lugar" a una **lista** (`id`, `diseno`, …). Al
+    pegar: se agrega; si pasa de 12, la más vieja se marca `saliendo` (se va
+    con una animación y se borra al terminar).
+  - La calco suelta vuelve a su lugar de una (sin verse: la imagen cambia) y
+    la nueva entra con la animación de entrada del lugar (el `key` de la `img`
+    es el diseño).
+  - Se van `controles`, `tomar` y `devolver` (RF-A7 reemplazado por RF-D5).
+- Tests: los 58 archivos existen, tienen alfa y están en el catálogo; los
+  iniciales están en la lista; `siguienteDiseno` nunca devuelve uno visible y
+  recorre todos antes de repetir.
+
