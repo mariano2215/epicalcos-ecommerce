@@ -68,6 +68,9 @@ export function PromoCountdown({ endMs, label = 'Termina en' }) {
  * Hasta el 28/9/2026 tenía calcos flotando de fondo (`StickerField`); se
  * sacaron a pedido de Mariano: "queda feo".
  *
+ * `subtitle` es opcional: el 3x2 va sin (el título ya lo dice todo). Sin él no
+ * se dibuja la línea, así el banner no guarda el alto de un renglón vacío.
+ *
  * ⚠️ `endMs` es OPCIONAL desde la spec 017. Las tres promos vivas hoy no vencen,
  * así que no hay nada que contar y el contador no se renderiza. Sin esta guarda
  * `useCountdown(NaN)` deja `remaining` en NaN y el banner muestra "NaN:NaN".
@@ -85,7 +88,7 @@ export default function PromoBanner({ title, subtitle, endMs, to, ariaLabel }) {
           <div className="min-w-0">
             <Link to={to} className="group inline-flex flex-col items-center sm:items-start">
               <span className="promo-banner__title">{title}</span>
-              <span className="promo-banner__sub">{subtitle}</span>
+              {subtitle && <span className="promo-banner__sub">{subtitle}</span>}
             </Link>
           </div>
 

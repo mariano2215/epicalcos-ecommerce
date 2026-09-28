@@ -90,10 +90,12 @@ export default function Header() {
            catálogo. El 2x1 se anuncia en sus cuatro categorías y el mayorista en
            `OfertaPrincipal` del Home, así cada oferta habla donde significa algo
            en vez de tres carteles peleando arriba (spec 014). Cambiar cuál gana
-           es reordenar este if/else. */
+           es reordenar este if/else.
+           Sin subtítulo desde el 28/9/2026 ("Cada 3 calcos, la más barata
+           gratis"): "3×2" ya dice llevás 3 y pagás 2 (Mariano). La mecánica
+           exacta sigue explicada en el carrito y en el checkout. */
         <PromoBanner
           title="3×2 EN TODAS LAS CALCOS"
-          subtitle="Cada 3 calcos, la más barata gratis"
           to="/categorias"
           ariaLabel="Promoción 3x2 en todas las calcos"
         />
