@@ -111,11 +111,14 @@ dentro del hero se estaba midiendo en un hero que ya no existe, así que
 `hero_buscador` también. Los dos quedan en `active: false` (todos a control).
 
 **Qué hacer**:
-- **Leer los dos tests con la ventana del 18/9 al 2/10/2026** (dos semanas
-  completas desde el corte de la spec 024). Es la última lectura: no hay más
-  datos después.
-- El deploy de la spec 028 se hace **después** de esa lectura (acordado:
-  desde el sábado 3/10/2026). Fecha real del deploy: **completar al publicar**.
+- **Leer los dos tests con la ventana del 18/9 al 27/9/2026**. Es la última
+  lectura: no hay más datos después.
+- **Fecha real del deploy: lunes 28/9/2026, ~15:40 (hora de Argentina).** El
+  plan era publicar desde el 3/10, después de dos semanas completas de datos;
+  Mariano decidió adelantarlo. Consecuencias:
+  - la ventana queda en **10 días** (18/9 al 27/9), no 14: con menos datos, una
+    diferencia chica entre variantes no alcanza para declarar ganador;
+  - el **28/9 no se lee**: ese día mezcla el hero viejo y el nuevo.
 - Desde el deploy, `view_item_list` y `custom_sticker_click` (`origen: 'hero'`)
   del Home arrancan una **serie nueva** — el hero es otro. La comparación del
   hero nuevo es antes/después contra las dos semanas previas, no un A/B.

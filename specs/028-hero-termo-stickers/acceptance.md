@@ -5,7 +5,7 @@
 | **Spec** | `028-hero-termo-stickers` |
 | **Requirements** | [`requirements.md`](requirements.md) |
 | **Validado el** | 27/09/2026 (Chrome headless, build de producción) |
-| **Resultado** | ⬜ pendiente — todo verificado en Chrome; faltan ANF-6 (Safari/Firefox/dispositivos reales) y AN-3 (fecha del deploy) |
+| **Resultado** | ⬜ publicada el 28/9/2026 — todo verificado en Chrome; falta ANF-6 (Safari/Firefox/dispositivos reales) |
 
 > **Este documento determina cuándo la feature está terminada.**
 
@@ -100,7 +100,7 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 |---|---|---|
 | AN-1 | Sin eventos nuevos; `custom_sticker_click` intacto (REG-4) | ✅ Sin eventos nuevos; `custom_sticker_click` intacto. |
 | AN-2 | El Home ya no manda `experiment_view` de `hero_titular` ni `hero_buscador` | ❌ **como estaba escrito**: `hero_titular` ya no se envía, pero `hero_buscador` **sí** (todo `debajo`), porque `Home` lo sigue leyendo a propósito (RN-5) y `useExperiment` reporta aunque esté apagado. El criterio estaba mal planteado; queda documentado en `CRO-EXPERIMENTS.md` para no leerlo. |
-| AN-3 | `docs/CRO-EXPERIMENTS.md` tiene el corte con la fecha real del deploy | ⬜ La sección está en `CRO-EXPERIMENTS.md`; **la fecha real del deploy se completa al publicar** (desde el 3/10). |
+| AN-3 | `docs/CRO-EXPERIMENTS.md` tiene el corte con la fecha real del deploy | ✅ Publicada el 28/9/2026 (adelantada por Mariano; el plan era desde el 3/10): fecha y ventana de lectura (18/9 al 27/9) en `CRO-EXPERIMENTS.md`. |
 
 ---
 
@@ -230,9 +230,9 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 ### Resumen
 | | Cantidad |
 |---|---|
-| ✅ Cumple | 42 |
+| ✅ Cumple | 43 |
 | ❌ No cumple | 1 (AN-2, criterio mal planteado) |
-| ⬜ Pendiente | 2 (ANF-6 dispositivos reales, AN-3 fecha del deploy) |
+| ⬜ Pendiente | 1 (ANF-6 dispositivos reales) |
 | ⏭️ No aplica | 1 (§6 paridad de precios) |
 
 ### Criterios no cumplidos
