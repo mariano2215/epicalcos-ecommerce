@@ -119,7 +119,7 @@ popup_cta_click → add_to_cart → begin_checkout → purchase
 
 | Evento | Cuándo | Parámetros |
 |---|---|---|
-| `popup_view` | se abre el popup (solo o a mano) | `popup_variant`, `popup_trigger` (`time` · `scroll` · `product_views` · `search` · `category` · `exit_intent` · `manual`), `page_path`, `device_type` (`mobile` · `desktop`), `new_vs_returning` |
+| `popup_view` | se abre el popup (solo o a mano) | `popup_variant`, `popup_trigger` (`time` · `scroll` · `product_views` · `search` · `category` · `exit_intent` · `manual` · `sticker_game`, el premio del juego del hero, spec 028), `page_path`, `device_type` (`mobile` · `desktop`), `new_vs_returning` |
 | `popup_close` | se cierra sin navegar | `popup_variant`, `popup_step` (`capture` · `success`), `close_method` (`x` · `esc` · `overlay` · `navigation`) |
 | `popup_email_submit` | se envía un mail con formato válido (antes de la respuesta) | `popup_variant`, `discount_type` (`percentage`), `page_path`, `device_type` |
 | `generate_lead` | el servidor registró el mail: **es la conversión del popup** | `lead_source: 'welcome_popup'` + `popup_variant`, `popup_trigger`, `device_type` |
@@ -178,7 +178,7 @@ Sin PII ni valor: solo el tipo.
 
 | Evento | Cuándo | Parámetros |
 |---|---|---|
-| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Moverla dentro del termo **no** lo dispara de nuevo; despegarla y volver a pegarla, sí. | `slot` (1-4: mate, Ruta 40, carpincho, Pumas) · `metodo`: `arrastre` · `clic` · `toque` |
+| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Moverla dentro del termo **no** lo dispara de nuevo; despegarla y volver a pegarla, sí. | `slot` (1-4: mate, Ruta 40, carpincho, Pumas) · `metodo`: `arrastre` · `clic` · `toque` · `pegadas`: cuántas hay en el termo después de esta (1-4) |
 
 Solo GA4 (no va al Píxel: no es un paso del embudo).
 
@@ -193,6 +193,14 @@ Solo GA4 (no va al Píxel: no es un paso del embudo).
   mouse cuánta gente descubre el arrastre y cuánta hace solo clic.
 
 Sin PII: solo el número de calco y cómo se pegó.
+
+**El premio (ampliación C)**: pegar las 4 abre el popup de bienvenida con
+`popup_trigger: 'sticker_game'` (una vez por carga). El embudo del juego se lee:
+`hero_sticker_stick` con `pegadas: 1` (empezó) → `pegadas: 4` (completó) →
+`popup_view` con `sticker_game` → `generate_lead` con `popup_trigger:
+'sticker_game'` → `purchase`. Mientras alguien juega, el popup no se abre solo:
+por eso, desde el deploy de la spec 028, los `popup_view` por `time`/`scroll`
+del Home pueden bajar sin que el popup ande peor.
 
 ---
 

@@ -36,37 +36,98 @@ export const COPY_HERO = {
 /**
  * El termo va LISO a propósito: es el que "está pidiendo calcos", y las cuatro
  * de alrededor son las que le faltan. Foto provista por Mariano, recortada y sin
- * el fondo blanco (la manija queda del lado derecho). Las medidas son las del
- * archivo, para que el navegador reserve la proporción antes de bajarlo; el CSS
- * también las usa para ubicar las calcos contra el borde del termo.
+ * el fondo blanco. Desde la ampliación B, además, SIN MANIJA NI LOGO (editada:
+ * la silueta derecha es el espejo de la izquierda y el cuerpo, una columna de
+ * color pareja): un cilindro liso girando se ve igual en cualquier ángulo, así
+ * que el giro se hace girando solo las calcos pegadas (ver HeroCalcos.jsx). Una
+ * manija o un logo quietos delatarían el truco.
+ *
+ * Las medidas son las del archivo, para que el navegador reserve la proporción
+ * antes de bajarlo; el CSS también las usa para el radio del giro.
  */
 export const TERMO = {
   src: '/images/hero/termo.webp',
-  ancho: 172,
-  alto: 516,
+  ancho: 142,
+  alto: 512,
   alt: 'Termo liso, listo para personalizar con calcos',
-  // Dónde se puede pegar una calco (ampliación A), en fracciones de la caja
-  // del termo. Medido sobre ESTE archivo: arriba del 30 % está la tapa de acero
-  // y el aro negro, abajo del 88 % la base, y desde el 80 % del ancho la manija.
+  // Dónde se puede pegar una calco, en fracciones de la caja del termo. Medido
+  // sobre ESTE archivo: arriba del 30 % está la tapa de acero y el aro negro,
+  // abajo del 89 % la base.
   // ⚠️ Si se cambia la foto, se vuelve a medir: con otro termo estos números
   // pegan calcos en la tapa.
-  cuerpo: { x0: 0.05, x1: 0.8, y0: 0.3, y1: 0.88 }
+  cuerpo: { x0: 0.04, x1: 0.96, y0: 0.3, y1: 0.89 }
 };
 
 /** Ancho de una calco pegada, como fracción del ancho del termo. */
-export const ANCHO_PEGADA = 0.42;
+export const ANCHO_PEGADA = 0.46;
 
 /**
  * Dónde cae cada calco cuando se la pega con un clic o un toque, en fracciones
- * de la caja del termo, y con qué inclinación. Una por calco y repartidas: con
- * clic en las cuatro no quedan una encima de otra (lo verifica el test).
+ * de la caja del termo, y con qué inclinación. Todas al FRENTE (fx 0,5): el
+ * termo gira, así que cada una queda en otro ángulo según cuándo se pegó; lo que
+ * las separa es la altura (lo verifica el test).
  */
 export const DESTINOS_PEGADO = {
-  1: { fx: 0.36, fy: 0.38, rot: -8 },
-  3: { fx: 0.5, fy: 0.55, rot: 6 },
-  2: { fx: 0.33, fy: 0.7, rot: 8 },
-  4: { fx: 0.52, fy: 0.82, rot: -5 }
+  1: { fx: 0.5, fy: 0.38, rot: -8 },
+  3: { fx: 0.5, fy: 0.56, rot: 6 },
+  2: { fx: 0.5, fy: 0.7, rot: 8 },
+  4: { fx: 0.5, fy: 0.83, rot: -5 }
 };
+
+/**
+ * El giro (ampliación B). `PERSPECTIVA_PX` es la `perspective` de
+ * `.hero-termo__pegadas` en index.css: si se cambia una, se cambia la otra.
+ * `GIRO_MAX_GRADOS`: una calco soltada casi en el borde se pega a 75° y no a
+ * 90°, donde quedaría de canto y no se vería.
+ */
+export const PERSPECTIVA_PX = 700;
+export const GIRO_MAX_GRADOS = 75;
+
+/**
+ * ¿En qué ángulo del cilindro cae un punto de la pantalla? `x` y la caja del
+ * termo en píxeles; 0° es el frente, positivo hacia la derecha.
+ *
+ * Con perspectiva, un punto del cilindro a `a` grados se ve en
+ *   x = radio · sen(a) · p / (p − radio · cos(a))
+ * (el frente está más cerca y se ve más ancho). Esa cuenta no se invierte con
+ * un `asin`: se busca el ángulo por bisección. Entre ±75° es creciente (lo es
+ * mientras cos(a) > radio / p, o sea hasta ~85°), así que la búsqueda es segura.
+ * La primera versión usaba un factor fijo de perspectiva y en los bordes pegaba
+ * las calcos 10° más adentro de donde se las soltaba.
+ */
+export function anguloEnTermo(x, { left, width }) {
+  const radio = width / 2;
+  const p = PERSPECTIVA_PX;
+  const proyeccion = (grados) => {
+    const a = (grados * Math.PI) / 180;
+    return (radio * Math.sin(a) * p) / (p - radio * Math.cos(a));
+  };
+  const objetivo = x - (left + radio);
+  let bajo = -GIRO_MAX_GRADOS;
+  let alto = GIRO_MAX_GRADOS;
+  if (objetivo <= proyeccion(bajo)) return bajo;
+  if (objetivo >= proyeccion(alto)) return alto;
+  for (let i = 0; i < 30; i++) {
+    const medio = (bajo + alto) / 2;
+    if (proyeccion(medio) < objetivo) bajo = medio;
+    else alto = medio;
+  }
+  return (bajo + alto) / 2;
+}
+
+/**
+ * Lo que la perspectiva le hace a una calco pegada a `grados` del frente: se ve
+ * `escala` veces más grande (está más cerca de quien mira) y, como la
+ * perspectiva agranda desde el centro de la caja, también se corre en vertical
+ * alejándose del centro. `alturaCss` es el `top` (fracción de la caja) que hay
+ * que darle para que se VEA a la altura `fyPantalla`: sin esto, al pegarla
+ * saltaba hasta 8 px hacia arriba o hacia abajo.
+ */
+export function perspectivaPegada(fyPantalla, grados, anchoCaja) {
+  const radio = anchoCaja / 2;
+  const escala = PERSPECTIVA_PX / (PERSPECTIVA_PX - radio * Math.cos((grados * Math.PI) / 180));
+  return { escala, alturaCss: 0.5 + (fyPantalla - 0.5) / escala };
+}
 
 /** ¿El punto (en fracciones de la caja del termo) cae sobre el cuerpo? */
 export function dentroDelCuerpo(fx, fy) {

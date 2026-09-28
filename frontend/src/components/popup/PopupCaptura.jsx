@@ -16,7 +16,11 @@ const MENSAJES = {
   servidor: 'No pudimos activar el descuento. Intentá nuevamente.'
 };
 
-export default function PopupCaptura({ pct, email, error, enviando, onEmail, onSubmit, tituloRef }) {
+/**
+ * @param {{ premio?: boolean }} props `premio` = lo abrió el juego del hero
+ *   (spec 028, ampliación C): cambia solo el título, lo demás es lo de siempre.
+ */
+export default function PopupCaptura({ pct, premio = false, email, error, enviando, onEmail, onSubmit, tituloRef }) {
   return (
     <>
       <h2
@@ -29,8 +33,17 @@ export default function PopupCaptura({ pct, email, error, enviando, onEmail, onS
             usa todo el ancho: con los márgenes laterales, "Tenés 10% OFF" se
             partía en dos renglones a 375 px y el descuento dejaba de leerse de
             un vistazo. */}
-        <span className="block text-3xl sm:text-5xl font-black">Tenés {pct}% OFF</span>
-        <span className="block text-lg sm:text-2xl mt-1">en tu primer pedido 🎁</span>
+        {premio ? (
+          <>
+            <span className="block text-3xl sm:text-5xl font-black">¡Ganaste {pct}% OFF!</span>
+            <span className="block text-lg sm:text-2xl mt-1">por vestir tu termo 🎉</span>
+          </>
+        ) : (
+          <>
+            <span className="block text-3xl sm:text-5xl font-black">Tenés {pct}% OFF</span>
+            <span className="block text-lg sm:text-2xl mt-1">en tu primer pedido 🎁</span>
+          </>
+        )}
       </h2>
       <p id="popup-bajada" className="text-white/70 text-sm mt-3">
         Elegí tus calcos favoritas y usá tu descuento en tu primera compra.

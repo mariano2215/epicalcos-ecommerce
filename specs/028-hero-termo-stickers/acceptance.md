@@ -137,6 +137,40 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 
 ---
 
+## 8. Ampliación B — El termo gira
+
+> Validado el 28/09/2026 con `giro3.mjs` y capturas cuadro a cuadro.
+
+| ID | Criterio | Resultado |
+|---|---|---|
+| AC-B1 | *(RF-B1)* Termo sin manija ni logo. | ✅ Captura: cuerpo liso y simétrico, 142×512, 4,9 kB. |
+| AC-B2 | *(RF-B2, RF-B3)* Gira (una vuelta cada 12 s); las pegadas se corren, se angostan en el borde y pasan por detrás. | ✅ Tira de 8 cuadros cada 0,65 s: las pegadas salen del frente, se angostan en el borde derecho y desaparecen. |
+| AC-B3 | *(RF-B4)* Soltada sobre el termo, queda donde se soltó en ese momento del giro. | ✅ Centro soltado (742,5; 702,1) → pegada en (742,2; 702,1). |
+| AC-B4 | *(RF-B5)* Clic/toque: vuela al frente, a su altura. | ✅ Con el giro detenido: las cuatro en fx 0,5 y su fy (± 2 %), solape máximo 19 %. |
+| AC-B5 | *(RF-B6)* Arrastrando, el giro se pausa; al soltar sigue. | ✅ `currentTime` 2350 → 2350 durante 0,7 s arrastrando; 3400 → 3917 después. |
+| AC-B6 | *(RF-B7)* Fuera de pantalla se pausa. | ✅ `.hero-termo__giro` sumado a la regla de `data-pausado` (misma que el fondo, verificada en §1 AC-17). |
+| AC-B7 | *(RF-B8)* Movimiento reducido: no gira. | ✅ Sin animación en el giro; el juego igual (clic → pegada al frente a los 120 ms). |
+| AC-B8 | *(RF-B9)* Del lado de atrás no se puede tocar. | ✅ A 127°, `elementFromPoint` en su centro devuelve el termo, no la calco. |
+| ANF-B1 | *(RNF-B1, RNF-B2)* Sin librerías; chunk de calcos ≤ +2 kB. | ✅ CSS 3D + animación CSS. Chunk de calcos 31,9 → 32,4 kB gzip (+0,5 kB, con el juego incluido). |
+
+---
+
+## 9. Ampliación C — "Pegá las 4 calcos y ganate 10% OFF"
+
+> Validado el 28/09/2026 con `giro.mjs`, `giro3.mjs` y `bloqueo.mjs`.
+
+| ID | Criterio | Resultado |
+|---|---|---|
+| AC-C1 | *(RF-C1)* Con premio: "🎁 Pegá las 4 calcos y ganate 10% OFF" + contador. | ✅ 0/4 → 1/4 → 2/4 → 3/4 al pegar (desktop). |
+| AC-C2 | *(RF-C2)* Con la cuarta: "¡Listo!" y el popup con "¡Ganaste 10% OFF!". | ✅ Desktop y celular (4 toques): `popup_view` con `popup_trigger: 'sticker_game'` y el título del premio. |
+| AC-C3 | *(RF-C3)* Jugando, el popup no se abre solo; al dejar de jugar vuelve. | ✅ Sin jugar abre solo a los 13 s (`time`). Jugando hasta los 33 s: nada. Después abrió a los 55 s (20 s + la gracia de 3 s). |
+| AC-C4 | *(RF-C4, RF-C6)* Una vez por carga. | ✅ `premiado` en `juegoTermo` (test: `ganaAhora` con `premiado: true` no gana). |
+| AC-C5 | *(RF-C5)* Sin premio (cupón activo): pista simple, sin popup. | ✅ Pista "Arrastrá una calco al termo"; con las 4 pegadas, 0 `popup_view`. |
+| AN-C1 | `hero_sticker_stick` con `pegadas`. | ✅ `1:clic:1 … 4:clic:4` y `1:toque:1 … 4:toque:4`. |
+| REG-C1 | El popup sigue igual para quien no juega; nada de precios. | ✅ Control de `bloqueo.mjs`; `config/pricing.js` sin cambios (el premio es `EPICA10`). |
+
+---
+
 ## Definition of Done
 
 ### Código

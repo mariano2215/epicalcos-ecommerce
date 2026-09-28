@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   LazyMotion,
   MotionConfig,
@@ -15,10 +16,16 @@ import {
   ANCHO_PEGADA,
   DESTINOS_PEGADO,
   dentroDelCuerpo,
-  ajustarAlCuerpo
+  ajustarAlCuerpo,
+  anguloEnTermo,
+  perspectivaPegada
 } from '../../lib/heroTermo.js';
 import { useReducedMotion } from '../../lib/motion.js';
 import { trackHeroStickerStick } from '../../lib/analytics.js';
+import { POPUP_JUEGO } from '../../config/popup.js';
+import { porcentajeOferta } from '../../lib/popupReglas.js';
+import { usePopupVersion } from '../../lib/popupEstado.js';
+import { registrarPegadas, hayPremio, yaPremiado } from '../../lib/juegoTermo.js';
 
 /**
  * Las cuatro calcos del hero del termo (spec 028). Es el ÚNICO archivo del
@@ -60,6 +67,18 @@ import { trackHeroStickerStick } from '../../lib/analytics.js';
  * doblada sobre un cilindro. La suelta no se desmonta: queda oculta en su
  * lugar, y despegar es mostrarla de nuevo y moverla. Nada se guarda: recargar
  * o volver al Home las despega a todas (Q5).
+ *
+ * EL GIRO (ampliación B): la foto del termo NO gira. Es un cilindro liso (sin
+ * manija ni logo), y un cilindro liso se ve igual en cualquier ángulo: lo que
+ * gira es `.hero-termo__giro`, una capa 3D con las pegadas puestas alrededor del
+ * eje (`rotateY(φ) translateZ(radio)`). La anima el CSS; acá solo se lee en qué
+ * ángulo va (θ) cuando hace falta pegar una: queda en φ = α − θ, donde α es
+ * dónde se la ve en la pantalla.
+ *
+ * EL JUEGO (ampliación C): "Pegá las 4 calcos y ganate 10% OFF". El progreso va
+ * a lib/juegoTermo.js, que le avisa al popup de bienvenida cuando alguien gana.
+ * Mientras alguien juega, la sección lleva `data-popup-bloqueo`: el popup ya
+ * sabía no abrirse encima de algo así (lo usa el menú del celular).
  *
  * @param {{ seccionRef: import('react').RefObject<HTMLElement>, entrada: boolean, inicioEntrada: number }} props
  *        `seccionRef` = la sección del hero: el parallax escucha el cursor ahí.
@@ -147,11 +166,12 @@ function alLlegar(mx, my, listo) {
  * mueve el navegador scrollea y manda `pointercancel`: no cuenta como toque y
  * la página baja normal (RF-A10).
  */
-function usePuntero({ alIniciar, alMover, alSoltar, alClic }) {
+function usePuntero({ alIniciar, alMover, alSoltar, alClic, alTocar }) {
   const toque = useRef(null);
 
   const onPointerDown = (e) => {
     if (e.button !== 0) return;
+    alTocar?.();
     if (e.pointerType !== 'mouse') {
       toque.current = { x: e.clientX, y: e.clientY };
       return;
@@ -211,11 +231,24 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
   // arrastre o la mande de vuelta a su lugar.
   const controles = useRef({});
 
+  const giroRef = useRef(null);
+
+  // En qué ángulo va el giro, leído de la animación CSS (sin JS por cuadro).
+  // Sin animación (movimiento reducido) o sin soporte, el termo está en 0°.
+  const anguloGiro = () => {
+    const anim = giroRef.current?.getAnimations?.()[0];
+    const t = Number(anim?.currentTime);
+    const dur = Number(anim?.effect?.getTiming?.().duration);
+    if (!Number.isFinite(t) || !(dur > 0)) return 0;
+    return ((t % dur) / dur) * 360;
+  };
+
   const pegar = (slot, datos, metodo) => {
     vecesPegada.current += 1;
+    const total = Object.keys(pegadas).filter((k) => Number(k) !== slot).length + 1;
     setPegadas((p) => ({ ...p, [slot]: { ...datos, vez: vecesPegada.current } }));
     // Solo cuando pasa de suelta a pegada. Moverla dentro del termo no cuenta.
-    if (metodo) trackHeroStickerStick({ slot, metodo });
+    if (metodo) trackHeroStickerStick({ slot, metodo, pegadas: total });
   };
   const despegar = (slot) => {
     setPegadas((p) => {
@@ -224,21 +257,71 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
     });
   };
 
-  // La pista (Hero.jsx) se ve solo si el juego cargó y todavía no se pegó
-  // nada. Son atributos y no clases, por lo mismo que `data-pausado`: React no
-  // los maneja y no los pisa en un re-render.
+  // ── El juego (ampliación C) ────────────────────────────────────────────────
+  usePopupVersion(); // si deja el mail en el popup, la pista deja de prometer
+  const premio = hayPremio();
+  const pct = porcentajeOferta();
+  const cantidad = Object.keys(pegadas).length;
+  const [gano, setGano] = useState(() => yaPremiado());
+  useEffect(() => {
+    if (registrarPegadas(cantidad)) setGano(true);
+  }, [cantidad]);
+
+  // "Está jugando": con cada toque, la sección lleva `data-popup-bloqueo` por
+  // `jugandoMs`. El popup no se abre solo mientras exista (usePopupDisparo).
+  const bloqueo = useRef(null);
+  const tocar = () => {
+    const el = seccionRef.current;
+    if (!el) return;
+    el.dataset.popupBloqueo = '';
+    clearTimeout(bloqueo.current);
+    bloqueo.current = setTimeout(() => {
+      delete el.dataset.popupBloqueo;
+    }, POPUP_JUEGO.jugandoMs);
+  };
+  // Mientras se arrastra, el termo deja de girar: se puede apuntar.
+  const arrastrar = (si) => {
+    const el = seccionRef.current;
+    if (!el) return;
+    if (si) el.dataset.arrastrando = '';
+    else delete el.dataset.arrastrando;
+  };
   useEffect(() => {
     const el = seccionRef.current;
-    if (!el) return undefined;
-    el.dataset.juego = '';
     return () => {
-      delete el.dataset.juego;
-      delete el.dataset.pegada;
+      clearTimeout(bloqueo.current);
+      if (!el) return;
+      delete el.dataset.popupBloqueo;
+      delete el.dataset.arrastrando;
     };
   }, [seccionRef]);
+
+  // La pista vive en Hero.jsx (así su lugar está reservado desde el primer
+  // cuadro); el texto lo pone el juego, porque depende del progreso.
+  const [pistaEl, setPistaEl] = useState(null);
   useEffect(() => {
-    if (Object.keys(pegadas).length) seccionRef.current?.setAttribute('data-pegada', '');
-  }, [pegadas, seccionRef]);
+    setPistaEl(seccionRef.current?.querySelector('.hero-termo__pista') ?? null);
+  }, [seccionRef]);
+  let pista = null;
+  if (premio || gano) {
+    pista = gano ? (
+      <span className="hero-termo__pista-texto">🎉 ¡Listo! Tu {pct}% OFF te espera</span>
+    ) : (
+      <>
+        <span className="hero-termo__pista-texto">🎁 Pegá las {POPUP_JUEGO.piezas} calcos y ganate {pct}% OFF</span>
+        <span className="hero-termo__contador">
+          {cantidad}/{POPUP_JUEGO.piezas}
+        </span>
+      </>
+    );
+  } else if (cantidad === 0) {
+    pista = (
+      <>
+        <span className="hero-termo__pista-mouse">Arrastrá una calco al termo</span>
+        <span className="hero-termo__pista-toque">Tocá una calco para pegarla</span>
+      </>
+    );
+  }
 
   // UN par de valores para las cuatro calcos: la posición del cursor normalizada
   // a [-0,5, 0,5]. Cada calco la multiplica por su intensidad. Dos resortes y no
@@ -286,16 +369,21 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
           aria-hidden="true"
           style={{ WebkitMaskImage: `url(${TERMO.src})`, maskImage: `url(${TERMO.src})` }}
         >
-          {CALCOS.filter((c) => pegadas[c.slot]).map((c) => (
-            <CalcoPegada
-              key={`${c.slot}-${pegadas[c.slot].vez}`}
-              calco={c}
-              datos={pegadas[c.slot]}
-              controles={controles}
-              onDespegar={despegar}
-            />
-          ))}
+          <div ref={giroRef} className="hero-termo__giro">
+            {CALCOS.filter((c) => pegadas[c.slot]).map((c) => (
+              <CalcoPegada
+                key={`${c.slot}-${pegadas[c.slot].vez}`}
+                calco={c}
+                datos={pegadas[c.slot]}
+                controles={controles}
+                onDespegar={despegar}
+                onTocar={tocar}
+                onArrastre={arrastrar}
+              />
+            ))}
+          </div>
         </div>
+        {pistaEl && pista && createPortal(pista, pistaEl)}
         <div className="hero-calcos" aria-hidden="true">
           {CALCOS.map((calco) => (
             <Calco
@@ -311,6 +399,9 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
               capaRef={capaRef}
               controles={controles}
               onPegar={pegar}
+              anguloGiro={anguloGiro}
+              onTocar={tocar}
+              onArrastre={arrastrar}
             />
           ))}
         </div>
@@ -319,7 +410,22 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
   );
 }
 
-function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse, pegada, capaRef, controles, onPegar }) {
+function Calco({
+  calco,
+  suaveX,
+  suaveY,
+  entrada,
+  adelantoMs,
+  reducido,
+  conMouse,
+  pegada,
+  capaRef,
+  controles,
+  onPegar,
+  anguloGiro,
+  onTocar,
+  onArrastre
+}) {
   const { slot } = calco;
   const [falta, setFalta] = useState(false);
   const [arrastrando, setArrastrando] = useState(false);
@@ -362,12 +468,32 @@ function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse,
     llevar(escala, 1);
   };
 
-  // `r`: cuánto más grande es suelta que pegada. La pegada arranca de ese
-  // tamaño y se achica: no hay salto al cambiar de elemento.
-  const pegarEn = ({ fx, fy }, rot, metodo) => {
+  // Se pega donde se la VE: a la altura `fy` (fracción de la caja, en pantalla)
+  // y, alrededor del eje, en el ángulo α en que cae su centro (ampliación B).
+  // Como el termo va girando en θ, en el sistema que gira queda en φ = α − θ, y
+  // desde ahí da la vuelta. `alfa` se pasa cuando ya se sabe (el vuelo va al
+  // frente): medirla recién movida no sirve, porque Framer Motion la dibuja en
+  // su lugar nuevo recién en el cuadro siguiente (con movimiento reducido el
+  // vuelo es un salto y se medía la calco todavía en su lugar de origen).
+  // `r`: cuánto más grande es suelta que pegada, con la perspectiva incluida.
+  // La pegada arranca de ese tamaño y se achica: no hay salto de un elemento
+  // al otro.
+  const pegarEn = (fy, rot, metodo, alfaDada) => {
     const capa = capaRef.current.getBoundingClientRect();
     const c = centroDe(imgRef.current);
-    onPegar(slot, { fx, fy, rot, rotDesde: calco.entrada.hasta.rotate ?? 0, r: c.ancho / (ANCHO_PEGADA * capa.width) }, metodo);
+    const alfa = alfaDada ?? anguloEnTermo(c.x, capa);
+    const { escala, alturaCss } = perspectivaPegada(fy, alfa, capa.width);
+    onPegar(
+      slot,
+      {
+        fy: alturaCss,
+        phi: alfa - anguloGiro(),
+        rot,
+        rotDesde: calco.entrada.hasta.rotate ?? 0,
+        r: c.ancho / (ANCHO_PEGADA * capa.width * escala)
+      },
+      metodo
+    );
   };
 
   // Ya pegada, la suelta vuelve a su lugar (oculta) para cuando la despeguen.
@@ -384,6 +510,7 @@ function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse,
     congelar();
     sesion.current = { cx: inicio.clientX, cy: inicio.clientY, ax: arrastreX.get(), ay: arrastreY.get(), vieneDePegada };
     setArrastrando(true);
+    onArrastre(true);
   };
   const seguir = (e) => {
     const s = sesion.current;
@@ -395,6 +522,7 @@ function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse,
     const s = sesion.current;
     sesion.current = null;
     setArrastrando(false);
+    onArrastre(false);
     if (!s || !capaRef.current) return volverACasa();
     // Cuenta el centro de la calco, no el cursor: es lo que se ve.
     const capa = capaRef.current.getBoundingClientRect();
@@ -403,7 +531,7 @@ function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse,
     const fy = (c.y - capa.top) / capa.height;
     if (!dentroDelCuerpo(fx, fy)) return volverACasa();
     // Una que ya estaba pegada y se movió dentro del termo no vuelve a contar.
-    return pegarEn(ajustarAlCuerpo(fx, fy), calco.entrada.hasta.rotate ?? 0, s.vieneDePegada ? null : 'arrastre');
+    return pegarEn(ajustarAlCuerpo(fx, fy).fy, calco.entrada.hasta.rotate ?? 0, s.vieneDePegada ? null : 'arrastre');
   };
   const volar = (metodo) => {
     if (volando.current || !capaRef.current || !imgRef.current) return;
@@ -414,7 +542,7 @@ function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse,
     const d = DESTINOS_PEGADO[slot];
     llevar(arrastreX, arrastreX.get() + capa.left + d.fx * capa.width - c.x);
     llevar(arrastreY, arrastreY.get() + capa.top + d.fy * capa.height - c.y);
-    alLlegar(arrastreX, arrastreY, () => pegarEn(d, d.rot, metodo));
+    alLlegar(arrastreX, arrastreY, () => pegarEn(d.fy, d.rot, metodo, 0));
   };
 
   // Lo que la versión pegada usa para despegarse: la suelta (oculta en su
@@ -448,7 +576,8 @@ function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse,
     alIniciar: (inicio) => iniciarArrastre(inicio, false),
     alMover: seguir,
     alSoltar: soltar,
-    alClic: volar
+    alClic: volar,
+    alTocar: onTocar
   });
 
   const { desde, hasta, duracionMs, rotacionMs } = calco.entrada;
@@ -503,10 +632,17 @@ function Calco({ calco, suaveX, suaveY, entrada, adelantoMs, reducido, conMouse,
 }
 
 /**
- * Una calco pegada en el termo. Llega del tamaño que tenía suelta (`r`) y se
- * achica "apretándose" contra el termo; sin flotación ni parallax (RF-A6).
+ * Una calco pegada en el termo. Son dos elementos por lo mismo que la suelta:
+ *   · el `div` la ubica alrededor del eje (`rotateY(φ) translateZ(radio)`, en
+ *     CSS) y la esconde cuando queda del lado de atrás (`backface-visibility`),
+ *     que además la deja sin clics (RF-B9).
+ *   · la `img` hace el apretón: llega del tamaño que tenía suelta (`r`) y se
+ *     achica contra el termo. Framer Motion le escribe su propio `transform`, y
+ *     en el mismo elemento pisaría el del giro.
+ * Sin flotación ni parallax (RF-A6): está pegada a un termo que no se mueve de
+ * lugar, solo gira.
  */
-function CalcoPegada({ calco, datos, controles, onDespegar }) {
+function CalcoPegada({ calco, datos, controles, onDespegar, onTocar, onArrastre }) {
   const ref = useRef(null);
   const puntero = usePuntero({
     alIniciar: (inicio, e) => {
@@ -518,27 +654,31 @@ function CalcoPegada({ calco, datos, controles, onDespegar }) {
     alClic: () => {
       controles.current[calco.slot]?.devolver(ref.current.getBoundingClientRect());
       onDespegar(calco.slot);
-    }
+    },
+    alTocar: onTocar
   });
 
   return (
-    <m.img
+    <div
       ref={ref}
-      src={calco.src}
-      alt=""
-      width={calco.ancho}
-      height={calco.alto}
-      decoding="async"
-      draggable={false}
       className="hero-calco-pegada"
-      style={{ left: `${datos.fx * 100}%`, top: `${datos.fy * 100}%`, width: `${ANCHO_PEGADA * 100}%` }}
-      initial={{ scale: datos.r, rotate: datos.rotDesde }}
-      animate={{ scale: [datos.r, 0.94, 1], rotate: datos.rot }}
-      transition={{
-        scale: { duration: 0.4, times: [0, 0.75, 1], ease: 'easeOut' },
-        rotate: { duration: 0.3, ease: 'easeOut' }
-      }}
+      style={{ top: `${datos.fy * 100}%`, width: `${ANCHO_PEGADA * 100}%`, '--angulo': `${datos.phi}deg` }}
       {...puntero}
-    />
+    >
+      <m.img
+        src={calco.src}
+        alt=""
+        width={calco.ancho}
+        height={calco.alto}
+        decoding="async"
+        draggable={false}
+        initial={{ scale: datos.r, rotate: datos.rotDesde }}
+        animate={{ scale: [datos.r, 0.94, 1], rotate: datos.rot }}
+        transition={{
+          scale: { duration: 0.4, times: [0, 0.75, 1], ease: 'easeOut' },
+          rotate: { duration: 0.3, ease: 'easeOut' }
+        }}
+      />
+    </div>
   );
 }

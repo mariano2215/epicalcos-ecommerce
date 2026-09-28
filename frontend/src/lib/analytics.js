@@ -622,13 +622,15 @@ export function trackCustomStickerClick(origen = 'home') {
 
 /**
  * Una calco del hero quedó pegada en el termo (spec 028, ampliación A).
- * `metodo`: 'arrastre' | 'clic' | 'toque'. Solo GA4: no es un paso del embudo
- * y en el Píxel ensuciaría las audiencias. Moverla dentro del termo NO cuenta:
- * el que llama solo lo manda cuando la calco pasa de suelta a pegada.
+ * `metodo`: 'arrastre' | 'clic' | 'toque'. `pegadas`: cuántas hay en el termo
+ * después de esta (el juego de la ampliación C premia al llegar a 4). Solo
+ * GA4: no es un paso del embudo y en el Píxel ensuciaría las audiencias.
+ * Moverla dentro del termo NO cuenta: el que llama solo lo manda cuando la
+ * calco pasa de suelta a pegada.
  */
-export function trackHeroStickerStick({ slot, metodo }) {
-  pushDataLayer({ event: 'hero_sticker_stick', slot, metodo });
-  debug('hero_sticker_stick', slot, metodo);
+export function trackHeroStickerStick({ slot, metodo, pegadas }) {
+  pushDataLayer({ event: 'hero_sticker_stick', slot, metodo, pegadas });
+  debug('hero_sticker_stick', slot, metodo, pegadas);
 }
 
 /** Entrada al camino mayorista / negocio (el de mayor ticket). */

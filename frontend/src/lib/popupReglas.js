@@ -74,6 +74,18 @@ export function beneficioActivo(cupon, ahora = Date.now()) {
 }
 
 /**
+ * ¿El juego del hero (spec 028, ampliación C) puede prometer el descuento?
+ *
+ * Es la misma oferta del popup, así que se puede prometer si el popup la puede
+ * dar: el popup activo, el cupón existiendo, y la persona sin un cupón activo
+ * (ya lo tiene) y sin haber comprado. NO mira el cooldown de "lo cerró": el que
+ * juega para ganarlo lo está pidiendo, igual que el que toca el acceso manual.
+ */
+export function premioDelJuego({ habilitado, cuponActivo, comprado }) {
+  return Boolean(habilitado && !cuponActivo && !comprado);
+}
+
+/**
  * ¿Puede abrirse SOLO? (el acceso manual no pasa por acá)
  *
  * @param {{ estado: object, sesion: object, cuponActivo: boolean,

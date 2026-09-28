@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `028-hero-termo-stickers` |
-| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliación A (§13): implementada en la rama (28/09/2026)**, en el deploy preview para el OK de Mariano |
+| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliaciones A (§13), B (§14) y C (§15): en la rama (28/09/2026)**, en el deploy preview para el OK de Mariano |
 | **Fecha** | 27/09/2026 |
 | **Autor** | Mariano (pedido) · Claude (redacción) |
 
@@ -362,4 +362,107 @@ juegan van más al catálogo que los que no?
 | **Q4** | En el celular, ¿se arrastra con el dedo o se toca para pegar? | ✅ *Rige la propuesta (28/9).* **Tocar para pegar.** Arrastrar con el dedo obliga a que la calco "capture" el gesto: si alguien empieza a scrollear con el dedo encima de una calco, en vez de bajar por la página arrastra la calco. En el hero, que es lo primero que se scrollea, eso se siente como un error. Con el toque, scrollear sigue funcionando siempre. |
 | **Q5** | ¿Las calcos pegadas se guardan para la próxima visita? | ✅ *Rige la propuesta (28/9).* **No.** Al recargar vuelven a su lugar y se repite la entrada. Guardarlas agrega estado en el navegador para algo que es un juego de 5 segundos, y la próxima visita arrancaría con un hero distinto del que se diseñó. |
 | **Q6** | ¿Mostrar una pista de que se puede jugar? | ✅ *Rige la propuesta (28/9).* **Sí**, una línea chica debajo de los botones: *"Arrastrá una calco al termo"* (con mouse) / *"Tocá una calco para pegarla"* (táctil). Aparece al terminar la entrada y se va al pegar la primera. Sin pista, casi nadie descubre que las calcos se pueden agarrar. |
+
+---
+
+## 14. Ampliación B — El termo gira (28/09/2026)
+
+### 14.1 Pedido
+
+> *"¿Se puede hacer que el termo gire y le vayas pegando los stickers mientras
+> va girando, así ves cómo quedan?"* — y después: *"Sacarle la manija y el logo,
+> y después hacé lo otro."*
+
+### 14.2 Objetivo
+
+Ver cómo queda un termo con calcos **de todos lados**: el termo gira despacio,
+las calcos pegadas dan la vuelta con él, y se pueden seguir pegando mientras
+gira.
+
+### 14.3 Requisitos
+
+| ID | Requisito |
+|---|---|
+| RF-B1 | El termo del hero no tiene manija ni logo de marca. |
+| RF-B2 | El termo gira sobre su eje vertical, lento y parejo (una vuelta cada 10-14 s). Sin calcos, se ve como un termo liso girando. |
+| RF-B3 | Una calco pegada gira con el termo: se corre de costado, se angosta al llegar al borde y desaparece al pasar por detrás; vuelve a aparecer por el otro lado. |
+| RF-B4 | Soltada sobre el termo, la calco queda pegada en el punto donde se soltó **en ese momento del giro**, y desde ahí da la vuelta. |
+| RF-B5 | Con clic o toque, la calco vuela al frente del termo (a la altura que le toca) y se pega ahí. |
+| RF-B6 | Mientras se arrastra una calco, el termo deja de girar (para poder apuntar); al soltarla vuelve a girar. |
+| RF-B7 | Con el hero fuera de pantalla, el giro se pausa. |
+| RF-B8 | Con movimiento reducido, el termo no gira: el juego funciona igual, con el termo quieto. |
+| RF-B9 | Una calco que está del lado de atrás no se puede tocar ni agarrar. |
+
+### 14.4 No funcionales
+
+| ID | Requisito |
+|---|---|
+| RNF-B1 | Sin librerías nuevas: el giro es una animación de CSS que corre el compositor. |
+| RNF-B2 | El chunk de las calcos no suma más de 2 kB gzip por el giro. |
+| RNF-B3 | Las calcos son planas (no se curvan): aceptado mientras sean chicas respecto del termo. |
+
+---
+
+## 15. Ampliación C — "Pegá tus calcos en el termo y ganate un descuento" (28/09/2026)
+
+### 15.1 Pedido
+
+> *"El POP UP que aparezca luego del scroll: si la persona está haciendo eso con
+> el termo, NO le tiene que aparecer el popup del 10% OFF. Es más, lo que haría
+> es: PEGÁ TUS CALCOS EN EL TERMO Y GANATE UN DESCUENTO, y ahí podés hacer la
+> gamificación que haga que la gente pegue calcos en el termo y le aparezca el
+> popup de dejar el mail."*
+
+### 15.2 Objetivo
+
+Que el juego del hero sea la puerta al popup del mail (spec 026): el premio por
+pegar las calcos es el mismo 10% OFF que ya da el popup, y mientras alguien
+juega, el popup no lo interrumpe.
+
+**Cómo se sabrá que funcionó**: `popup_view` y `generate_lead` con
+`popup_trigger: 'sticker_game'` (§15.6), comparados con los demás disparadores.
+
+### 15.3 Requisitos
+
+| ID | Requisito |
+|---|---|
+| RF-C1 | Si la persona puede recibir el descuento del popup, la pista dice **"Pegá las 4 calcos en el termo y ganate {pct}% OFF"**, con un contador de progreso (0/4 … 4/4). El % sale del cupón real, como en el popup. |
+| RF-C2 | Al pegar la cuarta calco, la pista festeja y, un instante después (~1,2 s, para que se vea el termo terminado), se abre el popup del mail con un título de premio (*"¡Ganaste {pct}% OFF!"*). El resto del popup es el de siempre. |
+| RF-C3 | Mientras la persona juega (tocó o arrastró una calco en los últimos 20 s), el popup **no se abre solo** por tiempo, scroll ni intención. Cuando deja de jugar, las reglas de siempre vuelven a correr. |
+| RF-C4 | El premio del juego se entrega una vez por carga de página. Si la persona ya vio o cerró el popup antes (y no dejó el mail), ganar igual lo abre: lo pidió jugando. |
+| RF-C5 | Si la persona **no** puede recibir el descuento (ya lo tiene activo, ya compró, o el cupón está apagado), el juego sigue, pero la pista no promete nada (vuelve a "Arrastrá una calco al termo") y el popup no se abre. |
+| RF-C6 | Despegar calcos baja el contador; el premio se da la primera vez que se llega a 4. |
+
+### 15.4 Reglas de negocio
+
+| ID | Regla |
+|---|---|
+| RN-C1 | **El premio es el cupón que ya existe** (`EPICA10`, 10%), con sus reglas de siempre (acumulable hasta el tope, sin vencimiento, solo calcos del catálogo). **No se toca ningún precio ni cupón**: un descuento distinto para el juego necesita su propia spec y el espejo de precios (regla 11). |
+| RN-C2 | El popup sigue apareciendo **solo en el Home** y respetando todo lo de la spec 026 salvo RF-C3/RF-C4. |
+
+### 15.5 Edge cases
+
+| Caso | Qué debe pasar |
+|---|---|
+| Ya dejó el mail (cupón activo) | Juego sin promesa; al completar, nada. |
+| Llega a 4, despega una y vuelve a 4 | El popup se abrió la primera vez; no se vuelve a abrir. |
+| El chunk de las calcos no carga | No hay juego ni pista; el popup se comporta como hoy. |
+| Juega 5 s y se va a scrollear | A los 20 s sin tocar calcos, el popup puede abrirse por sus reglas. |
+| Movimiento reducido | Mismo juego y mismo premio, con el termo quieto. |
+
+### 15.6 Analytics
+
+| Evento | Cambio |
+|---|---|
+| `hero_sticker_stick` | Suma `pegadas` (cuántas hay en el termo después de esta). |
+| `popup_view` | Nuevo valor de `popup_trigger`: `sticker_game`. |
+| `generate_lead` (lead del popup) | `popup_trigger: 'sticker_game'` cuando el mail llega desde el premio del juego. |
+
+### 15.7 Decisiones tomadas por defecto (se cambian en el preview)
+
+| ID | Decisión | Por qué |
+|---|---|---|
+| D-C1 | Hay que pegar **las 4**. | Una meta clara y corta; con el contador se ve cuánto falta. |
+| D-C2 | "Jugando" = tocó una calco en los **últimos 20 s**. | Suficiente para pegar las 4 con calma sin que el popup la interrumpa, y corto para que quien dejó el juego vea el popup de siempre. |
+| D-C3 | El popup del premio abre **1,2 s** después de la cuarta. | Que se vea el termo completo girando antes de taparlo. |
 

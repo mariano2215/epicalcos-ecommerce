@@ -683,3 +683,111 @@ Se llama solo al pasar a **pegada** (no al moverla dentro del termo).
 Ninguna nueva y **sin `domMax`**: +14 kB por algo que se resuelve con ~150 líneas
 propias sobre lo que ya se carga.
 
+---
+
+## 13. Ampliación B — El termo gira
+
+### 13.1 La foto
+
+`termo.webp` se rehace desde el recorte anterior (script en el scratchpad de la
+sesión): del eje del cuerpo hacia la derecha, la silueta es el **espejo** de la
+izquierda (se va la manija), y cada columna del cuerpo se pinta con el color de
+una franja limpia (filas sin logo ni conectores): el cuerpo es un cilindro, su
+color no cambia en vertical. Resultado: 142×512, 4,9 kB. `TERMO.cuerpo` se
+vuelve a medir (4-96 % del ancho, 30-89 % del alto).
+
+### 13.2 Por qué no se gira la foto
+
+Un cilindro liso girando se ve **igual** en cualquier ángulo. Lo único que
+delata el giro es lo que tiene pegado: por eso sin manija ni logo alcanza con
+girar **las calcos** alrededor del eje. Nada de WebGL ni de un modelo 3D.
+
+### 13.3 La capa de pegadas pasa a 3D
+
+```
+.hero-termo__pegadas            máscara con la silueta · perspective: 700px
+  └─ .hero-termo__giro          preserve-3d · animation: rotateY 0 → 360deg, 12 s, linear, infinite
+       └─ .hero-calco-pegada    left: 50% · top: fy% · translate(-50%,-50%) rotateY(φ) translateZ(R) · backface-visibility: hidden
+            └─ m.img            el apretón (Framer Motion: scale/rotate en su propio transform)
+```
+
+- **R** (`--radio`) = medio ancho de la caja del termo, en CSS con las variables
+  que ya existen.
+- Cada calco está en un ángulo **φ** del sistema que gira. Con el giro en **θ**,
+  aparece en `x = R · sin(θ + φ)` y mira hacia atrás cuando `cos(θ + φ) < 0`:
+  `backface-visibility: hidden` la esconde y deja de recibir clics (RF-B9).
+- **θ** se lee de la animación CSS (`getAnimations()[0].currentTime`): no hay JS
+  por cuadro.
+- **Pegar**: con el centro de la calco en `x`, `α = asin((x − cx) / R)` (topeado
+  a ±75°) y **φ = α − θ**: queda donde se soltó y desde ahí gira (RF-B4).
+- **Clic/toque**: vuela a `x = cx` (el frente) a la altura `fy` de su destino;
+  al llegar, `α = 0` (RF-B5).
+- **Pausa**: `data-arrastrando` en la sección → `animation-play-state: paused`
+  del giro (RF-B6). También con `data-pausado` (RF-B7) y sin animación con
+  movimiento reducido (RF-B8, θ = 0).
+- El borde de la calco que se pasa de la silueta lo sigue recortando la máscara.
+
+---
+
+## 14. Ampliación C — El juego da el 10% del popup
+
+### 14.1 Cómo se comunican el juego y el popup
+
+Viven en árboles distintos: `WelcomePopup` está en `App` (chunk principal) y el
+juego en `HeroCalcos` (chunk del Home). Se hablan por un módulo chico,
+**`lib/juegoTermo.js`**, que ya importan los dos:
+
+```js
+// estado del juego en esta carga de página
+{ pegadas: 0, ultimoToque: 0, premiado: false }
+registrarToque()         // HeroCalcos: cada clic/toque/arrastre sobre una calco
+registrarPegadas(n)      // HeroCalcos: cuántas hay en el termo
+alGanar(fn)              // WelcomePopup: se suscribe al premio
+```
+
+- **"Está jugando" (RF-C3)** reusa el mecanismo que ya tiene el popup:
+  `usePopupDisparo` no abre si hay un elemento con **`data-popup-bloqueo`** en la
+  página (hoy lo usa el menú del celular). `HeroCalcos` lo pone en la sección
+  del hero con cada toque y lo saca a los 20 s sin tocar. Cero cambios en las
+  reglas del popup; su "gracia" de 3 s después de un bloqueo también aplica.
+- **El premio (RF-C2, RF-C4)**: al llegar a 4 por primera vez, `juegoTermo`
+  marca `premiado` y, 1,2 s después, avisa a `WelcomePopup`, que hace
+  `abrir('sticker_game', false)`: la misma apertura del acceso manual (no cuenta
+  como "abierto solo", no mira el cooldown de "lo cerró").
+- **¿Hay premio? (RF-C5)**: `premioDelJuego()` en `lib/popupReglas.js` (pura,
+  testeada): hay premio si el popup está activo, el cupón existe, no tiene un
+  cupón activo y no compró. La usan el juego (para la pista) y el popup (para
+  abrirse).
+
+### 14.2 La pista
+
+`Hero.jsx` sigue reservando el lugar (`<p class="hero-termo__pista">`); el
+contenido lo pone `HeroCalcos` con un portal, porque depende del progreso:
+
+- Con premio: *"Pegá las 4 calcos en el termo y ganate {pct}% OFF"* + contador
+  `n/4`. Al completar: *"¡Listo! Tu {pct}% OFF te espera"*.
+- Sin premio: la de la ampliación A (mouse / táctil), que se va al pegar la
+  primera.
+
+### 14.3 El popup
+
+`PopupDialogo` recibe el disparo y `PopupCaptura` cambia **solo el título**
+cuando es `sticker_game`: *"¡Ganaste {pct}% OFF!"* / *"por vestir tu termo 🎉"*.
+El resto (campo, botón, éxito, cupón) es el mismo.
+
+### 14.4 Archivos
+
+| Archivo | Cambio |
+|---|---|
+| `lib/juegoTermo.js` (nuevo) | Estado del juego y aviso del premio |
+| `lib/popupReglas.js` | `premioDelJuego()` |
+| `components/hero/HeroCalcos.jsx` | Giro (θ, φ), toques, pegadas, bloqueo, pista por portal |
+| `components/WelcomePopup.jsx` | Suscripción al premio → `abrir('sticker_game')` |
+| `components/popup/PopupDialogo.jsx`, `PopupCaptura.jsx` | Título de premio |
+| `lib/heroTermo.js` | `TERMO` nuevo (medidas, cuerpo), `PIEZAS_PARA_GANAR` |
+| `styles/index.css` | Capa 3D, giro, pausa, pista con contador |
+| `lib/analytics.js` | `pegadas` en `hero_sticker_stick` |
+
+⚠️ `WelcomePopup` y `popupReglas` son de la spec 026: solo se **suma** un
+disparo y una función; ninguna regla existente cambia.
+

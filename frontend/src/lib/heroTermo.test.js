@@ -5,6 +5,10 @@ import {
   CALCOS,
   DESTINOS_PEGADO,
   ANCHO_PEGADA,
+  GIRO_MAX_GRADOS,
+  PERSPECTIVA_PX,
+  anguloEnTermo,
+  perspectivaPegada,
   duracionEntradaMs,
   dentroDelCuerpo,
   ajustarAlCuerpo
@@ -143,10 +147,10 @@ describe('pegar calcos en el termo (ampliación A)', () => {
   const altoEnAnchos = TERMO.alto / TERMO.ancho;
   const distancia = (a, b) => Math.hypot(a.fx - b.fx, (a.fy - b.fy) * altoEnAnchos);
 
-  it('el cuerpo deja afuera la tapa, la base y la manija', () => {
+  it('el cuerpo deja afuera la tapa, la base y lo que está fuera del termo', () => {
     expect(dentroDelCuerpo(0.4, 0.1)).toBe(false); // tapa
     expect(dentroDelCuerpo(0.4, 0.97)).toBe(false); // base de acero
-    expect(dentroDelCuerpo(0.92, 0.5)).toBe(false); // manija
+    expect(dentroDelCuerpo(0.99, 0.5)).toBe(false); // al costado del termo
     expect(dentroDelCuerpo(0.4, 0.5)).toBe(true);
     expect(cuerpo.x0).toBeLessThan(cuerpo.x1);
     expect(cuerpo.y0).toBeLessThan(cuerpo.y1);
@@ -179,6 +183,31 @@ describe('pegar calcos en el termo (ampliación A)', () => {
     expect(borde.fy).toBeLessThan(cuerpo.y1 - 0.001);
     expect(dentroDelCuerpo(borde.fx, borde.fy)).toBe(true);
     expect(ajustarAlCuerpo(0.42, 0.6)).toEqual({ fx: 0.42, fy: 0.6 });
+  });
+
+  it('el ángulo del giro: el centro es el frente, los costados van hacia el borde, sin pasar de 75°', () => {
+    const caja = { left: 100, width: 120 };
+    expect(anguloEnTermo(160, caja)).toBeCloseTo(0, 5);
+    expect(anguloEnTermo(190, caja)).toBeGreaterThan(20);
+    expect(anguloEnTermo(130, caja)).toBeLessThan(-20);
+    expect(anguloEnTermo(220, caja)).toBe(GIRO_MAX_GRADOS);
+    // Ida y vuelta: el ángulo encontrado, proyectado, cae donde se soltó.
+    const a = (anguloEnTermo(200, caja) * Math.PI) / 180;
+    const x = 160 + (60 * Math.sin(a) * 700) / (700 - 60 * Math.cos(a));
+    expect(x).toBeCloseTo(200, 3);
+    expect(anguloEnTermo(0, caja)).toBe(-GIRO_MAX_GRADOS);
+  });
+
+  it('la perspectiva: al frente se ve más grande, y la altura se compensa para verse donde se soltó', () => {
+    const ancho = 100;
+    const frente = perspectivaPegada(0.8, 0, ancho);
+    expect(frente.escala).toBeCloseTo(PERSPECTIVA_PX / (PERSPECTIVA_PX - 50), 6);
+    // Proyectada desde el centro de la caja, la altura CSS cae en 0,8.
+    expect(0.5 + (frente.alturaCss - 0.5) * frente.escala).toBeCloseTo(0.8, 10);
+    // En el costado está más lejos: se agranda menos.
+    expect(perspectivaPegada(0.8, 75, ancho).escala).toBeLessThan(frente.escala);
+    // El centro no se mueve.
+    expect(perspectivaPegada(0.5, 0, ancho).alturaCss).toBeCloseTo(0.5, 10);
   });
 
   it('una calco pegada es de tamaño real: más chica que el termo, pero se ve', () => {

@@ -197,6 +197,24 @@ Ver [`specs/README.md`](../README.md).
 
 ---
 
+## Ampliaciones B (el termo gira) y C (el juego da el 10%)
+
+> Pedido de Mariano del 28/9: *"Sacarle la manija y el logo, y después hacé lo
+> otro"* + el popup del juego. En el mismo PR, para el deploy preview.
+
+- [x] **B.1** `termo.webp` sin manija ni logo (142×512, 4,9 kB); `TERMO` y `cuerpo` medidos de nuevo
+- [x] **B.2** `anguloEnTermo` y `perspectivaPegada` (puras, con test de ida y vuelta)
+- [x] **B.3** Capa 3D (`.hero-termo__giro`), `rotateY(φ) translateZ(radio)`, `backface-visibility`
+- [x] **B.4** Pegar en φ = α − θ; vuelo al frente; pausa arrastrando, fuera de pantalla y con movimiento reducido
+- [x] **C.1** `POPUP_JUEGO` (config), `premioDelJuego` (reglas), `lib/juegoTermo.js` + tests
+- [x] **C.2** `data-popup-bloqueo` en la sección mientras juega (20 s desde el último toque)
+- [x] **C.3** Pista con premio y contador (portal) · pista simple sin premio
+- [x] **C.4** `WelcomePopup` abre con `sticker_game` al ganar; título "¡Ganaste…!" en `PopupCaptura`
+- [x] **C.5** `pegadas` en `hero_sticker_stick`; `docs/analytics.md`
+- [x] **C.6** Arneses: `giro3.mjs`, `bloqueo.mjs`, `juego.mjs` (con el giro detenido) y la regresión completa
+
+---
+
 ## Hallazgos fuera de scope
 
 | Hallazgo | Archivo | Propuesta |
@@ -208,6 +226,7 @@ Ver [`specs/README.md`](../README.md).
 | La prop `eagerFirst` de `StickerField` quedó sin uso (solo la pasaba el hero). | `components/StickerField.jsx` | Sacarla en otro cambio. |
 | La barra de promo anima `left` en su `::after` (el brillo que la cruza): el navegador lo cuenta como corrimiento de layout. Es **todo** el CLS del Home (0,013-0,02 en cada carga; en una corrida del build viejo, 0,35). | `styles/index.css` (`.promo-banner::after`, `relampago-barrido`) | Animar con `transform: translateX()` en vez de `left`: mismo efecto, CLS 0. |
 | En 375×812, sin scrollear, el botón flotante "10% OFF" (spec 026) queda encima de la calco 2 y el de WhatsApp cerca de la 4: un toque ahí abre el popup en vez de pegar la calco. Con un poco de scroll las cuatro quedan libres. | `WelcomePopup` / botón flotante | Mirarlo en el celular; si molesta, correr las dos calcos de abajo o el botón. |
+| En una de siete corridas, el build de **producción** (el hero viejo) marcó un CLS de 0,35; en otras cinco corridas buscándolo no apareció. No lo pude reproducir. | Home | Si Search Console muestra CLS malo en mobile, empezar por el Home. |
 | El `sitemap.xml` commiteado está desactualizado (faltan 11 categorías); Netlify lo regenera en cada build. | `frontend/public/sitemap.xml` | Commitear el regenerado en un cambio aparte. |
 
 ---
@@ -231,4 +250,9 @@ Ver [`specs/README.md`](../README.md).
 | 28/9 | **Resorte del vuelo con `restDelta`/`restSpeed` en píxeles** (0,5 px / 10 px/s). La escala va con otro resorte, con los valores de fábrica. | Medido: con los de fábrica (0,001) el resorte tardaba más de 1 s en darse por quieto después de llegar, y la última calco se pegaba 1,3 s después del clic. Ahora: 570 ms. |
 | 28/9 | **La pista baja la escena**: `margin-top` de la escena 1,75 → 1 rem (mobile) y 2,25 → 1,5 rem (md); calcos 1 y 3 en `xl` suben 25 px (−315 / −275 px). | La pista ocupa su lugar siempre (sin salto): la escena se acerca para compensar y las de `xl` siguen a la altura del titular. |
 | 28/9 | **FPS del arrastre medidos con el fondo apagado.** | Este Chrome sin GPU dibuja el fondo con blur a ~13 fps aunque no se toque nada. Sin el fondo: 60 en reposo y 60 arrastrando. |
+| 28/9 | **Termo sin manija ni logo**: silueta derecha = espejo de la izquierda; el cuerpo, pintado columna por columna con una franja limpia. | Un cilindro liso girando se ve igual en cualquier ángulo: el giro se hace girando solo las pegadas. Una manija o un logo quietos lo delatarían (y de paso se va la marca ajena). |
+| 28/9 | **El ángulo se busca por bisección** con la proyección exacta. | La primera versión usaba un factor de perspectiva fijo: en los bordes pegaba las calcos 10° más adentro de donde se soltaban (lo detectó el test). |
+| 28/9 | **La altura de la pegada se compensa por la perspectiva** (`perspectivaPegada`). | Sin eso, la calco pegada se veía hasta 8 px más arriba o más abajo de donde se soltó (medido en el arnés). Ahora: 0,3 px. |
+| 28/9 | **El vuelo pasa el ángulo (0°, el frente) en vez de medirlo.** | Con movimiento reducido el vuelo es un salto y Framer Motion dibuja la calco movida recién en el cuadro siguiente: se medía todavía en su lugar y se pegaba en el borde izquierdo. |
+| 28/9 | **"Jugando" reusa `data-popup-bloqueo`**, el mismo que el menú del celular. | Cero cambios en las reglas del popup (spec 026). |
 | 27/9 | **AN-2 estaba mal planteado**: `experiment_view` de `hero_buscador` sigue llegando (todo `debajo`). | `Home` sigue leyendo el experimento a propósito (RN-5) y `useExperiment` reporta aunque esté apagado. Documentado en `CRO-EXPERIMENTS.md`. |

@@ -34,6 +34,7 @@ import {
   setPopupUserProperties
 } from '../lib/analytics.js';
 import { usePopupDisparo } from './popup/usePopupDisparo.js';
+import { alGanar, hayPremio } from '../lib/juegoTermo.js';
 
 /**
  * Popup de bienvenida: el orquestador (spec 026).
@@ -55,6 +56,11 @@ import { usePopupDisparo } from './popup/usePopupDisparo.js';
  *     una condición ("o") es seguro porque ya no aparece sobre la grilla ni la
  *     ficha, y porque nunca abre mientras la persona escribe, busca, tiene el
  *     carrito abierto o acaba de agregar un calco (ver usePopupDisparo).
+ *  4. Spec 028 (ampliación C, 28/9/2026): el juego del hero ("Pegá las 4 calcos
+ *     y ganate 10% OFF") es otra puerta. Mientras alguien juega, la sección del
+ *     hero lleva `data-popup-bloqueo` y el disparo automático espera, como con
+ *     el menú del celular. Al completar, el juego avisa (lib/juegoTermo.js) y el
+ *     popup se abre con `sticker_game`, como el acceso manual: lo pidió jugando.
  */
 
 const cargarDialogo = () => import('./popup/PopupDialogo.jsx');
@@ -168,6 +174,19 @@ export default function WelcomePopup() {
     [ctx]
   );
 
+  // El premio del juego del hero. `abiertoRef` porque la suscripción se arma
+  // una vez y tiene que ver el estado del momento en que alguien gana.
+  const abiertoRef = useRef(abierto);
+  abiertoRef.current = abierto;
+  useEffect(
+    () =>
+      alGanar(() => {
+        if (abiertoRef.current || !popupPermitido(window.location.pathname) || !hayPremio()) return;
+        abrir('sticker_game', false);
+      }),
+    [abrir]
+  );
+
   // ─── ¿Qué corresponde mostrar? ──────────────────────────────────────────────
   const pct = porcentajeOferta();
   const habilitado = POPUP_CONFIG.activo && pct != null;
@@ -255,6 +274,7 @@ export default function WelcomePopup() {
       {Dialogo && (
         <Dialogo
           pct={pct}
+          disparo={abierto.disparo}
           contexto={ctx}
           hayCarrito={totalItems > 0}
           onCerrar={cerrar}

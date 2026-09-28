@@ -87,6 +87,22 @@ export const INTERESES = [
   { id: 'celular', emoji: '📱', label: 'Celular', to: '/categorias' }
 ];
 
+/**
+ * El juego del hero (spec 028, ampliaciones A y C): "Pegá las 4 calcos y ganate
+ * 10% OFF". El premio es el MISMO cupón de `POPUP_OFERTA`: acá no hay precios.
+ *
+ * `piezas`: cuántas calcos hay que pegar para ganar.
+ * `jugandoMs`: mientras la persona haya tocado una calco hace menos que esto,
+ *   el popup no se abre solo (ni por tiempo, ni por scroll, ni por intención).
+ * `demoraPremioMs`: entre la última calco y el popup, para que se vea el termo
+ *   terminado antes de taparlo.
+ */
+export const POPUP_JUEGO = {
+  piezas: 4,
+  jugandoMs: 20_000,
+  demoraPremioMs: 1_200
+};
+
 /** El popup (solo o a mano) aparece únicamente acá (spec 026 P-6). */
 export const RUTAS_POPUP = ['/'];
 
