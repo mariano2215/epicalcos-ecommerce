@@ -44,8 +44,50 @@ export const TERMO = {
   src: '/images/hero/termo.webp',
   ancho: 172,
   alto: 516,
-  alt: 'Termo liso, listo para personalizar con calcos'
+  alt: 'Termo liso, listo para personalizar con calcos',
+  // Dónde se puede pegar una calco (ampliación A), en fracciones de la caja
+  // del termo. Medido sobre ESTE archivo: arriba del 30 % está la tapa de acero
+  // y el aro negro, abajo del 88 % la base, y desde el 80 % del ancho la manija.
+  // ⚠️ Si se cambia la foto, se vuelve a medir: con otro termo estos números
+  // pegan calcos en la tapa.
+  cuerpo: { x0: 0.05, x1: 0.8, y0: 0.3, y1: 0.88 }
 };
+
+/** Ancho de una calco pegada, como fracción del ancho del termo. */
+export const ANCHO_PEGADA = 0.42;
+
+/**
+ * Dónde cae cada calco cuando se la pega con un clic o un toque, en fracciones
+ * de la caja del termo, y con qué inclinación. Una por calco y repartidas: con
+ * clic en las cuatro no quedan una encima de otra (lo verifica el test).
+ */
+export const DESTINOS_PEGADO = {
+  1: { fx: 0.36, fy: 0.38, rot: -8 },
+  3: { fx: 0.5, fy: 0.55, rot: 6 },
+  2: { fx: 0.33, fy: 0.7, rot: 8 },
+  4: { fx: 0.52, fy: 0.82, rot: -5 }
+};
+
+/** ¿El punto (en fracciones de la caja del termo) cae sobre el cuerpo? */
+export function dentroDelCuerpo(fx, fy) {
+  const { x0, x1, y0, y1 } = TERMO.cuerpo;
+  return fx >= x0 && fx <= x1 && fy >= y0 && fy <= y1;
+}
+
+// Cuánto se mete para adentro una calco soltada en el borde del cuerpo. La
+// máscara ya recorta lo que se sale de la silueta, pero soltada justo en el
+// borde quedaría casi toda recortada: parecería que no se pegó.
+const MARGEN_PEGADO = { x: 0.12, y: 0.04 };
+
+/** Lleva hacia adentro del cuerpo un punto soltado cerca del borde. */
+export function ajustarAlCuerpo(fx, fy) {
+  const { x0, x1, y0, y1 } = TERMO.cuerpo;
+  const entre = (v, min, max) => Math.min(Math.max(v, min), max);
+  return {
+    fx: entre(fx, x0 + MARGEN_PEGADO.x, x1 - MARGEN_PEGADO.x),
+    fy: entre(fy, y0 + MARGEN_PEGADO.y, y1 - MARGEN_PEGADO.y)
+  };
+}
 
 /** La curva del pedido: sale rápido y frena largo. Sin sobrepaso, sin rebote. */
 export const CURVA_SALIDA = [0.22, 1, 0.36, 1];

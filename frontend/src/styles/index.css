@@ -487,7 +487,7 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   max-width: 880px;
   height: var(--alto-escena);
-  margin-top: 1.75rem;
+  margin-top: 1rem;
 }
 
 /* El termo: centrado, del alto de la escena y con el ancho que dé su proporción
@@ -519,11 +519,13 @@ a { color: inherit; text-decoration: none; }
   from { scale: 0.92; }
 }
 
-/* Las calcos. `.hero-calco` es el <div> que lleva el parallax y el hover
-   (Framer Motion le escribe `transform`); `.hero-calco__img` lleva la entrada y
-   la flotación. Ver HeroCalcos.jsx.
-   `pointer-events: none` por defecto: una calco nunca se come un toque. Solo
-   con mouse se vuelven "tocables", para el hover (RF-21, RF-22). */
+/* Las calcos. `.hero-calco` es el <div> que lleva el parallax, el arrastre y
+   el hover (Framer Motion le escribe `transform`); `.hero-calco__img` lleva la
+   entrada y la flotación. Ver HeroCalcos.jsx.
+   Se pueden tocar y agarrar (ampliación A). No tapan nada clickeable: la
+   escena está debajo de los botones, así que RF-22 se sigue cumpliendo. Con el
+   dedo solo se tocan: `touch-action` queda por defecto y scrollear empezando
+   encima de una calco scrollea la página (RF-A10). */
 .hero-calcos {
   position: absolute;
   inset: 0;
@@ -531,12 +533,22 @@ a { color: inherit; text-decoration: none; }
 }
 .hero-calco {
   position: absolute;
-  pointer-events: none;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
 }
 .hero-calco--delante { z-index: 30; }
 .hero-calco--detras  { z-index: 15; }
 @media (hover: hover) and (pointer: fine) {
-  .hero-calco { pointer-events: auto; }
+  .hero-calco,
+  .hero-calco-pegada { cursor: grab; }
+}
+/* En la mano: arriba de todo, "levantada" (más sombra) y sin flotar. La
+   flotación se PAUSA, no se apaga: apagarla haría saltar la calco hasta 15 px
+   justo cuando la agarran. */
+.hero-calco[data-arrastrando] { z-index: 40; cursor: grabbing; }
+.hero-calco[data-arrastrando] .hero-calco__img {
+  animation-play-state: paused;
+  filter: drop-shadow(0 22px 26px rgba(0, 0, 0, 0.45));
 }
 .hero-calco__img {
   display: block;
@@ -544,6 +556,67 @@ a { color: inherit; text-decoration: none; }
   height: auto;
   filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.35));
   user-select: none;
+}
+
+/* Las calcos pegadas (ampliación A). La capa ocupa EXACTAMENTE la caja del
+   termo (mismo centrado, mismo alto y el ancho que da su proporción) y usa la
+   foto del termo como máscara —la pone HeroCalcos, desde lib/heroTermo.js—:
+   lo que se pasa de la silueta no se ve, como una calco doblada sobre un
+   cilindro. Arriba del termo (20) y abajo de las sueltas (30). */
+.hero-termo__pegadas {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 25;
+  height: 100%;
+  width: calc(var(--alto-escena) * var(--proporcion-termo, 0.33));
+  translate: -50% 0;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+/* Centrada en su punto con `translate` (Framer Motion usa `transform` para el
+   apretón y la rotación: no se pisan). Sombra mínima: una calco pegada no
+   flota, apenas tiene borde. */
+.hero-calco-pegada {
+  position: absolute;
+  height: auto;
+  max-width: none;
+  translate: -50% -50%;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.4));
+}
+
+/* La pista del juego (ampliación A). Siempre ocupa su lugar (sin salto al
+   aparecer); se ve solo con el juego cargado y hasta pegar la primera calco.
+   Más chica y apagada que la bajada: no compite con los botones (RN-A1). */
+.hero-termo__pista {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+}
+.hero-termo[data-juego]:not([data-pegada]) .hero-termo__pista {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.4s ease, visibility 0s;
+}
+/* Con la entrada, la pista espera a que terminen de llegar las calcos. */
+.hero--entrada[data-juego]:not([data-pegada]) .hero-termo__pista {
+  transition-delay: 1.4s, 1.4s;
+}
+.hero-termo__pista-toque { display: none; }
+@media not all and (hover: hover) and (pointer: fine) {
+  .hero-termo__pista-mouse { display: none; }
+  .hero-termo__pista-toque { display: inline; }
 }
 
 /* La flotación: CSS y no Framer Motion. Así la corre el compositor, se pausa con
@@ -570,7 +643,7 @@ a { color: inherit; text-decoration: none; }
 
 @media (min-width: 768px) {
   .hero-termo__grilla { padding-top: 3.5rem; padding-bottom: 1.5rem; }
-  .hero-termo__escena { --alto-escena: clamp(320px, 42vw, 400px); margin-top: 2.25rem; }
+  .hero-termo__escena { --alto-escena: clamp(320px, 42vw, 400px); margin-top: 1.5rem; }
   .hero-calco--1 { top: 4%;     right: calc(50% + var(--medio-termo) + 3rem);    width: clamp(104px, 11vw, 150px); }
   .hero-calco--2 { bottom: 12%; right: calc(50% + var(--medio-termo) - 1.75rem); width: clamp(92px, 9.5vw, 130px); }
   .hero-calco--3 { top: 0;      left:  calc(50% + var(--medio-termo) + 3rem);    width: clamp(90px, 9vw, 128px); }
@@ -601,10 +674,11 @@ a { color: inherit; text-decoration: none; }
    Más angosto no hay lugar y se quedan en la escena, contra el termo.
    ⚠️ El `top` es negativo y en px: sube desde la escena hasta la altura del H1,
    que a partir de `lg` tiene tamaño fijo. Si cambia el tamaño del titular o el
-   espacio entre el copy y la escena, rehacer esta cuenta. */
+   espacio entre el copy y la escena (la pista, por ejemplo), rehacer esta
+   cuenta. */
 @media (min-width: 1280px) {
-  .hero-calco--1 { top: -290px; right: calc(50% + 360px); left: auto; width: 150px; }
-  .hero-calco--3 { top: -250px; left: calc(50% + 360px); right: auto; width: 128px; }
+  .hero-calco--1 { top: -315px; right: calc(50% + 360px); left: auto; width: 150px; }
+  .hero-calco--3 { top: -275px; left: calc(50% + 360px); right: auto; width: 128px; }
 }
 
 /* ============================================================
@@ -1392,4 +1466,5 @@ a { color: inherit; text-decoration: none; }
   .hero-calco__img {
     animation: none !important;
   }
+  .hero-termo__pista { transition: none !important; }
 }

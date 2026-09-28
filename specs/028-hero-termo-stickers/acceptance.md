@@ -41,7 +41,7 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 | AC-11 | *(RF-16, RF-17)* Con el cursor en el borde, la calco 4 se desplaza ~12 px y las otras entre ~1,5 y ~3,5 px, todas distintas; el termo, 0. | Arnés: `Input.dispatchMouseEvent` + medición | ✅ Cursor de punta a punta: calcos 4 / 7 / 3 / **24,9** px (esperado 4, 7, 3, 25). Termo: 0 px. |
 | AC-12 | *(RF-18)* Orden de entrada titular → bajada → botones → termo → calcos, todo antes de 1,5 s. | Capturas cada 100 ms | ✅ Cuadro a cuadro: H1 → bajada → botones (opacidad > 0,5 a los 440-570 ms) → termo → calcos 1, 3, 2, 4. La última termina a 1,30-1,49 s de que aparece el hero (ver bitácora: retrasos anclados). |
 | AC-13 | *(RF-19, RF-20)* Los botones responden a un clic a los 50 ms; el H1 y la bajada tienen opacidad 1 desde el primer cuadro. | Arnés: clic temprano + `getComputedStyle().opacity` en el primer cuadro | ✅ En el primer cuadro con H1 (147-197 ms): H1, bajada y termo con opacidad 1; `elementFromPoint` en el centro del botón devuelve el botón. |
-| AC-14 | *(RF-21)* Con mouse, hover sobre una calco la agranda y la gira un poco; con touch emulado, no. | Arnés con `hover: hover` y con `Emulation.setTouchEmulationEnabled` | ✅ Mouse: la calco 4 llega a escala 1,08 y 2° y vuelve a 1 en < 250 ms al soltar. Touch emulado: `pointer-events: none` en las 4. |
+| AC-14 | *(RF-21)* Con mouse, hover sobre una calco la agranda y la gira un poco; con touch emulado, no. | Arnés con `hover: hover` y con `Emulation.setTouchEmulationEnabled` | ✅ Mouse: la calco 4 llega a escala 1,08 y 2° y vuelve a 1 en < 250 ms al soltar. Touch emulado: `pointer-events: none` en las 4. *(28/9, ampliación A: las calcos pasan a `pointer-events: auto` para poder tocarlas; el hover sigue solo con mouse — `whileHover` depende de `conMouse` —, verificado en `juego.mjs`.)* |
 | AC-15 | *(RF-22)* Ninguna calco está encima de un elemento clickeable. | `elementFromPoint` en el centro de cada botón devuelve el botón | ✅ En los 44 tamaños, `elementFromPoint` en el centro de cada botón devuelve el botón. |
 | AC-16 | *(RF-23)* Volver al Home navegando dentro del sitio muestra el hero armado; recargar repite la entrada. | Navegación con el router | ✅ Clic a `/categorias` + atrás: sin `.hero--entrada` y calcos con opacidad 1 a los 60 ms. Recargar: vuelve la entrada. |
 | AC-17 | *(RF-24)* Con el hero fuera de pantalla, los loops de las calcos están en pausa. | Scroll + `animationPlayState` | ✅ Con scroll a 2500 px: `data-pausado` puesto y el loop `paused`; de vuelta arriba, `running`. |
@@ -112,28 +112,28 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 
 ## 7. Ampliación A — Pegar las calcos en el termo
 
-> Se valida cuando la ampliación esté implementada (`requirements.md` §13).
+> Validado el 28/09/2026 con `juego.mjs` (arnés de Chrome headless: mouse, touch emulado, movimiento reducido) sobre el build de producción.
 
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
-| AC-A1 | *(RF-A1)* Cursor `grab` sobre una calco y `grabbing` al arrastrar. | `getComputedStyle().cursor` | ⬜ |
-| AC-A2 | *(RF-A2)* Arrastrando, el centro de la calco queda a ± 1 px del cursor en todo el recorrido; no flota ni hace parallax. | Arnés: `page.mouse` en 20 pasos | ⬜ |
-| AC-A3 | *(RF-A3)* Soltada sobre el cuerpo: queda pegada ahí, más chica, y la parte fuera de la silueta no se ve. Sobre la tapa, la base o la manija: no se pega. | Arnés + captura | ⬜ |
-| AC-A4 | *(RF-A4)* Soltada afuera: vuelve a su lugar (± 1 px) en < 1 s. | Arnés | ⬜ |
-| AC-A5 | *(RF-A5)* Clic en las cuatro: todas pegadas, cada una en su destino, sin taparse. | Arnés + captura | ⬜ |
-| AC-A6 | *(RF-A6, RF-A8)* Pegada: sin animaciones, sin parallax; por delante del termo y por detrás de una que se arrastra. | Arnés | ⬜ |
-| AC-A7 | *(RF-A7)* Agarrar una pegada la despega bajo el cursor; clic en una pegada la manda a su lugar. | Arnés | ⬜ |
-| AC-A8 | *(RF-A9)* Arrastrar y soltar sobre "VER CALCOS" no navega. | Arnés | ⬜ |
-| AC-A9 | *(RF-A5, Q4)* Táctil: un toque pega la calco. | Arnés con touch emulado | ⬜ |
-| AC-A10 | *(RF-A10)* Táctil: un gesto de scroll que empieza sobre una calco scrollea la página y no la pega. | Arnés: `Input.dispatchTouchEvent` | ⬜ |
-| AC-A11 | *(RF-A11)* La pista aparece al terminar la entrada, con el texto según el puntero, y se va al pegar la primera; si el chunk no cargó, no aparece. | Arnés | ⬜ |
-| AC-A12 | *(RF-A12)* Recargar o volver al Home navegando: todas en su lugar. | Arnés | ⬜ |
-| ANF-A1 | *(RNF-A1)* Chunk de calcos ≤ +3 kB gzip; chunk principal sin cambios. | Salida del build | ⬜ |
-| ANF-A2 | *(RNF-A2)* ≥ 50 fps arrastrando en desktop. | Arnés con `requestAnimationFrame` | ⬜ |
-| ANF-A3 | *(RNF-A3)* Movimiento reducido: el arrastre funciona; vuelo y vuelta instantáneos. | Arnés | ⬜ |
-| ANF-A4 | *(RNF-A4)* Pegar, despegar o arrastrar no cambia la altura del hero. | Arnés | ⬜ |
-| AN-A1 | `hero_sticker_stick` con `slot` y `metodo` correctos, una vez por pegada; no al mover una pegada dentro del termo. | `dataLayer` | ⬜ |
-| REG-A1 | Todo §1-§5 sigue en verde (barrido de geometría incluido). | Arnés completo | ⬜ |
+| AC-A1 | *(RF-A1)* Cursor `grab` sobre una calco y `grabbing` al arrastrar. | `getComputedStyle().cursor` | ✅ `cursor: grab` sobre la calco y `grabbing` mientras se arrastra. |
+| AC-A2 | *(RF-A2)* Arrastrando, el centro de la calco queda a ± 1 px del cursor en todo el recorrido; no flota ni hace parallax. | Arnés: `page.mouse` en 20 pasos | ✅ Deriva máxima entre cursor y calco: 0,00 px en 20 pasos; `z-index` 40 en la mano; la flotación se pausa. |
+| AC-A3 | *(RF-A3)* Soltada sobre el cuerpo: queda pegada ahí, más chica, y la parte fuera de la silueta no se ve. Sobre la tapa, la base o la manija: no se pega. | Arnés + captura | ✅ Soltada en (0,35; 0,41) → pegada ahí, al 42 % del ancho del termo, con la suelta oculta. Soltada sobre la tapa: no se pega. Captura: la silueta recorta lo que se pasa. |
+| AC-A4 | *(RF-A4)* Soltada afuera: vuelve a su lugar (± 1 px) en < 1 s. | Arnés | ✅ Soltada afuera: vuelve a 1,5 px de su lugar en < 1,1 s (el resto lo pone la flotación, que sigue). |
+| AC-A5 | *(RF-A5)* Clic en las cuatro: todas pegadas, cada una en su destino, sin taparse. | Arnés + captura | ✅ Clic en 2, 3 y 4: las tres en su destino (± 2 %), solape máximo 15 %. Del clic a pegada: 570 ms. |
+| AC-A6 | *(RF-A6, RF-A8)* Pegada: sin animaciones, sin parallax; por delante del termo y por detrás de una que se arrastra. | Arnés | ✅ Pegadas: 0 animaciones, 0,0 px de corrimiento con el cursor cruzando la pantalla, capa con `z-index` 25. |
+| AC-A7 | *(RF-A7)* Agarrar una pegada la despega bajo el cursor; clic en una pegada la manda a su lugar. | Arnés | ✅ Agarrar una pegada: aparece suelta en la mano y se re-pega donde se suelta, sin evento nuevo. Clic en una pegada: vuelve a 0,9 px de su lugar. |
+| AC-A8 | *(RF-A9)* Arrastrar y soltar sobre "VER CALCOS" no navega. | Arnés | ✅ Soltada encima de VER CALCOS: sigue en `/`. |
+| AC-A9 | *(RF-A5, Q4)* Táctil: un toque pega la calco. | Arnés con touch emulado | ✅ Toque (touch emulado) → pegada, evento `1:toque`. Con un poco de scroll, las cuatro. ⚠️ Sin scroll, en 375×812 el botón "10% OFF" tapa el centro de la calco 2 (hallazgo en `tasks.md`). |
+| AC-A10 | *(RF-A10)* Táctil: un gesto de scroll que empieza sobre una calco scrollea la página y no la pega. | Arnés: `Input.dispatchTouchEvent` | ✅ Gesto de scroll con el dedo empezando sobre la calco 3 (eventos táctiles de CDP): la página baja 174 px, igual que empezando sobre el titular, y no se pega nada. `touch-action: auto`. |
+| AC-A11 | *(RF-A11)* La pista aparece al terminar la entrada, con el texto según el puntero, y se va al pegar la primera; si el chunk no cargó, no aparece. | Arnés | ✅ Con mouse: "Arrastrá una calco al termo"; táctil: "Tocá una calco para pegarla". Aparece al terminar la entrada, se va al pegar la primera; con el chunk bloqueado no aparece. |
+| AC-A12 | *(RF-A12)* Recargar o volver al Home navegando: todas en su lugar. | Arnés | ✅ Volver al Home navegando y recargar: 0 pegadas, las 4 sueltas visibles. |
+| ANF-A1 | *(RNF-A1)* Chunk de calcos ≤ +3 kB gzip; chunk principal sin cambios. | Salida del build | ✅ para el chunk de calcos: **+1,9 kB** gzip (30,0 → 31,9). ⚠️ El principal no quedó "sin cambios": **+0,3 kB** (la función `trackHeroStickerStick` en `analytics.js` y el texto de la pista), por debajo del 1 kB del ANF-3. |
+| ANF-A2 | *(RNF-A2)* ≥ 50 fps arrastrando en desktop. | Arnés con `requestAnimationFrame` | ✅ 60 fps arrastrando (y 60 en reposo), medidos con el fondo con blur apagado: este Chrome sin GPU dibuja ese fondo a ~13 fps aunque no se toque nada. En un equipo real, mirarlo en el preview. |
+| ANF-A3 | *(RNF-A3)* Movimiento reducido: el arrastre funciona; vuelo y vuelta instantáneos. | Arnés | ✅ Movimiento reducido: clic → pegada a los 120 ms en su destino; soltada afuera vuelve de una (0 px); el arrastre funciona igual. |
+| ANF-A4 | *(RNF-A4)* Pegar, despegar o arrastrar no cambia la altura del hero. | Arnés | ✅ Alto del hero 732 px antes y después de pegar las cuatro. |
+| AN-A1 | `hero_sticker_stick` con `slot` y `metodo` correctos, una vez por pegada; no al mover una pegada dentro del termo. | `dataLayer` | ✅ `dataLayer`: `1:arrastre, 2:clic, 3:clic, 4:clic`, una por pegada; moverla dentro del termo no suma. |
+| REG-A1 | Todo §1-§5 sigue en verde (barrido de geometría incluido). | Arnés completo | ✅ Todo el arnés de §1-§5 de nuevo: barrido de 44 tamaños (ahora con la pista como texto que nada puede tapar) sin calcos sobre el texto; mismos únicos ❌ de antes (320 px previo, `.buscador` fijo). El LCP del 28/9 dio más lento en los dos builds (entorno): producción 2332 ms, este 1760 ms en la misma corrida. CLS 0,02, todo de la barra de promo (hallazgo). |
 
 ---
 

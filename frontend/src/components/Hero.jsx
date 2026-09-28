@@ -175,6 +175,16 @@ export default function Hero({ conBuscador = false }) {
           )}
         </div>
 
+        {/* La pista del juego de pegar calcos (spec 028, ampliación A). Está
+            siempre en el DOM para que su lugar quede reservado desde el primer
+            cuadro: aparecer o irse no corre nada. Se ve solo si el juego cargó
+            y todavía no se pegó ninguna (`data-juego` / `data-pegada`, que
+            pone HeroCalcos). El CSS elige el texto según el puntero. */}
+        <p className="hero-termo__pista" aria-hidden="true">
+          <span className="hero-termo__pista-mouse">Arrastrá una calco al termo</span>
+          <span className="hero-termo__pista-toque">Tocá una calco para pegarla</span>
+        </p>
+
         {/* La escena tiene un tamaño fijo por CSS que no depende de ninguna
             imagen: cargar el termo o las calcos no mueve nada (sin CLS). Las
             calcos se posicionan adentro de ella, y la escena está DEBAJO de

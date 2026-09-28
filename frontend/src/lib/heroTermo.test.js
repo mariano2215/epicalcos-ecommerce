@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { COPY_HERO, TERMO, CALCOS, duracionEntradaMs } from './heroTermo.js';
+import {
+  COPY_HERO,
+  TERMO,
+  CALCOS,
+  DESTINOS_PEGADO,
+  ANCHO_PEGADA,
+  duracionEntradaMs,
+  dentroDelCuerpo,
+  ajustarAlCuerpo
+} from './heroTermo.js';
 
 /**
  * El hero del termo (spec 028). Lo que se cuida acá es lo que se rompe sin que
@@ -126,3 +135,55 @@ describe('las cuatro calcos', () => {
     for (const capa of capas) expect(['delante', 'detras']).toContain(capa);
   });
 });
+
+describe('pegar calcos en el termo (ampliación A)', () => {
+  const { cuerpo } = TERMO;
+  // Distancias en "anchos de termo": el alto se convierte con la proporción del
+  // archivo, si no un paso vertical parece tres veces más chico de lo que es.
+  const altoEnAnchos = TERMO.alto / TERMO.ancho;
+  const distancia = (a, b) => Math.hypot(a.fx - b.fx, (a.fy - b.fy) * altoEnAnchos);
+
+  it('el cuerpo deja afuera la tapa, la base y la manija', () => {
+    expect(dentroDelCuerpo(0.4, 0.1)).toBe(false); // tapa
+    expect(dentroDelCuerpo(0.4, 0.97)).toBe(false); // base de acero
+    expect(dentroDelCuerpo(0.92, 0.5)).toBe(false); // manija
+    expect(dentroDelCuerpo(0.4, 0.5)).toBe(true);
+    expect(cuerpo.x0).toBeLessThan(cuerpo.x1);
+    expect(cuerpo.y0).toBeLessThan(cuerpo.y1);
+  });
+
+  it('hay un destino por calco y todos caen en el cuerpo', () => {
+    expect(Object.keys(DESTINOS_PEGADO).map(Number).sort()).toEqual(CALCOS.map((c) => c.slot));
+    for (const d of Object.values(DESTINOS_PEGADO)) {
+      expect(dentroDelCuerpo(d.fx, d.fy)).toBe(true);
+      expect(ajustarAlCuerpo(d.fx, d.fy)).toEqual({ fx: d.fx, fy: d.fy });
+    }
+  });
+
+  it('con clic, las cuatro quedan repartidas: ninguna encima de otra', () => {
+    const ds = Object.values(DESTINOS_PEGADO);
+    for (let i = 0; i < ds.length; i++) {
+      for (let j = i + 1; j < ds.length; j++) {
+        expect(distancia(ds[i], ds[j])).toBeGreaterThanOrEqual(ANCHO_PEGADA / 2);
+      }
+    }
+  });
+
+  it('pegadas quedan inclinadas apenas, como puestas a mano (nada de 360°)', () => {
+    for (const d of Object.values(DESTINOS_PEGADO)) expect(Math.abs(d.rot)).toBeLessThanOrEqual(15);
+  });
+
+  it('ajustarAlCuerpo mete para adentro un punto del borde y no toca uno del centro', () => {
+    const borde = ajustarAlCuerpo(cuerpo.x0 + 0.001, cuerpo.y1 - 0.001);
+    expect(borde.fx).toBeGreaterThan(cuerpo.x0 + 0.001);
+    expect(borde.fy).toBeLessThan(cuerpo.y1 - 0.001);
+    expect(dentroDelCuerpo(borde.fx, borde.fy)).toBe(true);
+    expect(ajustarAlCuerpo(0.42, 0.6)).toEqual({ fx: 0.42, fy: 0.6 });
+  });
+
+  it('una calco pegada es de tamaño real: más chica que el termo, pero se ve', () => {
+    expect(ANCHO_PEGADA).toBeGreaterThan(0.25);
+    expect(ANCHO_PEGADA).toBeLessThan(0.6);
+  });
+});
+

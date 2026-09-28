@@ -165,35 +165,35 @@ Ver [`specs/README.md`](../README.md).
 > ⛔ Se ejecuta solo cuando Mariano apruebe la ampliación y lo pida
 > explícitamente. Mismo PR, antes del merge. Diseño: `design.md` §12.
 
-- [ ] **A.0** Mariano contestó Q4 (táctil), Q5 (guardar) y Q6 (pista), y pidió la implementación
+- [x] **A.0** Mariano pidió la implementación (28/9: *"Haz esto en preview…"*); Q4-Q6 con las propuestas
 
 ### Fase A1 — Datos y tests
-- [ ] **A1.1** Tests nuevos en `heroTermo.test.js` (destinos, cuerpo, `ajustarAlCuerpo`); tienen que fallar
+- [x] **A1.1** Tests nuevos en `heroTermo.test.js` (destinos, cuerpo, `ajustarAlCuerpo`); tienen que fallar
   - *Verificación*: fallan por lo que falta, no por otra cosa
-- [ ] **A1.2** `TERMO.cuerpo`, `DESTINOS_PEGADO`, `ANCHO_PEGADA`, `dentroDelCuerpo`, `ajustarAlCuerpo` en `heroTermo.js`
+- [x] **A1.2** `TERMO.cuerpo`, `DESTINOS_PEGADO`, `ANCHO_PEGADA`, `dentroDelCuerpo`, `ajustarAlCuerpo` en `heroTermo.js`
   - *Verificación*: `npm test` en verde
 
 ### Fase A2 — Interacción (`HeroCalcos.jsx`)
-- [ ] **A2.1** Estados por calco en `HeroCalcos`; `data-juego` en la sección al montar
-- [ ] **A2.2** Arrastre con mouse: umbral 4 px, captura del puntero, parallax congelado, `jump()`
+- [x] **A2.1** Estados por calco en `HeroCalcos`; `data-juego` en la sección al montar
+- [x] **A2.2** Arrastre con mouse: umbral 4 px, captura del puntero, parallax congelado, `jump()`
   - *Verificación*: arrastrada, la calco queda exactamente bajo el cursor (± 1 px)
-- [ ] **A2.3** Soltar: pegar si el centro cae en el cuerpo; si no, vuelve con resorte
-- [ ] **A2.4** Clic / toque: vuelo al destino y pegado al terminar
+- [x] **A2.3** Soltar: pegar si el centro cae en el cuerpo; si no, vuelve con resorte
+- [x] **A2.4** Clic / toque: vuelo al destino y pegado al terminar
   - *Verificación*: scroll con el dedo empezando sobre una calco → la página scrollea y no se pega
-- [ ] **A2.5** Capa de pegadas con máscara y apretón; agarrar una pegada; clic en una pegada la despega
-- [ ] **A2.6** `data-pegada` + `trackHeroStickerStick` al pegar
+- [x] **A2.5** Capa de pegadas con máscara y apretón; agarrar una pegada; clic en una pegada la despega
+- [x] **A2.6** `data-pegada` + `trackHeroStickerStick` al pegar
 
 ### Fase A3 — Hero, CSS y analytics
-- [ ] **A3.1** La pista en `Hero.jsx` (lugar reservado, dos textos por CSS)
-- [ ] **A3.2** CSS: `.hero-termo__pegadas`, `.hero-calco-pegada`, `[data-arrastrando]`, cursores, `pointer-events` en táctil, pista, reduced-motion
-- [ ] **A3.3** `trackHeroStickerStick` en `lib/analytics.js` (solo se suma) + `docs/analytics.md`
+- [x] **A3.1** La pista en `Hero.jsx` (lugar reservado, dos textos por CSS)
+- [x] **A3.2** CSS: `.hero-termo__pegadas`, `.hero-calco-pegada`, `[data-arrastrando]`, cursores, `pointer-events` en táctil, pista, reduced-motion
+- [x] **A3.3** `trackHeroStickerStick` en `lib/analytics.js` (solo se suma) + `docs/analytics.md`
   - *Verificación*: `git diff lib/analytics.js` solo agrega líneas
 
 ### Fase A4 — Verificación y cierre
-- [ ] **A4.1** `npm test`, build; chunk de calcos ≤ +3 kB gzip; chunk principal sin cambios
-- [ ] **A4.2** Arnés: arrastrar adentro / afuera / sobre un botón, clic, toque, scroll táctil, re-arrastre, despegar, movimiento reducido, `dataLayer`, fps arrastrando
-- [ ] **A4.3** Barrido de geometría de nuevo (la pista suma altura): nada tapa el texto
-- [ ] **A4.4** `acceptance.md` §7 con resultados reales; commit + push al PR
+- [x] **A4.1** `npm test`, build; chunk de calcos ≤ +3 kB gzip; chunk principal sin cambios — ✅ 749 tests; calcos +1,9 kB; principal +0,3 kB (la función de analytics y la pista, ver acceptance)
+- [x] **A4.2** Arnés: arrastrar adentro / afuera / sobre un botón, clic, toque, scroll táctil, re-arrastre, despegar, movimiento reducido, `dataLayer`, fps arrastrando
+- [x] **A4.3** Barrido de geometría de nuevo (la pista suma altura): nada tapa el texto
+- [x] **A4.4** `acceptance.md` §7 con resultados reales; commit + push al PR
 
 ---
 
@@ -206,6 +206,8 @@ Ver [`specs/README.md`](../README.md).
 | `useExperiment` manda `experiment_view` aunque el experimento esté apagado (con la variante de control). Infla las exposiciones de los tests pausados. | `lib/experiments.js` | Decidir si un test apagado debe reportar exposición. Documentado en `CRO-EXPERIMENTS.md`. |
 | `heroVariantes.js` ya solo se usa por `ubicacionBuscador`; `TITULARES` y `CTA_PRINCIPAL` quedan como registro. | `lib/heroVariantes.js` | Limpiar cuando se decida que `hero_titular` no vuelve. |
 | La prop `eagerFirst` de `StickerField` quedó sin uso (solo la pasaba el hero). | `components/StickerField.jsx` | Sacarla en otro cambio. |
+| La barra de promo anima `left` en su `::after` (el brillo que la cruza): el navegador lo cuenta como corrimiento de layout. Es **todo** el CLS del Home (0,013-0,02 en cada carga; en una corrida del build viejo, 0,35). | `styles/index.css` (`.promo-banner::after`, `relampago-barrido`) | Animar con `transform: translateX()` en vez de `left`: mismo efecto, CLS 0. |
+| En 375×812, sin scrollear, el botón flotante "10% OFF" (spec 026) queda encima de la calco 2 y el de WhatsApp cerca de la 4: un toque ahí abre el popup en vez de pegar la calco. Con un poco de scroll las cuatro quedan libres. | `WelcomePopup` / botón flotante | Mirarlo en el celular; si molesta, correr las dos calcos de abajo o el botón. |
 | El `sitemap.xml` commiteado está desactualizado (faltan 11 categorías); Netlify lo regenera en cada build. | `frontend/public/sitemap.xml` | Commitear el regenerado en un cambio aparte. |
 
 ---
@@ -225,4 +227,8 @@ Ver [`specs/README.md`](../README.md).
 | 27/9 | **El hover va en el `div` de la calco, no en la `img`.** | Al soltar el hover, Framer Motion vuelve con la `transition` del elemento; en la `img` esa transición tiene el retraso de la entrada. |
 | 27/9 | **Sombra del termo al 0,45**, no al 0,12 del pedido. | Sobre un fondo casi negro, 0,12 no se ve. |
 | 27/9 | **Retraso del buscador en el hero: 300 → 150 ms.** | Con los botones a 200 ms, el buscador (que va arriba de ellos) tiene que salir antes. |
+| 28/9 | **Ampliación A implementada** con las propuestas de Q4-Q6. | Pedido de Mariano: verla en el deploy preview. |
+| 28/9 | **Resorte del vuelo con `restDelta`/`restSpeed` en píxeles** (0,5 px / 10 px/s). La escala va con otro resorte, con los valores de fábrica. | Medido: con los de fábrica (0,001) el resorte tardaba más de 1 s en darse por quieto después de llegar, y la última calco se pegaba 1,3 s después del clic. Ahora: 570 ms. |
+| 28/9 | **La pista baja la escena**: `margin-top` de la escena 1,75 → 1 rem (mobile) y 2,25 → 1,5 rem (md); calcos 1 y 3 en `xl` suben 25 px (−315 / −275 px). | La pista ocupa su lugar siempre (sin salto): la escena se acerca para compensar y las de `xl` siguen a la altura del titular. |
+| 28/9 | **FPS del arrastre medidos con el fondo apagado.** | Este Chrome sin GPU dibuja el fondo con blur a ~13 fps aunque no se toque nada. Sin el fondo: 60 en reposo y 60 arrastrando. |
 | 27/9 | **AN-2 estaba mal planteado**: `experiment_view` de `hero_buscador` sigue llegando (todo `debajo`). | `Home` sigue leyendo el experimento a propósito (RN-5) y `useExperiment` reporta aunque esté apagado. Documentado en `CRO-EXPERIMENTS.md`. |

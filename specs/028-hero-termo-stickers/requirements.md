@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `028-hero-termo-stickers` |
-| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliación A (§13): `READY FOR REVIEW`**, con 3 preguntas (Q4-Q6) |
+| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliación A (§13): implementada en la rama (28/09/2026)**, en el deploy preview para el OK de Mariano |
 | **Fecha** | 27/09/2026 |
 | **Autor** | Mariano (pedido) · Claude (redacción) |
 
@@ -252,8 +252,9 @@ Ninguno.
 
 ## 13. Ampliación A — Pegar las calcos en el termo (27/09/2026)
 
-> **Estado de la ampliación: `READY FOR REVIEW`.** No autoriza a implementarla
-> (ver `specs/README.md`). Se implementa en el mismo PR, antes del merge.
+> **Estado de la ampliación: implementada en la rama (28/09/2026).** Mariano
+> pidió verla en el deploy preview (*"Haz esto en preview y si va bien, después
+> de mi confirmación, lo hacemos"*); el merge espera su OK.
 
 ### 13.1 Pedido
 
@@ -358,7 +359,7 @@ juegan van más al catálogo que los que no?
 
 | ID | Pregunta | Propuesta |
 |---|---|---|
-| **Q4** | En el celular, ¿se arrastra con el dedo o se toca para pegar? | **Tocar para pegar.** Arrastrar con el dedo obliga a que la calco "capture" el gesto: si alguien empieza a scrollear con el dedo encima de una calco, en vez de bajar por la página arrastra la calco. En el hero, que es lo primero que se scrollea, eso se siente como un error. Con el toque, scrollear sigue funcionando siempre. |
-| **Q5** | ¿Las calcos pegadas se guardan para la próxima visita? | **No.** Al recargar vuelven a su lugar y se repite la entrada. Guardarlas agrega estado en el navegador para algo que es un juego de 5 segundos, y la próxima visita arrancaría con un hero distinto del que se diseñó. |
-| **Q6** | ¿Mostrar una pista de que se puede jugar? | **Sí**, una línea chica debajo de los botones: *"Arrastrá una calco al termo"* (con mouse) / *"Tocá una calco para pegarla"* (táctil). Aparece al terminar la entrada y se va al pegar la primera. Sin pista, casi nadie descubre que las calcos se pueden agarrar. |
+| **Q4** | En el celular, ¿se arrastra con el dedo o se toca para pegar? | ✅ *Rige la propuesta (28/9).* **Tocar para pegar.** Arrastrar con el dedo obliga a que la calco "capture" el gesto: si alguien empieza a scrollear con el dedo encima de una calco, en vez de bajar por la página arrastra la calco. En el hero, que es lo primero que se scrollea, eso se siente como un error. Con el toque, scrollear sigue funcionando siempre. |
+| **Q5** | ¿Las calcos pegadas se guardan para la próxima visita? | ✅ *Rige la propuesta (28/9).* **No.** Al recargar vuelven a su lugar y se repite la entrada. Guardarlas agrega estado en el navegador para algo que es un juego de 5 segundos, y la próxima visita arrancaría con un hero distinto del que se diseñó. |
+| **Q6** | ¿Mostrar una pista de que se puede jugar? | ✅ *Rige la propuesta (28/9).* **Sí**, una línea chica debajo de los botones: *"Arrastrá una calco al termo"* (con mouse) / *"Tocá una calco para pegarla"* (táctil). Aparece al terminar la entrada y se va al pegar la primera. Sin pista, casi nadie descubre que las calcos se pueden agarrar. |
 

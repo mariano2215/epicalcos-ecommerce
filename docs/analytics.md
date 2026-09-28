@@ -174,6 +174,26 @@ Sin PII: ni el mail ni nada del lead. `page_path` es la ruta sin query.
 
 Sin PII ni valor: solo el tipo.
 
+## El juego de pegar calcos en el hero (spec 028, ampliación A)
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Moverla dentro del termo **no** lo dispara de nuevo; despegarla y volver a pegarla, sí. | `slot` (1-4: mate, Ruta 40, carpincho, Pumas) · `metodo`: `arrastre` · `clic` · `toque` |
+
+Solo GA4 (no va al Píxel: no es un paso del embudo).
+
+**Cómo se lee**:
+
+- Sesiones con al menos un `hero_sticker_stick` / sesiones que ven el Home =
+  cuánta gente juega.
+- `view_item_list` y `custom_sticker_click` (`origen: 'hero'`) en sesiones
+  **con** y **sin** el evento: si los que juegan van más al catálogo o a
+  personalizados, el juego suma; si van menos, distrae.
+- `metodo` separa mouse (`arrastre`/`clic`) de celular (`toque`), y dentro del
+  mouse cuánta gente descubre el arrastre y cuánta hace solo clic.
+
+Sin PII: solo el número de calco y cómo se pegó.
+
 ---
 
 ## Precios +20 % y 15 % por transferencia (spec 027, 26/9/2026)
