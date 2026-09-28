@@ -90,6 +90,10 @@ El stack es deliberadamente chico: React + React Router + Tailwind + Vite, y
 `mercadopago` + `@netlify/blobs` del lado del servidor. **No hay** state manager,
 librería de formularios, de fechas ni de tests más allá de Vitest.
 
+La única excepción es `framer-motion`, y está **encerrada**: la importa un solo
+archivo (`components/hero/HeroCalcos.jsx`), en un chunk que solo baja el Home
+(spec 028). No se usa en ningún otro componente sin pasar por esta regla.
+
 Para agregar una dependencia hay que justificar en `design.md`: qué problema
 resuelve, cuánto pesa, y por qué no alcanza con código propio. El A/B testing y
 el formateo de precios son propios a propósito — está explicado en

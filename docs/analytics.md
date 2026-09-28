@@ -119,7 +119,7 @@ popup_cta_click → add_to_cart → begin_checkout → purchase
 
 | Evento | Cuándo | Parámetros |
 |---|---|---|
-| `popup_view` | se abre el popup (solo o a mano) | `popup_variant`, `popup_trigger` (`time` · `scroll` · `product_views` · `search` · `category` · `exit_intent` · `manual`), `page_path`, `device_type` (`mobile` · `desktop`), `new_vs_returning` |
+| `popup_view` | se abre el popup (solo o a mano) | `popup_variant`, `popup_trigger` (`time` · `scroll` · `product_views` · `search` · `category` · `exit_intent` · `manual` · `sticker_game`, el premio del juego del hero, spec 028), `page_path`, `device_type` (`mobile` · `desktop`), `new_vs_returning` |
 | `popup_close` | se cierra sin navegar | `popup_variant`, `popup_step` (`capture` · `success`), `close_method` (`x` · `esc` · `overlay` · `navigation`) |
 | `popup_email_submit` | se envía un mail con formato válido (antes de la respuesta) | `popup_variant`, `discount_type` (`percentage`), `page_path`, `device_type` |
 | `generate_lead` | el servidor registró el mail: **es la conversión del popup** | `lead_source: 'welcome_popup'` + `popup_variant`, `popup_trigger`, `device_type` |
@@ -173,6 +173,40 @@ Sin PII: ni el mail ni nada del lead. `page_path` es la ruta sin query.
   la garantía; si se abre mucho, la duda es real y el texto tiene que ser claro.
 
 Sin PII ni valor: solo el tipo.
+
+## El juego de pegar calcos en el hero (spec 028, ampliación A)
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Una pegada no se vuelve a mover: un clic la despega y no manda nada. | `slot` (1-4: el lugar de donde salió; el diseño de cada lugar cambia con la recarga) · `metodo`: `arrastre` · `clic` · `toque` · `pegadas`: cuántas hay en el termo después de esta (1-12) · `diseno`: `argentina-<n>` (ampliación D) |
+
+Solo GA4 (no va al Píxel: no es un paso del embudo).
+
+**Cómo se lee**:
+
+- Sesiones con al menos un `hero_sticker_stick` / sesiones que ven el Home =
+  cuánta gente juega.
+- `view_item_list` y `custom_sticker_click` (`origen: 'hero'`) en sesiones
+  **con** y **sin** el evento: si los que juegan van más al catálogo o a
+  personalizados, el juego suma; si van menos, distrae.
+- `metodo` separa mouse (`arrastre`/`clic`) de celular (`toque`), y dentro del
+  mouse cuánta gente descubre el arrastre y cuánta hace solo clic.
+- `diseno` dice **qué diseños** pega la gente. Cada lugar se recarga al azar
+  entre los 58 de Argentina con fondo transparente, pero las 4 del arranque
+  (mate, Ruta 40, carpincho, Pumas) son siempre las mismas: van a salir más
+  por estar primeras, no por gustar más. Para comparar gusto, sacarlas del
+  ranking (`argentina-30`, `-57`, `-19`, `-54`).
+
+Sin PII: solo el lugar, el diseño y cómo se pegó.
+
+**El premio (ampliación C)**: pegar las 4 abre el popup de bienvenida con
+`popup_trigger: 'sticker_game'` (una vez por carga). El embudo del juego se lee:
+`hero_sticker_stick` con `pegadas: 1` (empezó) → `pegadas: 4` (completó; se
+puede seguir hasta 12, y al despegar el número baja) →
+`popup_view` con `sticker_game` → `generate_lead` con `popup_trigger:
+'sticker_game'` → `purchase`. Mientras alguien juega, el popup no se abre solo:
+por eso, desde el deploy de la spec 028, los `popup_view` por `time`/`scroll`
+del Home pueden bajar sin que el popup ande peor.
 
 ---
 

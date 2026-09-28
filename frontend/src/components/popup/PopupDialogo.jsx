@@ -52,7 +52,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabi
  *           onCerrar: (metodo, paso) => void, onConvertido: (codigo) => void,
  *           onSalir: () => void }} props
  */
-export default function PopupDialogo({ pct, contexto, hayCarrito, onCerrar, onConvertido, onSalir }) {
+export default function PopupDialogo({ pct, disparo, contexto, hayCarrito, onCerrar, onConvertido, onSalir }) {
   const [s, dispatch] = useReducer(reducer, INICIAL);
   const cajaRef = useRef(null);
   const tituloRef = useRef(null);
@@ -207,6 +207,7 @@ export default function PopupDialogo({ pct, contexto, hayCarrito, onCerrar, onCo
           ) : (
             <PopupCaptura
               pct={pct}
+              premio={disparo === 'sticker_game'}
               email={s.email}
               error={s.error}
               enviando={s.paso === 'enviando'}

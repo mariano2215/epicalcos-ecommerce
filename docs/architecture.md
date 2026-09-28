@@ -25,6 +25,7 @@ administrativo dentro de este repo. Ver §7 y §8.
 | Routing | react-router-dom | ^6.26.2 (`BrowserRouter`) |
 | Build | Vite | ^5.4.8 |
 | Estilos | Tailwind CSS | ^3.4.13 + PostCSS + Autoprefixer |
+| Animación | framer-motion | ^13.4.4 — **solo** en `components/hero/HeroCalcos.jsx`, en un chunk aparte (spec 028) |
 | Tests | Vitest | ^2.1.9 (`environment: 'node'`) |
 | Servidor | Netlify Functions | Node 20, bundler `esbuild` |
 | Pagos | mercadopago (SDK) | ^3.2.0 (raíz) |
@@ -32,6 +33,13 @@ administrativo dentro de este repo. Ver §7 y §8.
 
 **Sin TypeScript. Sin linter configurado. Sin state manager.** El estado global
 es un único `CartContext` con `useReducer`.
+
+**`framer-motion` no es una librería de uso general acá.** Lo importa un solo
+archivo, `HeroCalcos` (las calcos del hero del Home), y `Hero` lo pide con
+`lazy()`. `Home` es eager y viaja en el chunk principal, que se baja en TODAS
+las rutas: importado ahí, `motion` le sumaba 43 kB gzip (+44 %) a cada página.
+Todo el resto del movimiento del sitio es CSS. Antes de usarlo en otro
+componente, leer `specs/028-hero-termo-stickers/design.md` §10.
 
 Hay **tres** `package.json`:
 - `/package.json` — solo deps de las Functions (`mercadopago`, `@netlify/blobs`)
