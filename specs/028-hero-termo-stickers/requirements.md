@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `028-hero-termo-stickers` |
-| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliaciones A (§13), B (§14), C (§15) y D (§16): en la rama (28/09/2026)**, en el deploy preview para el OK de Mariano |
+| **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliaciones A (§13), B (§14), C (§15) y D (§16)** publicadas el 28/09/2026 con la spec; **E (§17), el hero lleno de calcos**: publicada el mismo día |
 | **Fecha** | 27/09/2026 |
 | **Autor** | Mariano (pedido) · Claude (redacción) |
 
@@ -508,3 +508,68 @@ juega, el popup no lo interrumpe.
   lugar): con la recarga, su lugar ya tiene otra calco. Clic la **despega**
   (RF-D5); ya no se reubica arrastrándola.
 
+
+---
+
+## 17. Ampliación E — El hero lleno de calcos (28/09/2026)
+
+> **Estado de la ampliación: implementada y publicada el 28/09/2026** (va
+> directo a `main`, con la spec 028 ya en producción).
+
+### 17.1 Pedido
+
+> *"Que en el hero esté lleno de calcos por todos lados flotando y no solo 4."*
+
+### 17.2 Problema y objetivo
+
+Con cuatro calcos, el hero se ve vacío: en desktop, los costados del titular
+son fondo liso, y en el celular las cuatro quedan chiquitas contra el termo. El
+objetivo es que el hero se lea como **una lluvia de calcos** alrededor del termo
+—lo que vende el sitio— sin perder lo que ya funciona: el texto se lee, los
+botones se tocan y el juego de pegarlas sigue igual.
+
+**Cómo se sabrá que funcionó**: `hero_sticker_stick` por sesión del Home (más
+calcos a mano → más gente juega) y `view_item_list` / clics en VER CALCOS
+contra los días previos (que no bajen).
+
+### 17.3 Requisitos funcionales
+
+| ID | Requisito |
+|---|---|
+| RF-E1 | La cantidad de calcos sueltas crece con la pantalla: **8 en el celular**, 10 en tablet, 12 desde 1024 px, 14 desde 1280 px y **16 desde 1440 px** (la notebook más común). |
+| RF-E2 | Se reparten **por todo el hero**: alrededor del termo en todos los anchos, y desde 1024 px también a los costados del titular, de arriba abajo. |
+| RF-E3 | **Todas flotan**, cada una con su amplitud y su ritmo: no hay dos que se muevan igual (se mantiene el punto 13 del pedido original). Las calcos 3 y 4, que hasta ahora quedaban quietas, pasan a flotar apenas. |
+| RF-E4 | Todas se pueden arrastrar o tocar para pegarlas en el termo, y todas se recargan al pegarse (como la ampliación D). |
+| RF-E5 | Siguen valiendo RF-4, RF-5 y RF-22: ninguna calco tapa el titular, la bajada, los botones ni la pista, ninguna queda cortada por el borde de la pantalla y no hay scroll horizontal, de 320 a 1920 px. |
+| RF-E6 | La entrada sigue siendo de a una y termina antes de 1,5 s (RF-18). |
+| RF-E7 | La pista pasa a decir **"Pegá 4 calcos y ganate {pct}% OFF"** (sin "las": ya no son cuatro a la vista; sin "en el termo" para que entre en una línea a 375 px). El premio no cambia: 4 calcos cualesquiera. |
+| RF-E8 | Pegadas con un clic o un toque, se reparten en el termo en alturas distintas una tras otra, sin importar de qué lugar vinieron. |
+| RF-E9 | Con movimiento reducido: todas en su lugar, sin loops ni parallax (RF-28). |
+
+### 17.4 Requisitos no funcionales
+
+| ID | Requisito |
+|---|---|
+| RNF-E1 | En un celular no se piden más imágenes que las calcos que se ven: las de pantallas más grandes no se bajan. |
+| RNF-E2 | La próxima calco de cada lugar se pide recién cuando la persona toca una calco por primera vez (con 16 lugares, precargar todo de entrada serían 32 imágenes). |
+| RNF-E3 | El LCP del Home (el termo) no empeora más de 200 ms y el CLS sigue ≤ 0,05 (RNF-1, RNF-2). |
+| RNF-E4 | Scrollear el Home no suma tareas largas (RNF-4). |
+
+### 17.5 Fuera de scope
+
+- Calcos detrás del texto o del botón (bajaría la lectura y el clic: RF-4 y
+  RF-22 siguen).
+- Cambiar el premio, el cupón o la cantidad de piezas del juego.
+- En el celular, las calcos siguen debajo de los botones (la escena empieza
+  cerca del borde inferior de la primera pantalla, como hoy).
+
+### 17.6 Analytics
+
+Sin eventos nuevos. `hero_sticker_stick` ya trae `slot`: pasa a ir de 1 a 16.
+
+### 17.7 Decisiones tomadas por defecto
+
+| ID | Decisión | Por qué |
+|---|---|---|
+| D-E1 | Todas las calcos **se pueden pegar**, no hay calcos solo decorativas. | Con el juego en pantalla, una calco que no responde al toque parece rota. |
+| D-E2 | Los diseños con que arranca cada lugar nuevo son **fijos** (corazón, sol, LOVE, "Fútbol mate asado", Ushuaia, Branca, Aconcagua, tango, escudo "Argentina", termo y mate, Patagonia, mapa). | Se ve igual en cada carga (se puede comparar y verificar); después, la recarga es al azar como en D. |

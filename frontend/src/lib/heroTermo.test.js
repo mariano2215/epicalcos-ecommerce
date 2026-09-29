@@ -6,6 +6,7 @@ import {
   COPY_HERO,
   TERMO,
   CALCOS,
+  lugaresPara,
   DESTINOS_PEGADO,
   ANCHO_PEGADA,
   GIRO_MAX_GRADOS,
@@ -100,12 +101,13 @@ describe('diseños de Argentina (ampliación D)', () => {
     }
   });
 
-  it('los cuatro iniciales están entre los diseños y son distintos', () => {
+  it('los iniciales están entre los diseños, son distintos y hay uno por lugar', () => {
     const iniciales = Object.values(DISENOS_INICIALES);
-    expect(new Set(iniciales).size).toBe(4);
+    expect(new Set(iniciales).size).toBe(CALCOS.length);
     const nums = new Set(DISENOS_HERO.map((d) => d.n));
     for (const n of iniciales) expect(nums.has(n)).toBe(true);
-    expect(Object.keys(DISENOS_INICIALES).map(Number).sort()).toEqual(CALCOS.map((c) => c.slot));
+    // Orden numérico: `.sort()` a secas pone el 10 antes que el 2.
+    expect(Object.keys(DISENOS_INICIALES).map(Number).sort((x, y) => x - y)).toEqual(CALCOS.map((c) => c.slot));
   });
 
   it('el tope del termo es 12', () => {
@@ -141,9 +143,38 @@ describe('siguienteDiseno', () => {
   });
 });
 
-describe('las cuatro calcos', () => {
-  it('son exactamente cuatro, una por slot', () => {
-    expect(CALCOS.map((c) => c.slot)).toEqual([1, 2, 3, 4]);
+describe('las calcos', () => {
+  it('son 16 lugares, numerados del 1 al 16 (ampliación E)', () => {
+    expect(CALCOS.map((c) => c.slot)).toEqual(Array.from({ length: 16 }, (_, i) => i + 1));
+  });
+
+  it('crecen con la pantalla: 8 en el celular y 16 desde 1440 (RF-E1)', () => {
+    const cuantas = (ancho) => lugaresPara(ancho).length;
+    expect(cuantas(320)).toBe(8);
+    expect(cuantas(375)).toBe(8);
+    expect(cuantas(768)).toBe(10);
+    expect(cuantas(1024)).toBe(12);
+    expect(cuantas(1280)).toBe(14);
+    expect(cuantas(1440)).toBe(16);
+    expect(cuantas(1920)).toBe(16);
+    // Las cuatro originales están en cualquier pantalla.
+    expect(lugaresPara(0).map((c) => c.slot)).toEqual(expect.arrayContaining([1, 2, 3, 4]));
+  });
+
+  it('cada lugar tiene su posición en el CSS, con el mismo corte de ancho que en el JS', () => {
+    // El espejo de `desdeAncho`: un lugar que el JS monta y el CSS no ubica
+    // aparece en la esquina de la escena, encima de todo; uno que el CSS muestra
+    // desde otro ancho que el JS queda vacío o sin posición.
+    const css = readFileSync(join(PUBLIC, '..', 'src', 'styles', 'index.css'), 'utf8');
+    for (const c of CALCOS) {
+      expect(css, `sin regla para .hero-calco--${c.slot}`).toMatch(new RegExp(`\\.hero-calco--${c.slot}\\s*\\{`));
+      if (c.desdeAncho > 0) {
+        const bloque = new RegExp(
+          `@media \\(min-width: ${c.desdeAncho}px\\) \\{[^@]*\\.hero-calco--${c.slot}\\s*\\{\\s*display: block`
+        );
+        expect(css, `.hero-calco--${c.slot} no aparece desde ${c.desdeAncho}px`).toMatch(bloque);
+      }
+    }
   });
 
   it('no hay dos que se muevan igual', () => {
@@ -166,12 +197,10 @@ describe('las cuatro calcos', () => {
     }
   });
 
-  it('flotan la 1 y la 2, y la 1 más que la 2; la 3 y la 4 quedan quietas', () => {
-    const [c1, c2, c3, c4] = CALCOS;
-    expect(c1.loop && c2.loop).toBeTruthy();
+  it('flotan todas, y la 1 más que la 2 (ampliación E: la 3 y la 4 ya no quedan quietas)', () => {
+    for (const c of CALCOS) expect(c.loop, `la ${c.slot} no flota`).toBeTruthy();
+    const [c1, c2] = CALCOS;
     expect(c1.loop.amplitudPx).toBeGreaterThan(c2.loop.amplitudPx);
-    expect(c3.loop).toBeNull();
-    expect(c4.loop).toBeNull();
   });
 
   it('las flotaciones son lentas (ciclo ≥ 3 s) y cortas (≤ 20 px): no rebotan', () => {
@@ -228,16 +257,16 @@ describe('pegar calcos en el termo (ampliación A)', () => {
     expect(cuerpo.y0).toBeLessThan(cuerpo.y1);
   });
 
-  it('hay un destino por calco y todos caen en el cuerpo', () => {
-    expect(Object.keys(DESTINOS_PEGADO).map(Number).sort()).toEqual(CALCOS.map((c) => c.slot));
-    for (const d of Object.values(DESTINOS_PEGADO)) {
+  it('hay al menos cuatro destinos (se usan en orden) y todos caen en el cuerpo', () => {
+    expect(DESTINOS_PEGADO.length).toBeGreaterThanOrEqual(4);
+    for (const d of DESTINOS_PEGADO) {
       expect(dentroDelCuerpo(d.fx, d.fy)).toBe(true);
       expect(ajustarAlCuerpo(d.fx, d.fy)).toEqual({ fx: d.fx, fy: d.fy });
     }
   });
 
-  it('con clic, las cuatro quedan repartidas: ninguna encima de otra', () => {
-    const ds = Object.values(DESTINOS_PEGADO);
+  it('con clic, los destinos quedan repartidos: ninguno encima de otro', () => {
+    const ds = DESTINOS_PEGADO;
     for (let i = 0; i < ds.length; i++) {
       for (let j = i + 1; j < ds.length; j++) {
         expect(distancia(ds[i], ds[j])).toBeGreaterThanOrEqual(ANCHO_PEGADA / 2);
@@ -246,7 +275,7 @@ describe('pegar calcos en el termo (ampliación A)', () => {
   });
 
   it('pegadas quedan inclinadas apenas, como puestas a mano (nada de 360°)', () => {
-    for (const d of Object.values(DESTINOS_PEGADO)) expect(Math.abs(d.rot)).toBeLessThanOrEqual(15);
+    for (const d of DESTINOS_PEGADO) expect(Math.abs(d.rot)).toBeLessThanOrEqual(15);
   });
 
   it('ajustarAlCuerpo mete para adentro un punto del borde y no toca uno del centro', () => {

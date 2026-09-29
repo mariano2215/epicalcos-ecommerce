@@ -192,6 +192,30 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 | AN-D1 | `hero_sticker_stick` con `diseno`. | ✅ `argentina-16:11`, `argentina-49:12`, `argentina-23:12`, `argentina-32:12` (diseño:pegadas). |
 | REG-D1 | Lo de las ampliaciones A-C sigue igual. | ✅ `juego.mjs` completo en verde con la recarga (AC-A1 a AC-A12, ANF-A2 a ANF-A4); `verificar.mjs`: mismos ❌ de antes (320 px previo; `pointer-events: auto` en táctil, buscado desde A — ver AC-14; el override `?exp_hero_buscador` no aplica porque el test está cerrado). |
 
+## 11. Ampliación E — El hero lleno de calcos
+
+> Validado el 29/09/2026 con los arneses de Chrome headless `hero.mjs`
+> (geometría y capturas en 12 anchos), `juego.mjs` (toque, clic, premio y
+> movimiento reducido) y `lcp.mjs` (antes vs. después sobre builds de
+> producción), más los tests de `heroTermo`.
+
+| ID | Criterio | Resultado |
+|---|---|---|
+| AC-E1 | *(RF-E1)* 8 calcos en el celular, 10 en tablet, 12 desde 1024, 14 desde 1280 y 16 desde 1440. | ✅ Medido: 320/360/375/390 → 8 · 768 → 10 · 1024 → 12 · 1280 y 1366 → 14 · 1440, 1680 y 1920 → 16. Test: `lugaresPara` da 8/10/12/14/16. |
+| AC-E2 | *(RF-E2)* Por todo el hero: alrededor del termo y, desde 1024, a los costados del titular. | ✅ Capturas a 375, 768, 1280, 1440 y 1920. Desde 1440 las de afuera se abren con la pantalla (`vw`): a 1920 llegan a las esquinas. |
+| AC-E3 | *(RF-E3)* Todas flotan, ninguna igual a otra. | ✅ Test: las 16 con `loop`; firmas (entrada + loop + parallax) y parallax distintos en las 16. |
+| AC-E4 | *(RF-E4)* Cualquiera se pega y su lugar se recarga. | ✅ Celular (toque, 375): el lugar 5 pega y pasa del diseño 7 al 11. Desktop (clic, 1440): los lugares 13, 16, 5 y 11 → 4 pegadas. |
+| AC-E5 | *(RF-E5)* Ninguna calco cruza el H1, la bajada, los botones ni la pista; ninguna se sale de la pantalla; no hay scroll horizontal nuevo. | ✅ 0 cruces y 0 fuera en 320, 360, 375, 390, 768, 1024, 1280, 1366×650, 1440, 1680 y 1920 (líneas de texto medidas con `Range`). Tampoco se pisan entre sí (> 25 % del área). A 320 siguen los 5 px de scroll que ya estaban (hallazgo previo): la calco más a la derecha termina en 318. |
+| AC-E6 | *(RF-E6)* Entrada de a una, terminada antes de 1,5 s. | ✅ Test: 16 retrasos distintos y `duracionEntradaMs() ≤ 1500` (la última, 950 + 550 ms). |
+| AC-E7 | *(RF-E7)* Pista "Pegá 4 calcos y ganate {pct}% OFF"; premio con 4 cualesquiera. | ✅ Pista `🎁 Pegá 4 calcos y ganate 10% OFF · 0/4`, en una línea a 375. Con 4 de lugares distintos (13, 16, 5, 11) se abre "¡Ganaste 10% OFF!". |
+| AC-E8 | *(RF-E8)* Pegadas seguidas con clic, en alturas distintas. | ✅ Alturas: 38,9 % → 68,6 % → 55,6 % → 80,6 %. |
+| AC-E9 | *(RF-E9)* Movimiento reducido: todas en su lugar, sin loops. | ✅ 1440 con `prefers-reduced-motion`: 16 de 16 con opacidad 1 y 0 animaciones. |
+| ANF-E1 | *(RNF-E1)* El celular no baja las imágenes de desktop. | ✅ Al cargar: 8 imágenes a 375, 10 a 768, 12 a 1024, 14 a 1280, 16 a 1440 — una por calco a la vista. |
+| ANF-E2 | *(RNF-E2)* La próxima de cada lugar, recién con el primer toque. | ✅ 375: 8 imágenes al cargar → 17 después del primer toque (8 + la próxima de cada lugar + la nueva del lugar pegado). Antes de esta ampliación eran 8 al cargar con 4 lugares; ahora son 8 con 8. |
+| ANF-E3 | *(RNF-E3)* LCP no empeora > 200 ms; CLS ≤ 0,05. | ✅ 375 px, CPU ×4, red 4G, 7 cargas de cada build alternadas: LCP mediana **2.536 → 2.312 ms**, el elemento sigue siendo el termo. CLS máx. 0,0191 → 0,0195 (viene de la barra de promo, hallazgo previo). Una carga suelta de 5,6 s en el build nuevo (el viejo llegó a 2,9 s; en la primera tanda, con los tests corriendo en paralelo, los dos pasaron de 6,8 s): se lee como ruido de la máquina, porque en el celular se piden las mismas 8 imágenes que antes. |
+| ANF-E4 | Chunks. | ✅ Principal 98,76 → 99,08 kB gzip (+0,32: los datos de 16 lugares); calcos 33,25 → 33,31 kB. Medido con el mismo `.env` en los dos builds. |
+| REG-E1 | Tests. | ✅ `npm test`: 769 en verde (44 archivos). |
+
 ---
 
 ## Definition of Done
@@ -199,7 +223,7 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 ### Código
 - [ ] Todos los criterios de §1, §2 y §3 en ✅ (ANF-6: con el OK de Mariano) — **todo ✅ salvo ANF-6**, que espera los dispositivos reales
 - [x] Todos los criterios de regresión (§4) en ✅
-- [x] `npm test` en verde (743; 767 con las ampliaciones A-D)
+- [x] `npm test` en verde (743; 767 con las ampliaciones A-D; 769 con la E)
 - [x] `framer-motion` importado en **un solo** archivo y fuera del chunk principal
 - [x] Sin refactors fuera de scope en el diff (lo encontrado va en *Hallazgos* de `tasks.md`)
 - [x] Los comentarios explican el **por qué**, con la densidad del repo

@@ -26,13 +26,20 @@ const HeroCalcos = lazy(() => import('./hero/HeroCalcos.jsx'));
  * él ("Tu termo está pidiendo calcos."). El hero anterior decía "calcos" pero no
  * mostraba ningún objeto con calcos hasta Antes/Después, varias pantallas más
  * abajo. El termo va liso a propósito —es el que "pide calcos"— y alrededor,
- * cuatro calcos llegan de a una y cada una se mueve distinto
+ * las calcos llegan de a una y cada una se mueve distinto
  * (ver lib/heroTermo.js). Abajo del texto, los mismos dos caminos de siempre:
  * el catálogo y los personalizados.
  *
+ * Eran cuatro; desde la ampliación E (28/9/2026) son de 8 a 16 según el
+ * ancho, a pedido de Mariano: "que esté lleno de calcos por todos lados". Todas
+ * se pueden pegar en el termo y ninguna va detrás del texto.
+ *
  * Lo que se fue del hero con la spec 028, y por qué:
  *   · las 8 calcos flotantes de fondo (`StickerField`): con las 4 nuevas eran
- *     12 cosas moviéndose, y el pedido era "sin verse sobrecargado".
+ *     12 cosas moviéndose, y el pedido era "sin verse sobrecargado". Con la
+ *     ampliación E el hero volvió a llenarse, pero con calcos que se juegan y
+ *     rodean el texto: las de `StickerField` iban DETRÁS del titular y no se
+ *     podían tocar. No vuelven.
  *   · el saludo ("Bienvenido" → "Estás en casa", spec 024): una segunda línea
  *     animada arriba de un titular que ahora tiene que leerse de inmediato.
  *   · los experimentos `hero_titular` y `hero_cta`: el H1 y el botón ya no son
@@ -76,7 +83,7 @@ let heroYaSeMostro = false;
 /**
  * Si el chunk de las calcos no llega (red cortada a mitad de carga), `lazy()`
  * rechaza y el error sube hasta el primer límite que encuentre. Sin éste, ese
- * límite es la raíz: se caería la Home entera por cuatro calcos decorativas.
+ * límite es la raíz: se caería la Home entera por unas calcos decorativas.
  */
 class SinCalcosSiFalla extends Component {
   state = { fallo: false };

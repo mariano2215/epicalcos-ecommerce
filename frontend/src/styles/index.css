@@ -710,6 +710,85 @@ a { color: inherit; text-decoration: none; }
   .hero-calco--3 { top: -275px; left: calc(50% + 360px); right: auto; width: 128px; }
 }
 
+/* EL HERO LLENO DE CALCOS (ampliación E). Las de la 5 a la 16, con la misma
+   regla que las cuatro de arriba: del lado izquierdo, `right` = distancia del
+   centro a su borde que mira al termo; del derecho, `left`. Impares a la
+   izquierda, pares a la derecha.
+
+   Cuántas hay depende del ancho, y el corte está ESPEJADO en `desdeAncho` de
+   lib/heroTermo.js: el JS no monta (ni baja la imagen de) un lugar que acá no
+   tiene dónde ir. Si se cambia un corte, se cambia en los dos lados. Los
+   `display: none` son para cuando la ventana se achica con la página abierta.
+
+   MOBILE (8): dos columnas, una de cada lado del termo. La 5 y la 6 a media
+   altura y afuera; la 7 y la 8 abajo y afuera, al lado de la 2 y la 4. Entre
+   320 y 767 px nada se sale de la pantalla: la más ajustada es la 8 a 320
+   (queda a 5 px del borde). */
+.hero-calco--5 { top: 34%;    right: calc(50% + var(--medio-termo) + 3.25rem); width: clamp(54px, 16vw, 76px); }
+.hero-calco--6 { top: 30%;    left:  calc(50% + var(--medio-termo) + 2.5rem);  width: clamp(56px, 17vw, 80px); }
+.hero-calco--7 { bottom: 0;   right: calc(50% + var(--medio-termo) + 3.5rem);  width: clamp(50px, 15vw, 70px); }
+.hero-calco--8 { top: 63%;    left:  calc(50% + var(--medio-termo) + 4.25rem); width: clamp(48px, 14vw, 66px); }
+.hero-calco--9,
+.hero-calco--10,
+.hero-calco--11,
+.hero-calco--12,
+.hero-calco--13,
+.hero-calco--14,
+.hero-calco--15,
+.hero-calco--16 { display: none; }
+
+/* TABLET (10): la escena tiene ~730 px de ancho y el termo 90: a cada lado
+   entran tres columnas. La 9 y la 10, arriba y lo más afuera. */
+@media (min-width: 768px) {
+  .hero-calco--5  { top: 34%;  right: calc(50% + var(--medio-termo) + 9rem);    width: clamp(84px, 9vw, 120px); }
+  /* 24 % y no 30: a 1280 la escena mide 320 px y la 6 (ya de 115) se montaba
+     sobre la 8 (lo marcó el arnés). */
+  .hero-calco--6  { top: 24%;  left:  calc(50% + var(--medio-termo) + 8rem);    width: clamp(86px, 9vw, 124px); }
+  .hero-calco--7  { bottom: 0; right: calc(50% + var(--medio-termo) + 8rem);    width: clamp(80px, 8.5vw, 116px); top: auto; }
+  .hero-calco--8  { top: auto; bottom: 6%; left: calc(50% + var(--medio-termo) + 7rem); width: clamp(80px, 8.5vw, 116px); }
+  .hero-calco--9  { display: block; top: 8%; right: calc(50% + var(--medio-termo) + 14rem);   width: clamp(80px, 8vw, 112px); }
+  .hero-calco--10 { display: block; top: 2%; left:  calc(50% + var(--medio-termo) + 13.5rem); width: clamp(78px, 8vw, 110px); }
+}
+
+/* DESDE 1024 (12): a los costados del titular hay lugar (el H1 llega a 300 px
+   del centro). La 11 y la 12 suben a esa franja: la 11 a la altura de la
+   bajada, la 12 a la del H1. Mismo `top` negativo en px que la 1 y la 3 de
+   `xl`, y por el mismo motivo: desde `lg` el titular tiene tamaño fijo. */
+@media (min-width: 1024px) {
+  .hero-calco--11 { display: block; top: -250px; right: calc(50% + 350px); width: 110px; }
+  .hero-calco--12 { display: block; top: -300px; left:  calc(50% + 350px); width: 100px; }
+  /* En pantallas anchas y bajas (1366×650) la escena mide 300 px de alto y los
+     anchos en `vw` la llenaban: la 5 se montaba sobre la 7 y la 6 sobre la 8
+     (lo marcó el arnés). Desde acá el ancho también se topea por el alto de la
+     escena, que es lo que comparten las que van una arriba de la otra. */
+  .hero-calco--5 { width: min(120px, 9vw, calc(var(--alto-escena) * 0.33)); }
+  .hero-calco--6 { width: min(124px, 9vw, calc(var(--alto-escena) * 0.35)); }
+  .hero-calco--7 { width: min(116px, 8.5vw, calc(var(--alto-escena) * 0.31)); }
+  .hero-calco--8 { width: min(116px, 8.5vw, calc(var(--alto-escena) * 0.31)); }
+}
+
+/* DESDE 1280 (14): la 1 y la 3 suben al titular (arriba), así que la 11 y la
+   12 bajan a la altura de los botones. La 13 y la 14, los costados de la
+   escena, más allá de la 5 y la 6. */
+@media (min-width: 1280px) {
+  .hero-calco--11 { top: -130px; right: calc(50% + 380px); width: 120px; }
+  .hero-calco--12 { top: -105px; left:  calc(50% + 400px); width: 110px; }
+  .hero-calco--13 { display: block; top: 55%; right: calc(50% + 330px); width: 120px; }
+  .hero-calco--14 { display: block; top: 45%; left:  calc(50% + 340px); width: 115px; }
+}
+
+/* DESDE 1440 (16): la columna de afuera, a la altura del titular. `max()` con
+   `vw`: en 1920 se abre hacia el borde en vez de quedar pegada a la del
+   medio. A 1440, 38vw = 547 px: la 15 termina a 667 px del centro (de 720). */
+@media (min-width: 1440px) {
+  .hero-calco--15 { display: block; top: -220px; right: calc(50% + max(540px, 38vw)); width: 120px; }
+  .hero-calco--16 { display: block; top: -300px; left:  calc(50% + max(540px, 38vw)); width: 120px; }
+  /* La 13 y la 14 también se abren con la pantalla: a 1920, con los 330-340 px
+     fijos, las esquinas de abajo quedaban vacías y todo se juntaba en el medio. */
+  .hero-calco--13 { right: calc(50% + max(330px, 26vw)); }
+  .hero-calco--14 { left:  calc(50% + max(340px, 27vw)); }
+}
+
 /* ============================================================
    Buscador (components/BuscadorCalcos.jsx)
    ============================================================ */

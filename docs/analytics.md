@@ -178,7 +178,7 @@ Sin PII ni valor: solo el tipo.
 
 | Evento | Cuándo | Parámetros |
 |---|---|---|
-| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Una pegada no se vuelve a mover: un clic la despega y no manda nada. | `slot` (1-4: el lugar de donde salió; el diseño de cada lugar cambia con la recarga) · `metodo`: `arrastre` · `clic` · `toque` · `pegadas`: cuántas hay en el termo después de esta (1-12) · `diseno`: `argentina-<n>` (ampliación D) |
+| `hero_sticker_stick` | Una calco del hero queda pegada en el termo. Una pegada no se vuelve a mover: un clic la despega y no manda nada. | `slot` (1-16: el lugar de donde salió; 1-8 existen en el celular, 9-16 solo en pantallas más anchas — ampliación E, 28/9/2026 —; el diseño de cada lugar cambia con la recarga) · `metodo`: `arrastre` · `clic` · `toque` · `pegadas`: cuántas hay en el termo después de esta (1-12) · `diseno`: `argentina-<n>` (ampliación D) |
 
 Solo GA4 (no va al Píxel: no es un paso del embudo).
 

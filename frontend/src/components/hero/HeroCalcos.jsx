@@ -11,6 +11,7 @@ import {
 } from 'framer-motion';
 import {
   CALCOS,
+  lugaresPara,
   CURVA_SALIDA,
   TERMO,
   ANCHO_PEGADA,
@@ -35,8 +36,8 @@ import { registrarPegadas, hayPremio, yaPremiado } from '../../lib/juegoTermo.js
 import { DISENOS_HERO } from '../../lib/disenosHero.js';
 
 /**
- * Las cuatro calcos del hero del termo (spec 028). Es el ÚNICO archivo del
- * sitio que importa `framer-motion`, y `Hero` lo pide con `lazy()`.
+ * Las calcos del hero del termo (spec 028). Es el ÚNICO archivo del sitio que
+ * importa `framer-motion`, y `Hero` lo pide con `lazy()`.
  *
  * ⚠️ POR QUÉ UN CHUNK APARTE. `Home` es eager y viaja en el chunk principal, que
  * se baja en TODAS las rutas — también en la ficha de producto a la que llega
@@ -88,10 +89,16 @@ import { DISENOS_HERO } from '../../lib/disenosHero.js';
  * 12: con la 13, la más vieja se despega sola. Un clic en una pegada la
  * despega.
  *
- * EL JUEGO (ampliación C): "Pegá las 4 calcos y ganate 10% OFF". El progreso va
- * a lib/juegoTermo.js, que le avisa al popup de bienvenida cuando alguien gana.
+ * EL JUEGO (ampliación C): "Pegá 4 calcos y ganate 10% OFF". El progreso va a
+ * lib/juegoTermo.js, que le avisa al popup de bienvenida cuando alguien gana.
  * Mientras alguien juega, la sección lleva `data-popup-bloqueo`: el popup ya
  * sabía no abrirse encima de algo así (lo usa el menú del celular).
+ *
+ * LLENO DE CALCOS (ampliación E): de 8 lugares en el celular a 16 desde 1440
+ * px. Cuáles existen se decide UNA vez, con el ancho al montar
+ * (`lugaresPara`): así un celular no baja las imágenes de los lugares de
+ * desktop. Si la ventana se achica después, el CSS esconde los que ya no
+ * entran; si se agranda, quedan los que había (menos calcos, nada roto).
  *
  * @param {{ seccionRef: import('react').RefObject<HTMLElement>, entrada: boolean, inicioEntrada: number }} props
  *        `seccionRef` = la sección del hero: el parallax escucha el cursor ahí.
@@ -242,13 +249,18 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
   // saber dónde cayó una calco y a dónde tiene que volar.
   const capaRef = useRef(null);
 
+  // Los lugares que entran en esta pantalla (ampliación E).
+  const [activas] = useState(() => lugaresPara(typeof window === 'undefined' ? 0 : window.innerWidth));
+
   // Qué diseño muestra cada lugar y cuál sigue (ya precargado). La "bolsa" de
   // usados vive en un ref: elegir el próximo no tiene que re-renderizar.
-  const usados = useRef(new Set(Object.values(DISENOS_INICIALES)));
+  const usados = useRef(null);
   const [lugares, setLugares] = useState(() => {
-    const visibles = new Set(Object.values(DISENOS_INICIALES));
+    const iniciales = activas.map((c) => DISENOS_INICIALES[c.slot]);
+    usados.current = new Set(iniciales);
+    const visibles = new Set(iniciales);
     const inicial = {};
-    for (const c of CALCOS) {
+    for (const c of activas) {
       const { n, usados: u } = siguienteDiseno({ visibles, usados: usados.current, disenos: DISENOS_HERO });
       usados.current = u;
       visibles.add(n);
@@ -258,9 +270,14 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
   });
   // Precarga: la próxima de cada lugar ya está bajada cuando le toque entrar
   // (una por lugar, nunca las 58: RNF-D1). Una sola vez por diseño: el efecto
-  // corre con cada recarga y, sin el registro, volvía a pedir las cuatro.
+  // corre con cada recarga y, sin el registro, volvía a pedir todas.
+  // Arranca recién con el primer toque a una calco (RNF-E2): con 16 lugares,
+  // precargar de entrada eran 16 imágenes más para quien no juega. Del toque a
+  // que el lugar se recarga pasa el vuelo al termo (~0,6 s): alcanza.
+  const [jugo, setJugo] = useState(false);
   const precargadas = useRef(new Set());
   useEffect(() => {
+    if (!jugo) return;
     for (const { siguiente } of Object.values(lugares)) {
       if (precargadas.current.has(siguiente)) continue;
       precargadas.current.add(siguiente);
@@ -268,7 +285,11 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
       img.decoding = 'async';
       img.src = srcDiseno(siguiente);
     }
-  }, [lugares]);
+  }, [lugares, jugo]);
+
+  // Pegadas con clic o toque: cada una a la próxima altura (ampliación E).
+  const destinos = useRef(0);
+  const siguienteDestino = () => DESTINOS_PEGADO[destinos.current++ % DESTINOS_PEGADO.length];
 
   const giroRef = useRef(null);
 
@@ -332,6 +353,7 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
   // `jugandoMs`. El popup no se abre solo mientras exista (usePopupDisparo).
   const bloqueo = useRef(null);
   const tocar = () => {
+    setJugo(true);
     const el = seccionRef.current;
     if (!el) return;
     el.dataset.popupBloqueo = '';
@@ -369,7 +391,8 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
       <span className="hero-termo__pista-texto">🎉 ¡Listo! Tu {pct}% OFF te espera</span>
     ) : (
       <>
-        <span className="hero-termo__pista-texto">🎁 Pegá las {POPUP_JUEGO.piezas} calcos y ganate {pct}% OFF</span>
+        {/* "Pegá 4", no "las 4": desde la ampliación E hay más de cuatro a la vista. */}
+        <span className="hero-termo__pista-texto">🎁 Pegá {POPUP_JUEGO.piezas} calcos y ganate {pct}% OFF</span>
         <span className="hero-termo__contador">
           {cantidad}/{POPUP_JUEGO.piezas}
         </span>
@@ -384,10 +407,10 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
     );
   }
 
-  // UN par de valores para las cuatro calcos: la posición del cursor normalizada
+  // UN par de valores para todas las calcos: la posición del cursor normalizada
   // a [-0,5, 0,5]. Cada calco la multiplica por su intensidad. Dos resortes y no
-  // ocho: la profundidad ya sale de las intensidades distintas, y cada resorte
-  // es trabajo por cuadro en el hilo principal.
+  // uno por calco: la profundidad ya sale de las intensidades distintas, y cada
+  // resorte es trabajo por cuadro en el hilo principal (con 16 calcos, 32).
   const cursorX = useMotionValue(0);
   const cursorY = useMotionValue(0);
   const suaveX = useSpring(cursorX, RESORTE_CURSOR);
@@ -438,7 +461,7 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
         </div>
         {pistaEl && pista && createPortal(pista, pistaEl)}
         <div className="hero-calcos" aria-hidden="true">
-          {CALCOS.map((calco) => (
+          {activas.map((calco) => (
             <Calco
               key={calco.slot}
               calco={calco}
@@ -454,6 +477,7 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
               anguloGiro={anguloGiro}
               onTocar={tocar}
               onArrastre={arrastrar}
+              onDestino={siguienteDestino}
             />
           ))}
         </div>
@@ -475,7 +499,8 @@ function Calco({
   onPegar,
   anguloGiro,
   onTocar,
-  onArrastre
+  onArrastre,
+  onDestino
 }) {
   const { slot } = calco;
   const [falta, setFalta] = useState(false);
@@ -595,7 +620,7 @@ function Calco({
     congelar();
     const capa = capaRef.current.getBoundingClientRect();
     const c = centroDe(imgRef.current);
-    const d = DESTINOS_PEGADO[slot];
+    const d = onDestino();
     llevar(arrastreX, arrastreX.get() + capa.left + d.fx * capa.width - c.x);
     llevar(arrastreY, arrastreY.get() + capa.top + d.fy * capa.height - c.y);
     alLlegar(arrastreX, arrastreY, () => pegarEn(d.fy, d.rot, metodo, 0));

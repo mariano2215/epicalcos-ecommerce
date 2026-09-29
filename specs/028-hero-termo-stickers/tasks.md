@@ -224,6 +224,18 @@ Ver [`specs/README.md`](../README.md).
 - [x] **D.4** `diseno` en `hero_sticker_stick`; docs
 - [x] **D.5** Arneses de nuevo: `muchas.mjs` (nuevo), `juego.mjs`, `giro3.mjs`, `bloqueo.mjs`, `verificar.mjs`
 
+## Ampliación E — El hero lleno de calcos
+
+> Pedido de Mariano del 28/9: *"Que en el hero esté lleno de calcos por todos
+> lados flotando y no solo 4."* Directo a `main` (la spec ya está publicada).
+
+- [x] **E.1** `CALCOS` a 16 lugares con `desdeAncho` + `lugaresPara`; `DISENOS_INICIALES` de 16; la 3 y la 4 flotan; `DESTINOS_PEGADO` en lista
+- [x] **E.2** Tests: 16 lugares, 8/10/12/14/16 por ancho, todas flotan, destinos en lista, espejo JS↔CSS de los cortes
+- [x] **E.3** `HeroCalcos`: solo los lugares de la pantalla, precarga después del primer toque, destinos en orden, pista "Pegá 4 calcos…"
+- [x] **E.4** CSS de los lugares 5-16 en los cinco cortes, con `display: none` debajo de cada corte
+- [x] **E.5** Arneses `hero.mjs` (12 anchos: 0 cruces con el texto, 0 fuera de pantalla, 0 calcos pisadas), `juego.mjs` y `lcp.mjs`
+- [x] **E.6** `npm test` + `vite build`; acceptance §11; commit y push
+
 ---
 
 ## Hallazgos fuera de scope
@@ -270,3 +282,10 @@ Ver [`specs/README.md`](../README.md).
 | 28/9 | **La lista de 58 diseños (`disenosHero.js`) la importa solo `HeroCalcos`**, no `heroTermo.js`. | Primera versión: `heroTermo.js` la importaba y terminaba en el chunk principal (lo marcó la salida del build). Así, el principal crece 0,12 kB y la lista viaja en el chunk de las calcos. |
 | 28/9 | **RF-A7 reemplazado por RF-D5**: clic en una pegada la despega (se va con una animación); ya no se reubica arrastrándola ni vuelve a su lugar. | Con la recarga, su lugar ya tiene otra calco. |
 | 27/9 | **AN-2 estaba mal planteado**: `experiment_view` de `hero_buscador` sigue llegando (todo `debajo`). | `Home` sigue leyendo el experimento a propósito (RN-5) y `useExperiment` reporta aunque esté apagado. Documentado en `CRO-EXPERIMENTS.md`. |
+| 28/9 | **Ampliación E: 16 lugares, con cuántos según el ancho** (8 a 16), en vez de "más calcos" en todos los tamaños. | En el celular, al lado de un termo de 85 px, entran dos columnas de cuatro; más, se pisan o se salen de la pantalla. |
+| 28/9 | **Qué lugares hay se decide al montar**, con el ancho de ese momento. | Montar los 16 y esconder por CSS habría bajado las 16 imágenes en el celular (un `<img>` con `display: none` se descarga igual). |
+| 28/9 | **La precarga de la próxima calco espera al primer toque.** | Con 16 lugares, precargar de entrada eran 32 imágenes a 1440 para quien no juega. Del toque a la recarga pasa el vuelo al termo: alcanza. |
+| 28/9 | **Destinos del pegado en orden, no por lugar.** | Con 16 lugares y 4 alturas, dos lugares con el mismo destino pegados seguidos caían uno encima del otro. |
+| 29/9 | **La 6 a 24 % (no 30 %) desde `md`; la 5 a la 8 topeadas por el alto de la escena desde `lg`.** | El arnés marcó la 6 sobre la 8 a 1280, y la 5 sobre la 7 y la 6 sobre la 8 a 1366×650 (escena de 300 px con anchos en `vw`). |
+| 29/9 | **La 13 y la 14 se abren con la pantalla desde 1440** (`max(330px, 26vw)`). | A 1920 las esquinas de abajo quedaban vacías y todo se juntaba en el medio. |
+| 29/9 | **Pista sin "en el termo"** (RF-E7). | Para que entre en una línea a 375 px, como la anterior. |

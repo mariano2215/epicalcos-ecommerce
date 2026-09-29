@@ -819,3 +819,78 @@ disparo y una función; ninguna regla existente cambia.
   iniciales están en la lista; `siguienteDiseno` nunca devuelve uno visible y
   recorre todos antes de repetir.
 
+
+---
+
+## 16. Ampliación E — El hero lleno de calcos
+
+### 16.1 Dependencias analizadas
+
+Solo cambian módulos del hero: `lib/heroTermo.js` (lo importan `Hero.jsx`,
+`HeroCalcos.jsx` y su test), `components/hero/HeroCalcos.jsx` (solo `Hero`) y
+el bloque del hero en `styles/index.css`. Ninguno de la tabla de la regla 9:
+`analytics.js` no se toca (`hero_sticker_stick` ya manda `slot`).
+
+### 16.2 Datos (`lib/heroTermo.js`)
+
+- `CALCOS` pasa de 4 a **16 lugares**. Las 4 de siempre conservan entrada,
+  parallax y capa; la 3 y la 4 suman una flotación chica (RF-E3). Las 12
+  nuevas salen de `lugarExtra(slot, desdeAncho, rot, retrasoMs, amplitudPx,
+  cicloMs, parallaxPx)`: misma entrada (aparece creciendo y girando 10° hasta
+  su inclinación, 550 ms) y todo lo demás distinto.
+- **`desdeAncho`** en cada lugar + **`lugaresPara(ancho)`**: 0 (1-8), 768 (9-10),
+  1024 (11-12), 1280 (13-14), 1440 (15-16).
+- `DISENOS_INICIALES` con los 16 (fijos, D-E2).
+- `DESTINOS_PEGADO` pasa de objeto por lugar a **lista que se usa en orden**
+  (RF-E8): con 16 lugares y 4 alturas, "uno por lugar" pegaba dos seguidas en
+  la misma altura.
+- Retrasos: de 300 a 950 ms, todos distintos; la última termina a 1.500 ms
+  (RF-E6, lo cuida el test existente).
+
+### 16.3 `HeroCalcos.jsx`
+
+- `activas = lugaresPara(window.innerWidth)` **una vez, al montar**. Solo esos
+  lugares tienen estado, diseño inicial y `<img>`: un celular pide 8 imágenes,
+  no 16 (RNF-E1). No se escucha `resize`: si la ventana se achica, el CSS
+  esconde los que no entran; si se agranda, quedan los que había.
+- **Precarga diferida** (RNF-E2): la próxima de cada lugar se pide recién
+  después del primer toque a una calco (`jugo`). Antes: 4 + 4 imágenes al
+  cargar; con 16 lugares sin este cambio serían 32.
+- `siguienteDestino()` (un contador) reemplaza `DESTINOS_PEGADO[slot]`.
+- Pista: "Pegá {n} calcos y ganate {pct}% OFF" (RF-E7).
+
+### 16.4 CSS (`styles/index.css`)
+
+Misma regla que las cuatro originales: del lado izquierdo `right: calc(50% +
+distancia)`, del derecho `left`, medidas contra `--medio-termo`. Impares a la
+izquierda, pares a la derecha.
+
+| Ancho | Lugares | Dónde van las nuevas |
+|---|---|---|
+| < 768 | 1-8 | 5 y 6 a media altura, afuera; 7 y 8 abajo, afuera. |
+| ≥ 768 | + 9, 10 | Tres columnas por lado en la escena; 9 y 10 arriba, lo más afuera. |
+| ≥ 1024 | + 11, 12 | Suben a la franja libre al costado del titular (`top` negativo en px, como la 1 y la 3 de `xl`). |
+| ≥ 1280 | + 13, 14 | La 1 y la 3 ocupan la altura del H1: la 11 y la 12 bajan a la de los botones; 13 y 14 a los costados de la escena. |
+| ≥ 1440 | + 15, 16 | Columna de afuera a la altura del titular, `max(540px, 38vw)` del centro. |
+
+Los lugares 9-16 llevan `display: none` debajo de su corte. **El corte está
+espejado** con `desdeAncho`: el test verifica que cada lugar tenga su regla y
+que aparezca (`display: block`) en el `@media` de su ancho.
+
+### 16.5 Rendimiento
+
+- Imágenes al cargar: 8 (celular) a 16 (≥ 1440), ~15 kB cada una, todas
+  después del LCP (el termo) porque viajan en el chunk diferido.
+- Flotación: CSS sobre `translate` (compositor), pausada fuera de pantalla.
+- Parallax: siguen siendo 2 resortes para todas; cada calco suma 2
+  `useTransform`.
+
+### 16.6 Testing
+
+- `heroTermo.test.js`: 16 lugares; `lugaresPara` da 8/10/12/14/16; todas
+  flotan; destinos en lista; espejo JS↔CSS de los cortes. Se corrige un
+  `.sort()` sin comparador que con más de 9 lugares ordenaba "10" antes que "2".
+- Arnés CDP (`hero.mjs`, en el scratchpad de la sesión): en 320, 375, 390,
+  768, 1024, 1280, 1440 y 1920 px mide que ninguna calco cruce una línea del
+  H1, de la bajada, los botones o la pista; que ninguna se salga de la
+  pantalla; que no se pisen entre sí; y cuántas imágenes se pidieron.
