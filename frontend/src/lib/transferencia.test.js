@@ -77,9 +77,10 @@ describe('AC-1 · la tabla de precios de la spec 029 (requirements §9.1)', () =
     expect(POLAROID_IMAN_POR_FOTO).toBe(750);
   });
 
-  it('los envíos NO cambian (decisión de Mariano)', () => {
+  it('los costos de envío NO cambian; el umbral nacional sube a $55.000 (enmienda del 1/10/2026)', () => {
     expect(shipping.freeShippingThresholdRosario).toBe(35000);
-    expect(shipping.freeShippingThresholdNational).toBe(50000);
+    expect(shipping.freeShippingThresholdNational).toBe(55000);
+    expect([shipping.costRosario, shipping.costNearby, shipping.costInterior]).toEqual([4500, 6500, 8500]);
   });
 });
 

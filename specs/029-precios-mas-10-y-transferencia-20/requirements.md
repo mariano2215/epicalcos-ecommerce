@@ -175,5 +175,20 @@ umbral de envío gratis a todo el país ($50.000) pagando con Mercado Pago.**
 Hasta el 1/10/2026 ($47.999) quedaban abajo y pagaban $6.500 a ciudades
 próximas y $8.500 al interior. No es una promo regalando el envío: es la regla
 de siempre (manda el umbral) con el precio nuevo. Por transferencia ($42.399)
-siguen pagando envío fuera de Rosario. Si se quiere evitar, la decisión es de
-Mariano (subir el umbral nacional o dejarlo así); no se tocó en esta spec.
+siguen pagando envío fuera de Rosario.
+
+### 13.1 Enmienda (1/10/2026) — umbral nacional a $55.000
+
+**Decisión de Mariano**: *"Subí el umbral a $55.000"*. El umbral de envío
+gratis al resto del país pasa de $50.000 a **$55.000**; el de Rosario sigue en
+$35.000 y los costos de envío no cambian. Con eso la promo de 100 calcos y
+Negocio ($52.999) vuelven a pagar envío fuera de Rosario con cualquier medio de
+pago, como hasta el 1/10/2026.
+
+| ID | Requisito | Prioridad |
+|---|---|---|
+| RF-10 | El envío es gratis al resto del país desde $55.000 (subtotal ya descontado) | 🔴 must |
+| RF-11 | La promo de 100 calcos y Negocio quedan por debajo del umbral nacional; si una suba futura las deja arriba, el deploy se frena hasta que alguien lo decida | 🟡 should |
+
+Esto deja sin efecto la línea de §4 que dejaba los umbrales fuera de scope, solo
+para el nacional.

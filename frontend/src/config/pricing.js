@@ -789,6 +789,13 @@ export function precioVidrieraLinea(line, now = Date.now()) {
  * $8.500 de Correo Argentino, o sea el 17 % de esa venta. Es una decisión
  * comercial tomada a la vista de ese número, no un descuido.
  *
+ * El 1/10/2026 subió a $55.000 (spec 029, enmienda): la suba de precios dejó a
+ * la promo de 100 calcos y a Negocio ($52.999) arriba de $50.000, y viajaban
+ * gratis a todo el país sin que nadie lo hubiera decidido. Un umbral que cruza
+ * sola una promo es este mismo atajo por otra puerta: `envio.test.js` frena el
+ * deploy si una próxima suba vuelve a dejar la promo de 100 o Negocio arriba
+ * del umbral nacional.
+ *
  * Si mañana hace falta una promo con el envío puesto, NO se hace reponiendo este
  * atajo: se sube el precio del pack por encima del umbral, o se declara como
  * una regla de negocio propia con su spec — y se piensa antes qué pasa cuando

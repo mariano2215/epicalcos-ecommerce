@@ -67,7 +67,8 @@ transaction_id: "EPI-TEST-123"
 
 ## 3. Precios y envío
 
-Umbrales vigentes: **$35.000** Rosario · **$50.000** resto del país.
+Umbrales vigentes: **$35.000** Rosario · **$55.000** resto del país (desde el
+1/10/2026; las filas "recalculado 21/8" de abajo usan los $50.000 de entonces).
 
 | Caso | Esperado | Resultado |
 |---|---|---|

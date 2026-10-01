@@ -40,9 +40,13 @@ export const shipping = {
   /**
    * Envío gratis al RESTO DEL PAÍS (ciudades próximas + interior) a partir de
    * este monto. En Rosario sigue mandando el umbral de arriba, que es más bajo.
+   * $55.000 desde el 1/10/2026 (spec 029, enmienda): con los precios nuevos la
+   * promo de 100 calcos y Negocio ($52.999) quedaban arriba de $50.000 y
+   * viajaban gratis a todo el país pagando con Mercado Pago. Mariano subió el
+   * umbral para que sigan pagando envío fuera de Rosario, como hasta ese día.
    * ⚠️ Espejado en netlify/functions/lib/pricing.js (FREE_SHIPPING_THRESHOLD_NATIONAL).
    */
-  freeShippingThresholdNational: 50000,
+  freeShippingThresholdNational: 55000,
   /** Costo de envío dentro de Rosario bajo el mínimo (motomensajería) */
   costRosario: 4500,
   /** Costo de envío a ciudades próximas (Funes, Granadero Baigorria, Villa Gobernador Gálvez) */

@@ -21,6 +21,8 @@
 | AC-10 | *(RF-9)* Feed de Meta con los precios nuevos | diff del CSV | ✅ 6.680 filas, mismos SKUs, solo `price` y 5 descripciones |
 | AC-11 | `npm test` en verde (4 combinaciones de interruptores), `vite build` OK | local | ✅ las 4 combinaciones en verde, build OK |
 | AC-12 | Mariano aprobó la tabla de §9.1 y P-2/P-3 | conversación | ✅ 01/10/2026: "Aprobado, implementá la spec 029" |
+| AC-13 | *(RF-10, enmienda)* Envío gratis al resto del país desde $55.000, en cliente y servidor | tests + recorrido | ✅ candado y paridad en `envio.test.js` + recorrido (marquesina y /politicas/envios dicen $55.000) |
+| AC-14 | *(RF-11, enmienda)* La promo de 100 calcos con Mercado Pago a Buenos Aires paga $8.500 de envío | test | ✅ REGRESIÓN de `envio.test.js` (otra vez con MP) + test que frena el deploy si la promo de 100 o Negocio cruzan el umbral |
 
 ## Definition of Done
 

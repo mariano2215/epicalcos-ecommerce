@@ -341,11 +341,14 @@ con el óptimo real. Los tests están en `src/lib/reparto.test.js`.
 - Línea: `pack:mayorista100:{size}:{ts}` con `quantity = 1` (1 línea = 1 pack).
 - **No participa** de cupones ni de promos N×M; sí del 20 % por transferencia.
 - **Paga envío como cualquier pedido**: lo decide el umbral, no la promo.
-  ⚠️ Desde la spec 029, con Mercado Pago los $52.999 **cruzan los dos
-  umbrales** ($35.000 Rosario y $50.000 país) y el pack viaja gratis a todo el
-  país; hasta el 1/10/2026 ($47.999) pagaba $6.500 a ciudades próximas y $8.500
-  al interior. Por transferencia queda en $42.399: gratis en Rosario, y paga
-  $6.500 / $8.500 en el resto (ver §5). Lo mismo vale para la Promo Negocio.
+  $52.999 cruza el umbral de Rosario ($35.000) pero no el nacional ($55.000),
+  así que suma $6.500 a ciudades próximas y $8.500 al interior (ver §5). Lo
+  mismo vale para la Promo Negocio.
+  ⚠️ Con la suba de la spec 029 los $52.999 cruzaban el umbral nacional de
+  entonces ($50.000) y viajaban gratis a todo el país con Mercado Pago. Mariano
+  subió el umbral a **$55.000** el mismo 1/10/2026 para que sigan pagando
+  envío. `envio.test.js` frena el deploy si una próxima suba vuelve a dejar la
+  promo de 100 o Negocio arriba del umbral nacional.
 - ✅ **Reactivada el 7/9/2026 (spec 017), sin fecha de fin.** Antes vencía el
   14/8/2026. Se apaga con `activa: false` en los dos lados (ver el recuadro
   arriba de §3.1).
@@ -472,7 +475,7 @@ acentos). Las tarifas especiales **solo aplican en Santa Fe**.
 | Destino | Umbral |
 |---|---|
 | Rosario | desde **$35.000** |
-| Resto del país (nearby + interior) | desde **$50.000** |
+| Resto del país (nearby + interior) | desde **$55.000** (desde el 1/10/2026; antes $50.000) |
 
 Además, el envío es **$0** cuando:
 - el método es `retiro` (retiro en Ov. Lagos y Bv. Seguí, Rosario)
@@ -483,7 +486,7 @@ saltea el umbral, y el servidor no lee ningún flag del cliente.
 
 ⚠️ **Un descuento ALEJA del envío gratis.** El umbral se mide sobre el subtotal
 ya descontado (`physicalTotal`), así que con `EPI50` (50 % off) hace falta el
-**doble** de precio de lista para cruzarlo: $70.000 en Rosario y $100.000 en el
+**doble** de precio de lista para cruzarlo: $70.000 en Rosario y $110.000 en el
 resto del país. Un carrito de $80.000 en 6 cm hoy viaja gratis a todo el país;
 con el cupón pasa a $40.000 y paga envío. Es correcto según la regla y está
 aceptado en `specs/009-cupon-epi50` §9.1 — **no** se arregla salteando el umbral
@@ -501,7 +504,9 @@ copy que lo prometía (card del x100, carrito, checkout, `/politicas/envios`).
 ⚠️ **Los umbrales bajaron el 21/8/2026** (decisión de Mariano): Rosario de
 $50.000 a $35.000 y el resto del país de $75.000 a $50.000. El umbral nacional
 anterior era $75.000 justamente porque abajo de eso el correo se come
-la ganancia. Si hace falta una promo con el envío puesto, **no** se hace
+la ganancia. El **1/10/2026** el nacional subió a **$55.000** (spec 029,
+enmienda), para que la promo de 100 calcos y Negocio no lo crucen solas con
+los precios nuevos. Si hace falta una promo con el envío puesto, **no** se hace
 reponiendo el atajo: se sube el precio del pack por encima del umbral, o se
 declara como regla propia con su spec, pensando antes qué pasa cuando ese pack
 viaja a Ushuaia.
