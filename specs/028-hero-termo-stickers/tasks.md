@@ -236,6 +236,17 @@ Ver [`specs/README.md`](../README.md).
 - [x] **E.5** Arneses `hero.mjs` (12 anchos: 0 cruces con el texto, 0 fuera de pantalla, 0 calcos pisadas), `juego.mjs` y `lcp.mjs`
 - [x] **E.6** `npm test` + `vite build`; acceptance §11; commit y push
 
+## Ampliación F — Sin tope en el termo
+
+> Pedido de Mariano del 1/10: *"Que no haya tope de stickers para pegar en el
+> termo, que no se vayan borrando."* Directo a `main`.
+
+- [x] **F.1** `siguienteDiseno` con `flotando`: agotados los 58 a la vista, puede repetir uno pegado, nunca uno flotando + tests (sin el escalón, la simulación de 100 pegadas rompe con `Cannot destructure property 'n'`)
+- [x] **F.2** `HeroCalcos`: sin `MAX_PEGADAS`, ninguna pegada sale sola; la recarga pasa `flotando`
+- [x] **F.3** Docs: `docs/analytics.md` (`pegadas` sin techo)
+- [x] **F.4** Verificación en el navegador: arnés `sintope.mjs` (Chrome headless, clics reales). 1440: 40 clics → 40 pegadas, de a una, ninguna se fue; 16 sueltas distintas; 59 fps y 0 tareas largas con el termo lleno girando; clic en una pegada 40 → 39; 0 errores. 375: 50 clics → 32 pegadas (los clics restantes fueron a calcos fuera de la pantalla), el número nunca bajó
+- [x] **F.5** `npm test` (765 + 17 saltados) + `vite build` (chunk de las calcos 33,27 kB gzip, antes 33,31); acceptance §12; commit y push
+
 ---
 
 ## Hallazgos fuera de scope

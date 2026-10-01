@@ -303,8 +303,11 @@ export const DISENOS_INICIALES = {
   15: 50, 16: 43
 };
 
-/** Cuántas calcos entran en el termo. Con una más, la más vieja se despega. */
-export const MAX_PEGADAS = 12;
+// Sin tope de pegadas desde la ampliación F (1/10/2026). Hasta ahí había un
+// MAX_PEGADAS = 12 y con la 13 la más vieja se despegaba sola: a quien estaba
+// llenando el termo se le iban borrando calcos que había elegido. Si se repone
+// un tope, mirar antes `flotando` en `siguienteDiseno`: sin tope, con 16
+// lugares los 58 diseños pueden estar todos a la vista.
 
 /** La imagen del hero de un diseño (recortada por scripts/build-hero-argentina.py). */
 export const srcDiseno = (n) => `/images/hero/argentina/${n}.webp`;
@@ -324,10 +327,17 @@ export const disenoPorNumero = (n, disenos) => disenos.find((d) => d.n === n);
  * en otro lugar o pegado en el termo): dos iguales a la vez parecería un error.
  * Pura, con el azar inyectado, para testearla.
  *
- * @param {{ visibles: Set<number>, usados: Set<number>, disenos: {n: number}[], azar?: () => number }} args
+ * `flotando` (ampliación F): los que están en un lugar, sueltos o esperando.
+ * Sin tope en el termo, pasadas ~26 pegadas los 58 están TODOS a la vista y no
+ * queda ninguno libre: ahí se puede repetir uno pegado —en el termo, entre
+ * muchas, se nota poco—, pero nunca uno de `flotando`, que se vería dos veces
+ * suelto. Sin este escalón, `libres` quedaba vacío y el juego se rompía al
+ * desarmar `undefined`. Sin `flotando`, vale lo de siempre.
+ *
+ * @param {{ visibles: Set<number>, usados: Set<number>, disenos: {n: number}[], azar?: () => number, flotando?: Set<number> }} args
  * @returns {{ n: number, usados: Set<number> }}
  */
-export function siguienteDiseno({ visibles, usados, disenos, azar = Math.random }) {
+export function siguienteDiseno({ visibles, usados, disenos, azar = Math.random, flotando = visibles }) {
   let bolsa = usados;
   let libres = disenos.filter((d) => !visibles.has(d.n) && !bolsa.has(d.n));
   if (!libres.length) {
@@ -335,6 +345,11 @@ export function siguienteDiseno({ visibles, usados, disenos, azar = Math.random 
     bolsa = new Set();
     libres = disenos.filter((d) => !visibles.has(d.n));
   }
+  // Todos a la vista: se repite uno pegado, nunca uno flotando.
+  if (!libres.length) libres = disenos.filter((d) => !flotando.has(d.n));
+  // Red de seguridad: con 58 diseños y 16 lugares no pasa, pero un lugar vacío
+  // rompería el hero entero.
+  if (!libres.length) libres = disenos;
   const { n } = libres[Math.floor(azar() * libres.length)];
   return { n, usados: new Set([...bolsa, n]) };
 }

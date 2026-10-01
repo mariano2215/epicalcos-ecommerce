@@ -21,7 +21,6 @@ import {
   anguloEnTermo,
   perspectivaPegada,
   DISENOS_INICIALES,
-  MAX_PEGADAS,
   srcDiseno,
   idDiseno,
   disenoPorNumero,
@@ -85,9 +84,14 @@ import { DISENOS_HERO } from '../../lib/disenosHero.js';
  *
  * MUCHAS CALCOS (ampliación D): los cuatro lugares se RECARGAN. Al pegar una,
  * su lugar trae otro diseño de Argentina (sin repetir hasta agotar los 58, y
- * nunca uno que ya se vea), con el próximo ya precargado. En el termo entran
- * 12: con la 13, la más vieja se despega sola. Un clic en una pegada la
- * despega.
+ * nunca uno que ya se vea), con el próximo ya precargado. Un clic en una
+ * pegada la despega.
+ *
+ * SIN TOPE (ampliación F): en el termo entran todas las que la persona quiera
+ * y ninguna se va sola. Hasta el 1/10/2026 entraban 12 y con la 13 la más vieja
+ * se despegaba: a quien llenaba el termo se le borraban calcos que había
+ * elegido. Sin tope los 58 diseños pueden quedar todos a la vista, y por eso la
+ * recarga le pasa a `siguienteDiseno` cuáles están flotando.
  *
  * EL JUEGO (ampliación C): "Pegá 4 calcos y ganate 10% OFF". El progreso va a
  * lib/juegoTermo.js, que le avisa al popup de bienvenida cuando alguien gana.
@@ -305,7 +309,7 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
 
   // `pegar` se llama al terminar un vuelo, ~0,6 s después del clic: con el
   // estado de ese render podría no ver una calco pegada en el medio (y repetir
-  // un diseño a la vista o contar mal el tope). Lee siempre lo último.
+  // un diseño a la vista o contar mal las pegadas). Lee siempre lo último.
   const pegadasRef = useRef(pegadas);
   pegadasRef.current = pegadas;
   const lugaresRef = useRef(lugares);
@@ -318,20 +322,16 @@ export default function HeroCalcos({ seccionRef, entrada, inicioEntrada }) {
     ultimoId.current += 1;
     const nueva = { ...datos, id: ultimoId.current, diseno, saliendo: false };
     const activas = pegadas.filter((p) => !p.saliendo);
-    // Con la 13, la más vieja se despega sola (RF-D4).
-    const sobran = Math.max(0, activas.length + 1 - MAX_PEGADAS);
-    const vanASalir = new Set(activas.slice(0, sobran).map((p) => p.id));
-    setPegadas((ps) => [...ps.map((p) => (vanASalir.has(p.id) ? { ...p, saliendo: true } : p)), nueva]);
-    trackHeroStickerStick({ slot, metodo, pegadas: activas.length + 1 - sobran, diseno: idDiseno(diseno) });
+    // Sin tope (ampliación F): la nueva se suma y ninguna se va sola.
+    setPegadas((ps) => [...ps, nueva]);
+    trackHeroStickerStick({ slot, metodo, pegadas: activas.length + 1, diseno: idDiseno(diseno) });
 
     // El lugar se recarga: entra la que estaba esperando y se elige la próxima,
-    // que no puede ser ninguna de las que se ven.
-    const visibles = new Set([
-      ...Object.values(lugares).flatMap((l) => [l.actual, l.siguiente]),
-      ...activas.map((p) => p.diseno),
-      diseno
-    ]);
-    const { n, usados: u } = siguienteDiseno({ visibles, usados: usados.current, disenos: DISENOS_HERO });
+    // que no puede ser ninguna de las que se ven. Si ya se ven todas, puede ser
+    // una pegada, nunca una flotando (ver `siguienteDiseno`).
+    const flotando = new Set(Object.values(lugares).flatMap((l) => [l.actual, l.siguiente]));
+    const visibles = new Set([...flotando, ...activas.map((p) => p.diseno), diseno]);
+    const { n, usados: u } = siguienteDiseno({ visibles, flotando, usados: usados.current, disenos: DISENOS_HERO });
     usados.current = u;
     setLugares((ls) => ({ ...ls, [slot]: { actual: ls[slot].siguiente, siguiente: n } }));
   };
@@ -698,8 +698,8 @@ function Calco({
  *     en el mismo elemento pisaría el del giro.
  * Sin flotación ni parallax (RF-A6): está pegada a un termo que no se mueve de
  * lugar, solo gira. Un clic o un toque la despega (RF-D5): se infla, se
- * desvanece y recién al terminar se borra (`onSalio`). Lo mismo cuando la
- * despega el tope de 12.
+ * desvanece y recién al terminar se borra (`onSalio`). Es la ÚNICA forma de
+ * que se vaya: sin tope desde la ampliación F, ninguna se despega sola.
  */
 function CalcoPegada({ datos, onDespegar, onSalio, onTocar }) {
   const nada = () => {};

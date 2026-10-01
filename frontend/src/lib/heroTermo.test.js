@@ -17,7 +17,6 @@ import {
   dentroDelCuerpo,
   ajustarAlCuerpo,
   DISENOS_INICIALES,
-  MAX_PEGADAS,
   srcDiseno,
   siguienteDiseno
 } from './heroTermo.js';
@@ -110,9 +109,6 @@ describe('diseños de Argentina (ampliación D)', () => {
     expect(Object.keys(DISENOS_INICIALES).map(Number).sort((x, y) => x - y)).toEqual(CALCOS.map((c) => c.slot));
   });
 
-  it('el tope del termo es 12', () => {
-    expect(MAX_PEGADAS).toBe(12);
-  });
 });
 
 describe('siguienteDiseno', () => {
@@ -140,6 +136,53 @@ describe('siguienteDiseno', () => {
     const r = siguienteDiseno({ visibles: new Set([2]), usados: new Set([1, 2, 3, 4, 5, 6]), azar: () => 0, disenos });
     expect(r.n).not.toBe(2);
     expect([...r.usados]).toEqual([r.n]);
+  });
+
+  // Ampliación F: sin tope en el termo, los diseños pueden estar todos a la vista.
+  it('con todos a la vista, repite uno PEGADO y nunca uno flotando', () => {
+    const visibles = new Set([1, 2, 3, 4, 5, 6]);
+    const flotando = new Set([1, 2, 3]);
+    for (const azar of [0, 0.34, 0.67, 0.99]) {
+      const r = siguienteDiseno({ visibles, flotando, usados: new Set(), azar: () => azar, disenos });
+      expect([4, 5, 6]).toContain(r.n);
+    }
+  });
+
+  it('nunca se queda sin diseño, aunque todo esté flotando', () => {
+    const todos = new Set([1, 2, 3, 4, 5, 6]);
+    const r = siguienteDiseno({ visibles: todos, flotando: todos, usados: new Set(), azar: () => 0.5, disenos });
+    expect(todos.has(r.n)).toBe(true);
+  });
+
+  it('100 pegadas seguidas con 16 lugares y los 58 diseños: no se traba y nunca hay dos iguales flotando', () => {
+    // Modelo de lo que hace HeroCalcos al pegar: el lugar pasa a su "siguiente"
+    // y elige uno nuevo. Con el tope de 12 nunca se veían los 58; sin tope, en
+    // la pegada ~26 ya están todos, y antes de la ampliación F acá se rompía.
+    let semilla = 7;
+    const azar = () => ((semilla = (semilla * 16807) % 2147483647) / 2147483647);
+    let usados = new Set(Object.values(DISENOS_INICIALES));
+    const lugares = {};
+    const enVista = new Set(Object.values(DISENOS_INICIALES));
+    for (const slot of Object.keys(DISENOS_INICIALES)) {
+      const r = siguienteDiseno({ visibles: enVista, usados, disenos: DISENOS_HERO, azar });
+      usados = r.usados;
+      enVista.add(r.n);
+      lugares[slot] = { actual: DISENOS_INICIALES[slot], siguiente: r.n };
+    }
+    const pegadas = [];
+    for (let i = 0; i < 100; i++) {
+      const slot = Object.keys(lugares)[i % 16];
+      const diseno = lugares[slot].actual;
+      const flotando = new Set(Object.values(lugares).flatMap((l) => [l.actual, l.siguiente]));
+      const visibles = new Set([...flotando, ...pegadas, diseno]);
+      const r = siguienteDiseno({ visibles, flotando, usados, disenos: DISENOS_HERO, azar });
+      usados = r.usados;
+      pegadas.push(diseno);
+      lugares[slot] = { actual: lugares[slot].siguiente, siguiente: r.n };
+      const ahora = Object.values(lugares).flatMap((l) => [l.actual, l.siguiente]);
+      expect(new Set(ahora).size, `pegada ${i + 1}`).toBe(ahora.length);
+    }
+    expect(pegadas).toHaveLength(100);
   });
 });
 

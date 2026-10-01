@@ -218,6 +218,19 @@ movimiento reducido y métricas. Lo que no se puede probar desde el contenedor
 
 ---
 
+## 12. Ampliación F — Sin tope en el termo
+
+| ID | Criterio | Resultado |
+|---|---|---|
+| AC-F1 | *(RF-F1)* Se pegan más de 12 y ninguna se despega sola. | ✅ 1440: 40 clics → 40 pegadas (1, 2, 3… 40). 375: 32 pegadas, la cuenta nunca bajó. |
+| AC-F2 | *(RF-F2)* Clic o toque en una pegada la sigue despegando. | ✅ Clic real con el termo lleno: 40 → 39. ⚠️ El toque no se re-probó: el código del toque no cambió y en el arnés con toque emulado el popup del premio deja colgado el envío de toques de CDP (del arnés, no del sitio). |
+| AC-F3 | *(RF-F3)* Con los 58 a la vista, la recarga trae uno pegado y nunca uno flotando; el juego no se rompe. | ✅ Test: 100 pegadas con 16 lugares y los 58 diseños, nunca dos iguales flotando (sin el cambio, se rompe en la ~26). En el navegador, 40 pegadas a 1440 (pasado ese punto): 16 sueltas distintas y 0 errores. |
+| AC-F4 | *(RF-F4)* El premio sigue saliendo con 4. | ✅ El arnés tuvo que cerrar el popup del premio después de la cuarta en las dos corridas; `juegoTermo` no cambió. |
+| ANF-F1 | *(RNF-F1)* Con 40 pegadas, sin tareas largas nuevas al girar ni al arrastrar. | ✅ 1440, 40 pegadas girando: 59 fps y 0 tareas largas en 4 s. ⚠️ En el celular no se midió (la medición se pasó del tiempo del arnés). |
+| REG-F1 | `npm test` en verde, `vite build` OK. | ✅ 765 + 17 saltados; build OK. |
+
+---
+
 ## Definition of Done
 
 ### Código

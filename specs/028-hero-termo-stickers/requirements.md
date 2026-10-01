@@ -573,3 +573,51 @@ Sin eventos nuevos. `hero_sticker_stick` ya trae `slot`: pasa a ir de 1 a 16.
 |---|---|---|
 | D-E1 | Todas las calcos **se pueden pegar**, no hay calcos solo decorativas. | Con el juego en pantalla, una calco que no responde al toque parece rota. |
 | D-E2 | Los diseños con que arranca cada lugar nuevo son **fijos** (corazón, sol, LOVE, "Fútbol mate asado", Ushuaia, Branca, Aconcagua, tango, escudo "Argentina", termo y mate, Patagonia, mapa). | Se ve igual en cada carga (se puede comparar y verificar); después, la recarga es al azar como en D. |
+
+---
+
+## 18. Ampliación F — Sin tope en el termo (01/10/2026)
+
+> **Estado de la ampliación: implementada y publicada el 01/10/2026** (directo
+> a `main`, con la spec 028 en producción).
+
+### 18.1 Pedido
+
+> *"Que no haya tope de stickers para pegar en el termo, que no se vayan
+> borrando."*
+
+### 18.2 Problema y objetivo
+
+Con el tope de 12 (RF-D4), al pegar la 13 la más vieja se despegaba sola: a
+quien estaba llenando el termo se le iban borrando calcos que había elegido. El
+objetivo es que el termo se pueda llenar sin límite y que **ninguna calco se
+vaya sola**.
+
+### 18.3 Requisitos funcionales
+
+| ID | Requisito |
+|---|---|
+| RF-F1 | **Sin tope**: se pueden pegar todas las calcos que la persona quiera. Ninguna se despega sola. |
+| RF-F2 | Una pegada se va **solo** con un clic o un toque sobre ella (RF-D5) o al recargar / salir del Home (Q5, nada se guarda). |
+| RF-F3 | La recarga de los lugares nunca se traba: si ya se ven los 58 diseños (sueltos, esperando y pegados), el lugar puede traer uno que esté **pegado** en el termo, pero nunca uno que esté flotando o esperando en otro lugar. |
+| RF-F4 | El juego y el premio no cambian: 4 calcos cualesquiera. |
+
+### 18.4 Requisitos no funcionales
+
+| ID | Requisito |
+|---|---|
+| RNF-F1 | Con 40 calcos pegadas el giro y el arrastre siguen fluidos (sin tareas largas nuevas). |
+
+### 18.5 Lo que cambia de las ampliaciones anteriores
+
+- **RF-D4 queda sin efecto** (tope de 12).
+- **RF-D2** ("nunca una que ya esté a la vista") pasa a tener la excepción de
+  RF-F3: sin tope, con 16 lugares se ven 32 diseños flotando o esperando, y a
+  partir de ~26 pegadas los 58 ya están todos a la vista. Sin la excepción, la
+  recarga no tendría qué elegir y el juego se rompería.
+
+### 18.6 Analytics
+
+Sin eventos nuevos. `pegadas` de `hero_sticker_stick` deja de llegar hasta 12:
+ya no tiene techo.
+
