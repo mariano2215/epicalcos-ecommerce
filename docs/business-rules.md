@@ -244,8 +244,28 @@ Argentina, y pisa a la promo 3x2 si estuviera vigente.
 > **Sin `endsAt` no hay cuenta regresiva** en el banner, y una promo sin fecha
 > **se olvida prendida** — ya pasó con `EPICA10`, que no venció durante meses.
 
-### 3.1 Promo 3x2 — ✅ VIVA (desde el 7/9/2026, sin fecha de fin)
-`PROMO_3X2` · `startsAt: 2026-09-07T00:00:00-03:00` · `endsAt: null`
+### 3.1 Promo 3x2 — ⏸️ APAGADA (desde el 1/10/2026, "hasta nuevo aviso")
+`PROMO_3X2` · `activa: false` · `startsAt: 2026-09-07T00:00:00-03:00` · `endsAt: null`
+
+Mariano la sacó del sitio el 1/10/2026 sin fecha de vuelta. Se apagó **solo**
+con el interruptor (los dos lados del espejo); toda la mecánica sigue en el
+código porque la comparten el 2x1 y los cupones de bundle. Lo que cambia en la
+web mientras está apagada:
+
+- El banner del header pasa al siguiente del `if/else` de `Header.jsx`: hoy, el
+  de la promo mayorista (100 calcos a precio fijo, link a `/mayorista`).
+- Carrito, checkout, drawer y `/personalizados` dejan de nombrar el 3x2 y de
+  descontarlo. El 2x1 por categoría sigue igual.
+- El tope de 25 % para transferencia + cupón **sigue** donde corra el 2x1 (lo
+  activa cualquier promo N×M, no solo el 3x2).
+- Los tests de su mecánica se saltean solos (`con3x2` en
+  `promoPricing.test.js`) y vuelven a correr al prenderla.
+
+**Para volver a prenderla:** `activa: true` en `config/pricing.js` y
+`PROMO_ACTIVA = true` en `netlify/functions/lib/pricing.js`, en el mismo commit.
+Un lado solo hace fallar la suite (y frena el deploy).
+
+Lo que sigue vale para cuando está prendida:
 
 Cada 3 calcos elegibles (**catálogo + personalizados**, o sea todo lo
 minorista), la **más barata gratis**. No entran packs, mayorista, Negocio,

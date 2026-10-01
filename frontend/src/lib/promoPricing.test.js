@@ -74,6 +74,7 @@ import {
   isCouponActive as beCouponActive,
   promo3x2 as bePromo3x2,
   isPromoActive as beActive,
+  PROMO_ACTIVA as BE_PROMO_ACTIVA,
   MAYORISTA100_END_MS,
   MAYORISTA100_START_MS,
   MAYORISTA100_PRICE,
@@ -117,6 +118,20 @@ const BEFORE_PROMO = new Date('2026-08-20T22:59:00-03:00'); // jue 20/8 22:59, u
 // para testear el camino sin descuento.
 const DURING_PROMO = new Date('2026-09-10T12:00:00-03:00'); // jue 10/9, promos vivas
 const AFTER_PROMO = new Date('2026-08-29T12:00:00-03:00'); // sáb 29/8: ANTES del 7/9, sin promos
+
+/**
+ * El 3x2 está APAGADO desde el 1/10/2026, "hasta nuevo aviso" (Mariano). Los
+ * casos que prueban su mecánica contra el servidor real no pueden correr con el
+ * interruptor en `false`: el server lo lee de una constante y no hay forma de
+ * prenderlo solo para un test. Se saltean solos y vuelven a correr —y a frenar
+ * el deploy si algo se rompió mientras tanto— el mismo día que se prenda.
+ *
+ * ⚠️ NO borrarlos "porque se saltean": son lo único que verifica el 3x2 de
+ * punta a punta el día que vuelve. `sin3x2` es el reverso: lo que tiene que
+ * pasar mientras está apagado.
+ */
+const con3x2 = it.runIf(PROMO_3X2.activa);
+const sin3x2 = it.runIf(!PROMO_3X2.activa);
 
 /**
  * Instante SIN ninguna promo por fecha viva (3x2, mayorista y Argentina, las
@@ -251,16 +266,23 @@ describe('promo3x2 — mecánica y paridad frontend ↔ backend', () => {
   it('isPromoActive coincide en ambos lados', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
-    expect(feActive()).toBe(true);
-    expect(beActive()).toBe(true);
+    expect(feActive()).toBe(PROMO_3X2.activa);
+    expect(beActive()).toBe(PROMO_3X2.activa);
     vi.setSystemTime(AFTER_PROMO);
     expect(feActive()).toBe(false);
     expect(beActive()).toBe(false);
   });
+
+  it('el interruptor `activa` es el mismo de los dos lados', () => {
+    // Hasta el 1/10/2026 esto no lo verificaba nadie de forma directa: solo lo
+    // agarraban de rebote los end-to-end. Prendido en un lado y apagado en el
+    // otro, todo checkout con 3 calcos o más se rechaza con `price_mismatch`.
+    expect(BE_PROMO_ACTIVA).toBe(PROMO_3X2.activa);
+  });
 });
 
 describe('checkout end-to-end: lo que manda el cliente == lo que valida el server', () => {
-  it('promo activa, sin cupón (MP): 3x2 y el server acepta', () => {
+  con3x2('promo activa, sin cupón (MP): 3x2 y el server acepta', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     // 13 elegibles → 4 gratis (los 4 más baratos = 4 de 4 cm).
@@ -271,6 +293,20 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(price(items, 'sticker:naruto:9cm')).toBe(round(P9 * keep));
     expect(price(items, 'custom:4cm:silueta:1')).toBe(round(P4 * keep));
     expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(P6 * 0.5)); // pack intacto (MP: sin transferencia)
+
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+  });
+
+  sin3x2('3x2 apagado: las 13 elegibles van a precio de lista y el server acepta', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    // El 2x1 sigue vivo, pero ninguna de estas es de sus categorías: nada gratis.
+    const items = clientItems(cart);
+    expect(price(items, 'sticker:goku:6cm')).toBe(P6);
+    expect(price(items, 'sticker:naruto:9cm')).toBe(P9);
+    expect(price(items, 'custom:4cm:silueta:1')).toBe(P4);
+    expect(price(items, 'pack:mayorista:6cm:1')).toBe(round(P6 * 0.5));
 
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
@@ -318,26 +354,30 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(res.ok).toBe(true);
   });
 
-  it('fuera de promo 25 % acumulable; en promo, 3x2 con % topeado en 25 %', () => {
-    const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: P6, quantity: 10 }];
+  // Era un solo test hasta el 1/10/2026. Se partió en dos para que la mitad
+  // "fuera de promo" siga corriendo con el 3x2 apagado.
+  const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: P6, quantity: 10 }];
 
-    // Fuera de promo: transferencia 15% + EPICA10 10% = 25% (tope 90%).
+  it('fuera de promo: 15 % + EPICA10 = 25 % acumulable', () => {
+    // Transferencia 15% + EPICA10 10% = 25% (tope 90%).
     vi.useFakeTimers();
     vi.setSystemTime(AFTER_PROMO);
-    let items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
+    const items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
     expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.75));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
+  });
 
-    // En promo: 10 unidades → 3 gratis (keep = 0.7). El tope es 25 % desde la
-    // spec 027, así que transferencia (15 %) + EPICA10 (10 %) entran los dos
-    // encima del 3x2.
+  con3x2('en promo: 3x2 y encima el % topeado en 25 %', () => {
+    // 10 unidades → 3 gratis (keep = 0.7). El tope es 25 % desde la spec 027,
+    // así que transferencia (15 %) + EPICA10 (10 %) entran los dos encima del 3x2.
+    vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
-    items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
+    const items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
     expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.7 * 0.75));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
-  it('promo activa + transferencia con 12 calcos: el 3x2 SÍ se combina con el 15%', () => {
+  con3x2('promo activa + transferencia con 12 calcos: el 3x2 SÍ se combina con el 15%', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     // 12 calcos de catálogo de 6cm por transferencia: corre el 3x2 y encima el 15%.
@@ -354,7 +394,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
     expect(validateAndPriceOrder({ items: conCupon, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
-  it('la ventana de la promo 3x2 está espejada: abre en el deploy y NO cierra', () => {
+  con3x2('la ventana de la promo 3x2 está espejada: abre en el deploy y NO cierra', () => {
     // ⚠️ Antes esto verificaba CUATRO bordes. Con la spec 017 la promo no tiene
     // fin, así que quedan dos: el instante anterior al inicio y el inicio. Los
     // dos últimos se reemplazan por "mucho después sigue viva", que es la
@@ -810,7 +850,7 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
     expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 / 2));
   });
 
-  it('con la promo 3x2 viva da 50 % y no aplica el N x M', () => {
+  con3x2('con la promo 3x2 viva da 50 % y no aplica el N x M', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     expect(feActive()).toBe(true);
@@ -1122,7 +1162,7 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
    * precio de lista deja de ser lo que se ahorra. Por eso `bulkSavings` del
    * CartContext pasó a ser la resta de lo que se cobra con cada medio.
    */
-  it('T-5b · con el 3x2, lo que ahorra la transferencia es la resta de los dos cobros, no el 10 % de lista', () => {
+  con3x2('T-5b · con el 3x2, lo que ahorra la transferencia es la resta de los dos cobros, no el 10 % de lista', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     const carrito = [
@@ -1455,17 +1495,27 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     expect(res.couponApplied).toBe('EPICA10');
   });
 
-  it('CF-10 · el caso aprobado, de punta a punta contra el servidor', () => {
+  const carritoCF10 = [
+    { id: 'sticker:disney-141:6cm', title: 'Disney', type: 'sticker', basePrice: P6, quantity: 3 },
+    { id: 'sticker:marvel-3:6cm', title: 'Marvel', type: 'sticker', basePrice: P6, quantity: 2 }
+  ];
+
+  con3x2('CF-10 · el caso aprobado, de punta a punta contra el servidor', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
-    const carrito = [
-      { id: 'sticker:disney-141:6cm', title: 'Disney', type: 'sticker', basePrice: P6, quantity: 3 },
-      { id: 'sticker:marvel-3:6cm', title: 'Marvel', type: 'sticker', basePrice: P6, quantity: 2 }
-    ];
-    const items = clientItems(carrito, { paymentMethod: 'mercadopago' });
+    const items = clientItems(carritoCF10, { paymentMethod: 'mercadopago' });
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
     expect(res.itemsTotal).toBe(5 * P6 - 2 * P6); // 5 calcos, 2 gratis
+  });
+
+  sin3x2('CF-10 con el 3x2 apagado: el 2x1 corre solo y Marvel paga lista', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    const items = clientItems(carritoCF10, { paymentMethod: 'mercadopago' });
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(5 * P6 - P6); // el par de Disney da 1 gratis; el trío ya no existe
   });
 });
 

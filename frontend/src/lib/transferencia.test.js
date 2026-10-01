@@ -17,6 +17,10 @@ import { shipping } from '../config/site.js';
 import { precioBaseVigente, conPrecioVigente } from './precioVigente.js';
 import { validateAndPriceOrder } from '../../../netlify/functions/lib/pricing.js';
 
+// Los casos del 3x2 se saltean mientras esté apagado (desde el 1/10/2026) y
+// vuelven a correr solos al prenderlo — ver `con3x2` en promoPricing.test.js.
+const con3x2 = it.runIf(PROMO_3X2.activa);
+
 /**
  * Spec 027 (26/9/2026): precios +20 % y 15 % OFF por transferencia en cualquier
  * compra, desde 1 unidad, sobre TODO producto. Estos son los criterios de
@@ -127,7 +131,7 @@ describe('AC-2…4 · 15 % por transferencia, desde 1, sobre todo producto, sin 
 });
 
 describe('AC-5…7 · cómo se combina', () => {
-  it('AC-5 · con el 3x2, EPICA10 + transferencia = 25 % encima (el tope)', () => {
+  con3x2('AC-5 · con el 3x2, EPICA10 + transferencia = 25 % encima (el tope)', () => {
     vi.setSystemTime(new Date('2026-09-10T12:00:00-03:00'));
     expect(PROMO_3X2.percentCap).toBe(0.25);
     const p6 = priceForSize('6cm');

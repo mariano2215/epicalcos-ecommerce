@@ -24,8 +24,12 @@ afterEach(() => vi.useRealTimers());
  */
 const P6 = priceForSize('6cm');
 const T = TRANSFER_DISCOUNT;
+
+// Los casos del 3x2 se saltean mientras esté apagado (desde el 1/10/2026) y
+// vuelven a correr solos al prenderlo — ver `con3x2` en promoPricing.test.js.
+const con3x2 = it.runIf(PROMO_3X2.activa);
 describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)', () => {
-  it('CF-25 · 3 calcos 6cm + transferencia + EPICA10: 3x2 y después 25 % (15 + 10)', () => {
+  con3x2('CF-25 · 3 calcos 6cm + transferencia + EPICA10: 3x2 y después 25 % (15 + 10)', () => {
     // Hasta la spec 027 la transferencia pedía 10 calcos y acá corría solo el
     // cupón. Ahora corren los dos desde 1, topeados en PROMO_3X2.percentCap.
     const keep = 2 / 3;
@@ -38,7 +42,7 @@ describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)',
     expect(res.itemsTotal).toBe(unit * 3);
   });
 
-  it('CF-25b · con 12 calcos, igual: 3x2 y 25 %', () => {
+  con3x2('CF-25b · con 12 calcos, igual: 3x2 y 25 %', () => {
     const keep = (12 - 4) / 12;
     const unit = round(P6 * keep * (1 - PROMO_3X2.percentCap));
     const res = validateAndPriceOrder({
@@ -78,7 +82,7 @@ describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)',
     expect(res.itemsTotal).toBe(conTransferencia);
   });
 
-  it('CF-5 · los personalizados entran al 3x2; los packs NO', () => {
+  con3x2('CF-5 · los personalizados entran al 3x2; los packs NO', () => {
     const keep = 2 / 3;
     const res = validateAndPriceOrder({
       items: [{ id: 'custom:6cm:silueta:1', title: 'Custom', quantity: 3, unit_price: round(P6 * keep) }],
@@ -107,6 +111,11 @@ describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)',
       shipping: retiro, paymentMethod: 'transferencia'
     });
     expect(una.ok).toBe(true);
+  });
+
+  // Mitad de REG-2 hasta el 1/10/2026: se separó para que la de arriba siga
+  // corriendo con el 3x2 apagado.
+  con3x2('REG-2b · con 10 calcos, el 15 % corre encima del 3x2', () => {
     // 10 de marvel (fuera del 2x1) → 3 gratis por 3x2, + 15 % encima.
     const keep = (10 - 3) / 10;
     const diez = validateAndPriceOrder({

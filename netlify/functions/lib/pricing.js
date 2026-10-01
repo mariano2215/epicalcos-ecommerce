@@ -86,7 +86,11 @@ export function isCouponActive(code, now = Date.now()) {
 // EPICA10.
 // ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend. El test
 // src/lib/promoPricing.test.js verifica la paridad.
-export const PROMO_ACTIVA = true;
+//
+// APAGADA desde el 1/10/2026, "hasta nuevo aviso" (Mariano). Espejo de
+// PROMO_3X2.activa: un lado prendido y el otro no rechaza todo checkout con
+// 3 calcos o más (`price_mismatch`).
+export const PROMO_ACTIVA = false;
 export const PROMO_START_MS = Date.parse('2026-09-07T00:00:00-03:00');
 export const PROMO_END_MS = Date.parse(null);
 const PROMO_BUY = 3;

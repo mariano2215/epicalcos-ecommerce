@@ -15,7 +15,7 @@ import {
   PACK_HOLOGRAFICO,
   tamanoPermitido
 } from '../config/personalizados.js';
-import { SIZES, NEGOCIO } from '../config/pricing.js';
+import { SIZES, NEGOCIO, PROMO_3X2, isPromoActive } from '../config/pricing.js';
 import { esCustomViejo, esCustomHolografico, purgarLineasRetiradas } from '../context/CartContext.jsx';
 // Espejo del backend: la fuente de verdad del servidor que re-precia el checkout.
 import { SIZE_PRICES, HOLOGRAFICO_TAMANOS, validateAndPriceOrder } from '../../../netlify/functions/lib/pricing.js';
@@ -23,6 +23,10 @@ import { SIZE_PRICES, HOLOGRAFICO_TAMANOS, validateAndPriceOrder } from '../../.
 /** Instantes fijos: sin promos por fecha y con el 3x2 vivo (arranca el 7/9/2026). */
 const SIN_PROMO = new Date('2026-08-29T12:00:00-03:00');
 const CON_3X2 = new Date('2026-09-15T12:00:00-03:00');
+
+// Los casos del 3x2 se saltean mientras esté apagado (desde el 1/10/2026) y
+// vuelven a correr solos al prenderlo — ver `con3x2` en promoPricing.test.js.
+const con3x2 = it.runIf(PROMO_3X2.activa);
 /** Pack holográfico completo: el pedido de 100 + su recargo (enmienda 26/9/2026). */
 const PACK_HOLO = NEGOCIO.price + RECARGO_HOLOGRAFICO.precio;
 
@@ -193,7 +197,7 @@ describe('paridad frontend ↔ backend (evita price_mismatch en el checkout)', (
   });
 });
 
-describe('paridad con el 3x2 vivo — lo que muestra el configurador es lo que cobra el servidor (RF-Q7)', () => {
+describe.runIf(PROMO_3X2.activa)('paridad con el 3x2 vivo — lo que muestra el configurador es lo que cobra el servidor (RF-Q7)', () => {
   /**
    * El "ahorrás" del configurador (spec 023) se calcula en el cliente. Si el
    * redondeo o la regla difirieran del servidor, la pantalla prometería un total
@@ -421,7 +425,7 @@ describe('validateAndPriceOrder — pack holográfico (enmienda 26/9/2026)', () 
     }
   });
 
-  it('el pack no se mezcla con el 3x2 de las calcos sueltas del mismo carrito', () => {
+  con3x2('el pack no se mezcla con el 3x2 de las calcos sueltas del mismo carrito', () => {
     vi.setSystemTime(CON_3X2);
     const sueltas = cotizarTanda({ tamano: '6cm', unidades: 3, promoActiva: true });
     const res = validateAndPriceOrder({
@@ -630,7 +634,9 @@ describe('más de 100 copias de un diseño en 6 cm — packs de Negocio + suelta
   it('paridad: el servidor acepta las líneas y cobra exactamente el total mostrado, con y sin 3x2', () => {
     for (const ahora of [SIN_PROMO, CON_3X2]) {
       vi.setSystemTime(ahora);
-      const promoActiva = ahora === CON_3X2;
+      // Del predicado real y no de la fecha: es lo que lee el configurador
+      // (usePromoActive), y con el 3x2 apagado CON_3X2 ya no trae 3x2.
+      const promoActiva = isPromoActive();
       for (const copias of [30, 38, 50, 100, 137, 138, 200, 237, 999, 1000]) {
         const c = precioEfectivoTanda({ tamano: '6cm', copias, disenos: 1, promoActiva });
         if (!c.esNegocio) continue;

@@ -155,7 +155,13 @@ export function couponIncluyeCustom(code, now = Date.now()) {
 }
 
 /**
- * ─── PROMO 3x2 — VIVA desde el deploy, SIN FECHA DE FIN (spec 017) ───────────
+ * ─── PROMO 3x2 — APAGADA desde el 1/10/2026, "hasta nuevo aviso" ────────────
+ *
+ * Mariano la sacó del sitio el 1/10/2026 sin fecha de vuelta. Se apagó con
+ * `activa: false` y NADA MÁS: la maquinaria (promo3x2, repartoPromos, el tope
+ * `percentCap`) queda entera porque la usan el 2x1 por categoría y los cupones
+ * de bundle. Para prenderla de nuevo: `activa: true` acá y `PROMO_ACTIVA` en el
+ * server, en el mismo commit.
  *
  * "3x2 en TODAS las calcos": cada 3 calcos elegibles, la MÁS BARATA gratis.
  * Alcance: calcos de catálogo (type 'sticker') + personalizados (type 'custom')
@@ -201,7 +207,7 @@ export function couponIncluyeCustom(code, now = Date.now()) {
  */
 export const PROMO_3X2 = {
   /** Interruptor manual. Con `false`, la promo desaparece del sitio y del server. */
-  activa: true,
+  activa: false,
   /**
    * Fecha del deploy de la spec 017. NO es `null` a propósito: dejarlo abierto
    * de las dos puntas hace que la promo esté "viva" también en el pasado, y con

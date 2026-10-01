@@ -27,9 +27,9 @@ const suma = (a) => a.reduce((x, y) => x + y, 0);
 
 afterEach(() => vi.useRealTimers());
 
-describe('las tres promos de la spec 017 están vivas', () => {
-  it('3x2, 2x1 y mayorista corren a la vez', () => {
-    expect(isPromoActive()).toBe(true);
+describe('las promos de la spec 017 que corren hoy', () => {
+  it('2x1 y mayorista corren; el 3x2 sigue a su interruptor (apagado desde el 1/10/2026)', () => {
+    expect(isPromoActive()).toBe(PROMO_3X2.activa);
     expect(is2x1PromoActive()).toBe(true);
     expect(isMayoristaPromoActive()).toBe(true);
   });
