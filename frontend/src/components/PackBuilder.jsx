@@ -126,7 +126,7 @@ export default function PackBuilder({
     : round(listUnit * (1 - discount));
   const totalPrice = promoOn ? promo.price : unit * totalSelected;
 
-  // Precio pagando por transferencia (spec 027): 15 % sobre TODO pack, desde 1
+  // Precio pagando por transferencia (spec 027; 20 % desde la 029): sobre TODO pack, desde 1
   // calco — el de catálogo, el mayorista y el de personalizados. Por calco en
   // los que se cobran por calco (así redondea el servidor); la promo de precio
   // fijo es UNA línea, así que se descuenta entera.

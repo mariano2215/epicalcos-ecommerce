@@ -5,37 +5,39 @@ import { formatPrice } from '../lib/formato.js';
 
 /** Tamaños disponibles por calco y su precio unitario (ARS). Precio de vidriera = Mercado Pago (sin descuento). */
 export const SIZES = [
-  { id: '4cm', label: '4 cm', price: 1450 },
-  { id: '6cm', label: '6 cm', price: 1900 },
-  { id: '9cm', label: '9 cm', price: 2400 }
+  { id: '4cm', label: '4 cm', price: 1600 },
+  { id: '6cm', label: '6 cm', price: 2100 },
+  { id: '9cm', label: '9 cm', price: 2650 }
 ];
 
 export const DEFAULT_SIZE = '6cm';
 
 /**
- * Descuento por transferencia bancaria (spec 027, 26/9/2026): 15 % a TODO
- * producto del pedido —calcos, personalizados, packs, Negocio, holográfico,
- * Polaroid, tatuajes, imprimibles—, desde 1 unidad. No toca el envío. Pagando
+ * Descuento por transferencia bancaria: 20 % a TODO producto del pedido
+ * —calcos, personalizados, packs, Negocio, holográfico, Polaroid, tatuajes,
+ * imprimibles—, desde 1 unidad (spec 029, 1/10/2026). No toca el envío. Pagando
  * con Mercado Pago el precio es siempre el de vidriera.
  *
- * Hasta el 26/9/2026 era un 10 % "por volumen": solo calcos de catálogo y
- * desde 10 (BULK_THRESHOLD). Todo texto del sitio sale de acá
- * (`TRANSFER_PCT`, `TRANSFER_OFF`): no se escribe "15 %" a mano en ningún lado,
- * para que no vuelva a pasar lo del 10 % desparramado en 16 archivos.
+ * Historia: hasta el 26/9/2026 era un 10 % "por volumen" (solo calcos de
+ * catálogo y desde 10, BULK_THRESHOLD); la spec 027 lo llevó a 15 % a todo
+ * producto y la 029 a 20 %. Todo texto del sitio sale de acá (`TRANSFER_PCT`,
+ * `TRANSFER_OFF`): no se escribe el % a mano en ningún lado, para que no vuelva
+ * a pasar lo del 10 % desparramado en 16 archivos — gracias a eso, el paso a
+ * 20 % fue cambiar este número.
  *
  * ⚠️ ESPEJO OBLIGATORIO: TRANSFER_DISCOUNT en netlify/functions/lib/pricing.js.
  */
-export const TRANSFER_DISCOUNT = 0.15;
+export const TRANSFER_DISCOUNT = 0.2;
 export const TRANSFER_PAYMENT_METHOD = 'transferencia';
-/** El % para mostrar: `15`. */
+/** El % para mostrar: `20`. */
 export const TRANSFER_PCT = Math.round(TRANSFER_DISCOUNT * 100);
-/** El beneficio en una frase corta, con la condición adentro (nunca "15% off" a secas). */
+/** El beneficio en una frase corta, con la condición adentro (nunca "20% off" a secas). */
 export const TRANSFER_OFF = `${TRANSFER_PCT}% OFF pagando por transferencia`;
 
 /**
  * Cupones de descuento sobre calcos sueltos (type === 'sticker'). Un cupón de %
  * es ACUMULABLE con el descuento por transferencia: los descuentos se SUMAN (ej.
- * transferencia 15 % + EPICA10 10 % = 25 % off), con un tope de seguridad
+ * transferencia 20 % + EPICA10 10 % = 30 % off), con un tope de seguridad
  * (MAX_STICKER_DISCOUNT).
  *
  * Un cupón con `bundle` NO es de %: aplica un "N x M" (cada `buy` unidades
@@ -223,11 +225,13 @@ export const PROMO_3X2 = {
   pay: 2,
   /**
    * Tope del descuento en % que corre ENCIMA de la agrupación N x M.
-   * 0.25 = el 15 % por transferencia + el 10 % de EPICA10, que es el máximo
-   * que se puede acumular hoy (spec 027, 26/9/2026). Era 0.10 hasta el 7/9/2026
-   * y 0.20 hasta el 26/9/2026.
+   * 0.30 = el 20 % por transferencia + el 10 % de EPICA10, que es el máximo
+   * que se puede acumular hoy (spec 029, 1/10/2026). Era 0.10 hasta el 7/9/2026,
+   * 0.20 hasta el 26/9/2026 y 0.25 hasta el 1/10/2026. Si sube el % por
+   * transferencia y este tope no, el cupón deja de sumar mientras corre una
+   * N x M — sin que ningún precio de lista haya cambiado.
    */
-  percentCap: 0.25
+  percentCap: 0.3
   // Ojo: NO agregar acá el código de un cupón para mostrarlo en el banner —
   // los cupones son ocultos (ver COUPONS arriba).
 };
@@ -294,7 +298,7 @@ export function promo3x2({ unitBasePrices, buy = PROMO_3X2.buy, pay = PROMO_3X2.
  * Mariano la sacó del sitio el 1/10/2026, el mismo día que el 3x2. Se apagó con
  * `activa: false` de los dos lados y nada más: con las DOS promos N x M
  * apagadas `repartoPromos` no corre, y el tope del % vuelve a
- * MAX_STICKER_DISCOUNT (el de 25 % solo existe mientras corre alguna N x M).
+ * MAX_STICKER_DISCOUNT (el de 30 % solo existe mientras corre alguna N x M).
  * `CATEGORIAS_2X1` sigue en uso: es la lista de "Los más elegidos" del Home.
  *
  * Cada 2 calcos de estas categorías, la más barata gratis. Convive con el 3x2
@@ -535,7 +539,7 @@ export const WHOLESALE_DISCOUNT = 0.5;
  * El test `src/lib/promoPricing.test.js` verifica que ambos lados coincidan.
  */
 const MAYORISTA100_QTY = 100;
-const MAYORISTA100_PRICE = 47999;
+const MAYORISTA100_PRICE = 52999;
 
 /**
  * EL objeto de la promo: economía (qty/price/sizes/endsAt), interruptor
@@ -845,10 +849,10 @@ export const PERSONALIZADOS_DISCOUNT = 0.10;
  * `listPrice` es el precio de lista tachado (solo display, no se cobra);
  * `price` es el que viaja al checkout y está espejado en netlify/functions/lib/pricing.js.
  */
-export const NEGOCIO = { qty: 100, size: '6cm', price: 47999, listPrice: 115999 };
+export const NEGOCIO = { qty: 100, size: '6cm', price: 52999, listPrice: 127999 };
 
 /** Productos de precio fijo. */
-export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 14500 };
+export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 16000 };
 /**
  * ─── FOTOS POLAROID (spec 019) ────────────────────────────────────────────────
  * Pack de 10 fotos, en 3 tamaños × 2 materiales. El id que viaja al carrito es
@@ -856,9 +860,11 @@ export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x h
  * (imantadas). `POLAROID.price` queda como precio de referencia para el feed de
  * Meta (mediana de las comunes).
  *
- * `priceIman` es el MISMO pack imantado: $700 por foto, o sea $7.000 por pack (spec 027; antes $600),
- * igual en los tres tamaños — el imán cuesta lo mismo atrás de una foto chica
- * que de una grande.
+ * `priceIman` es el MISMO pack imantado: $750 por foto, o sea $7.500 por pack
+ * (spec 029; $700 desde la 027, antes $600), igual en los tres tamaños — el imán
+ * cuesta lo mismo atrás de una foto chica que de una grande. Por eso la 5×8
+ * imantada es $19.500 y no los $20.000 que daba el redondeo: con $20.000 el
+ * recargo de ese tamaño sería $8.000 y el "por foto" de la página mentiría.
  *
  * ⚠️ ESPEJO OBLIGATORIO: los SEIS precios están escritos otra vez en
  * `FIXED_PRICES` de netlify/functions/lib/pricing.js. Si agregás un tamaño o
@@ -867,20 +873,20 @@ export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x h
  * sentidos: ningún id de un lado que le falte al otro.
  */
 export const POLAROID_SIZES = [
-  { id: '5x8',  label: '5 × 8 cm',  tag: 'Mini',                        price: 11000, priceIman: 18000 },
-  { id: '7x10', label: '7 × 10 cm', tag: 'Medianas',                    price: 14500, priceIman: 21500 },
-  { id: '9x13', label: '9 × 13 cm', tag: 'Grandes · Polaroid original', price: 18000, priceIman: 25000 }
+  { id: '5x8',  label: '5 × 8 cm',  tag: 'Mini',                        price: 12000, priceIman: 19500 },
+  { id: '7x10', label: '7 × 10 cm', tag: 'Medianas',                    price: 16000, priceIman: 23500 },
+  { id: '9x13', label: '9 × 13 cm', tag: 'Grandes · Polaroid original', price: 20000, priceIman: 27500 }
 ];
-export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 14500 };
+export const POLAROID = { id: 'polaroid-x10', name: 'Fotos Polaroid · x10', price: 16000 };
 
 /** Fotos por pack. El precio se cobra POR PACK; el "por foto" es solo para contarlo. */
 export const POLAROID_FOTOS_POR_PACK = 10;
 /** Recargo del imantado por foto. Es display: el precio que se cobra sale de `priceIman`. */
-export const POLAROID_IMAN_POR_FOTO = 700;
+export const POLAROID_IMAN_POR_FOTO = 750;
 /** Desde 2 packs (20 fotos) corre el descuento por volumen. */
 export const POLAROID_VOLUMEN_MIN_PACKS = 2;
 /** Cuánto baja el precio de cada foto a partir de ese mínimo. */
-export const POLAROID_VOLUMEN_OFF_POR_FOTO = 250;
+export const POLAROID_VOLUMEN_OFF_POR_FOTO = 300;
 /**
  * Lo mismo, por pack — que es la unidad que se cobra. Escrito como producto y no
  * como 2000 a mano para que cambiar el "por foto" no deje los dos números
@@ -965,7 +971,7 @@ export const IMPRIMIBLES = [
     id: 'pack-stickers',
     /** Nombre que ve el cliente (carrito, checkout, mail y CRM). */
     name: 'Pack de stickers imprimibles',
-    price: 11999,
+    price: 12999,
     /**
      * Precio de lista TACHADO — solo display, no se cobra ni se manda al
      * servidor: el checkout cobra `price` y nada más. Mismo criterio que
@@ -974,7 +980,7 @@ export const IMPRIMIBLES = [
      * ⚠️ Si lo cambiás, el % del cartel se recalcula solo — sale de
      * `imprimibleOff()`, no está escrito a mano en ninguna pantalla.
      */
-    listPrice: 47999,
+    listPrice: 52999,
     /**
      * Cantidad de diseños del pack — es EL argumento de venta de la card.
      * ⚠️ Poné acá el número real: se muestra en la página, en el Home y en el

@@ -220,6 +220,14 @@ del Home pueden bajar sin que el popup ande peor.
   con los precios nuevos: al comparar contra semanas anteriores, el ticket sube
   ~20 % solo por el cambio de precios, sin que haya cambiado nada del funnel.
 
+## Precios +10 % y 20 % por transferencia (spec 029, 1/10/2026)
+
+- Desde el 1/10 los `value` vuelven a subir, ~10 % (los que pagan por
+  transferencia, ~3,5 %), solo por el cambio de precios. Mismo cuidado al
+  comparar contra semanas anteriores.
+- El mismo día se apagaron el 3x2 y el 2x1 por categoría: los `promo_unlock`
+  de `nxm_3x2` y `nxm_2x1` dejan de dispararse hasta que vuelvan.
+
 ---
 
 `search` · `search_no_results` · `catalogo_orden` · `generate_lead` ·

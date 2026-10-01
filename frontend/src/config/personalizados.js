@@ -3,7 +3,7 @@
  *
  * Modelo de precio (simple a propósito): un calco personalizado vale lo MISMO
  * que uno del catálogo, según su tamaño.
- *   unitario = precio(tamaño)   →  4 cm $1.450 · 6 cm $1.900 · 9 cm $2.400 (spec 027)
+ *   unitario = precio(tamaño)   →  4 cm $1.600 · 6 cm $2.100 · 9 cm $2.650 (spec 029)
  *   total    = unitario × cantidad
  *
  * NO hay mínimo de compra (antes eran 10) — salvo en Vinilo Holográfico, que
@@ -71,7 +71,7 @@ export const MATERIAL_HOLOGRAFICO_ID = 'vinilo-holografico';
  * propósito: uno identifica el material que elige el cliente, el otro la
  * línea de cobro que ese material dispara.
  */
-export const RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 18000 };
+export const RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 20000 };
 
 /**
  * Pack holográfico (enmienda 26/9/2026, spec 023 RF-MAT11…15). Mariano: "el

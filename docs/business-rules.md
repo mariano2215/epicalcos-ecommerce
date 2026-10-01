@@ -9,10 +9,13 @@ Reglas comerciales **tal como están implementadas hoy**, extraídas del código
 
 Moneda: **ARS**. Todos los importes son enteros (`round = Math.round`).
 
-> **Spec 027 (26/9/2026)**: todos los precios de producto subieron ~20 %
-> (redondeados, tabla en `specs/027-precios-mas-20-y-transferencia-15/requirements.md`
-> §9.1) y el descuento por transferencia pasó a **15 % en cualquier compra,
+> **Spec 029 (1/10/2026)**: todos los precios de producto subieron ~10 %
+> (redondeados, tabla en `specs/029-precios-mas-10-y-transferencia-20/requirements.md`
+> §9.1) y el descuento por transferencia pasó a **20 % en cualquier compra,
 > desde 1 unidad, sobre todo producto** (§2). Los envíos no cambiaron.
+>
+> Antes, la **spec 027 (26/9/2026)** había subido todo ~20 % y llevado la
+> transferencia a 15 % (tabla en `specs/027-precios-mas-20-y-transferencia-15/`).
 
 ---
 
@@ -23,9 +26,9 @@ Moneda: **ARS**. Todos los importes son enteros (`round = Math.round`).
 
 | Tamaño | Precio unitario |
 |---|---|
-| 4 cm | $1.450 |
-| 6 cm | $1.900 |
-| 9 cm | $2.400 |
+| 4 cm | $1.600 |
+| 6 cm | $2.100 |
+| 9 cm | $2.650 |
 
 Default: **6 cm** (`DEFAULT_SIZE`).
 Catálogo: **61 categorías, 3.397 diseños**.
@@ -42,13 +45,14 @@ carrito completo.
 - **Vinilo Holográfico: solo en packs de 100 calcos** (spec 023, enmienda
   26/9/2026 — Mariano: *"el recargo holográfico de $15.000 es por 100 calcos
   en el pedido de $39.999, no por cada sticker. La compra mínima para
-  HOLOGRÁFICOS es de 100 calcos"*). Cada pack: **$47.999 + $18.000 de recargo
-  = $65.999** (con los precios de la spec 027; eran $39.999 + $15.000), en
+  HOLOGRÁFICOS es de 100 calcos"*). Cada pack: **$52.999 + $20.000 de recargo
+  = $72.999** (con los precios de la spec 029; $47.999 + $18.000 con los de la
+  027, y $39.999 + $15.000 antes), en
   **4 o 6 cm** (9 cm no), y con varios diseños las 100 son
   **en total**, repartidas entre ellos — se cobra un solo pack. No existe la
   calco holográfica suelta. Viaja como `negocio:vinilo-holografico:{tamano}:{ts}`
   (a `NEGOCIO.price`) + su recargo `fixed:material-holografico:{ts}`; ninguna
-  de las dos entra en el 3x2 ni en el cupón; sí en el 15 % por transferencia. El
+  de las dos entra en el 3x2 ni en el cupón; sí en el 20 % por transferencia. El
   servidor rechaza una `custom:` holográfica y un pack en 9 cm. (Del 22 al
   26/9/2026 el recargo era de $15.000 **por diseño** con cualquier cantidad:
   esas líneas se sacan solas de los carritos guardados.)
@@ -59,10 +63,10 @@ carrito completo.
 - Cortes (no afectan el precio): silueta, cuadrado, círculo.
 - El único beneficio por cantidad es el **3x2** vigente (el configurador lo
   muestra calculado igual que el servidor). Pagando por transferencia tienen
-  además el 15 % (spec 027; antes el % por transferencia no los alcanzaba).
+  además el 20 % (desde la spec 027; antes el % por transferencia no los alcanzaba).
 - Con cantidades altas se recomienda la **Promo Negocio** cuando lo que suman
-  las copias de un diseño alcanza su precio (hoy: 38 en 6 cm, 30 en 9 cm, 50 en
-  4 cm). La promo se puede tomar aunque el cliente quiera menos de 100
+  las copias de un diseño alcanza su precio (con el 3x2 vivo: 38 en 6 cm, 29 en
+  9 cm, 50 en 4 cm; sin el 3x2: 26, 20 y 34). La promo se puede tomar aunque el cliente quiera menos de 100
   (Mariano, 14/9/2026).
 - **Tope automático a la Promo Negocio** (spec 023, enmienda 22/9/2026,
   "topear el precio en $39.999"): si el diseño es **UNO solo**, en **6 cm** (el
@@ -83,46 +87,47 @@ carrito completo.
 
 | Producto | Precio | Id de línea |
 |---|---|---|
-| Tatuajes temporales · x hoja | $14.500 | `fixed:tatuajes-hoja` |
-| Fotos Polaroid x10 · 5×8 cm | $11.000 | `fixed:polaroid-x10-5x8` |
-| Fotos Polaroid x10 · 7×10 cm | $14.500 | `fixed:polaroid-x10-7x10` |
-| Fotos Polaroid x10 · 9×13 cm | $18.000 | `fixed:polaroid-x10-9x13` |
-| Fotos Polaroid x10 · 5×8 cm · **imantadas** | $18.000 | `fixed:polaroid-x10-5x8-iman` |
-| Fotos Polaroid x10 · 7×10 cm · **imantadas** | $21.500 | `fixed:polaroid-x10-7x10-iman` |
-| Fotos Polaroid x10 · 9×13 cm · **imantadas** | $25.000 | `fixed:polaroid-x10-9x13-iman` |
+| Tatuajes temporales · x hoja | $16.000 | `fixed:tatuajes-hoja` |
+| Fotos Polaroid x10 · 5×8 cm | $12.000 | `fixed:polaroid-x10-5x8` |
+| Fotos Polaroid x10 · 7×10 cm | $16.000 | `fixed:polaroid-x10-7x10` |
+| Fotos Polaroid x10 · 9×13 cm | $20.000 | `fixed:polaroid-x10-9x13` |
+| Fotos Polaroid x10 · 5×8 cm · **imantadas** | $19.500 | `fixed:polaroid-x10-5x8-iman` |
+| Fotos Polaroid x10 · 7×10 cm · **imantadas** | $23.500 | `fixed:polaroid-x10-7x10-iman` |
+| Fotos Polaroid x10 · 9×13 cm · **imantadas** | $27.500 | `fixed:polaroid-x10-9x13-iman` |
 
 #### Fotos Polaroid: material y volumen (spec 019)
 
 `config/pricing.js → POLAROID_SIZES` · espejo en `FIXED_PRICES` del servidor.
 
-- **Imantadas**: +$700 por foto, o sea **+$7.000 por pack de 10**, igual en los
-  tres tamaños. El material va en el **id de la línea** (sufijo `-iman`), no en
+- **Imantadas**: +$750 por foto, o sea **+$7.500 por pack de 10**, igual en los
+  tres tamaños (spec 029: por eso la 5×8 imantada es $19.500 y no los $20.000
+  que daba el redondeo). El material va en el **id de la línea** (sufijo `-iman`), no en
   un campo aparte: el servidor deriva el precio solo del id.
-- **Volumen**: desde **2 packs (20 fotos)**, el pack baja **$2.500** ($250 por
-  foto). Corre en comunes **y** en imantadas, y **escala** — 3 packs también lo
+- **Volumen**: desde **2 packs (20 fotos)**, el pack baja **$3.000** ($300 por
+  foto, spec 029). Corre en comunes **y** en imantadas, y **escala** — 3 packs también lo
   cobran, no vuelven al precio pleno.
 - Se cuenta **por línea**, no sumando todas las Polaroid del carrito: dos líneas
   de 10 fotos no llegan al descuento.
 - Es el **único** producto de precio fijo cuyo precio depende de la cantidad.
-  Cupones y promos N×M no lo tocan; el 15 % por transferencia sí, sobre el
+  Cupones y promos N×M no lo tocan; el 20 % por transferencia sí, sobre el
   precio ya descontado por volumen (spec 027).
 
 | Tamaño | 10 comunes | 10 imantadas | 20 comunes | 20 imantadas |
 |---|---|---|---|---|
-| 5×8 cm | $11.000 | $18.000 | $17.000 | $31.000 |
-| 7×10 cm | $14.500 | $21.500 | $24.000 | $38.000 |
-| 9×13 cm | $18.000 | $25.000 | $31.000 | $45.000 |
+| 5×8 cm | $12.000 | $19.500 | $18.000 | $33.000 |
+| 7×10 cm | $16.000 | $23.500 | $26.000 | $41.000 |
+| 9×13 cm | $20.000 | $27.500 | $34.000 | $49.000 |
 
 ### Archivos imprimibles (producto DIGITAL)
 `config/pricing.js → IMPRIMIBLES`
 
 | Pack | Precio | Id |
 |---|---|---|
-| Pack de stickers imprimibles | $11.999 (lista $47.999, −75 %) | `digital:pack-stickers` |
+| Pack de stickers imprimibles | $12.999 (lista $52.999, −75 %) | `digital:pack-stickers` |
 
 Reglas propias, todas verificadas en el servidor:
-- **No participa** de cupones ni de promos N×M. Sí del 15 % por transferencia
-  (spec 027).
+- **No participa** de cupones ni de promos N×M. Sí del 20 % por transferencia
+  (desde la spec 027).
 - **No suma para el envío gratis** (`physicalTotal` lo excluye).
 - **Cantidad siempre 1**: `addDigital` no acumula y el servidor rechaza
   `quantity ≠ 1`.
@@ -144,23 +149,24 @@ Alcance de cupones y promos: líneas `sticker` (catálogo) y, en promos N×M,
 también `custom` (personalizados). Packs, negocio y fijos ya traen su precio
 final. **La transferencia es la excepción: alcanza a todo producto.**
 
-### Descuento por transferencia (spec 027)
-`TRANSFER_DISCOUNT = 0.15` · `TRANSFER_PAYMENT_METHOD = 'transferencia'`
+### Descuento por transferencia (spec 029)
+`TRANSFER_DISCOUNT = 0.2` · `TRANSFER_PAYMENT_METHOD = 'transferencia'`
 
-**15 % off en cualquier compra, desde 1 unidad**, pagando por transferencia
+**20 % off en cualquier compra, desde 1 unidad**, pagando por transferencia
 bancaria: calcos, personalizados, packs, Negocio, pack holográfico (y su
 recargo), Polaroid, tatuajes e imprimibles. **No** se descuenta el envío. Con
 Mercado Pago el precio es siempre el de vidriera.
 
 - Se **suma** a un cupón de % (EPICA10) y corre **encima** del 3x2/2x1 y de
-  Argentina; lo que suman transferencia + cupón queda topeado en **25 %**
-  (`percentCap`) mientras corre una promo N×M.
+  Argentina: con EPICA10 da **30 %**. Mientras corre una promo N×M, lo que
+  suman transferencia + cupón queda topeado en **30 %** (`percentCap`).
 - Con un cupón que **anula todo** (EPI50, o uno de bundle) no corre, en ninguna
   línea: ese cupón es el único descuento.
 - El envío gratis se mide sobre el subtotal **ya descontado**.
 
-> Hasta el 26/9/2026 era un **10 % "por volumen"**: solo calcos de catálogo y
-> desde 10 unidades (`BULK_THRESHOLD`/`BULK_DISCOUNT`, ya no existen).
+> Fue **15 %** del 26/9 al 1/10/2026 (spec 027). Hasta el 26/9/2026 era un
+> **10 % "por volumen"**: solo calcos de catálogo y desde 10 unidades
+> (`BULK_THRESHOLD`/`BULK_DISCOUNT`, ya no existen).
 
 ### Cupones
 `config/pricing.js → COUPONS`
@@ -176,16 +182,17 @@ Mercado Pago el precio es siempre el de vidriera.
   la spec 026, se ve en el acceso "🎁 10% OFF activo" de quien ya lo tiene). El sitio
   igual lo acepta si alguien lo escribe: "oculto" es no publicitarlo, no un
   secreto criptográfico — viaja en el bundle JS.
-- **Acumulable** con el 15 % por transferencia: los porcentajes **se suman**
-  (transferencia 15 % + EPICA10 10 % = 25 % off). Salvo los `exclusivo`, abajo.
+- **Acumulable** con el 20 % por transferencia: los porcentajes **se suman**
+  (transferencia 20 % + EPICA10 10 % = 30 % off). Salvo los `exclusivo`, abajo.
 - ✅ **Durante una promo N×M el cupón de % SÍ descuenta** (spec 017, 7/9/2026).
   Esto **revirtió** la decisión del 20/8/2026, que era la contraria. El motivo:
   el popup ahora entrega `EPICA10` con un contador de 10 minutos, y un contador
   sobre un cupón que descuenta $0 es una promesa rota a la vista del cliente.
-  El tope de lo que corre encima de la promo pasó de 10 % a 20 %, y a **25 %**
-  con la spec 027 (`percentCap`), para que entren transferencia + cupón.
-- ✅ **Sigue acumulable con el 3x2 y con la transferencia**, tope 25 %
-  (confirmado por Mariano el 25/9/2026, spec 026; tope subido en la spec 027).
+  El tope de lo que corre encima de la promo pasó de 10 % a 20 %, a 25 % con
+  la spec 027 y a **30 %** con la 029 (`percentCap`), para que entren
+  transferencia + cupón.
+- ✅ **Sigue acumulable con el 3x2 y con la transferencia**, tope 30 %
+  (confirmado por Mariano el 25/9/2026, spec 026; tope subido en las specs 027 y 029).
 - ♾️ **Desde la spec 026 (25/9/2026) el popup entrega `EPICA10` SIN ventana**:
   no vence, y sigue valiendo (y autocompletándose) después de comprar. La
   maquinaria de la ventana de 10 min sigue existiendo (§3.4) para los cupones
@@ -257,9 +264,9 @@ web mientras está apagada:
 - Carrito, checkout, drawer y `/personalizados` dejan de nombrar el 3x2 y de
   descontarlo. El 2x1 por categoría también está apagado desde el mismo día
   (§3.1-bis).
-- El tope de 25 % para transferencia + cupón solo existe mientras corre alguna
+- El tope de 30 % para transferencia + cupón solo existe mientras corre alguna
   promo N×M. Con las dos apagadas vuelve a `MAX_STICKER_DISCOUNT`; hoy no
-  cambia ningún precio, porque 15 % + 10 % ya da 25 %.
+  cambia ningún precio, porque 20 % + 10 % ya da 30 %.
 - Los tests de su mecánica se saltean solos (`con3x2` en
   `promoPricing.test.js`) y vuelven a correr al prenderla.
 
@@ -280,9 +287,9 @@ en promo es elegible para las dos, y el reparto lo decide `repartoPromos()`.
 
 | Con la promo corriendo | ¿Se suma? |
 |---|---|
-| 15 % por transferencia (desde 1, todo producto — spec 027) | **sí** |
+| 20 % por transferencia (desde 1, todo producto — specs 027 y 029) | **sí** |
 | Cupones de % (`EPICA10`) | **sí** — cambió el 7/9/2026, antes no sumaba |
-| Tope de los dos juntos | `percentCap = 0.25` (0.20 hasta la spec 027; 0.10 hasta la 017) |
+| Tope de los dos juntos | `percentCap = 0.30` (0.25 hasta la spec 029; 0.20 hasta la 027; 0.10 hasta la 017) |
 | `EPI50` | **no se suma: la reemplaza.** Es `exclusivo`, anula la agrupación N×M y corre su 50 % |
 
 Ver `specs/010-reactivar-3x2/` y `specs/017-todas-las-ofertas/`.
@@ -323,19 +330,22 @@ un calco baje el total** hasta $800. Ejemplo real:
 La regla vigente tiene 0 anomalías en 60.480 transiciones verificadas y coincide
 con el óptimo real. Los tests están en `src/lib/reparto.test.js`.
 
-### 3.2 Promo mayorista — 100 calcos a $47.999 — ✅ VIVA (desde el 7/9/2026, sin fecha de fin)
+### 3.2 Promo mayorista — 100 calcos a $52.999 — ✅ VIVA (desde el 7/9/2026, sin fecha de fin)
 `PROMO_MAYORISTA_100` · `activa: true` · vence **14/8/2026 23:59** (ART)
 
-- Pack de **exactamente 100 calcos** a precio fijo $47.999 (spec 027; antes $39.999).
+- Pack de **exactamente 100 calcos** a precio fijo $52.999 (spec 029; $47.999 desde la 027, antes $39.999).
 - Los 100 pueden ser 100 diseños **distintos** (catálogo y/o subidos por el
   cliente en el mismo armador).
 - **Solo en 4 y 6 cm.** Si el cliente elige 9 cm, el armador vuelve al pack
   mayorista de siempre.
 - Línea: `pack:mayorista100:{size}:{ts}` con `quantity = 1` (1 línea = 1 pack).
-- **No participa** de cupones ni de promos N×M; sí del 15 % por transferencia.
-- **Paga envío como cualquier pedido**: $47.999 cruza el umbral de Rosario
-  ($35.000) pero no el nacional ($50.000), así que suma $6.500 a ciudades
-  próximas y $8.500 al interior (ver §5).
+- **No participa** de cupones ni de promos N×M; sí del 20 % por transferencia.
+- **Paga envío como cualquier pedido**: lo decide el umbral, no la promo.
+  ⚠️ Desde la spec 029, con Mercado Pago los $52.999 **cruzan los dos
+  umbrales** ($35.000 Rosario y $50.000 país) y el pack viaja gratis a todo el
+  país; hasta el 1/10/2026 ($47.999) pagaba $6.500 a ciudades próximas y $8.500
+  al interior. Por transferencia queda en $42.399: gratis en Rosario, y paga
+  $6.500 / $8.500 en el resto (ver §5). Lo mismo vale para la Promo Negocio.
 - ✅ **Reactivada el 7/9/2026 (spec 017), sin fecha de fin.** Antes vencía el
   14/8/2026. Se apaga con `activa: false` en los dos lados (ver el recuadro
   arriba de §3.1).
@@ -431,14 +441,14 @@ Línea `pack:personalizados:{size}:{ts}`, mínimo 10 unidades, 10 % ya incluido.
 > configurador nuevo emite líneas `custom:` **sin mínimo y sin descuento**, y
 > esta rama `pack:personalizados` sigue viva porque **las 10 unidades son el
 > umbral para acceder al 10 % off** del pack (que ya viene en el precio; el
-> 15 % por transferencia se suma aparte desde la spec 027).
+> % por transferencia se suma aparte desde la spec 027; 20 % desde la 029).
 > No es código residual: son dos ofertas distintas para el mismo producto.
 
 ### Promo Negocio
-`NEGOCIO = { qty: 100, size: '6cm', price: 47999, listPrice: 115999 }`
+`NEGOCIO = { qty: 100, size: '6cm', price: 52999, listPrice: 127999 }`
 
 100 calcos de **un solo diseño** (el logo del cliente) en 6 cm, precio fijo
-$47.999 (spec 027; antes $39.999). `listPrice` es solo el tachado de display. Línea `negocio:{ts}`,
+$52.999 (spec 029; $47.999 desde la 027, antes $39.999). `listPrice` es solo el tachado de display. Línea `negocio:{ts}`,
 **1 unidad por línea**. Paga envío por umbral, como todo.
 
 ---
@@ -635,7 +645,7 @@ vuelve a decir "no aceptamos devoluciones".
 
 Marquesina con cuatro respuestas a dudas de compra: envío gratis (los **dos**
 umbrales), 2x1 en calcos de Argentina (**solo mientras el 2x1 está vivo**), los
-días de garantía y el 15 % por transferencia con su condición (`TRANSFER_OFF`). Se ve
+días de garantía y el 20 % por transferencia con su condición (`TRANSFER_OFF`). Se ve
 **también con banner de promo** y se recoge al scrollear.
 
 Argentina se anuncia por el **2x1**, nunca por un %: la promo del 50 % venció el

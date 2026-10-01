@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `029-precios-mas-10-y-transferencia-20` |
-| **Estado** | 🟡 `APPROVAL` — falta el OK de Mariano a la tabla (§9.1) y a P-2/P-3 |
+| **Estado** | ✅ `DONE` — Mariano aprobó la tabla (§9.1) y P-2/P-3 el 01/10/2026 ("Aprobado, implementá la spec 029") |
 | **Fecha** | 01/10/2026 |
 | **Autor** | Claude Code, a partir del pedido de Mariano |
 
@@ -90,7 +90,7 @@ $1.680 con transferencia.
 
 ## 9. Reglas de negocio
 
-### 9.1 Tabla de precios (redondeada — pendiente del OK de Mariano)
+### 9.1 Tabla de precios (redondeada — aprobada por Mariano el 01/10/2026)
 
 Mismo criterio de redondeo que la spec 027: calcos a los $50 más cercanos;
 montos redondos a los $500 más cercanos; los que terminan en …999 siguen
@@ -164,6 +164,16 @@ precios nuevos.
 
 | ID | Pregunta | Estado |
 |---|---|---|
-| P-1 | ¿Aprobás la tabla de §9.1, con los dos ajustes marcados ⚠️? | ⬜ pendiente |
-| P-2 | ¿Los costos y umbrales de envío quedan como están (como en la 027)? | ⬜ pendiente — se asume que sí |
-| P-3 | ¿El 20 % sigue sin aplicarse al envío (como el 15 %)? | ⬜ pendiente — se asume que sí |
+| P-1 | ¿Aprobás la tabla de §9.1, con los dos ajustes marcados ⚠️? | ✅ aprobada el 01/10/2026 (con los dos ajustes) |
+| P-2 | ¿Los costos y umbrales de envío quedan como están (como en la 027)? | ✅ sí, sin cambios |
+| P-3 | ¿El 20 % sigue sin aplicarse al envío (como el 15 %)? | ✅ sí, no se aplica al envío |
+
+## 13. Hallazgo de la implementación
+
+⚠️ **La promo de 100 calcos y la Promo Negocio ($52.999) cruzan ahora el
+umbral de envío gratis a todo el país ($50.000) pagando con Mercado Pago.**
+Hasta el 1/10/2026 ($47.999) quedaban abajo y pagaban $6.500 a ciudades
+próximas y $8.500 al interior. No es una promo regalando el envío: es la regla
+de siempre (manda el umbral) con el precio nuevo. Por transferencia ($42.399)
+siguen pagando envío fuera de Rosario. Si se quiere evitar, la decisión es de
+Mariano (subir el umbral nacional o dejarlo así); no se tocó en esta spec.

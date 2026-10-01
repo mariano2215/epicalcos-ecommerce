@@ -10,7 +10,8 @@ import { TRANSFER_PCT, TRANSFER_OFF } from '../config/pricing.js';
  * en el checkout. Todo el sitio consume estas constantes para que la promesa
  * sea siempre la misma.
  *
- * Spec 027 (26/9/2026): 15 % en cualquier compra, desde 1 calco. Hasta ahí era
+ * Spec 027 (26/9/2026): 15 % en cualquier compra, desde 1 calco (20 % desde la
+ * spec 029, 1/10/2026 — el número sale de TRANSFER_PCT). Hasta la 027 era
  * 10 % desde 10 calcos, y esta caja tenía tres estados ("ya llegaste", "te
  * faltan N", "desde 10"); sin umbral queda uno solo.
  */

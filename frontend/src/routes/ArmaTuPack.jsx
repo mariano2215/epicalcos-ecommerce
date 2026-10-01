@@ -28,7 +28,7 @@ import { useSeo } from '../lib/seo.js';
  * DECISIÓN IMPORTANTE: los packs x10/x20/x50 NO son una regla de precio nueva.
  * Son una forma guiada de elegir varios diseños de una, y van al carrito como
  * calcos SUELTAS (`emit="stickers"`). El descuento que muestran es el % por
- * transferencia que YA existe (15 % sin mínimo desde la spec 027). Inventar un "precio de pack"
+ * transferencia que YA existe (sin mínimo desde la spec 027; 20 % desde la 029). Inventar un "precio de pack"
  * habría obligado a agregar un tipo de línea al espejo
  * frontend/src/config/pricing.js ↔ netlify/functions/lib/pricing.js — y a
  * inventar porcentajes que nadie definió.

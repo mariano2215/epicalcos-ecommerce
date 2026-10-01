@@ -14,7 +14,7 @@ import { useExperiment } from '../lib/experiments.js';
  *
  * TODOS los números salen de config/pricing.js — no hay ni un precio escrito a
  * mano acá. Los packs de catálogo NO son una regla de precio nueva: son el
- * precio de lista más el % por transferencia (15 % desde la spec 027, sin mínimo).
+ * precio de lista más el % por transferencia (sin mínimo desde la spec 027; 20 % desde la 029).
  * Por eso el card muestra las dos cifras y dice de dónde sale el descuento, en
  * vez de inventar un "precio de pack".
  *

@@ -38,7 +38,7 @@ describe('cotizarTanda — precio de lista (mismo que el catálogo, sin mínimo)
     expect(cotizarTanda({ tamano: 'no-existe' }).configuracionCompleta).toBe(false);
   });
 
-  it('el unitario es el precio de lista del tamaño (4cm 1450 · 6cm 1900 · 9cm 2400 desde la spec 027)', () => {
+  it('el unitario es el precio de lista del tamaño (4cm 1600 · 6cm 2100 · 9cm 2650 desde la spec 029)', () => {
     for (const s of SIZES) {
       const r = cotizarTanda({ tamano: s.id, unidades: 1 });
       expect(r.configuracionCompleta).toBe(true);
@@ -97,9 +97,12 @@ describe('convieneNegocio — la recomendación de Negocio sale de las reglas (P
     return null;
   };
 
-  it('con el 3x2: 38 copias en 6 cm, 30 en 9 cm, 50 en 4 cm (precios de la spec 027)', () => {
+  // En 9 cm bajó de 30 a 29 con la spec 029: la calco subió un poco más que el
+  // pack de Negocio (2.400 → 2.650, +10,4 %, contra 47.999 → 52.999, +10,4 %
+  // también, pero el redondeo por unidad del 3x2 lo corre una copia).
+  it('con el 3x2: 38 copias en 6 cm, 29 en 9 cm, 50 en 4 cm (precios de la spec 029)', () => {
     expect(umbral('6cm', true)).toBe(38);
-    expect(umbral('9cm', true)).toBe(30);
+    expect(umbral('9cm', true)).toBe(29);
     expect(umbral('4cm', true)).toBe(50);
   });
 
@@ -301,13 +304,13 @@ describe('material — Vinilo Blanco / DTF UV (enmienda 22/9/2026)', () => {
 describe('Vinilo Holográfico — packs de 100 (enmienda 26/9/2026, RF-MAT11…15)', () => {
   const PACK = NEGOCIO.price + RECARGO_HOLOGRAFICO.precio;
 
-  it('el pack es el pedido de 100 (precio de Negocio) + el recargo = $65.999 por 100 calcos (spec 027)', () => {
+  it('el pack es el pedido de 100 (precio de Negocio) + el recargo = $72.999 por 100 calcos (spec 029)', () => {
     expect(PACK_HOLOGRAFICO).toMatchObject({ qty: 100, precio: NEGOCIO.price });
-    expect(RECARGO_HOLOGRAFICO.precio).toBe(18000) // spec 027 (antes $15.000);
-    expect(PACK).toBe(65999) // $47.999 + $18.000 (spec 027; antes $54.999);
+    expect(RECARGO_HOLOGRAFICO.precio).toBe(20000); // spec 029 ($18.000 desde la 027, antes $15.000)
+    expect(PACK).toBe(72999); // $52.999 + $20.000 (spec 029; $65.999 desde la 027, antes $54.999)
   });
 
-  it('1 diseño en 6 cm: $54.999 por 100, con cualquier número de copias y con o sin 3x2 (AC-HOLO1)', () => {
+  it('1 diseño en 6 cm: el precio del pack por 100, con cualquier número de copias y con o sin 3x2 (AC-HOLO1)', () => {
     for (const copias of [1, 10, 38, 100, 500]) {
       for (const promoActiva of [false, true]) {
         const c = precioEfectivoTanda({ tamano: '6cm', copias, disenos: 1, promoActiva, material: MATERIAL_HOLOGRAFICO_ID });

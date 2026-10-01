@@ -8,7 +8,8 @@ import {
   FREE_SHIPPING_THRESHOLD_NATIONAL as BE_UMBRAL_NACIONAL,
   validateAndPriceOrder,
   MAYORISTA100_PRICE,
-  SIZE_PRICES
+  SIZE_PRICES,
+  TRANSFER_DISCOUNT
 } from '../../../netlify/functions/lib/pricing.js';
 
 const UMBRAL_ROSARIO = shipping.freeShippingThresholdRosario;
@@ -86,27 +87,53 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
   };
   const datos = (dest) => ({ name: 'A', address: 'B', zip: '1000', ...dest });
 
+  /**
+   * ⚠️ Desde la spec 029 (1/10/2026) la promo cuesta $52.999 y, pagada con
+   * Mercado Pago, CRUZA el umbral nacional ($50.000): viaja gratis a todo el
+   * país porque lo dice el umbral (ver el test de abajo). Pagada por
+   * transferencia queda en $42.399 y no lo cruza — por eso los casos que
+   * prueban "la promo no regala el envío" van por transferencia: es la única
+   * forma de que la promo siga por debajo del umbral.
+   */
+  const PROMO_TRANSFERENCIA = Math.round(MAYORISTA100_PRICE * (1 - TRANSFER_DISCOUNT));
+
   it('REGRESIÓN: la promo de 100 calcos a precio fijo PAGA envío a Buenos Aires', () => {
-    // El caso real que se cobró mal: $39.999 no llega al umbral nacional
-    // ($50.000), así que el pedido paga los $8.500 de Correo Argentino. Antes
+    // El caso real que se cobró mal: $39.999 no llegaba al umbral nacional
+    // ($50.000), así que el pedido pagaba los $8.500 de Correo Argentino. Antes
     // viajaba gratis porque la línea `pack:mayorista100` traía el envío puesto.
     conLaPromoViva();
+    expect(PROMO_TRANSFERENCIA).toBeLessThan(UMBRAL_NACIONAL);
+    const pedido = validateAndPriceOrder({
+      items: [{ id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: PROMO_TRANSFERENCIA }],
+      shipping: { methodValue: 'envio', ...datos({ city: 'La Plata', province: 'Buenos Aires' }) },
+      paymentMethod: 'transferencia'
+    });
+    expect(pedido.ok).toBe(true);
+    expect(pedido.shippingCost).toBe(shipping.costInterior);
+    expect(pedido.itemsTotal + pedido.shippingCost).toBe(PROMO_TRANSFERENCIA + shipping.costInterior);
+  });
+
+  it('con Mercado Pago, los $52.999 de la promo cruzan el umbral nacional y viaja gratis (spec 029)', () => {
+    // No es la promo regalando el envío: es el umbral. Hasta el 1/10/2026 el
+    // precio ($47.999) quedaba abajo y este mismo pedido pagaba $8.500.
+    conLaPromoViva();
+    expect(MAYORISTA100_PRICE).toBeGreaterThanOrEqual(UMBRAL_NACIONAL);
     const pedido = validateAndPriceOrder({
       items: [{ id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: MAYORISTA100_PRICE }],
       shipping: { methodValue: 'envio', ...datos({ city: 'La Plata', province: 'Buenos Aires' }) },
       paymentMethod: 'mercadopago'
     });
     expect(pedido.ok).toBe(true);
-    expect(pedido.shippingCost).toBe(shipping.costInterior);
-    expect(pedido.itemsTotal + pedido.shippingCost).toBe(MAYORISTA100_PRICE + shipping.costInterior);
+    expect(pedido.shippingCost).toBe(0);
   });
 
   it('la misma promo paga el envío donde no llega al umbral, y solo ahí', () => {
     conLaPromoViva();
-    // Desde el 21/8/2026 los umbrales son $35.000 / $50.000, así que los $39.999
-    // de la promo SÍ cruzan el de Rosario y no el del resto del país. El mismo
-    // pack viaja gratis en una zona y paga en otra, y lo decide el umbral y no
-    // la promo — que es justo lo que este bloque existe para probar.
+    // Desde el 21/8/2026 los umbrales son $35.000 / $50.000, así que la promo
+    // pagada por transferencia ($42.399) SÍ cruza el de Rosario y no el del resto
+    // del país. El mismo pack viaja gratis en una zona y paga en otra, y lo
+    // decide el umbral y no la promo — que es justo lo que este bloque existe
+    // para probar.
     const esperado = [
       [rosario, 0],
       [funes, shipping.costNearby],
@@ -114,9 +141,9 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
     ];
     for (const [dest, costo] of esperado) {
       const pedido = validateAndPriceOrder({
-        items: [{ id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: MAYORISTA100_PRICE }],
+        items: [{ id: 'pack:mayorista100:4cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: PROMO_TRANSFERENCIA }],
         shipping: { methodValue: 'envio', ...datos(dest) },
-        paymentMethod: 'mercadopago'
+        paymentMethod: 'transferencia'
       });
       expect(pedido.ok).toBe(true);
       expect(pedido.shippingCost).toBe(costo);
@@ -125,7 +152,7 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
 
   it('el pack mayorista sí viaja gratis cuando su PRECIO cruza el umbral', () => {
     // Control de que el fix no apagó el envío gratis legítimo: 100 calcos de
-    // 6 cm al 50 % off quedan arriba del umbral nacional ($95.000 desde la spec 027).
+    // 6 cm al 50 % off quedan arriba del umbral nacional ($105.000 desde la spec 029).
     const unit = Math.round(SIZE_PRICES['6cm'] * 0.5);
     const pedido = validateAndPriceOrder({
       items: [{ id: 'pack:mayorista:6cm:1', title: 'Pack Mayorista x100', quantity: 100, unit_price: unit }],
@@ -144,10 +171,10 @@ describe('ninguna promo regala el envío: manda el umbral', () => {
     conLaPromoViva();
     const pedido = validateAndPriceOrder({
       items: [
-        { id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: MAYORISTA100_PRICE, envioGratis: true }
+        { id: 'pack:mayorista100:6cm:1', title: 'Pack Mayorista PROMO x100', quantity: 1, unit_price: PROMO_TRANSFERENCIA, envioGratis: true }
       ],
       shipping: { methodValue: 'envio', cost: 0, envioGratis: true, ...datos(interior) },
-      paymentMethod: 'mercadopago'
+      paymentMethod: 'transferencia'
     });
     expect(pedido.ok).toBe(true);
     expect(pedido.shippingCost).toBe(shipping.costInterior);

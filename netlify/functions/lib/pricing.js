@@ -10,18 +10,18 @@
  */
 
 // --- Espejo de frontend/src/config/pricing.js ---
-export const SIZE_PRICES = { '4cm': 1450, '6cm': 1900, '9cm': 2400 };
-// Descuento por transferencia (spec 027, 26/9/2026): 15 % a TODO producto del
+export const SIZE_PRICES = { '4cm': 1600, '6cm': 2100, '9cm': 2650 };
+// Descuento por transferencia (spec 029, 1/10/2026): 20 % a TODO producto del
 // pedido —calcos, personalizados, packs, Negocio, holográfico, Polaroid,
-// tatuajes, imprimibles—, desde 1 unidad. No toca el envío. Hasta el 26/9 era
-// 10 %, solo en calcos de catálogo y desde 10 (BULK_THRESHOLD).
+// tatuajes, imprimibles—, desde 1 unidad. No toca el envío. Fue 15 % del 26/9
+// al 1/10 (spec 027) y, antes, 10 % solo en calcos de catálogo y desde 10.
 // ⚠️ Espejo de TRANSFER_DISCOUNT en frontend/src/config/pricing.js.
-export const TRANSFER_DISCOUNT = 0.15;
+export const TRANSFER_DISCOUNT = 0.2;
 const TRANSFER_PAYMENT_METHOD = 'transferencia';
 
 // Cupones de descuento (solo calcos sueltos). El cupón de % es ACUMULABLE con
-// el 15 % por transferencia: los descuentos se SUMAN (ej. transferencia 15 % +
-// EPICA10 10 % = 25 % off), con un tope de seguridad para no llegar a precio
+// el 20 % por transferencia: los descuentos se SUMAN (ej. transferencia 20 % +
+// EPICA10 10 % = 30 % off), con un tope de seguridad para no llegar a precio
 // negativo.
 //
 // ...salvo que el cupón sea `exclusivo` (EPI50): ese NO se acumula con nada —
@@ -81,9 +81,9 @@ export function isCouponActive(code, now = Date.now()) {
 //
 // ⚠️ ACUMULA con el % por transferencia Y con los cupones de %. Esto CAMBIÓ
 // el 7/9/2026: hasta la spec 017 un cupón no sumaba nada mientras la promo
-// corría. Por eso PROMO_PERCENT_CAP pasó de 0.1 a 0.2 — y a 0.25 con la spec
-// 027 (26/9/2026): tiene que entrar el 15 % de transferencia más el 10 % de
-// EPICA10.
+// corría. Por eso PROMO_PERCENT_CAP pasó de 0.1 a 0.2, a 0.25 con la spec 027
+// (26/9/2026) y a 0.3 con la 029 (1/10/2026): tiene que entrar el 20 % de
+// transferencia más el 10 % de EPICA10.
 // ⚠️ Si cambiás algo acá, cambialo TAMBIÉN en el frontend. El test
 // src/lib/promoPricing.test.js verifica la paridad.
 //
@@ -95,7 +95,7 @@ export const PROMO_START_MS = Date.parse('2026-09-07T00:00:00-03:00');
 export const PROMO_END_MS = Date.parse(null);
 const PROMO_BUY = 3;
 const PROMO_PAY = 2;
-export const PROMO_PERCENT_CAP = 0.25;
+export const PROMO_PERCENT_CAP = 0.3;
 
 // Espejo de promoVigente() del frontend: una punta ausente (NaN) significa "sin
 // límite de ese lado".
@@ -253,7 +253,7 @@ const WHOLESALE_DISCOUNT = 0.5;
 // MAYORISTA100_ACTIVA. Espejo de PROMO_MAYORISTA_100 del frontend.
 export const MAYORISTA100_START_MS = Date.parse('2026-09-07T00:00:00-03:00');
 export const MAYORISTA100_END_MS = Date.parse(null);
-export const MAYORISTA100_PRICE = 47999;
+export const MAYORISTA100_PRICE = 52999;
 export const MAYORISTA100_QTY = 100;
 export const MAYORISTA100_SIZES = ['4cm', '6cm'];
 // Interruptor manual, espejo de PROMO_MAYORISTA_100.activa del frontend. Apagar
@@ -274,7 +274,7 @@ export function isMayorista100Active(now = Date.now()) {
 // Es la única promo con FECHA DE INICIO: antes del lunes el precio válido sigue
 // siendo el de lista, así que se miran las DOS puntas.
 //
-// ACUMULA con el 15 % por transferencia y con el cupón (los % se suman), con el
+// ACUMULA con el % por transferencia y con el cupón (los % se suman), con el
 // tope MAX_STICKER_DISCOUNT.
 // ⚠️ Si cambiás el %, la categoría o las fechas, cambialo TAMBIÉN en el
 // frontend (lo verifica promoPricing.test.js).
@@ -320,9 +320,9 @@ export function esPromoArgentina(lineId, now = Date.now()) {
 // reponer cualquier atajo parecido.
 const PERSONALIZADOS_MIN = 10; // personalizados: mínimo 10 calcos, 10 % off
 const PERSONALIZADOS_DISCOUNT = 0.1;
-const NEGOCIO_PRICE = 47999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
+const NEGOCIO_PRICE = 52999; // promo negocio: 100u 6 cm precio fijo, 1 por línea
 export const FIXED_PRICES = {
-  'tatuajes-hoja': 14500,
+  'tatuajes-hoja': 16000,
   // Recargo del Vinilo Holográfico en /personalizados (spec 023, enmiendas
   // 22/9 y 26/9/2026) — espejo de RECARGO_HOLOGRAFICO.precio en
   // frontend/src/config/personalizados.js. Es un cobro FIJO POR PACK DE 100
@@ -330,29 +330,29 @@ export const FIXED_PRICES = {
   // (`fixed:material-holografico:{ts}`, quantity SIEMPRE 1), nunca como parte
   // del precio del pack. Ver el bloque "Espejo de personalizados" más abajo
   // para la validación cruzada que exige esta línea junto al pack.
-  'material-holografico': 18000,
+  'material-holografico': 20000,
   // Fotos Polaroid x10 por tamaño Y material — espejo de POLAROID_SIZES del
   // frontend (`price` y `priceIman`). Imantadas = +$700 por foto = +$7.000 por
   // pack, igual en los tres tamaños.
   // ⚠️ Si agregás o cambiás uno, cambialo TAMBIÉN en frontend/src/config/pricing.js:
   // lo verifica frontend/src/lib/promoPricing.test.js en los dos sentidos.
-  'polaroid-x10-5x8': 11000,
-  'polaroid-x10-7x10': 14500,
-  'polaroid-x10-9x13': 18000,
-  'polaroid-x10-5x8-iman': 18000,
-  'polaroid-x10-7x10-iman': 21500,
-  'polaroid-x10-9x13-iman': 25000
+  'polaroid-x10-5x8': 12000,
+  'polaroid-x10-7x10': 16000,
+  'polaroid-x10-9x13': 20000,
+  'polaroid-x10-5x8-iman': 19500,
+  'polaroid-x10-7x10-iman': 23500,
+  'polaroid-x10-9x13-iman': 27500
 };
 
 // --- Descuento por volumen de las Polaroid (spec 019) ---
-// Desde 2 packs (20 fotos) el precio POR PACK baja $2.500, o sea $250 por foto (spec 027; antes $2.000).
+// Desde 2 packs (20 fotos) el precio POR PACK baja $3.000, o sea $300 por foto (spec 029; $2.500 desde la 027, antes $2.000).
 // Corre en comunes e imantadas por igual y ESCALA: 3 packs pagan 3 × el precio
 // ya descontado, no vuelven al precio pleno.
 // Es el único producto de precio fijo cuyo precio depende de la cantidad, y por
 // eso se decide acá adentro y no en la tabla: la tabla guarda precios de lista.
 // ⚠️ Espejo de descuentoPolaroidVolumen() en frontend/src/config/pricing.js.
 export const POLAROID_VOLUMEN_MIN_PACKS = 2;
-export const POLAROID_VOLUMEN_OFF_PACK = 2500;
+export const POLAROID_VOLUMEN_OFF_PACK = 3000;
 const POLAROID_PREFIX = 'polaroid-x10-';
 
 // --- Espejo de IMPRIMIBLES en frontend/src/config/pricing.js (producto DIGITAL) ---
@@ -363,7 +363,7 @@ const POLAROID_PREFIX = 'polaroid-x10-';
 // ⚠️ Si cambiás un precio acá, cambialo TAMBIÉN en el frontend
 // (lo verifica frontend/src/lib/promoPricing.test.js).
 export const DIGITAL_PRICES = {
-  'pack-stickers': 11999
+  'pack-stickers': 12999
 };
 
 /** true si TODAS las líneas del pedido son archivos digitales (no hay nada que enviar). */
@@ -665,13 +665,13 @@ export function validateAndPriceOrder({ items, shipping, paymentMethod, couponCo
   // El % de este cupón, ¿alcanza también a los personalizados sueltos?
   const incluyeCustom = Boolean(coupon?.incluyeCustom);
 
-  // Transferencia (spec 027): 15 % a todo producto, sin mínimo. Hasta el 26/9
-  // era 10 % y solo con ≥ 10 líneas `sticker:`. Un cupón que anula todo
+  // Transferencia: 20 % a todo producto, sin mínimo (spec 029; 15 % desde la
+  // 027). Hasta el 26/9 era 10 % y solo con ≥ 10 líneas `sticker:`. Un cupón que anula todo
   // (bundle / exclusivo) también la anula: ese cupón es el ÚNICO descuento.
   const transferRate = !anulaTodo && paymentMethod === TRANSFER_PAYMENT_METHOD ? TRANSFER_DISCOUNT : 0;
 
   // Durante la promo 3x2 el % (cupón + transferencia) queda topeado en
-  // PROMO_PERCENT_CAP (25 %); fuera de la promo, el tope es MAX_STICKER_DISCOUNT.
+  // PROMO_PERCENT_CAP (30 %); fuera de la promo, el tope es MAX_STICKER_DISCOUNT.
   //
   // El tope sigue a la promo REAL, no a la fecha: un cupón que la anula
   // (`anulaTodo`) deja al pedido sin 3x2, así que tampoco corre su tope. Sin
