@@ -133,7 +133,10 @@ export function promo3x2(unitBasePrices, buy = PROMO_BUY, pay = PROMO_PAY) {
 // ⚠️ Si agregás o sacás una categoría acá y no en el frontend, TODO checkout
 // con un calco de esa categoría se rechaza con price_mismatch.
 export const CATEGORIAS_2X1 = ['anime', 'argentina', 'disney', 'frases'];
-export const PROMO_2X1_ACTIVA = true;
+// APAGADA desde el 1/10/2026, "hasta nuevo aviso" (Mariano), igual que el 3x2.
+// Espejo de PROMO_2X1.activa: un lado solo prendido rechaza todo checkout con
+// 2 calcos de estas categorías (`price_mismatch`).
+export const PROMO_2X1_ACTIVA = false;
 export const PROMO_2X1_START_MS = Date.parse('2026-09-07T00:00:00-03:00');
 export const PROMO_2X1_END_MS = Date.parse(null);
 const PROMO_2X1_BUY = 2;

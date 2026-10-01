@@ -28,9 +28,9 @@ const suma = (a) => a.reduce((x, y) => x + y, 0);
 afterEach(() => vi.useRealTimers());
 
 describe('las promos de la spec 017 que corren hoy', () => {
-  it('2x1 y mayorista corren; el 3x2 sigue a su interruptor (apagado desde el 1/10/2026)', () => {
+  it('el mayorista corre; el 3x2 y el 2x1 siguen a su interruptor (los dos apagados desde el 1/10/2026)', () => {
     expect(isPromoActive()).toBe(PROMO_3X2.activa);
-    expect(is2x1PromoActive()).toBe(true);
+    expect(is2x1PromoActive()).toBe(PROMO_2X1.activa);
     expect(isMayoristaPromoActive()).toBe(true);
   });
 
@@ -48,10 +48,17 @@ describe('las promos de la spec 017 que corren hoy', () => {
 });
 
 describe('esPromo2x1 decide por el id de la línea', () => {
-  it('una categoría del 2x1 entra; otra no', () => {
+  // El 2x1 está apagado desde el 1/10/2026: este caso vuelve a correr solo el
+  // día que se prenda, y mientras tanto corre su reverso.
+  it.runIf(PROMO_2X1.activa)('una categoría del 2x1 entra; otra no', () => {
     expect(esPromo2x1('sticker:disney-141:6cm')).toBe(true);
     expect(esPromo2x1('sticker:anime-4:4cm')).toBe(true);
     expect(esPromo2x1('sticker:marvel-3:6cm')).toBe(false);
+  });
+
+  it.runIf(!PROMO_2X1.activa)('con el 2x1 apagado no entra ninguna línea, ni de sus categorías', () => {
+    expect(esPromo2x1('sticker:disney-141:6cm')).toBe(false);
+    expect(esPromo2x1('sticker:anime-4:4cm')).toBe(false);
   });
 
   it('un personalizado NUNCA entra: no tiene categoría de catálogo', () => {

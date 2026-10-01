@@ -75,6 +75,7 @@ import {
   promo3x2 as bePromo3x2,
   isPromoActive as beActive,
   PROMO_ACTIVA as BE_PROMO_ACTIVA,
+  PROMO_2X1_ACTIVA as BE_PROMO_2X1_ACTIVA,
   MAYORISTA100_END_MS,
   MAYORISTA100_START_MS,
   MAYORISTA100_PRICE,
@@ -132,6 +133,9 @@ const AFTER_PROMO = new Date('2026-08-29T12:00:00-03:00'); // sáb 29/8: ANTES d
  */
 const con3x2 = it.runIf(PROMO_3X2.activa);
 const sin3x2 = it.runIf(!PROMO_3X2.activa);
+// Mismo criterio para el 2x1 por categoría, apagado el mismo día. Los casos que
+// mezclan las dos promos piden la combinación exacta de interruptores.
+const sinNinguna = it.runIf(!PROMO_3X2.activa && !PROMO_2X1.activa);
 
 /**
  * Instante SIN ninguna promo por fecha viva (3x2, mayorista y Argentina, las
@@ -278,6 +282,12 @@ describe('promo3x2 — mecánica y paridad frontend ↔ backend', () => {
     // agarraban de rebote los end-to-end. Prendido en un lado y apagado en el
     // otro, todo checkout con 3 calcos o más se rechaza con `price_mismatch`.
     expect(BE_PROMO_ACTIVA).toBe(PROMO_3X2.activa);
+  });
+
+  it('el interruptor del 2x1 también es el mismo de los dos lados', () => {
+    // Mismo agujero que el del 3x2: con un lado solo prendido, todo checkout con
+    // 2 calcos de anime, Argentina, Disney o frases se rechaza.
+    expect(BE_PROMO_2X1_ACTIVA).toBe(PROMO_2X1.activa);
   });
 });
 
@@ -1500,7 +1510,7 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     { id: 'sticker:marvel-3:6cm', title: 'Marvel', type: 'sticker', basePrice: P6, quantity: 2 }
   ];
 
-  con3x2('CF-10 · el caso aprobado, de punta a punta contra el servidor', () => {
+  it.runIf(PROMO_3X2.activa && PROMO_2X1.activa)('CF-10 · el caso aprobado, de punta a punta contra el servidor', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     const items = clientItems(carritoCF10, { paymentMethod: 'mercadopago' });
@@ -1509,13 +1519,23 @@ describe('spec 017 — paridad front ↔ server de las promos simultáneas', () 
     expect(res.itemsTotal).toBe(5 * P6 - 2 * P6); // 5 calcos, 2 gratis
   });
 
-  sin3x2('CF-10 con el 3x2 apagado: el 2x1 corre solo y Marvel paga lista', () => {
+  it.runIf(!PROMO_3X2.activa && PROMO_2X1.activa)('CF-10 con el 3x2 apagado: el 2x1 corre solo y Marvel paga lista', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     const items = clientItems(carritoCF10, { paymentMethod: 'mercadopago' });
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
     expect(res.ok).toBe(true);
     expect(res.itemsTotal).toBe(5 * P6 - P6); // el par de Disney da 1 gratis; el trío ya no existe
+  });
+
+  sinNinguna('CF-10 sin ninguna promo N x M: las 5 a precio de lista', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(DURING_PROMO);
+    const items = clientItems(carritoCF10, { paymentMethod: 'mercadopago' });
+    expect(price(items, 'sticker:disney-141:6cm')).toBe(P6);
+    const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'mercadopago' });
+    expect(res.ok).toBe(true);
+    expect(res.itemsTotal).toBe(5 * P6);
   });
 });
 

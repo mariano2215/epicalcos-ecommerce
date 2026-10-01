@@ -255,9 +255,11 @@ web mientras está apagada:
 - El banner del header pasa al siguiente del `if/else` de `Header.jsx`: hoy, el
   de la promo mayorista (100 calcos a precio fijo, link a `/mayorista`).
 - Carrito, checkout, drawer y `/personalizados` dejan de nombrar el 3x2 y de
-  descontarlo. El 2x1 por categoría sigue igual.
-- El tope de 25 % para transferencia + cupón **sigue** donde corra el 2x1 (lo
-  activa cualquier promo N×M, no solo el 3x2).
+  descontarlo. El 2x1 por categoría también está apagado desde el mismo día
+  (§3.1-bis).
+- El tope de 25 % para transferencia + cupón solo existe mientras corre alguna
+  promo N×M. Con las dos apagadas vuelve a `MAX_STICKER_DISCOUNT`; hoy no
+  cambia ningún precio, porque 15 % + 10 % ya da 25 %.
 - Los tests de su mecánica se saltean solos (`con3x2` en
   `promoPricing.test.js`) y vuelven a correr al prenderla.
 
@@ -285,8 +287,21 @@ en promo es elegible para las dos, y el reparto lo decide `repartoPromos()`.
 
 Ver `specs/010-reactivar-3x2/` y `specs/017-todas-las-ofertas/`.
 
-### 3.1-bis Promo 2x1 por categoría — ✅ VIVA (desde el 7/9/2026, sin fecha de fin)
-`PROMO_2X1` · `CATEGORIAS_2X1 = ['anime', 'argentina', 'disney', 'frases']`
+### 3.1-bis Promo 2x1 por categoría — ⏸️ APAGADA (desde el 1/10/2026, "hasta nuevo aviso")
+`PROMO_2X1` · `activa: false` · `CATEGORIAS_2X1 = ['anime', 'argentina', 'disney', 'frases']`
+
+Mariano la sacó del sitio el 1/10/2026, junto con el 3x2. Se apagó **solo** con
+el interruptor de los dos lados. Mientras está apagada desaparece de la
+marquesina del header (el mensaje de Argentina), del aviso en sus cuatro
+categorías, del carrito, del drawer y del checkout. "Los más elegidos" del Home
+sigue mostrando las mismas cuatro categorías: esa sección nunca nombró la promo.
+
+**Para volver a prenderla:** `PROMO_2X1.activa = true` en `config/pricing.js` y
+`PROMO_2X1_ACTIVA = true` en `netlify/functions/lib/pricing.js`, en el mismo
+commit. Los tests están probados con las cuatro combinaciones de los dos
+interruptores: cualquiera de las dos promos se puede prender sola.
+
+Lo que sigue vale para cuando está prendida:
 
 Cada 2 calcos de esas cuatro categorías, la **más barata gratis**. Solo calcos
 de catálogo: un personalizado no tiene categoría y nunca entra.

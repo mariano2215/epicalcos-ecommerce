@@ -289,7 +289,13 @@ export function promo3x2({ unitBasePrices, buy = PROMO_3X2.buy, pay = PROMO_3X2.
 }
 
 /**
- * ─── PROMO 2x1 POR CATEGORÍA — las cuatro de "Los más elegidos" (spec 017) ────
+ * ─── PROMO 2x1 POR CATEGORÍA — APAGADA desde el 1/10/2026, "hasta nuevo aviso" ─
+ *
+ * Mariano la sacó del sitio el 1/10/2026, el mismo día que el 3x2. Se apagó con
+ * `activa: false` de los dos lados y nada más: con las DOS promos N x M
+ * apagadas `repartoPromos` no corre, y el tope del % vuelve a
+ * MAX_STICKER_DISCOUNT (el de 25 % solo existe mientras corre alguna N x M).
+ * `CATEGORIAS_2X1` sigue en uso: es la lista de "Los más elegidos" del Home.
  *
  * Cada 2 calcos de estas categorías, la más barata gratis. Convive con el 3x2
  * general: un calco de Disney es elegible para las DOS promos, y `repartoPromos`
@@ -314,7 +320,7 @@ export const CATEGORIAS_2X1 = ['anime', 'argentina', 'disney', 'frases'];
 export const PROMO_2X1 = {
   id: 'cat2x1',
   /** Interruptor manual, mismo criterio que las otras dos. */
-  activa: true,
+  activa: false,
   /** Mismo criterio que PROMO_3X2.startsAt — ver el comentario de allá. */
   startsAt: '2026-09-07T00:00:00-03:00',
   endsAt: null,
