@@ -39,6 +39,14 @@ lo tenía solo `abandonedStore.js`, así que cargar las variables habría
 recuperado los carritos y dejado los pedidos igual de rotos. Lo cuida
 `src/lib/blobsFallback.test.js`.
 
+> **⏰ El PAT vence.** El vigente se generó el 3/10/2026 con vigencia de 90
+> días: **vence el 1/1/2027**. Renovarlo una semana antes, no el día:
+> Netlify → User settings → Applications → Personal access tokens → crear uno
+> nuevo → pegarlo en `NETLIFY_BLOBS_TOKEN` (env vars del sitio, scope
+> Functions) → redeployar → revocar el viejo → **actualizar esta fecha**.
+> Si vence, el canario avisa ese mismo día, pero desde ese momento hasta que se
+> renueve no se guarda ningún pedido.
+
 Comprobación en 5 segundos, sin efectos:
 
 ```bash
