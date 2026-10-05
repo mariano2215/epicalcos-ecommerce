@@ -20,7 +20,7 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 - ✅ **Cumple** — verificado, con evidencia (captura, salida de comando, test)
 - ❌ **No cumple** — con el detalle
-- ⏭️ **No aplica** — con el motivo (ej. "N-1 = A: no hay escalera")
+- ⏭️ **No aplica** — con el motivo (ej. "N-4 sin responder: la sección de recurrentes no se monta")
 
 **No se marca ✅ nada que no se haya verificado.**
 
@@ -48,17 +48,17 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 | AC-H2 | *(RF-H4)* El "desde" del hero es el menor precio por calco vigente y la suelta, ambos del config: cambiar `NEGOCIO.price` en local cambia el hero | Prueba local | 1 | ⬜ |
 | AC-H3 | *(RF-H6)* La imagen del hero es una foto real listada en `data/negociosFotos.js` | Revisión del archivo | 1 | ⬜ |
 | AC-H4 | *(RF-H7)* A 375 × 667, H1 + precio + CTA primario sin scroll | Captura | 1 | ⬜ |
-| AC-T1 | *(RF-T1)* Los 4 datos de confianza salen de `brandStats`, `data/marcas.js` (cuenta) y `shipping.production` | Revisión + cambiar uno en local | 1 | ⬜ |
+| AC-T1 | *(RF-T1)* Los 4 datos de confianza salen de `brandStats`, `data/marcas.js` (cuenta) y `shipping.produccionNegocio` (5 días hábiles) | Revisión + cambiar uno en local | 1 | ⬜ |
 
 ### Cotizador
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
 | AC-C1 | *(RF-C2/3/4)* Opciones: 100 · 250 · 500 · 1.000 · Más de 1.000; 4/6/9 cm; vinilo blanco, DTF UV, holográfico; holográfico + 9 cm no se puede elegir | Inspección | 2 | ⬜ |
-| AC-C2 | *(RF-C8)* Para cada fila de `design.md` §3.2 × cada cantidad × promo x100 on/off, el total del cotizador **es igual al peso** al que calcula `validateAndPriceOrder()` con MP y con transferencia | `cotizadorNegocio.test.js` | 2 | ⬜ |
-| AC-C3 | *(RF-C8)* Casos de referencia (precios al 5/10/2026): 1 diseño 6 cm × 100 → $52.999 · 1 diseño 6 cm × 250 → $158.997 y "te llevás 300" · 3 diseños 6 cm × 250 → 3 packs x100, $158.997, "te llevás 300" · 9 cm × 250 → $331.250 · holográfico 4 cm × 100 → $72.999 | Test + pantalla | 2 | ⬜ |
+| AC-C2 | *(RF-C8)* Para cada tamaño × material × cantidad del cotizador, el total **es igual al peso** al que calcula `validateAndPriceOrder()` con MP y con transferencia | `cotizadorNegocio.test.js` | 2 | ⬜ |
+| AC-C3 | *(RF-C8)* Los totales del cotizador son los de la tabla aprobada en la spec 032 §9.1 para cada escalón (y 240 → "te llevás 250") | Test + pantalla | 2 | ⬜ |
 | AC-C4 | *(RF-C6)* Se ven total, precio por calco y precio por transferencia | Inspección | 2 | ⬜ |
-| AC-C5 | *(RF-C7)* El ahorro usa la referencia elegida en N-2 y no aparece si es ≤ 0 | Test | 2 | ⬜ |
+| AC-C5 | *(RF-C7)* Cada cantidad muestra su % de descuento, derivado del monto con la referencia aprobada en P-2 de la 032 | Test | 2 | ⬜ |
 | AC-C6 | *(RF-C9)* "Más de 1.000" y DTF UV en 4 cm / 9 cm / varios diseños muestran **Pedir presupuesto**, sin precio | Inspección + test | 2 | ⬜ |
 | AC-C7 | *(RF-C10)* Subir 3 archivos y agregar: el carrito tiene las líneas de §3.3 y el checkout por MP **no** devuelve `price_mismatch` | Recorrido local con `create-preference` | 2 | ⬜ |
 | AC-C8 | *(RF-C10)* Las URLs de Cloudinary llegan al mail/CRM una sola vez, en un bloque | `resumenPedido.test.js` + pedido de prueba | 2 | ⬜ |
@@ -66,15 +66,17 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 | AC-C10 | *(RF-C12)* Sin subir archivos, se puede agregar al carrito y el resumen dice que el diseño llega por WhatsApp | Recorrido | 2 | ⬜ |
 | AC-C11 | *(RF-C13)* "Hablar por WhatsApp" abre `wa.me` con cantidad, tamaño, material y diseños en el texto | Revisar el `href` | 2 | ⬜ |
 | AC-C12 | *(RF-C14)* Se completa con teclado solo; el lector de pantalla anuncia el precio al cambiar | Teclado + VoiceOver | 2 | ⬜ |
-| AC-C13 | *(RF-C15)* Con `PROMO_MAYORISTA_100.activa = false` (local, los dos lados) el cotizador cotiza 4 cm × 100 a $80.000 | Test con `now`/interruptor | 2 | ⬜ |
+| AC-C13 | *(RF-C15)* Cambiar un escalón en local (los dos lados) cambia el precio del cotizador sin tocar otro archivo | Prueba local | 2 | ⬜ |
+| AC-C15 | *(RF-C16)* Sin razón social no se puede agregar al carrito; con razón social y CUIT, los dos llegan al mail y al CRM | Recorrido + pedido de prueba | 2 | ⬜ |
+| AC-P2 | *(RF-P3)* Checkout y mail de un pedido de negocio dicen 5 días hábiles de producción; los de la tienda, el plazo de la tienda | Pedido de prueba de cada tipo | 2 | ⬜ |
 | AC-C14 | *(D-11)* Agregar dos veces seguidas no duplica el pedido sin querer | Recorrido | 2 | ⬜ |
 
 ### Precios y contenido
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
-| AC-E1 | *(RF-E1)* Tabla suelta vs. desde 100 por tamaño + transferencia, del config | Cambiar un precio en local | 2 | ⬜ |
-| AC-E2 | *(RF-E2/3)* Sin escalera real (N-1 = A) no existe la sección 100/250/500/1.000 ni un "MÁS ELEGIDO" | Inspección del DOM y del HTML prerenderizado | 2 | ⬜ |
+| AC-E1 | *(RF-E1)* La escala muestra 100 · 250 · 500 · 1.000 con total, por calco, % y transferencia, del config; el titular dice "Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad." | Cambiar un escalón en local | 2 | ⬜ |
+| AC-E2 | *(RF-E2/3)* La suelta aparece como referencia; no hay "MÁS ELEGIDO" | Inspección | 2 | ⬜ |
 | AC-U1 | *(RF-U1)* 6 usos; ninguna imagen de stock | Inspección | 3 | ⬜ |
 | AC-G1 | *(RF-G1)* Con la lista de fotos vacía, la galería no está ni en el DOM ni en el HTML | `curl` + DOM | 3 | ⬜ |
 | AC-M1 | *(RF-M1/2/3)* Una card por material de `MATERIALES`; el holográfico dice packs de 100 en 4 y 6 cm | Inspección | 3 | ⬜ |
@@ -82,13 +84,13 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 | AC-R1 | *(RF-R1)* "¿Pedís calcos todos los meses?" no se monta sin N-4 resuelto | Inspección | 3 | ⬜ |
 | AC-S1 | *(RF-S1)* Marcas, cifras y testimonios reales; un componente sin datos no se monta | Inspección | 1–3 | ⬜ |
 | AC-K1 | *(RF-K1)* Banda de pedidos grandes con Pedir presupuesto y Hablar por WhatsApp | Inspección | 2 | ⬜ |
-| AC-F1 | *(RF-F1/2)* Solo se ven (y van al JSON-LD) las preguntas con `publicar: true`; factura no aparece sin N-7 | DOM + JSON-LD | 3 | ⬜ |
+| AC-F1 | *(RF-F1/2)* Solo se ven (y van al JSON-LD) las preguntas con `publicar: true`; "¿Puedo pedir factura?" responde "Sí, emitimos factura C." | DOM + JSON-LD | 3 | ⬜ |
 
 ### Presupuesto
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
-| AC-L1 | *(RF-L1)* Obligatorios según N-11; el resto opcional | Enviar vacío | 2 | ⬜ |
+| AC-L1 | *(RF-L1)* Obligatorios: nombre y apellido, razón social / empresa, mail y teléfono; el resto opcional | Enviar vacío y de a un campo | 2 | ⬜ |
 | AC-L2 | *(RF-L2)* Abierto desde el cotizador, llega con cantidad, tamaño, material y diseños cargados | Recorrido | 2 | ⬜ |
 | AC-L3 | *(RF-L3)* Mariano recibe el mail con todos los campos y el link del archivo; el CRM recibe `lead.created` con `fuente: presupuesto_negocio` | Envío real a la casilla de prueba + log del CRM | 2 | ⬜ |
 | AC-L4 | *(RF-L4)* Con el mail caído (local, sin `RESEND_API_KEY`), el cliente ve error + WhatsApp con su pedido escrito, nunca "listo" | Test del handler + prueba local | 2 | ⬜ |
@@ -146,15 +148,15 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 | Caso | Comportamiento esperado | Resultado |
 |---|---|---|
-| 250 de un diseño en 6 cm | Precio de 3 packs, "te llevás 300" | ⬜ |
-| 100 con 3 diseños en 4 cm | Un pack x100; reparto según N-9 en el resumen | ⬜ |
-| DTF UV con varios diseños | Pedir presupuesto | ⬜ |
-| Promo x100 apagada con la página abierta | Recalcula al próximo render | ⬜ |
+| 250 de un diseño en 6 cm | Escalón de 250 | ⬜ |
+| 100 con 3 diseños en 4 cm | Escalón de 100; reparto según N-9 en el resumen | ⬜ |
+| DTF UV con varios diseños | Escala si P-4 de la 032 = sí; si no, presupuesto | ⬜ |
+| La escala cambia con la página abierta | Checkout pide recargar; al recargar cobra la vigente | ⬜ |
 | 40 archivos para 100 calcos | Se aceptan; resumen correcto | ⬜ |
 | Falla Cloudinary | Seguir sin archivo o reintentar | ⬜ |
 | Falla el mail del presupuesto | Error + WhatsApp, nunca "listo" | ⬜ |
 | Instagram sin storage | Cotizador y formulario andan; A/B en control | ⬜ |
-| 1.000 de un diseño | 10 líneas de Negocio, checkout OK | ⬜ |
+| 1.000 de un diseño | Una línea `volumen:` de 1.000, checkout OK | ⬜ |
 
 ---
 
@@ -198,12 +200,12 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 ## 6. Paridad de precios
 
-La spec **no cambia** precios: la paridad que se verifica es la del cotizador
-contra el servidor.
+Esta spec **no cambia** precios (los define la 032): la paridad que se verifica
+es la del cotizador contra el servidor.
 
 | ID | Criterio | Resultado |
 |---|---|---|
-| PAR-1 | `git diff` no toca `config/pricing.js` ni `netlify/functions/lib/pricing.js` | ⬜ |
+| PAR-1 | Esta spec no toca `config/pricing.js` ni `netlify/functions/lib/pricing.js` (la escala la agrega la 032) | ⬜ |
 | PAR-2 | `cotizadorNegocio.test.js` (paridad con `validateAndPriceOrder`) en verde | ⬜ |
 | PAR-3 | `promoPricing.test.js`, `envio.test.js`, `precioPersonalizados.test.js` en verde | ⬜ |
 | PAR-4 | Un pedido B2B real (o de prueba en MP) no se rechaza con `price_mismatch` | ⬜ |

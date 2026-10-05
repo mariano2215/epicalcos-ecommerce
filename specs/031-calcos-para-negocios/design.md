@@ -27,8 +27,8 @@ El detalle con evidencia está en [`AUDIT.md`](AUDIT.md). Lo que decide el dise�
 ```
                      ┌──────────────────────────────┐
 config/pricing.js ──▶│ lib/cotizadorNegocio.js      │  función PURA
-config/personalizados│  cotizarPedidoNegocio()      │  (sin React, testeable contra el servidor)
-lib/precioPersonaliz.│  lineasPedidoNegocio()       │
+(escala, spec 032)   │  cotizarPedidoNegocio()      │  (sin React, testeable contra el servidor)
+config/personalizados│  lineaPedidoNegocio()        │
                      └──────────────┬───────────────┘
                                     │
          ┌──────────────────────────┼──────────────────────────────┐
@@ -36,7 +36,7 @@ lib/precioPersonaliz.│  lineasPedidoNegocio()       │
 components/negocios/        components/negocios/            scripts/prerender.mjs
 Cotizador.jsx               SueltaVsPack.jsx                (HTML estático de /negocio,
  + SubidaArchivo (reuso)     (tabla de precios)              /mayorista, landings)
- + useCart().addNegocio/addPack/addFixed
+ + useCart().addNegocio (línea volumen:)
          │
          ├── "Agregar al carrito" ──▶ CartContext (sin cambios) ──▶ checkout de siempre
          └── "Pedir presupuesto" ──▶ FormularioPresupuesto ──▶ POST /api/presupuesto
@@ -54,8 +54,8 @@ y el HTML prerenderizado, y no pueden decir cosas distintas.
 
 | # | Decisión | Alternativa descartada | Por qué |
 |---|---|---|---|
-| D-1 | El cotizador **combina productos existentes** y emite sus líneas de siempre | Un precio por volumen nuevo para el cotizador | Un segundo motor de precios es exactamente lo que el pedido pide no hacer (§21) y lo que el servidor rechazaría (`price_mismatch`) |
-| D-2 | Elige la combinación **más barata** que el servidor acepta | Mandar a cada cliente a "su" página (`/negocio`, `/mayorista`, `/personalizados`) | Hoy esa derivación le cobra $630.000 a quien la tienda le podría cobrar $158.997 (AUDIT H-2) |
+| D-1 | El cotizador **lee la escala por volumen de la spec 032** (config espejado en el servidor) | Un motor de precios propio del cotizador | Un segundo motor de precios es lo que el pedido pide no hacer (§21) y lo que el servidor rechazaría (`price_mismatch`). La escala es UNA tabla que usan todos los caminos de 100+ |
+| D-2 | **Una** línea `volumen:` por pedido, con uno o varios diseños | Combinar Negocio / x100 / pack mayorista (versión del 5/10 a la mañana) | Con la escala ya no hace falta combinar: una línea, un precio, y deja de existir el caso de AUDIT H-2 ($630.000 vs. $158.997) |
 | D-3 | Subida y "Agregar al carrito" **dentro** del cotizador | Link a `/personalizados` con datos precargados | El link agrega una página, y el configurador de la 023 no arma packs con varios diseños. Además tocaría código de una spec en curso |
 | D-4 | `CartContext` **no se toca** | Una acción nueva "reemplazar el pedido del cotizador" | Es el módulo de mayor radio de impacto. El doble agregado se evita en el componente (D-11) |
 | D-5 | `/negocio` es la landing B2B; **la URL no cambia** | `/para-negocios` nueva + 301 desde `/negocio` | `/negocio` está indexada, en anuncios y en el ticker. Los nombres lindos son alias 301 |
@@ -75,16 +75,16 @@ y el HTML prerenderizado, y no pueden decir cosas distintas.
 
 | Archivo | Responsabilidad | Fase |
 |---|---|---|
-| `frontend/src/lib/cotizadorNegocio.js` | `cotizarPedidoNegocio()` y `lineasPedidoNegocio()` (§3) | 2 |
-| `frontend/src/lib/cotizadorNegocio.test.js` | Tabla de casos + **paridad contra `validateAndPriceOrder()` real**, MP y transferencia, con la promo x100 prendida y apagada | 2 |
+| `frontend/src/lib/cotizadorNegocio.js` | `cotizarPedidoNegocio()` y `lineaPedidoNegocio()` sobre `precioVolumen()` de la spec 032 (§3) | 2 |
+| `frontend/src/lib/cotizadorNegocio.test.js` | Casos + **paridad contra `validateAndPriceOrder()` real**, MP y transferencia (§3.3) | 2 |
 | `frontend/src/config/negocios.js` | Todo el copy B2B: cantidades del cotizador, usos, pasos, preguntas (con `publicar: false` las que dependen de un TODO), mensajes de WhatsApp, SEO | 1 |
 | `frontend/src/data/negociosFotos.js` | Fotos reales B2B por sección (hoy: solo `negocio-muestra.webp`) | 1 |
 | `frontend/src/components/negocios/HeroNegocio.jsx` | Hero B2B (pedido: *WholesaleHero*) | 1 |
 | `…/negocios/BarraConfianza.jsx` | 4 datos verificables (*TrustBar*) | 1 |
 | `…/negocios/Cotizador.jsx` | El cotizador (*BulkCalculator*): pasos, precio, subida, carrito, salida a presupuesto/WhatsApp | 2 |
 | `…/negocios/GrupoOpciones.jsx` | Radio-group accesible genérico para cantidad / tamaño / material / diseños (*QuantitySelector*, *SizeSelector*, *MaterialSelector*). Se reusa `SelectorTamano`/`SelectorMaterial` de personalizados **solo** si sus props lo permiten sin tocarlos | 2 |
-| `…/negocios/PrecioPedido.jsx` | Total, precio por calco, transferencia, ahorro (*PricePerUnit*, *BulkDiscount*) | 2 |
-| `…/negocios/SueltaVsPack.jsx` | Tabla suelta vs. desde 100 por tamaño (*WholesaleTable*). La escalera 100/250/500/1.000 solo si N-1 = B | 2 |
+| `…/negocios/PrecioPedido.jsx` | Total, precio por calco, % de descuento del escalón, transferencia (*PricePerUnit*, *BulkDiscount*) | 2 |
+| `…/negocios/EscalaVolumen.jsx` | "Mientras más cantidad, más barato te sale": 100 · 250 · 500 · 1.000 con total, por calco, % y transferencia, más la suelta como referencia (*WholesaleTable*) | 2 |
 | `…/negocios/UsosNegocio.jsx` | 6 cards de uso (*UseCaseCard*); foto si existe | 3 |
 | `…/negocios/Materiales.jsx` | Card por material (*MaterialCard*) desde `MATERIALES` | 3 |
 | `…/negocios/ComoFunciona.jsx` | Timeline de 4 pasos (*HowItWorks*) | 1 |
@@ -118,6 +118,9 @@ Los nombres de archivo siguen la convención del repo: en español.
 | `frontend/src/config/site.js` | `navLinks` nuevo (D-6); `footerLinks` en 4 grupos; `anunciosVigentes(now, { negocio })` suma "Calcos con tu logo desde 100 unidades" en páginas B2B. **El bloque de envíos no se toca** | 🟡 (módulo compartido, 40 importadores; el bloque espejado queda intacto) | 1 |
 | `frontend/src/components/Header.jsx` | Botón **Cotizar** (→ `/negocio#cotizador`), `negocio` a la tira según la ruta | 🟡 | 1 |
 | `frontend/src/components/Footer.jsx` | Renderiza los 4 grupos | 🟢 | 1 |
+| `frontend/src/config/site.js` → `shipping` | Suma `produccionNegocio: '5 días hábiles'` (N-3) **sin tocar** costos ni umbrales (lo espejado) | 🟡 | 1 |
+| `frontend/src/components/CheckoutForm.jsx` | Con líneas de negocio en el carrito, muestra `produccionNegocio` en vez de `production` (RF-P3) | 🟡 camino de compra, solo texto | 2 |
+| `netlify/functions/lib/notify.js` → `customerTimeline()` | Pedido con líneas `negocio:`/`volumen:`/`pack:` de 100+: "Tu pedido entra en producción: 5 días hábiles desde que se confirma el pago" + el envío. Hoy los plazos están escritos a mano ahí | 🟡 mail al cliente | 2 |
 | `frontend/src/routes/Negocio.jsx` | Pasa a landing B2B (RF-NE1). `NegocioForm.jsx` queda en el repo sin montar (criterio: no se borra) | 🟡 | 1–3 |
 | `frontend/src/routes/Mayorista.jsx` | Banda de pedidos grandes + presupuesto arriba del armador | 🟢 | 3 |
 | `frontend/src/routes/Home.jsx` | `useExperiment('home_b2b')` → control (el de hoy, intacto) o `<HomeB2B/>` lazy | 🟡 | 3 |
@@ -141,12 +144,18 @@ Los nombres de archivo siguen la convención del repo: en español.
 | `netlify/functions/lib/pricing.js` | **No** | `create-preference`, `create-order-transfer`, tests |
 | `frontend/src/lib/analytics.js` | Sí: funciones nuevas, ninguna existente cambia | 43 archivos |
 | `frontend/src/lib/experiments.js` | Sí: un experimento nuevo apagado | 9 archivos |
-| `frontend/src/lib/precioPersonalizados.js` | **No** (se importa `repartoNegocio`) | 5 archivos |
+| `frontend/src/lib/precioPersonalizados.js` | **No** en esta spec (lo cambia la 032 para que el configurador use la escala con 100+) | 5 archivos |
 | `components/personalizados/SubidaArchivo.jsx` | **No** (se usa con sus props) | `NegocioForm`, `PackBuilder`, `FixedProductPage` |
 
 ---
 
 ## 3. Datos — el cotizador
+
+> **Cambió el 5/10/2026.** La primera versión de esta sección combinaba los
+> productos de 100 que ya existían (Negocio, x100, pack mayorista, holográfico)
+> porque desde 100 el precio era plano. Mariano pidió una escala por volumen
+> (N-1), que define la spec 032: el cotizador ahora **lee la escala** y emite
+> **una** línea. Es más simple y arregla de raíz el hallazgo H-2.
 
 ### 3.1 Entrada y salida
 
@@ -155,81 +164,54 @@ cotizarPedidoNegocio({
   cantidad,        // 100 | 250 | 500 | 1000 | 'mas' (N-8)
   tamano,          // '4cm' | '6cm' | '9cm'
   material,        // 'vinilo-blanco' | 'dtf-uv' | 'vinilo-holografico'
-  disenos,         // entero ≥ 1
-  now = Date.now() // para isMayoristaPromoActive(): testeable sin mockear el reloj
+  disenos          // entero ≥ 1 (no cambia el precio: RF-8 de la 032)
 }) → {
   estado: 'precio' | 'presupuesto' | 'incompleto',
-  motivo,                 // si 'presupuesto': 'mas_de_1000' | 'sin_precio_online'
-  producto,               // 'negocio' | 'mayorista100' | 'mayorista' | 'holografico'
-  packs,                  // packs de 100 (0 en 'mayorista')
-  unidades,               // lo que se lleva (≥ cantidad: puede redondear a packs)
-  total, unitario,                        // Mercado Pago
-  totalTransferencia, unitarioTransferencia,
-  referenciaSuelta, ahorro, ahorroPct     // según N-2; ahorro 0 si no es positivo
+  motivo,                         // si 'presupuesto': 'mas_de_1000' | 'sin_precio_online'
+  ...precioVolumen(...),          // total, cantidadLlevada, escalon, unitario, pct (spec 032)
+  totalTransferencia, unitarioTransferencia,   // mismo redondeo que el servidor
+  escala                          // las 4 filas del tamaño/material elegidos, para la tabla (RF-E1)
 }
 ```
 
-Nada de esto se persiste: se recalcula en cada render desde el config, igual
-que `precioVidrieraLinea()`. Si una promo se apaga, el próximo render ya cotiza
-sin ella (RF-C15).
+- `'mas'` → `presupuesto / mas_de_1000`.
+- `precioVolumen()` devuelve `null` (holográfico en 9 cm, o DTF UV fuera de lo
+  que apruebe P-4 de la 032) → `presupuesto / sin_precio_online`.
+- Nada se persiste: se recalcula en cada render desde el config, igual que
+  `precioVidrieraLinea()` (RF-C15).
+- `totalTransferencia = round(total × (1 − TRANSFER_DISCOUNT))`: la línea es
+  `quantity 1`, así que el redondeo por línea del servidor da lo mismo.
 
-### 3.2 Tabla de decisión (con las reglas al 5/10/2026)
+### 3.2 La línea
 
-El orden importa: la primera fila que aplica gana. Cada fila usa **solo**
-constantes que ya existen.
+Una sola línea por pedido, definida en la spec 032 (`design.md` §3):
 
-| # | Material | Tamaño | Diseños | Producto | Cómo se calcula | Por calco hoy |
-|---|---|---|---|---|---|---|
-| 1 | cualquiera | — | — | — | `cantidad === 'mas'` → `presupuesto / mas_de_1000` | — |
-| 2 | holográfico | 4 / 6 cm | ≥ 1 | Pack holográfico | `packs = ceil(cantidad / 100)`; `total = packs × (NEGOCIO.price + RECARGO_HOLOGRAFICO.precio)` | $730 |
-| 3 | holográfico | 9 cm | — | — | no se puede elegir (RF-C4) | — |
-| 4 | vinilo blanco o DTF UV | 6 cm | 1 | Promo Negocio | `repartoNegocio({ tamano, copias: cantidad })` → packs (+ sueltas si alguna vez conviene) | $530 |
-| 5 | vinilo blanco | 4 / 6 cm | ≥ 2 (o 4 cm con 1) | Promo x100 si `isMayoristaPromoActive(now)` | `packs = ceil(cantidad / 100)` (salvo que sueltas sean más baratas: no pasa con 50) ; `total = packs × PROMO_MAYORISTA_100.price` | $530 |
-| 6 | vinilo blanco | 4 / 6 cm | ≥ 1 | Pack mayorista (promo x100 apagada) | `total = cantidad × round(SIZE.price × (1 − WHOLESALE_DISCOUNT))` | $800 / $1.050 |
-| 7 | vinilo blanco | 9 cm | ≥ 1 | Pack mayorista | ídem fila 6 | $1.325 |
-| 8 | DTF UV | 4 / 9 cm, o ≥ 2 diseños | — | — | `presupuesto / sin_precio_online` (N-10) | — |
+```js
+{ id: `volumen:${tamano}:${material}:${cantidadLlevada}:${ts}`,
+  type: 'negocio', quantity: 1, basePrice: total,
+  name: 'Calcos para negocio · 250 u · 6 cm · Vinilo blanco',   // nunca el nombre de un archivo
+  meta: { qty, material, disenos, reparto, archivos, razonSocial, cuit } }
+```
 
-`totalTransferencia` se calcula **por línea con el mismo redondeo que el
-servidor** (unitario × (1 − `TRANSFER_DISCOUNT`), redondeado por unidad). No se
-redondea el total: un "ahorrás" que no coincide con el checkout es una promesa
-rota (comentario de `precioPersonalizados.js`).
-
-> ⚠️ Si Mariano elige N-1 = B (escalera nueva), la escalera entra como **otra
-> regla de precio espejada** en una spec propia, y esta tabla suma una fila.
-> El cotizador no inventa la escalera.
-
-### 3.3 De la cotización a las líneas del carrito
-
-`lineasPedidoNegocio(cotizacion, { archivos, negocio, notas, ts })` devuelve
-las líneas que ya existen hoy, con ids únicos por pedido:
-
-| Producto | Líneas | Precedente |
-|---|---|---|
-| Promo Negocio | `packs` × `negocio:{material}:{ts}-{i}` (`quantity 1`), vinilo blanco sin material: `negocio:{ts}-{i}` | `construirLineasNegocio()` |
-| Promo x100 | `packs` × `pack:mayorista100:{size}:{ts}-{i}` (`quantity 1`, `meta.qty 100`) | `PackBuilder` |
-| Pack mayorista | 1 × `pack:mayorista:{size}:{ts}` (`quantity = cantidad`) | `PackBuilder` |
-| Holográfico | `packs` × (`negocio:vinilo-holografico:{size}:{ts}-{i}` + `fixed:material-holografico:{ts}-{i}`) — **un recargo por pack, emparejado por id** | `construirLineaHolografica()` + `agregarRecargoHolografico()` |
-
-- Los **archivos** van en `meta.archivos` de la **primera** línea; todas llevan
-  `meta.pedidoNegocio = { grupo: ts, parte: i, de: n, disenos, reparto }`.
-  `buildDesignSummary()` agrupa por `grupo`: un solo bloque en el mail con los
-  links una vez (los comentarios tienen tope de 20 KB).
+- Entra por `addNegocio()`: **`CartContext` no cambia** (D-4).
+- `meta.razonSocial` (obligatoria, RF-C16) y `meta.cuit` (opcional) viajan a
+  `comments` → mail y CRM, como hoy el "Nombre del negocio" de `NegocioForm`.
 - `meta.reparto` = "partes iguales salvo indicación" (N-9).
-- `name` **nunca** lleva el nombre del archivo (va a GA4/Meta): "Calcos para
-  negocio · 300 u · 6 cm · Vinilo blanco".
-- **El servidor no cambia.** Lo prueba el test de paridad: arma las líneas,
-  las pasa por `validateAndPriceOrder()` real con `mercadopago` y con
-  `transferencia`, y compara el total con el que muestra el cotizador, para
-  cada fila de §3.2 y cada cantidad, con la promo x100 prendida y apagada.
+- `buildDesignSummary()` rotula la línea y lista los links una vez.
+
+### 3.3 Paridad
+
+`cotizadorNegocio.test.js` arma la línea para cada tamaño × material ×
+cantidad del cotizador, la pasa por `validateAndPriceOrder()` real con
+`mercadopago` y con `transferencia`, y compara el total al peso. La paridad
+de la escala en sí (toda cantidad 100–1.000) la cubre la spec 032.
 
 ### 3.4 Persistencia y compatibilidad
 
-- No hay estructura persistida nueva. Las líneas son de forma conocida: un
-  carrito guardado de antes no cambia, y uno guardado después lo entiende
-  cualquier versión del sitio.
-- El estado del cotizador (opciones elegidas) vive en el componente. Si se
-  quiere sobrevivir a una recarga, `sessionStorage` en `try/catch` —nunca
-  `localStorage` (no es un borrador que deba durar días).
+- La línea `volumen:` la define y la acepta el servidor desde la spec 032; un
+  carrito guardado con ella se re-precia con `lib/precioVigente.js`.
+- El estado del cotizador vive en el componente. Si se quiere sobrevivir a una
+  recarga, `sessionStorage` en `try/catch` —nunca `localStorage`.
 
 ---
 
@@ -246,11 +228,12 @@ que ya conocen.
 ```json
 // request
 {
-  "nombre": "string ≤120 (obligatorio)",
-  "whatsapp": "string ≤40, ≥8 dígitos (obligatorio)",
-  "email": "string ≤254 (obligatorio si N-11 = mail obligatorio)",
-  "negocio": "string ≤120",
-  "cantidad": "100 | 250 | 500 | 1000 | 'mas' | número ≤ 1.000.000 (obligatorio)",
+  "nombre": "nombre y apellido, string ≤120 (obligatorio)",
+  "razonSocial": "razón social / empresa, string ≤120 (obligatorio)",
+  "email": "string ≤254 (obligatorio)",
+  "telefono": "string ≤40, ≥8 dígitos (obligatorio)",
+  "cuit": "11 dígitos, con o sin guiones (opcional)",
+  "cantidad": "100 | 250 | 500 | 1000 | 'mas' | número ≤ 1.000.000 (opcional)",
   "tamano": "'4cm'|'6cm'|'9cm'|'no-se'",
   "material": "'vinilo-blanco'|'dtf-uv'|'vinilo-holografico'|'no-se'",
   "disenos": "entero 1–1000",
@@ -313,7 +296,7 @@ destino que `/contacto`.
 | Cloudinary no sube | "No pudimos subir el archivo" + reintentar o seguir sin archivo ("lo mandás por WhatsApp después de pagar") | Evento `personalized_upload_error` existente con `origen: 'cotizador'` |
 | `/api/presupuesto` 502/red | "No pudimos registrar tu pedido" + **WhatsApp con el pedido escrito** | `trackContactoFormError`-equivalente, sin datos |
 | Validación | Error junto al campo, foco al primero | — |
-| La promo x100 se apaga con la página abierta | El precio cambia al próximo render y se muestra el nuevo | El checkout cobra el vigente |
+| La escala cambia con la página abierta | El checkout rechaza con "recargá la página" y al recargar `precioVigente` la arregla | Mismo flujo que una suba de precios |
 | `/api/presupuesto` responde 200 pero el CRM falla | "Listo" (el mail salió) | Log sin PII; el lead está en el mail |
 | El A/B no puede leer `localStorage` (Instagram) | Ve el control | Sin exposición registrada (como hoy) |
 
@@ -386,10 +369,11 @@ Todo vive en `config/negocios.js`; los montos se interpolan del config.
 | Bajada | Desde {100} unidades. Mandanos tu logo o tu diseño y te llegan las calcos listas para pegar en tus pedidos, tu packaging o tus productos. |
 | Precio en el hero | Desde **{$530}** por calco · suelta, {$2.100} |
 | CTAs | Cotizar mis calcos · Ver precios |
-| Cotizador | ¿Cuántas calcos necesitás? — Elegí cantidad, tamaño y material: el precio es el que pagás. |
-| Suelta vs. pack | Suelta o desde 100: la misma calco, otro precio. |
+| Cotizador | ¿Cuántas calcos necesitás? — Elegí cantidad, tamaño y material: el precio es el que pagás. Razón social: "La necesitamos para tu factura C." |
+| Escala | Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad. |
+| Factura | Emitimos factura C. |
 | Usos | Un detalle chico que hace que tu marca aparezca en todas partes. |
-| Cómo funciona | Pedir tus calcos es así: 1 Elegí cantidad y tamaño · 2 Subí tu diseño · 3 Revisamos tu archivo y te escribimos si hay algo para ajustar · 4 Producimos en {2 a 3 días hábiles} y te lo mandamos (o lo retirás en Rosario) |
+| Cómo funciona | Pedir tus calcos es así: 1 Elegí cantidad y tamaño · 2 Subí tu diseño · 3 Revisamos tu archivo y te escribimos si hay algo para ajustar · 4 Producimos en {5 días hábiles} desde que se confirma y se abona el pedido, y te lo mandamos (o lo retirás en Rosario) |
 | Pedidos grandes | ¿Necesitás 1.000, 5.000 o más? Contanos qué necesitás y te armamos una propuesta. |
 | Recurrentes | ¿Pedís calcos todos los meses? — (beneficios según N-4) |
 | CTA final | Tu marca también puede ser calco. — Empezá tu pedido desde 100 unidades. |

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `031-calcos-para-negocios` |
-| **Estado** | `READY FOR REVIEW` — espera respuestas de `BUSINESS-TODOS.md` y el "Implementá la spec 031 — Fase N" |
+| **Estado** | `READY FOR REVIEW` — respuestas del 5/10/2026 incorporadas (§12); la Fase 2 depende de la spec 032 (escala de precios). Espera el "Implementá la spec 031 — Fase N" |
 | **Fecha** | 05/10/2026 |
 | **Autor** | Claude Code, a partir del "prompt maestro" de Mariano |
 
@@ -78,8 +78,8 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 - [ ] **Posicionamiento**: jerarquía B2B en navegación, footer, tira de
       anuncios y CTA "Cotizar"; la tienda sigue a un click
 - [ ] **Cotizador** de pedidos de negocio: cantidad → tamaño → material →
-      diseños → precio total y por calco, con la combinación más barata entre
-      los productos que ya se venden
+      diseños → precio total, por calco y % de descuento, con la escala por
+      volumen de la spec 032
 - [ ] **Del cotizador al carrito**: subir los diseños y agregar el pedido sin
       pasar por otra página
 - [ ] **Pedido de presupuesto** (lead B2B) para +1.000 y para combinaciones sin
@@ -101,8 +101,10 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 
 ## 4. Fuera de scope
 
-- [ ] **Cualquier cambio de precio, promo, cupón o umbral de envío.** Si
-      Mariano decide una escalera por volumen (N-1), es otra spec.
+- [ ] **Cualquier cambio de precio, promo, cupón o umbral de envío.** La
+      escala por volumen que Mariano pidió el 5/10/2026 (N-1) es la spec
+      [`032-escala-de-precios-por-volumen`](../032-escala-de-precios-por-volumen/requirements.md):
+      esta spec la **muestra** y la **usa**, no la define.
 - [ ] **Cambios en el servidor de pagos** (`price_mismatch`, líneas,
       webhook). El cotizador usa líneas que el servidor ya acepta.
 - [ ] **Cuentas de usuario, "Mis pedidos" y "Repetir pedido"**: se documenta
@@ -197,7 +199,7 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-T1 | Cuatro datos debajo del hero, todos verificables: desde 100 unidades · +120.000 calcos vendidas · 35 marcas que ya confiaron (el número sale de la lista de logos) · producción en 2 a 3 días hábiles (sale de la configuración de envíos; ver N-3) | 🔴 must |
+| RF-T1 | Cuatro datos debajo del hero, todos verificables: desde 100 unidades · +120.000 calcos vendidas · 35 marcas que ya confiaron (el número sale de la lista de logos) · **producción en 5 días hábiles** (plazo de negocio, leído de la configuración; N-3) | 🔴 must |
 
 ### 7.5 Cotizador
 
@@ -209,23 +211,24 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 | RF-C4 | Paso 3, material: solo los que se venden (vinilo blanco, DTF UV, vinilo holográfico). Una combinación que no se vende (holográfico en 9 cm) no se puede elegir | 🔴 must |
 | RF-C5 | Paso 4, diseños: **uno** o **varios** (con la cantidad de diseños). Con varios, las calcos se reparten según N-9 | 🔴 must |
 | RF-C6 | Muestra **total** y **precio por calco**, en vivo, con el precio de Mercado Pago y debajo el de transferencia | 🔴 must |
-| RF-C7 | Muestra el ahorro contra la referencia que decida Mariano (N-2), solo si es positivo | 🟡 should |
-| RF-C8 | **El precio es el más barato posible con los productos que ya existen**, y es exactamente lo que se cobra en el checkout. Si la cantidad redondea a packs de 100, lo dice ("pedís 250, te llevás 300 por el mismo precio que…") | 🔴 must |
-| RF-C9 | "Más de 1.000" (N-8) y toda combinación sin precio online (N-10) muestran **Pedir presupuesto** en lugar de un precio | 🔴 must |
+| RF-C7 | Muestra el **% de descuento de la cantidad elegida**, calculado a partir de su monto con la referencia que apruebe Mariano en la spec 032 (P-2) | 🔴 must |
+| RF-C8 | **El precio es el de la escala por volumen** (spec 032) y es exactamente lo que se cobra en el checkout. Si conviene el escalón siguiente, lo dice ("pedís 240, te llevás 250") | 🔴 must |
+| RF-C9 | "Más de 1.000" (N-8) y toda combinación que la escala de la 032 no cubra (N-10) muestran **Pedir presupuesto** en lugar de un precio | 🔴 must |
 | RF-C10 | El CTA **Subir diseño y continuar** abre la subida de archivos ahí mismo; con los archivos subidos, **Agregar al carrito** suma el pedido con sus archivos adentro | 🔴 must |
 | RF-C11 | La subida acepta exactamente los formatos, pesos y cantidades que acepta hoy la subida de `/personalizados`; muestra "✓ archivo cargado", el nombre y "Cambiar archivo" | 🔴 must |
 | RF-C12 | Se puede seguir sin subir: el diseño se manda por WhatsApp después de pagar, como hoy en `/negocio` | 🟡 should |
 | RF-C13 | Debajo del precio: **Hablar por WhatsApp** con la configuración en el mensaje | 🟡 should |
 | RF-C14 | El cotizador funciona con teclado y lector de pantalla (grupos de opciones con nombre, precio anunciado al cambiar) | 🔴 must |
-| RF-C15 | Si una promo de la que depende el precio se apaga, el cotizador recalcula solo con lo que queda vigente | 🔴 must |
+| RF-C15 | Si la escala cambia, el cotizador muestra la vigente en el próximo render | 🔴 must |
+| RF-C16 | Antes de **Agregar al carrito** pide **razón social / empresa** (obligatorio, N-11) y CUIT (opcional, para la factura C). Viajan con el pedido al mail y al CRM. Nombre y apellido, mail y teléfono ya los pide el checkout como obligatorios | 🔴 must |
 
 ### 7.6 Precios y escala
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-E1 | Sección **"Suelta vs. desde 100"**: precio de la calco suelta y precio por calco desde 100, por tamaño, más el de transferencia. Todo leído de las reglas de precio | 🔴 must |
-| RF-E2 | La sección "Cuantos más pedís, menos pagás" con filas 100/250/500/1.000 **solo** se muestra si existe una escalera real (N-1 = B). Con precios planos no se muestra | 🔴 must |
-| RF-E3 | Ninguna etiqueta "MÁS ELEGIDO" sin dato que la respalde | 🔴 must |
+| RF-E1 | Sección de la escala: **"Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad."** Una fila por escalón (100 · 250 · 500 · 1.000) con total, **precio por calco**, **% de descuento** y precio por transferencia, para el tamaño y material elegidos. Todo leído de la escala (spec 032) | 🔴 must |
+| RF-E2 | La calco suelta aparece como referencia (precio por tamaño), leída de las reglas de precio | 🟡 should |
+| RF-E3 | Ninguna etiqueta "MÁS ELEGIDO" sin dato que la respalde. "MEJOR PRECIO POR CALCO" en el escalón de 1.000 sí es verificable | 🔴 must |
 
 ### 7.7 Contenido de las páginas B2B
 
@@ -236,20 +239,21 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 | RF-M1 | **Materiales**: una card por material que se vende, con beneficio, usos y en qué tamaños existe | 🟡 should |
 | RF-M2 | El holográfico dice que va en packs de 100 en 4 y 6 cm | 🔴 must |
 | RF-M3 | La foto de cada material se muestra solo si existe | 🟡 should |
-| RF-P1 | **Cómo funciona**, 4 pasos: elegí cantidad y tamaño → subí tu diseño → revisamos tu archivo y te escribimos si hay algo para ajustar → producimos y te lo enviamos (o lo retirás). Plazo leído de la configuración | 🔴 must |
+| RF-P1 | **Cómo funciona**, 4 pasos: elegí cantidad y tamaño → subí tu diseño → revisamos tu archivo y te escribimos si hay algo para ajustar → producimos **en 5 días hábiles desde que se confirma y se abona el pedido** y te lo enviamos (o lo retirás). Plazo leído de la configuración | 🔴 must |
+| RF-P3 | El checkout y el mail de confirmación de un pedido de negocio prometen el plazo de negocio (5 días hábiles de producción), no el de la tienda | 🔴 must |
 | RF-P2 | Ningún texto menciona boceto, muestra, prueba ni aprobación previa — ni para decir que no hay | 🔴 must |
 | RF-R1 | **¿Pedís calcos todos los meses?** con CTA de WhatsApp precargado. Solo enumera beneficios confirmados (N-4) | 🟡 should |
 | RF-S1 | **Social proof**: logos reales de clientes, cifras de marca reales, testimonios reales (preferir los de negocios). Un componente sin datos no se monta | 🔴 must |
 | RF-K1 | **Pedidos grandes**: "¿Necesitás 1.000, 5.000 o más?" con **Pedir presupuesto** y **Hablar por WhatsApp** | 🔴 must |
 | RF-F1 | **Preguntas de negocio**: pedido mínimo, varios diseños, tamaños, materiales, agua y sol, cómo mandar el diseño, calidad del archivo, más de 1.000, plazo, envíos, retiro, precio para empresas, volver a pedir el mismo diseño. Cada respuesta sale de un dato verificable; las que dependen de un TODO **no se publican** hasta confirmarlo | 🔴 must |
-| RF-F2 | "¿Puedo pedir factura?" solo se publica con N-7 resuelto | 🔴 must |
+| RF-F2 | "¿Puedo pedir factura?" → **"Sí, emitimos factura C."** (N-7, 5/10/2026) | 🔴 must |
 | RF-Z1 | **CTA final**: "Tu marca también puede ser calco." + Cotizar mis calcos + Hablar por WhatsApp | 🟡 should |
 
 ### 7.8 Pedido de presupuesto (lead B2B)
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-L1 | Formulario corto. **Obligatorios**: nombre, WhatsApp, cantidad aproximada. **Opcionales**: negocio, email, tamaño, material, cantidad de diseños, observaciones, archivo (N-11) | 🔴 must |
+| RF-L1 | Formulario corto. **Obligatorios** (N-11, 5/10/2026): **nombre y apellido, razón social / empresa, mail y teléfono**. **Opcionales**: CUIT, cantidad aproximada, tamaño, material, cantidad de diseños, observaciones, archivo | 🔴 must |
 | RF-L2 | Si se abre desde el cotizador, llega **precargado** con lo que el cliente ya eligió | 🔴 must |
 | RF-L3 | Al enviar, Mariano recibe un mail con todo y el lead queda en el CRM marcado como presupuesto de negocio, con el link al archivo si lo hay | 🔴 must |
 | RF-L4 | Si el pedido no se pudo registrar, el cliente **no** ve un "listo": ve el error y un botón de WhatsApp con su pedido escrito | 🔴 must |
@@ -352,12 +356,12 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 
 | Caso | Comportamiento esperado |
 |---|---|
-| Pide 250 de un diseño en 6 cm | Precio de 3 packs, avisando "te llevás 300" (la regla vigente de Negocio) |
-| Pide 100 con 3 diseños en 4 cm | Un pack x100 mezclado; reparto según N-9 |
-| Pide 100 con 3 diseños en DTF UV | Sin precio online hoy (N-10) → Pedir presupuesto |
-| Pide 9 cm | Pack mayorista 50 % OFF (precio por calco de 9 cm) |
+| Pide 250 de un diseño en 6 cm | Escalón de 250 de la escala |
+| Pide 100 con 3 diseños en 4 cm | Escalón de 100; reparto según N-9 |
+| Pide DTF UV en 4 o 9 cm, o con varios diseños | Precio de escala si Mariano aprueba P-4 de la 032; si no, Pedir presupuesto |
 | Holográfico + 9 cm | La opción 9 cm no se puede elegir con holográfico |
-| Se apaga la promo x100 mientras cotiza | Recalcula con el pack mayorista 50 % (precio por calco más alto) y lo muestra |
+| La escala cambia mientras cotiza | Muestra la vigente al próximo render; el checkout cobra la vigente |
+| No completa razón social | No puede agregar al carrito; el campo dice por qué lo pedimos (factura) |
 | Sube 40 archivos para un pedido de 100 | Se acepta (tope 100 archivos); reparto según N-9 |
 | Agrega al carrito y vuelve a cambiar la cantidad | No duplica: reemplaza su pedido del cotizador o avisa que ya está en el carrito |
 | Falla Cloudinary al subir | Puede seguir sin archivo (lo manda por WhatsApp) o reintentar |
@@ -406,15 +410,30 @@ observaciones). La cantidad viaja en rangos para el lead.
 ## 12. Preguntas abiertas
 
 Todas están en [`BUSINESS-TODOS.md`](BUSINESS-TODOS.md) con opciones y
-recomendación. Las que bloquean una fase:
+recomendación.
 
-- [ ] **N-1** escalera de precios por volumen → sección de escala
-- [ ] **N-2** referencia del ahorro → ahorro en el cotizador
-- [ ] **N-3** plazo de producción B2B → copy de plazos
+### Respondidas por Mariano el 05/10/2026
+
+- [x] **N-1** — **Sí a la escala por volumen**: *"mientras más cantidad, más
+      barato te sale, lo único que se mantiene es la calidad"*. Se especifica
+      en la spec 032 (tabla para aprobar).
+- [x] **N-2** — *"Poner el % de descuento según el monto que se haga por cada
+      cantidad"*: cada escalón muestra su %. La referencia (contra la suelta o
+      contra el precio de 100) es P-2 de la spec 032.
+- [x] **N-3** — **Producción: 5 días hábiles desde confirmado y abonado el
+      pedido.** ⚠️ Se aplica a los pedidos de negocio; la tienda sigue
+      prometiendo 2 a 3 días hasta que Mariano diga si también cambia (N-19).
+- [x] **N-7** — **Factura C.**
+- [x] **N-11** — **Obligatorios para negocios: nombre y apellido, razón social
+      / empresa, mail y teléfono.**
+
+### Siguen abiertas
+
 - [ ] **N-4** beneficio por recompra → sección de recurrentes
+- [ ] **N-5** ¿se ajustan logos? → copy del paso "revisamos tu archivo"
 - [ ] **N-6** fotos reales → hero con contexto, galería, materiales
-- [ ] **N-7** factura → FAQ de factura
-- [ ] **N-8** corte de +1.000 → cotizador
-- [ ] **N-9** reparto con varios diseños → cotizador
-- [ ] **N-10** combinaciones sin precio → cotizador
-- [ ] **N-17** Home como A/B o reemplazo directo
+- [ ] **N-8** corte de +1.000 (default: presupuesto)
+- [ ] **N-9** reparto con varios diseños (default: partes iguales)
+- [ ] **N-17** Home como A/B (default) o reemplazo directo
+- [ ] **N-19** ¿los 5 días hábiles también para la tienda (calcos sueltas)?
+- [ ] Spec 032: P-1 a P-5

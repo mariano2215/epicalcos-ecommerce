@@ -55,8 +55,8 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 - [ ] **1.2** Test de copy prohibido: falla si `config/negocios.js` o `components/negocios/**` contienen "archivo perfecto", "boceto", "muestra previa", "aprobación previa", un código de cupón o las frases genéricas de RF-CO1
   - *Verificación*: el test falla al agregar a mano "No hace falta que tu archivo esté perfecto" y pasa al sacarlo
 - [ ] **1.3** `data/negociosFotos.js` con `negocio-muestra.webp` (dimensiones reales y `alt`) y el resto de las listas vacías
-- [ ] **1.4** `config/site.js`: `navLinks` (D-6), `footerLinks` en 4 grupos, `anunciosVigentes(now, { negocio })`. **No** tocar `shipping`
-  - *Verificación*: `git diff frontend/src/config/site.js` no toca líneas del bloque `shipping`; `anuncios.test.js` actualizado y en verde
+- [ ] **1.4** `config/site.js`: `navLinks` (D-6), `footerLinks` en 4 grupos, `anunciosVigentes(now, { negocio })`, `shipping.produccionNegocio = '5 días hábiles'` (N-3). **No** tocar costos ni umbrales
+  - *Verificación*: `git diff frontend/src/config/site.js` no toca ningún costo ni umbral de envío; `anuncios.test.js` actualizado y en verde
 - [ ] **1.5** `Header.jsx`: botón **Cotizar** (→ `/negocio`; en Fase 2 → `#cotizador`) y la tira con `negocio` en `/negocio` y `/mayorista`
   - *Verificación*: a 1024 px el nav entra en una línea; a 375 px "Cotizar" está en el menú
 - [ ] **1.6** `Footer.jsx`: 4 grupos; las secciones de `HIDDEN_SECTIONS` siguen sin aparecer
@@ -72,19 +72,21 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 ## Fase 2 — Conversión
 
 ### Motor
-- [ ] **2.1** `lib/cotizadorNegocio.js`: `cotizarPedidoNegocio()` con la tabla de `design.md` §3.2, leyendo solo constantes existentes
-- [ ] **2.2** `lineasPedidoNegocio()` con los ids de §3.3 (sufijo `-{i}`, recargo holográfico emparejado por pack, archivos en la primera línea, `meta.pedidoNegocio`), sin nombre de archivo en `name`
-- [ ] **2.3** `lib/cotizadorNegocio.test.js`: tabla de casos de §3.2 × {100, 250, 500, 1.000} × promo x100 {on, off}, **y paridad**: las líneas pasan por `validateAndPriceOrder()` real con `mercadopago` y `transferencia`, y el total coincide al peso con el del cotizador
-  - *Verificación*: el test falla si se cambia a mano `NEGOCIO.price` en un solo lado del espejo
-- [ ] **2.4** `lib/resumenPedido.js`: agrupar por `meta.pedidoNegocio.grupo` (un bloque, links una vez) + test
-  - *Verificación*: un pedido de 10 packs produce un solo bloque y los links aparecen una vez
+- [ ] **2.0** Confirmar que la **Fase 1 de la spec 032** (escala en el config y en el servidor) está en `main`; si no, **parar**
+- [ ] **2.1** `lib/cotizadorNegocio.js`: `cotizarPedidoNegocio()` (§3.1) sobre `precioVolumen()`
+- [ ] **2.2** `lineaPedidoNegocio()` (§3.2): una línea `volumen:`, `meta` con razón social, CUIT, diseños, reparto y archivos; sin nombre de archivo en `name`
+- [ ] **2.3** `lib/cotizadorNegocio.test.js`: casos + **paridad** (la línea pasa por `validateAndPriceOrder()` real con `mercadopago` y `transferencia` y el total coincide al peso)
+  - *Verificación*: el test falla si se cambia a mano un escalón en un solo lado del espejo
+- [ ] **2.4** `lib/resumenPedido.js`: la línea muestra escalón, razón social, CUIT, diseños, reparto y los links una vez + test
 
 ### Interfaz
 - [ ] **2.5** `GrupoOpciones.jsx` (radio-group accesible, 44 px, foco visible, `aria-live` para el precio)
-- [ ] **2.6** `PrecioPedido.jsx`: total, por calco, transferencia, ahorro (N-2), "te llevás N" cuando redondea
-- [ ] **2.7** `Cotizador.jsx`: pasos → precio → **Subir diseño y continuar** (`SubidaArchivo` con el preset de Negocio) → **Agregar al carrito** con `addNegocio`/`addPack`/`addFixed` → CTA "Ver carrito" (D-11). Salidas a presupuesto (+1.000 y sin precio) y a WhatsApp
-  - *Verificación*: 3 diseños × 100 en 6 cm → carrito $158.997 → checkout MP sin `price_mismatch` (local)
-- [ ] **2.8** `SueltaVsPack.jsx` (RF-E1). La escalera solo si N-1 = B
+- [ ] **2.6** `PrecioPedido.jsx`: total, por calco, % del escalón (referencia de P-2 de la 032), transferencia, "te llevás N" cuando sube de escalón
+- [ ] **2.7** `Cotizador.jsx`: pasos → precio → **Subir diseño y continuar** (`SubidaArchivo` con el preset de Negocio) → razón social (obligatoria) y CUIT (opcional) → **Agregar al carrito** con `addNegocio` → CTA "Ver carrito" (D-11). Salidas a presupuesto (+1.000 y sin precio) y a WhatsApp
+  - *Verificación*: 3 diseños × 250 en 6 cm → una línea `volumen:` con el precio del escalón → checkout MP sin `price_mismatch` (local)
+- [ ] **2.8** `EscalaVolumen.jsx` (RF-E1)
+- [ ] **2.8b** Plazo de negocio (RF-P3): `shipping.produccionNegocio` en `config/site.js`, `CheckoutForm` lo muestra con líneas de negocio, `notify.js → customerTimeline()` lo escribe en el mail + test del mail
+  - *Verificación*: un pedido con una línea `volumen:` recibe "5 días hábiles"; uno de calcos sueltas sigue recibiendo el plazo de la tienda
 - [ ] **2.9** `PedidosGrandes.jsx`
 
 ### Presupuesto
@@ -160,11 +162,13 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 
 | Hallazgo | Archivo | Propuesta |
 |---|---|---|
-| El configurador cotiza varios diseños × 100 como sueltas ($630.000 vs. $158.997) | `lib/precioPersonalizados.js:226` | Que la spec 023 use `cotizarPedidoNegocio()` cuando haya 100+ |
+| El configurador cotiza varios diseños × 100 como sueltas ($630.000 vs. $158.997) | `lib/precioPersonalizados.js:226` | Lo resuelve la spec 032 (RF-13): el configurador usa la escala con 100+ |
 | FAQ con la frase prohibida "archivo perfecto" | `components/FAQ.jsx:75` | Quick win Q-1 |
 | FAQ con plazos contradictorios (2–3 vs. 3–5 días) | `components/FAQ.jsx:84,131` | Quick win Q-2 tras N-3 |
 | FAQ promete beneficios por recompra y ajuste de logos sin confirmar | `components/FAQ.jsx:126,136` | Q-3 tras N-4 y N-5 |
-| Dos referencias de ahorro para Negocio (59 % vs. 75 %) | `NegocioForm.jsx:15` | Unificar tras N-2 |
+| Dos referencias de ahorro para Negocio (59 % vs. 75 %) | `NegocioForm.jsx:15` | Unificar con la referencia que se elija en P-2 de la 032 |
+| Los Términos muestran en producción una nota "[REVISAR] … (CUIL persona humana)" que no cuadra con la factura C | `routes/legal/Terminos.jsx:100-104`, `site.taxIdType` | Texto: actualizar con la condición fiscal real (N-20) |
+| El mail al cliente escribe los plazos a mano (2–3 / 5–7 días) | `netlify/functions/lib/notify.js` `customerTimeline()` | Si los 5 días pasan a toda la tienda (N-19), leerlos del mismo lugar que el sitio |
 
 ---
 

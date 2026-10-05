@@ -25,6 +25,8 @@ reposicionamiento; todos cambian **cómo** se hace.
    fuerte: **suelta, la calco de 6 cm vale $2.100; desde 100, $530 (−75 %)**, y
    $424 pagando por transferencia. Una escalera 250/500/1.000 es una decisión de
    precios (spec aparte, espejo en el servidor) — ver `BUSINESS-TODOS.md` N-1.
+   **→ 5/10/2026: Mariano eligió la escala.** Tabla para aprobar en la spec
+   [`032-escala-de-precios-por-volumen`](../032-escala-de-precios-por-volumen/requirements.md).
 
 2. **El configurador de `/personalizados` le cobra de más al cliente de negocio
    que trae varios diseños.** El tope automático a la Promo Negocio corre solo

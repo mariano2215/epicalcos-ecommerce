@@ -16,20 +16,28 @@ a este archivo, con fecha.
 
 ---
 
+## ✅ Respondidas por Mariano (05/10/2026)
+
+| # | Pregunta | Respuesta | Dónde impacta |
+|---|---|---|---|
+| N-1 | ¿Escala de precios por volumen? | **Sí.** *"Mientras más cantidad, más barato te sale, lo único que se mantiene es la calidad."* | Spec nueva [`032-escala-de-precios-por-volumen`](../032-escala-de-precios-por-volumen/requirements.md) con la tabla para aprobar |
+| N-2 | ¿Contra qué se calcula el ahorro? | *"Poner el % de descuento según el monto que se haga por cada cantidad."* | Cada escalón muestra su %; la referencia exacta es P-2 de la 032 |
+| N-3 | Plazo de producción | **5 días hábiles desde confirmado y abonado el pedido** | Copy B2B, checkout y mail de pedidos de negocio (RF-T1, RF-P1, RF-P3). Ver N-19 |
+| N-7 | Factura | **Factura C** | FAQ de negocio (RF-F2); CUIT opcional en cotizador y presupuesto. Ver N-20 |
+| N-10 | Combinaciones sin precio | Las cubre la escala de la 032 si se aprueba P-4 (DTF UV en todos los tamaños) | Cotizador |
+| N-11 | Obligatorios del formulario | **Nombre y apellido, razón social / empresa, mail y teléfono** (para negocios) | Presupuesto (RF-L1); razón social también al comprar desde el cotizador (RF-C16) |
+
+---
+
 ## 🔴 Bloquean una fase
 
 | # | Decisión | Por qué importa | Opciones | Recomendación | Bloquea |
 |---|---|---|---|---|---|
-| **N-1** | **¿Hay escalera de precios por volumen?** Hoy, desde 100, la calco cuesta $530 con 100, 250, 500 o 1.000 (AUDIT H-1) | El pedido gira alrededor de "cuantos más pedís, menos pagás". Hoy eso es verdad **hasta** 100 y falso después | **A)** Sin escalera: se comunica "suelta $2.100 → desde 100 $530 (−75 %)". **B)** Escalera nueva (ej. 250 / 500 / 1.000 con precios más bajos): spec de precios aparte, con tabla aprobada, espejo en el servidor y tests | **A ahora, B como spec 032** si querés el argumento de volumen. A es verdad hoy y ya es un argumento fuerte; B es una decisión de margen que no se toma escribiendo una landing | Sección "Escala" (RF-E*) |
-| **N-2** | **¿Contra qué se calcula el ahorro?** `/negocio` muestra 59 % OFF contra un tachado de $127.999; el configurador, 75 % contra 100 × $2.100 (AUDIT H-4) | Un sitio que dice dos % distintos para el mismo producto pierde credibilidad justo con el comprador que compara | **A)** Contra la calco suelta (100 × precio por tamaño). **B)** Contra el tachado de `NEGOCIO.listPrice` | **A**: se deriva solo del precio real de la calco suelta y vale para todos los tamaños; el tachado de $127.999 no se explica por ningún precio del sitio | Ahorro en el cotizador (RF-C7) |
-| **N-3** | **Plazo de producción para 100+, 500+ y 1.000+** | El FAQ dice a la vez 2–3 y 3–5 días hábiles (AUDIT H-6). Un negocio compra con fecha | Un plazo por tramo, o "2 a 3 días hábiles hasta X; más, a coordinar" | Que lo definas vos: es capacidad del taller | Copy de plazos B2B, Q-2 |
 | **N-4** | **¿Hay beneficio real para el que repite?** El FAQ promete "condiciones especiales" | Sin respaldo es una promesa rota; con respaldo es el mejor argumento de recurrencia | A) Sí, cuál. B) No → se saca del FAQ | — | Sección "¿Pedís todos los meses?" (RF-N*) y Q-3 |
 | **N-5** | **¿Se ajustan logos?** El FAQ dice "si no tiene fondo transparente, te ayudamos a adaptarlo" | ¿Es parte del servicio o fue copy? Define qué se promete en "Subí tu diseño" | A) Sí: qué incluye (quitar fondo, vectorizar, contorno). B) No, solo se revisa y se avisa | — | Copy del paso "Revisamos tu archivo" |
 | **N-6** | **Sesión de fotos B2B** | Sin fotos reales no se montan: el hero con contexto, la galería "cómo lo usan otras marcas", las fotos de materiales y "tus calcos se hacen acá" (regla vigente: nada de mockups) | Lista mínima en la tabla de abajo | Prioridad alta: es lo que más mueve la percepción de "proveedor" | Hero visual (RF-H6), RF-G*, RF-M3, RF-P* |
-| **N-7** | **Factura** | Hoy la identidad fiscal es CUIL personal (AUDIT H-11). Muchas empresas no pueden comprar sin factura | A) Se emite (qué tipo). B) No se emite → la FAQ no menciona factura y el segmento "empresas" se apunta a pymes/emprendedores | Definirlo antes de pautar a "empresas" | Pregunta de factura del FAQ B2B |
-| **N-8** | **Pedidos de más de 1.000** | Hoy se pueden comprar online (10 packs = $529.990). ¿Querés que desde ahí sea **solo** presupuesto, o online + presupuesto? | A) Hasta 1.000 online, más = presupuesto. B) Todo online, presupuesto opcional | **A** (es lo que pide el pedido y deja margen para negociar) | Corte del cotizador (RF-C9) |
+| **N-8** | **Pedidos de más de 1.000** | Con la escala, 1.000 tiene precio online (spec 032). ¿Querés que desde ahí sea **solo** presupuesto, o online + presupuesto? | A) Hasta 1.000 online, más = presupuesto. B) Todo online, presupuesto opcional | **A** (es lo que pide el pedido y deja margen para negociar) | Corte del cotizador (RF-C9) |
 | **N-9** | **Reparto de cantidades con varios diseños** en el pack de 100 mezclado | El cliente con 3 logos y 300 calcos: ¿100 de cada uno? ¿Elige él? | A) Partes iguales salvo indicación en observaciones. B) El cliente reparte en el cotizador | **A** en la primera versión (un campo menos) | Cotizador con varios diseños (RF-C5) |
-| **N-10** | **Combinaciones sin precio por volumen**: DTF UV en 4 o 9 cm, DTF UV con varios diseños, holográfico en 9 cm | Hoy se cobran sueltas o no existen (AUDIT §2). El cotizador no puede inventarles precio | A) Se les define precio (spec de precios). B) El cotizador las manda a "Pedir presupuesto" | **B** ahora | Opciones del cotizador |
 
 ---
 
@@ -37,7 +45,6 @@ a este archivo, con fecha.
 
 | # | Dato | Para qué |
 |---|---|---|
-| N-11 | ¿Qué campos son obligatorios en el formulario de presupuesto? Propuesta: nombre, WhatsApp y cantidad aproximada; el resto opcional. ⚠️ El CRM interno hoy **descarta un lead sin mail** (`notifyCrmLead` corta con `no_email`): o el mail también es obligatorio, o hay que enseñarle al CRM (repo `epicalcos-app`) a aceptar leads con WhatsApp solo. Recomendación: mail obligatorio — un comprador de negocio lo tiene, y es un campo | Formulario corto (pedido §5) |
 | N-12 | ¿A qué mail/destino van los pedidos de presupuesto? ¿El mismo que `/contacto`? ¿Una etiqueta propia en el CRM? | Que no se mezclen con consultas de "¿tienen calcos de Boca?" |
 | N-13 | Testimonios de **negocios** (texto + nombre del negocio + permiso para publicarlo) | Social proof B2B; hoy hay uno solo |
 | N-14 | ¿Se pueden nombrar algunas de las 35 marcas en el copy ("Trabajamos con X, Y, Z")? | Hoy aparecen como logos; nombrarlas es otro nivel de permiso |
@@ -45,6 +52,8 @@ a este archivo, con fecha.
 | N-16 | ¿Lista de precios por mail (lead magnet) sí o no? | Se puede armar con el config (los precios salen solos), pero es un mail más que mantener |
 | N-17 | ¿El Home B2B sale como A/B (recomendado) o reemplaza directo al actual? | Riesgo R-1 de la auditoría |
 | N-18 | Horario de atención por WhatsApp, si querés publicarlo | Expectativa de respuesta en el CTA de "Hablar por WhatsApp" |
+| **N-19** | **¿Los 5 días hábiles valen también para la tienda (calcos sueltas, catálogo)?** Hoy el sitio, el checkout y el mail prometen 2 a 3 días para todo, y los pedidos de Negocio/x100 que ya se venden reciben ese mismo plazo en el mail | Si es para todo: un valor del config + el mail. Si es solo negocios: plazo separado (lo que diseña la 031) |
+| N-20 | Factura C implica monotributo: ¿actualizamos la condición fiscal en los Términos? Hoy muestran en producción una nota "[REVISAR] … (CUIL persona humana)" | Texto legal; no lo cambio sin tu OK |
 
 ---
 

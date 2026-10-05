@@ -38,7 +38,7 @@ nuevo de `/negocio`.
 | | |
 |---|---|
 | **Objetivo** | Tener los datos que el copy y el cotizador no pueden inventar |
-| **Entregables** | Respuestas a N-1, N-2, N-3, N-8, N-9, N-10, N-11 de `BUSINESS-TODOS.md`. Turno para la sesión de fotos (N-6). Decidir quick wins Q-1…Q-3 |
+| **Entregables** | ✅ N-1, N-2, N-3, N-7, N-11 respondidas el 5/10/2026. Faltan: **tabla de la spec 032** (P-1…P-5), N-19 (¿5 días también para la tienda?), N-8/N-9 (con default), N-4/N-5, turno para las fotos (N-6), quick wins Q-1…Q-3 |
 | **Depende de** | Mariano |
 | **Puede ir en paralelo** | Fase 1 (no depende de ninguna de estas respuestas salvo N-3 para el plazo, que tiene valor por defecto en el config) |
 
@@ -64,9 +64,9 @@ nuevo de `/negocio`.
 |---|---|
 | **Objetivo** | Que un negocio vea su precio y compre o pida presupuesto sin hablar con nadie |
 | **Entregables** | `lib/cotizadorNegocio.js` + **test de paridad contra el servidor** · `Cotizador` en `/negocio` (cantidad → tamaño → material → diseños → precio → subir → carrito) · tabla suelta vs. desde 100 · banda de pedidos grandes · `FormularioPresupuesto` + `POST /api/presupuesto` (mail + CRM, falla cerrado) · WhatsApp con mensaje por página y desde el cotizador · barra fija móvil en `/negocio` · eventos `cotizador_*`, `presupuesto_start`, `generate_lead` (`presupuesto_negocio`) |
-| **Depende de** | Fase 1. Respuestas N-2, N-8, N-9, N-10, N-11 (con las recomendadas como default si no hay respuesta, avisando). Que `netlify.toml` no tenga WIP de la 030 sin commitear |
+| **Depende de** | Fase 1 · **spec 032 Fase 1** (la escala en el config y en el servidor) · N-8/N-9 (con default si no hay respuesta, avisando) · que `netlify.toml` no tenga WIP de la 030 sin commitear |
 | **No toca** | `config/pricing.js`, servidor de pagos, `CartContext` |
-| **Gate** | AC-C*, AC-E1, AC-L*, AC-W*, AC-B*, paridad 100 % (todas las filas × cantidades × MP/transferencia × promo x100 on/off) |
+| **Gate** | AC-C*, AC-E*, AC-L*, AC-P2, AC-W*, AC-B*, paridad 100 % (tamaño × material × cantidad × MP/transferencia) |
 | **Rollback** | `cotizador.activo = false` en `config/negocios.js`: `/negocio` vuelve a la Promo Negocio sola |
 | **Señal** | % de visitas de `/negocio` que completan el cotizador; pedidos con líneas de negocio; presupuestos por semana |
 
