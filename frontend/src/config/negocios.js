@@ -54,7 +54,7 @@ export const HERO = {
     referencia: `en vez de ${formatPrice(PRECIO_SUELTA)} la suelta`
   },
   ctaPrimario: 'Cotizar mis calcos',
-  ctaWhatsapp: 'Hablar por WhatsApp',
+  ctaSecundario: 'Ver precios',
   fotoEtiqueta: 'Foto real de una tirada'
 };
 
@@ -97,12 +97,14 @@ export const CTA_FINAL = {
   h2: 'Tu marca también puede ser calco.',
   bajada: `Empezá tu pedido desde ${DESDE} unidades.`,
   ctaPrimario: 'Cotizar mis calcos',
-  ctaWhatsapp: 'Hablar por WhatsApp'
+  ctaSecundario: 'Ver precios'
 };
 
 /** Mensajes precargados de WhatsApp por contexto (RF-W2; el resto en la Fase 2). */
 export const WHATSAPP = {
-  negocio: 'Hola EPICALCOS. Estoy buscando calcos personalizados para mi negocio.'
+  negocio: 'Hola EPICALCOS. Estoy buscando calcos personalizados para mi negocio.',
+  /** El botón Cotizar del header: puede tocarlo cualquiera, de cualquier página. */
+  cotizar: 'Hola EPICALCOS. Quiero cotizar calcos.'
 };
 
 export const SEO = {

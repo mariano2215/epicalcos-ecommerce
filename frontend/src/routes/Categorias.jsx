@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
+import DisenoPropioCard from '../components/DisenoPropioCard.jsx';
 import { CATEGORIES } from '../data/categories.js';
 import { useSeo } from '../lib/seo.js';
 import { searchCatalog, esOrdenValido, ORDEN_POR_DEFECTO } from '../lib/searchCatalog.js';
@@ -141,6 +142,12 @@ export default function Categorias() {
             </p>
           </div>
         </header>
+
+        {/* La puerta a los personalizados, antes que el buscador (spec 031,
+            enmienda E-1). Va fuera del bloque que espera el catálogo: tiene que
+            existir apenas carga la página para que el link #diseno-propio del
+            Home baje directo hasta acá. */}
+        <DisenoPropioCard />
 
         {/* Buscador */}
         <div className="card-glass p-4 mb-6 flex items-center gap-3">

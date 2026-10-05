@@ -385,3 +385,26 @@ Todo vive en `config/negocios.js`; los montos se interpolan del config.
 Verificado contra RF-CO2: ninguna frase dice "archivo perfecto" ni "boceto";
 "muestra" aparece siempre como "muestra gratis — vista previa digital". El "100" del H1 alternativo y de la barra sale de
 `NEGOCIO.qty`.
+
+---
+
+## 12. Enmienda E-1 — selector del Home y Cotizar (05/10/2026)
+
+| Pieza | Archivo | Cómo |
+|---|---|---|
+| Selector | `config/selectorCompra.js` + `components/HeroSelector.jsx` | Dos botones `aria-pressed` que muestran sus dos destinos. Textos y precios del config (`SIZES`, `NEGOCIO`, `WHOLESALE_QTY`, `CATEGORY_COUNT`); una opción en `HIDDEN_SECTIONS` no se muestra. La elección se recuerda en `sessionStorage` (con `try/catch`) |
+| Home | `routes/Home.jsx` | `HeroSelector` en lugar de `Hero`; sin `IntentSelector`; el buscador va siempre en su sección (ya no lee `hero_buscador`) |
+| Diseño propio | `components/DisenoPropioCard.jsx` en `routes/Categorias.jsx` | Card de todo el ancho, `id="diseno-propio"`, antes del buscador y fuera del bloque que espera el catálogo. Precio del blurb de `SPECIALS` |
+| Cotizar | `components/BotonCotizar.jsx` | Botón `aria-expanded` que despliega WhatsApp (`hrefWhatsapp`) y "Dejar mis datos" (`COTIZAR_FORM_HREF` = `/contacto?motivo=cotizar#formulario`). Modo flotante (se cierra con Escape, tocando afuera o eligiendo) y en línea (menú del celular) |
+| Formulario | `routes/Contact.jsx` (`id="formulario"`), `components/contacto/FormularioContacto.jsx`, `lib/contacto.js` (`CONSULTA_COTIZAR`) | Con `?motivo=cotizar` la consulta arranca armada; el `generate_lead` lleva `motivo: 'cotizar'`. Sin cambios en el servidor |
+| Analytics | `lib/analytics.js` | `selector_compra` { paso, opcion } y `cotizar_click` { origen, via } |
+
+**Decisiones**
+
+| # | Decisión | Por qué |
+|---|---|---|
+| E1-D1 | El hero nuevo es texto y botones sobre `.hero-gradient`, sin las capas animadas | El LCP pasa a ser el H1 (no espera imagen ni chunk) y no hay animación que pausar fuera de pantalla. Framer Motion deja de bajar en el Home |
+| E1-D2 | `Hero.jsx`, `HeroCalcos.jsx` e `IntentSelector.jsx` quedan en el repo sin montar | Criterio del proyecto (no se borra) y vuelta atrás con un import |
+| E1-D3 | "Dejar mis datos" usa el formulario de /contacto existente, con la consulta precargada | Ya manda mail y CRM y falla cerrado (spec 012). El formulario de presupuesto con campos propios sigue siendo la Fase 2 |
+| E1-D4 | La card de Diseño propio se marca al llegar por `#diseno-propio`, sin forzar scroll | Está en la primera pantalla de /categorias; el `ScrollToHash` de App puede no encontrarla si la ruta lazy tarda |
+

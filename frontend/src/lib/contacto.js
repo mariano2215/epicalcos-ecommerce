@@ -79,3 +79,14 @@ export function validarConsulta(form = {}) {
 export function esValida(form) {
   return Object.keys(validarConsulta(form)).length === 0;
 }
+
+/**
+ * Consulta armada para quien llega desde el botón Cotizar ("Dejar mis datos",
+ * spec 031, enmienda E-1: `/contacto?motivo=cotizar`). Trae como renglones los
+ * datos que Mariano pide para un pedido de negocio —razón social, cantidad,
+ * tamaño, diseños— así el cliente solo los completa. No los vuelve
+ * obligatorios: el formulario de presupuesto con campos propios es la Fase 2
+ * de la spec 031.
+ */
+export const CONSULTA_COTIZAR =
+  'Hola, quiero cotizar calcos.\nEmpresa / razón social: \nCantidad aproximada: \nTamaño: \nCantidad de diseños: ';

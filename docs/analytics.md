@@ -296,12 +296,31 @@ nuevo y orígenes nuevos en dos que ya existían:
 | Evento | Cuándo | Parámetros |
 |---|---|---|
 | `hero_cta_click` | Click en un CTA del hero de negocio | `pagina` (`negocio`; `home_b2b` desde la Fase 3), `cta` (`cotizar` / `whatsapp`) |
-| `wholesale_click` | Botón "Cotizar" del header, del menú del celular y del CTA final | `origen`: `header_cotizar`, `menu_cotizar`, `negocio_cta_final` |
-| `whatsapp_click` | WhatsApp con mensaje de negocio precargado | `whatsapp_context`: `negocio_hero`, `negocio_cta_final` |
+| `cotizar_click` | Botón Cotizar: al desplegarlo y al elegir salida (enmienda E-1) | `origen` (`header`, `menu`, `negocio_hero`, `negocio_cta_final`), `via` (`abrir` / `whatsapp` / `formulario`) |
+| `whatsapp_click` | La salida WhatsApp de Cotizar | `whatsapp_context`: `cotizar_{origen}` |
+| `generate_lead` | El formulario de /contacto enviado desde "Dejar mis datos" | `lead_source: 'contacto_form'`, `motivo: 'cotizar'` |
 
-El CTA de WhatsApp del hero manda **los dos**: `hero_cta_click` (qué hero
-funciona) y `whatsapp_click` (de dónde vienen las consultas). No se suman: son
-preguntas distintas.
+`hero_cta_click` de /negocio: `cta` es `cotizar` (al desplegar Cotizar) o
+`precios`. Del 5/10 a la mañana hasta la enmienda E-1 (mismo día) el botón
+"Cotizar" del header y del menú mandaba `wholesale_click` con `origen`
+`header_cotizar` / `menu_cotizar`, y el hero tenía `cta: 'whatsapp'`: esas
+series son de horas, no leerlas.
+
+#### Selector del Home (spec 031, enmienda E-1, desde el 5/10/2026)
+
+El Home arranca con "¿Cómo querés comprar?" — POR MENOR / POR MAYOR.
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `selector_compra` | Al elegir POR MENOR / POR MAYOR, y al tocar un destino | `paso` (`tipo` / `destino`), `opcion` (`menor`, `mayor`, `tienda`, `personalizados`, `negocio`, `mayorista`) |
+| `custom_sticker_click` | Destino PERSONALIZADOS (`origen: 'hero'`) y botón de la card de /categorias (`categorias_diseno_propio`) | `origen` |
+| `wholesale_click` | Destinos PARA MI NEGOCIO y COMPRAR MUCHAS EN CANTIDAD | `origen`: `hero_negocio` / `hero_mayorista` |
+
+**Cómo leerlo:** `selector_compra` con `paso: 'tipo'` dice qué parte del
+tráfico del Home viene a comprar por mayor; con `paso: 'destino'`, a dónde va.
+`custom_sticker_click` con `origen: 'hero'` sigue existiendo, pero desde el
+5/10/2026 sale del selector y no del botón "Hacer los míos" del termo: es serie
+nueva. Los eventos del juego del termo (`hero_sticker_stick`) dejan de llegar.
 
 **Cómo leerlo:** visitas a `/negocio` → `hero_cta_click` → `add_to_cart` de
 `negocio:` → `purchase`. Para comparar antes/después, `/negocio` era hasta el

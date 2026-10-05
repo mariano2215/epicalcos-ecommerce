@@ -338,7 +338,7 @@ const visibles = (links) => links.filter((l) => !isSectionHidden(l.to));
  * Mientras no exista el FAQ de negocios (Fase 3), "Preguntas" va al del Home.
  *
  * ⚠️ El botón "Cotizar" NO está acá: es un CTA, no un link de navegación, y el
- * header lo dibuja aparte (ver Header.jsx).
+ * header lo dibuja aparte (ver Header.jsx y BotonCotizar.jsx).
  */
 export const navLinks = visibles([
   { to: '/negocio', label: 'Para negocios' },
@@ -348,8 +348,13 @@ export const navLinks = visibles([
   { to: '/#faq', label: 'Preguntas', hash: true }
 ]);
 
-/** A dónde lleva "Cotizar" (header y CTAs): el bloque de compra de /negocio. */
-export const COTIZAR_HREF = '/negocio#cotizar';
+/**
+ * "Dejar mis datos" del botón Cotizar (spec 031, enmienda E-1): el formulario
+ * de /contacto con la consulta ya armada para cotizar. `motivo=cotizar` lo lee
+ * FormularioContacto; `#formulario` baja hasta él (en el celular va después de
+ * la card de WhatsApp).
+ */
+export const COTIZAR_FORM_HREF = '/contacto?motivo=cotizar#formulario';
 
 /**
  * Footer en cuatro grupos (spec 031, RF-N4): Productos · Ayuda · EPICALCOS ·

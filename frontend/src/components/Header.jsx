@@ -10,8 +10,8 @@ import {
   PROMO_ARGENTINA,
   PROMO_ARGENTINA_END_MS
 } from '../config/pricing.js';
-import { navLinks, site, COTIZAR_HREF } from '../config/site.js';
-import { trackWholesaleClick } from '../lib/analytics.js';
+import { navLinks, site } from '../config/site.js';
+import BotonCotizar from './BotonCotizar.jsx';
 
 /** Páginas de negocio: ahí la tira suma "desde 100 unidades" (spec 031, RF-N5). */
 const PAGINAS_NEGOCIO = ['/negocio', '/mayorista'];
@@ -188,14 +188,15 @@ export default function Header() {
           {/* COTIZAR (spec 031, RF-N1): el CTA de negocio, separado de los
               links porque es una acción, no un lugar. Solo desde lg: en el
               celular el header ya tiene Buscar, carrito y menú, y un cuarto
-              botón aplastaría a "Buscar"; ahí vive dentro del menú. */}
-          <Link
-            to={COTIZAR_HREF}
-            onClick={() => trackWholesaleClick('header_cotizar')}
-            className="hidden lg:inline-flex btn-primary !py-2 !px-4 min-h-[44px] whitespace-nowrap"
-          >
-            Cotizar
-          </Link>
+              botón aplastaría a "Buscar"; ahí vive dentro del menú. Despliega
+              WhatsApp o "Dejar mis datos" (enmienda E-1). */}
+          <BotonCotizar
+            origen="header"
+            label="Cotizar"
+            alinear="derecha"
+            contenedorClassName="hidden lg:block"
+            className="btn-primary !py-2 !px-4 min-h-[44px] whitespace-nowrap"
+          />
           <button onClick={openDrawer} className="btn-secondary !py-2 !px-3 relative min-h-[44px] min-w-[44px]" aria-label="Abrir carrito">
             <span aria-hidden>🛒</span>
             <span className="hidden lg:inline">Carrito</span>
@@ -246,16 +247,13 @@ export default function Header() {
                 </NavLink>
               )
             )}
-            <Link
-              to={COTIZAR_HREF}
-              onClick={() => {
-                setOpen(false);
-                trackWholesaleClick('menu_cotizar');
-              }}
-              className="btn-primary mt-2 min-h-[44px]"
-            >
-              Cotizar mis calcos
-            </Link>
+            <BotonCotizar
+              origen="menu"
+              modo="en-linea"
+              alElegir={() => setOpen(false)}
+              contenedorClassName="mt-2"
+              className="btn-primary w-full min-h-[44px]"
+            />
           </div>
         </div>
       )}

@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
+import BotonCotizar from '../BotonCotizar.jsx';
 import { CTA_FINAL, WHATSAPP } from '../../config/negocios.js';
-import { COTIZAR_HREF } from '../../config/site.js';
-import { hrefWhatsapp } from '../../lib/whatsapp.js';
-import { trackWholesaleClick, trackWhatsappClick } from '../../lib/analytics.js';
 
 /**
  * Cierre de las páginas de negocio (spec 031, RF-Z1). El que llegó hasta acá es
@@ -25,22 +23,15 @@ export default function CtaFinalNegocio({ pagina = 'negocio' }) {
           <h2 className="font-display font-black text-3xl md:text-5xl leading-[1.05]">{CTA_FINAL.h2}</h2>
           <p className="text-white/75 mt-4 text-base md:text-lg">{CTA_FINAL.bajada}</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              to={COTIZAR_HREF}
-              onClick={() => trackWholesaleClick(`${pagina}_cta_final`)}
-              className="btn-primary min-h-[48px]"
-            >
-              {CTA_FINAL.ctaPrimario}
+            <BotonCotizar
+              origen={`${pagina}_cta_final`}
+              label={CTA_FINAL.ctaPrimario}
+              mensaje={WHATSAPP.negocio}
+              className="btn-primary min-h-[48px] w-full sm:w-auto"
+            />
+            <Link to="/negocio#precios" className="btn-secondary min-h-[48px]">
+              {CTA_FINAL.ctaSecundario}
             </Link>
-            <a
-              href={hrefWhatsapp(WHATSAPP.negocio)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackWhatsappClick(`${pagina}_cta_final`)}
-              className="btn-secondary min-h-[48px]"
-            >
-              {CTA_FINAL.ctaWhatsapp}
-            </a>
           </div>
         </div>
       </div>

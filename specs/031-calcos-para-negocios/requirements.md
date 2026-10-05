@@ -317,6 +317,37 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 
 ---
 
+### 7.15 Enmienda E-1 — selector del Home y Cotizar con dos salidas (05/10/2026)
+
+> **Pedido de Mariano (5/10/2026):** *"Que el HERO/HEADER arranque con un
+> SELECTOR: POR MENOR / POR MAYOR. Si es por menor: TIENDA (que lo lleve a
+> categorías) / PERSONALIZADOS (que lo lleve a categorías en donde dice 'diseño
+> propio' y esa card hacerla más visible). Y si es por mayor: PARA MI NEGOCIO /
+> COMPRAR MUCHAS EN CANTIDAD (lleva a mayorista). El botón COTIZAR que llegue a
+> WhatsApp o al form de consulta por mail así deja sus datos."*
+>
+> Aclaraciones del mismo día: el selector **reemplaza el hero entero del Home,
+> sin el termo**; son **dos** opciones (no tres); en /categorias **no existía**
+> una card de "diseño propio": se crea, grande; Cotizar ofrece **las dos**
+> salidas y elige el cliente.
+
+| ID | Requisito | Prioridad |
+|---|---|---|
+| RF-SE1 | El Home arranca con la pregunta "¿Cómo querés comprar?" y dos botones grandes: **POR MENOR** y **POR MAYOR**, cada uno con desde cuánto y su precio por calco (del config) | 🔴 must |
+| RF-SE2 | POR MENOR muestra **TIENDA** (→ /categorias) y **PERSONALIZADOS** (→ la card "Diseño propio" de /categorias) | 🔴 must |
+| RF-SE3 | POR MAYOR muestra **PARA MI NEGOCIO** (→ /negocio) y **COMPRAR MUCHAS EN CANTIDAD** (→ /mayorista) | 🔴 must |
+| RF-SE4 | El H1 del Home dice "calcos" (piso de SEO de la spec 015) | 🔴 must |
+| RF-SE5 | El hero del termo (spec 028) sale del Home; su código queda en el repo | 🔴 must |
+| RF-SE6 | El bloque "¿Qué querés hacer?" del Home se va: repetiría la pregunta del selector | 🟡 should |
+| RF-DP1 | /categorias tiene una card "Diseño propio" de todo el ancho, antes del buscador, que lleva a /personalizados; al llegar desde el selector se marca | 🔴 must |
+| RF-CT1 | Todo botón **Cotizar** (header, menú del celular, hero y cierre de /negocio) despliega dos salidas: **WhatsApp** con mensaje precargado o **Dejar mis datos** (formulario de /contacto) | 🔴 must |
+| RF-CT2 | "Dejar mis datos" abre el formulario con la consulta armada para cotizar (empresa / razón social, cantidad, tamaño, diseños) | 🔴 must |
+| RF-CT3 | En /negocio el segundo botón pasa a ser **Ver precios** (el bloque de compra) | 🟡 should |
+| RF-CT4 | Se mide: qué elige la gente en el selector, y cuántos abren Cotizar y por qué salida se van | 🔴 must |
+
+Esto **resuelve N-17** para el hero: el Home no se prueba como A/B, se
+reemplaza. Lo demás del Home B2B de la Fase 3 queda como estaba planeado.
+
 ## 8. Requisitos no funcionales
 
 | ID | Requisito | Criterio |
@@ -437,7 +468,7 @@ recomendación.
 - [ ] **N-6** fotos reales → hero con contexto, galería, materiales
 - [ ] **N-8** corte de +1.000 (default: presupuesto)
 - [ ] **N-9** reparto con varios diseños (default: partes iguales)
-- [ ] **N-17** Home como A/B (default) o reemplazo directo
+- [x] **N-17** — El hero del Home se **reemplaza** por el selector POR MENOR / POR MAYOR (enmienda E-1, 5/10/2026), sin A/B
 - [x] Spec 032: **opción B** aprobada, sin 9 cm, sin descuento en 100 (va **MUESTRA GRATIS**), $52.999 es el precio fijo, DTF UV = vinilo blanco y se recomienda vinilo blanco
 - [x] **MUESTRA GRATIS** = **vista previa digital por WhatsApp antes de producir** (RF-P2)
 - [ ] ¿La vista previa también para menos de 100? (asumido: no)

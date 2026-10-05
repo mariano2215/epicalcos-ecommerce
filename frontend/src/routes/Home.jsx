@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Hero from '../components/Hero.jsx';
+import HeroSelector from '../components/HeroSelector.jsx';
 import BuscadorSeccion from '../components/BuscadorSeccion.jsx';
-import IntentSelector from '../components/IntentSelector.jsx';
 import RecentCategories from '../components/RecentCategories.jsx';
 import FeaturedStickers from '../components/FeaturedStickers.jsx';
 import CategoryCard from '../components/CategoryCard.jsx';
@@ -21,8 +20,6 @@ import { CATEGORIES } from '../data/categories.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { useSeo } from '../lib/seo.js';
 import { useReducedMotion } from '../lib/motion.js';
-import { useExperiment } from '../lib/experiments.js';
-import { ubicacionBuscador } from '../lib/heroVariantes.js';
 
 const FEATURED_SLUGS = ['argentina', 'anime', 'disney', 'escudos-futbol', 'harry-potter', 'marvel', 'memes', 'los-simpsons', 'taylor-swift', 'frases'];
 
@@ -38,6 +35,12 @@ const FEATURED_SLUGS = ['argentina', 'anime', 'disney', 'escudos-futbol', 'harry
  * pregunta y se la pasa al siguiente.
  *
  * Ver `specs/014-rediseno-home-gestalt/`.
+ *
+ * DESDE EL 5/10/2026 (spec 031, enmienda E-1) el Home arranca con un SELECTOR
+ * —¿cómo querés comprar? POR MENOR / POR MAYOR— en lugar del hero del termo.
+ * Con eso se fue también `IntentSelector` ("¿Qué querés hacer?", tres cards):
+ * hacía la misma pregunta una pantalla más abajo. El componente queda en el
+ * repo por si se lo quiere volver a montar.
  */
 export default function Home() {
   const [catalog, setCatalog] = useState({});
@@ -45,10 +48,9 @@ export default function Home() {
   const featuredRef = useRef(null);
   const reducedMotion = useReducedMotion();
 
-  // El buscador va en UN lugar o en el otro, nunca en los dos. La decisión se
-  // toma acá —y no dentro de cada componente— porque es la Home la que tiene
-  // que apagar la sección en el mismo movimiento en que el hero lo enciende.
-  const buscador = ubicacionBuscador(useExperiment('hero_buscador'));
+  // El buscador va siempre en su sección. Hasta el 5/10/2026 lo decidía el
+  // experimento `hero_buscador` (cerrado desde la spec 028): el hero nuevo no
+  // tiene buscador, así que leerlo podía dejar el Home sin ninguno.
 
   useSeo({ title: undefined, description: undefined });
 
@@ -102,22 +104,17 @@ export default function Home() {
 
   return (
     <>
-      {/* ── DESEO ────────────────────────────────────────────────────────── */}
-      <Hero conBuscador={buscador.enHero} />
+      {/* ── ELECCIÓN ─────────────────────────────────────────────────────── */}
+      <HeroSelector />
 
       {/* ── DESCUBRIMIENTO ───────────────────────────────────────────────── */}
-      {/* Con 61 categorías el buscador es el mecanismo de navegación real del
-          sitio. Dónde rinde más —sección propia acá abajo, o adentro del hero
-          arriba de los CTA— lo está midiendo `hero_buscador` (spec 015). */}
-      {buscador.enSeccion && <BuscadorSeccion />}
+      {/* Con más de 60 categorías el buscador es el mecanismo de navegación
+          real del sitio. */}
+      <BuscadorSeccion />
 
       {/* Solo para quien ya estuvo mirando: con 61 categorías, volver a la que
           estabas viendo cuesta. No se renderiza nada si no hay historial. */}
       <RecentCategories />
-
-      {/* Bifurcación por intención: el que venía a mandar su logo o a comprar
-          para su negocio tenía que deducir solo que existía una página. */}
-      <IntentSelector />
 
       {/* ── PRODUCTO ─────────────────────────────────────────────────────── */}
       <FeaturedStickers />

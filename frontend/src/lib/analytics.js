@@ -655,6 +655,28 @@ export function trackHeroCta({ pagina, cta }) {
 }
 
 /**
+ * El selector del hero del Home (spec 031, enmienda E-1). `paso` 'tipo' es la
+ * primera elección (`opcion`: 'menor' / 'mayor'); `paso` 'destino', el botón
+ * que se tocó después ('tienda', 'personalizados', 'negocio', 'mayorista').
+ * Con los dos se lee qué parte del tráfico del Home viene a comprar por mayor.
+ */
+export function trackSelectorCompra({ paso, opcion }) {
+  pushDataLayer({ event: 'selector_compra', paso, opcion });
+  debug('selector_compra', paso, opcion);
+}
+
+/**
+ * El botón Cotizar (spec 031, enmienda E-1): `via` 'abrir' al desplegarlo y
+ * 'whatsapp' / 'formulario' al elegir salida. `origen` dice qué botón
+ * ('header', 'menu', 'negocio_hero', 'negocio_cta_final'). El lead en sí lo
+ * cuenta `generate_lead` cuando el formulario se envía, con `motivo: 'cotizar'`.
+ */
+export function trackCotizar({ origen, via }) {
+  pushDataLayer({ event: 'cotizar_click', origen, via });
+  debug('cotizar_click', origen, via);
+}
+
+/**
  * El carrito cruzó un umbral y desbloqueó un beneficio.
  *
  * ⚠️ `promo` es SIEMPRE el nombre del beneficio real ('envio_gratis' /

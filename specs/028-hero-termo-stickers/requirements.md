@@ -4,6 +4,7 @@
 |---|---|
 | **Spec** | `028-hero-termo-stickers` |
 | **Estado** | `IN PROGRESS` — implementada en la rama (27/09/2026); falta QA en dispositivos reales y el deploy desde el 3/10. **Ampliaciones A (§13), B (§14), C (§15) y D (§16)** publicadas el 28/09/2026 con la spec; **E (§17), el hero lleno de calcos**: publicada el mismo día |
+| **Retirado del Home** | 05/10/2026 — Mariano reemplazó el hero entero por el selector POR MENOR / POR MAYOR (spec 031, enmienda E-1). `Hero.jsx` y `HeroCalcos.jsx` quedan en el repo sin montar: volver es un import en `routes/Home.jsx` |
 | **Fecha** | 27/09/2026 |
 | **Autor** | Mariano (pedido) · Claude (redacción) |
 

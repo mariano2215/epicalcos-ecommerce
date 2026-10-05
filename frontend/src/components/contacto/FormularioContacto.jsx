@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { provinces, contact } from '../../config/site.js';
-import { validarConsulta, TOPES } from '../../lib/contacto.js';
+import { validarConsulta, TOPES, CONSULTA_COTIZAR } from '../../lib/contacto.js';
 import { trackLeadCapture, trackContactoFormError, trackWhatsappClick } from '../../lib/analytics.js';
 import { whatsappHref } from './CardWhatsapp.jsx';
 
@@ -31,7 +32,10 @@ const CONTADOR_DESDE = 1500;
  * qué (sin eso, en mobile hay que tipear todo a mano con el teclado equivocado).
  */
 export default function FormularioContacto() {
-  const [form, setForm] = useState(INICIAL);
+  // Llegó desde "Dejar mis datos" del botón Cotizar: la consulta viene armada.
+  const [params] = useSearchParams();
+  const motivo = params.get('motivo') === 'cotizar' ? 'cotizar' : null;
+  const [form, setForm] = useState(() => (motivo ? { ...INICIAL, consulta: CONSULTA_COTIZAR } : INICIAL));
   const [errores, setErrores] = useState({});
   const [estado, setEstado] = useState('idle'); // idle | enviando | ok | error
 
@@ -88,7 +92,7 @@ export default function FormularioContacto() {
         throw new Error(`http_${res.status}`);
       }
       setEstado('ok');
-      trackLeadCapture('contacto_form');
+      trackLeadCapture('contacto_form', motivo ? { motivo } : {});
     } catch (err) {
       setEstado('error');
       // 'red' si el fetch ni salió; 'servidor' si contestó mal.

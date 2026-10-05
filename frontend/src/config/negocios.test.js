@@ -4,7 +4,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as copy from './negocios.js';
 import { NEGOCIO, priceForSize } from './pricing.js';
-import { shipping, navLinks, footerLinks, COTIZAR_HREF } from './site.js';
+import { shipping, navLinks, footerLinks, COTIZAR_FORM_HREF } from './site.js';
 import { formatPrice } from '../lib/formato.js';
 import { MARCAS } from '../data/marcas.js';
 import { FOTO_HERO } from '../data/negociosFotos.js';
@@ -103,11 +103,13 @@ describe('navegación y footer (RF-N1, RF-N4)', () => {
     expect(navLinks.map((l) => l.label)).toEqual(['Para negocios', 'Precios', 'Con tu diseño', 'Tienda', 'Preguntas']);
   });
 
-  it('"Cotizar" y "Precios" llevan a anclas que /negocio tiene', () => {
+  it('"Precios" lleva a un ancla que /negocio tiene; "Dejar mis datos" de Cotizar, al formulario de /contacto', () => {
     const negocio = readFileSync(join(AQUI, '..', 'routes', 'Negocio.jsx'), 'utf8');
-    expect(COTIZAR_HREF).toBe('/negocio#cotizar');
-    expect(negocio).toContain('id="cotizar"');
+    const contacto = readFileSync(join(AQUI, '..', 'routes', 'Contact.jsx'), 'utf8');
+    expect(navLinks.find((l) => l.label === 'Precios').to).toBe('/negocio#precios');
     expect(negocio).toContain('id="precios"');
+    expect(COTIZAR_FORM_HREF).toBe('/contacto?motivo=cotizar#formulario');
+    expect(contacto).toContain('id="formulario"');
     const comoFunciona = FUENTES.find((x) => x.f === 'ComoFunciona.jsx').src;
     expect(footerLinks.ayuda.map((l) => l.to)).toContain('/negocio#como-funciona');
     expect(comoFunciona).toContain('id="como-funciona"');

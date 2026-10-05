@@ -71,6 +71,18 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 
 ---
 
+## Enmienda E-1 — selector del Home y Cotizar (05/10/2026)
+
+Pedida por Mariano en el chat el 5/10/2026 (ver `requirements.md` §7.15).
+
+- [x] **E1.1** `config/selectorCompra.js` + `components/HeroSelector.jsx`; test `config/selectorCompra.test.js`
+- [x] **E1.2** `routes/Home.jsx`: `HeroSelector` en lugar de `Hero`, sin `IntentSelector`, buscador siempre en su sección
+- [x] **E1.3** `components/DisenoPropioCard.jsx` en /categorias, antes del buscador
+- [x] **E1.4** `components/BotonCotizar.jsx` en header (desktop), menú del celular, hero y cierre de /negocio; "Ver precios" como segundo botón de /negocio
+- [x] **E1.5** /contacto: `id="formulario"` y consulta precargada con `?motivo=cotizar` (`CONSULTA_COTIZAR` en `lib/contacto.js`)
+- [x] **E1.6** `selector_compra` y `cotizar_click` en `lib/analytics.js` y en `docs/analytics.md`
+- [x] **E1.7** Verificado en el navegador (375 y 1280 px), `vite build` y suite completa
+
 ## Fase 2 — Conversión
 
 ### Motor
@@ -176,6 +188,7 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 
 | Fecha | Qué cambió respecto al diseño | Motivo |
 |---|---|---|
+| 05/10/2026 | Enmienda E-1: el hero del Home pasa a ser el selector POR MENOR / POR MAYOR (sin termo, sin A/B) y Cotizar despliega WhatsApp o "Dejar mis datos" | Pedido de Mariano en el chat, con las cuatro aclaraciones respondidas el mismo día |
 | 05/10/2026 | WIP ajeno al arrancar la Fase 1: `docs/analytics.md`, `Reveal.jsx`, `index.css`, `netlify.toml` y `specs/030/requirements.md` (spec 030, otra sesión) | No se tocaron; `analytics.md` se commiteó solo con la sección propia |
 | 05/10/2026 | Hero: el segundo CTA es "Hablar por WhatsApp" y no "Ver precios" | Hasta la Fase 2 los precios están en el mismo bloque que "Cotizar": dos botones al mismo lugar |
 | 05/10/2026 | "Cotizar" lleva a `/negocio#cotizar` (no `#cotizador`) y "Precios" a `/negocio#precios` | Las dos anclas ya existen sobre el bloque de compra y la Fase 2 las reusa: los links no cambian |

@@ -129,6 +129,19 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 ---
 
+### Enmienda E-1 (05/10/2026)
+
+| ID | Criterio | Cómo se verifica | Resultado |
+|---|---|---|---|
+| AC-SE1 | *(RF-SE1)* El Home arranca con "¿Cómo querés comprar?" y POR MENOR / POR MAYOR con desde cuánto y precio por calco | Navegador 375 y 1280 px | ✅ los dos botones en la primera pantalla a 375 px |
+| AC-SE2 | *(RF-SE2/3)* Cada opción muestra sus dos destinos con el link correcto | Test + clicks en el navegador | ✅ Tienda → /categorias · Personalizados → /categorias#diseno-propio · Para mi negocio → /negocio · Comprar muchas en cantidad → /mayorista |
+| AC-SE3 | *(RF-SE4)* El H1 dice "calcos" | Test | ✅ "Calcos para vos o para tu negocio." |
+| AC-SE4 | *(RF-SE5/6)* El Home no carga el termo ni Framer Motion, y no repite "¿Qué querés hacer?" | Recursos de la página en el navegador | ✅ chunk principal 99,26 kB gzip (antes 99,5); el chunk de las calcos ya no se genera |
+| AC-DP1 | *(RF-DP1)* /categorias muestra la card de Diseño propio antes del buscador y la marca al llegar desde el selector | Navegador 375 px | ✅ visible en la primera pantalla, con borde |
+| AC-CT1 | *(RF-CT1)* Cotizar despliega WhatsApp y "Dejar mis datos" en header, menú del celular, hero y cierre de /negocio; se cierra con Escape y tocando afuera | Navegador | ✅ |
+| AC-CT2 | *(RF-CT2)* "Dejar mis datos" abre /contacto en el formulario con la consulta armada, y esa consulta pasa la validación | Navegador + test | ✅ |
+| AC-CT3 | *(RF-CT4)* `selector_compra` y `cotizar_click` salen por `lib/analytics.js`, sin datos personales | Revisión del código | ✅ (no verificado en DebugView de GA4) |
+
 ## 2. Criterios no funcionales
 
 | ID | Criterio | Cómo se verifica | Resultado |

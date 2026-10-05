@@ -55,7 +55,9 @@ export default function Contact() {
             pantalla y para Google. Ubicar con `col-start`/`row-start` resuelve lo
             mismo sin duplicar nada. */}
         <div className="mt-10 flex flex-col gap-5 lg:grid lg:grid-cols-12 lg:items-start max-w-5xl mx-auto">
-          <div className="order-2 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:col-span-7">
+          {/* `id="formulario"`: lo apunta "Dejar mis datos" del botón Cotizar
+              (spec 031, enmienda E-1). NO renombrar. */}
+          <div id="formulario" className="order-2 scroll-mt-28 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:col-span-7">
             <FormularioContacto />
           </div>
           <div className="order-1 lg:col-start-8 lg:row-start-1 lg:col-span-5">

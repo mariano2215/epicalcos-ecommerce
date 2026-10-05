@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
+import BotonCotizar from '../BotonCotizar.jsx';
 import { HERO, WHATSAPP } from '../../config/negocios.js';
-import { COTIZAR_HREF } from '../../config/site.js';
 import { FOTO_HERO } from '../../data/negociosFotos.js';
-import { hrefWhatsapp } from '../../lib/whatsapp.js';
-import { trackHeroCta, trackWhatsappClick } from '../../lib/analytics.js';
+import { trackHeroCta } from '../../lib/analytics.js';
 
 /**
  * Hero de negocio (spec 031, RF-H1…H7; en el pedido, *WholesaleHero*).
@@ -22,10 +21,10 @@ import { trackHeroCta, trackWhatsappClick } from '../../lib/analytics.js';
  * etiquetas flotantes de "packaging" o "merch": esta foto no muestra eso, y
  * ponerlas sería prometer un uso que la imagen no prueba.
  *
- * CTAs (RF-CTA1): "Cotizar mis calcos" lleva al bloque de compra de la página.
- * El segundo es WhatsApp y no "Ver precios" porque, hasta que exista la escala
- * (Fase 2), los precios están en ese MISMO bloque: dos botones al mismo lugar
- * es uno de más.
+ * CTAs (RF-CTA1): "Cotizar mis calcos" despliega WhatsApp o "Dejar mis datos"
+ * (enmienda E-1: el que todavía no compra deja sus datos) y "Ver precios" baja
+ * al bloque de compra. Hasta la enmienda, "Cotizar" llevaba a ese bloque y el
+ * segundo botón era WhatsApp: ahora WhatsApp vive adentro de Cotizar.
  */
 export default function HeroNegocio({ pagina = 'negocio' }) {
   return (
@@ -46,25 +45,20 @@ export default function HeroNegocio({ pagina = 'negocio' }) {
           </p>
 
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <BotonCotizar
+              origen={`${pagina}_hero`}
+              label={HERO.ctaPrimario}
+              mensaje={WHATSAPP.negocio}
+              alAbrir={() => trackHeroCta({ pagina, cta: 'cotizar' })}
+              className="btn-primary min-h-[48px] w-full sm:w-auto"
+            />
             <Link
-              to={COTIZAR_HREF}
-              onClick={() => trackHeroCta({ pagina, cta: 'cotizar' })}
-              className="btn-primary min-h-[48px]"
-            >
-              {HERO.ctaPrimario}
-            </Link>
-            <a
-              href={hrefWhatsapp(WHATSAPP.negocio)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                trackHeroCta({ pagina, cta: 'whatsapp' });
-                trackWhatsappClick(`${pagina}_hero`);
-              }}
+              to="/negocio#precios"
+              onClick={() => trackHeroCta({ pagina, cta: 'precios' })}
               className="btn-secondary min-h-[48px]"
             >
-              {HERO.ctaWhatsapp}
-            </a>
+              {HERO.ctaSecundario}
+            </Link>
           </div>
         </div>
 

@@ -25,7 +25,7 @@ administrativo dentro de este repo. Ver §7 y §8.
 | Routing | react-router-dom | ^6.26.2 (`BrowserRouter`) |
 | Build | Vite | ^5.4.8 |
 | Estilos | Tailwind CSS | ^3.4.13 + PostCSS + Autoprefixer |
-| Animación | framer-motion | ^13.4.4 — **solo** en `components/hero/HeroCalcos.jsx`, en un chunk aparte (spec 028) |
+| Animación | framer-motion | ^13.4.4 — **solo** en `components/hero/HeroCalcos.jsx`, en un chunk aparte (spec 028). Desde el 5/10/2026 ese hero no está montado (spec 031, enmienda E-1): hoy no baja en ninguna página |
 | Tests | Vitest | ^2.1.9 (`environment: 'node'`) |
 | Servidor | Netlify Functions | Node 20, bundler `esbuild` |
 | Pagos | mercadopago (SDK) | ^3.2.0 (raíz) |
