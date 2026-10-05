@@ -4,8 +4,8 @@
 |---|---|
 | **Spec** | `031-calcos-para-negocios` |
 | **Requirements** | [`requirements.md`](requirements.md) |
-| **Validado el** | |
-| **Resultado** | ⬜ pendiente |
+| **Validado el** | Fase 1: 05/10/2026 |
+| **Resultado** | Fase 1 ✅ con observaciones (ANF-2, REG-2/3) · Fases 2 a 4 ⬜ |
 
 > **Este documento determina cuándo la feature está terminada.**
 > Se valida **por fase**: la columna "Fase" dice en cuál se cierra cada criterio.
@@ -32,23 +32,23 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
-| AC-N1 | *(RF-N1)* El nav dice Para negocios · Precios · Con tu diseño · Tienda · Preguntas + Cotizar | Inspección a 1024 y 1440 px | 1 | ⬜ |
-| AC-N2 | *(RF-N3)* A 1024 px el nav entra en una línea; a 375 px "Cotizar" está en el menú | Captura | 1 | ⬜ |
-| AC-N3 | *(RF-N4)* Footer en 4 grupos; una sección agregada a `HIDDEN_SECTIONS` desaparece del footer | Agregar `negocio` a mano en local y mirar | 1 | ⬜ |
-| AC-N4 | *(RF-N5)* En `/negocio` la tira suma "Calcos con tu logo desde 100 unidades" y conserva envío gratis, garantía y transferencia | Inspección | 1 | ⬜ |
-| AC-CTA1 | *(RF-CTA1/2)* En las páginas B2B solo aparecen los 5 CTAs con nombre fijo y nunca dos primarios en la misma pantalla | Recorrido + `grep` de textos de botón en `components/negocios/` | 1–3 | ⬜ |
-| AC-CO1 | *(RF-CO1/2)* El test de copy prohibido está en verde y falla al introducir una frase prohibida | Correr el test con y sin la frase | 1 | ⬜ |
-| AC-CO2 | *(RF-CO3)* Ningún monto, %, plazo ni cifra escrito a mano en `config/negocios.js` ni en `components/negocios/` | `grep` de tasks 1.1 | 1 | ⬜ |
+| AC-N1 | *(RF-N1)* El nav dice Para negocios · Precios · Con tu diseño · Tienda · Preguntas + Cotizar | Inspección a 1024 y 1440 px | 1 | ✅ test + navegador |
+| AC-N2 | *(RF-N3)* A 1024 px el nav entra en una línea; a 375 px "Cotizar" está en el menú | Captura | 1 | ✅ 1024 px: nav de 40 px de alto, sin desborde · 375 px: "Cotizar mis calcos" en el menú |
+| AC-N3 | *(RF-N4)* Footer en 4 grupos; una sección agregada a `HIDDEN_SECTIONS` desaparece del footer | Agregar `negocio` a mano en local y mirar | 1 | ✅ 4 grupos; "Armá tu pack" e "Imprimibles" (ocultas) no aparecen |
+| AC-N4 | *(RF-N5)* En `/negocio` la tira suma "Calcos con tu logo desde 100 unidades" y conserva envío gratis, garantía y transferencia | Inspección | 1 | ✅ test + navegador (/negocio y /mayorista) |
+| AC-CTA1 | *(RF-CTA1/2)* En las páginas B2B solo aparecen los 5 CTAs con nombre fijo y nunca dos primarios en la misma pantalla | Recorrido + `grep` de textos de botón en `components/negocios/` | 1–3 | ✅ Fase 1: "Cotizar mis calcos", "Hablar por WhatsApp" y "Cotizar" (header); un primario por pantalla |
+| AC-CO1 | *(RF-CO1/2)* El test de copy prohibido está en verde y falla al introducir una frase prohibida | Correr el test con y sin la frase | 1 | ✅ con la frase agregada a mano: 1 falla / 11 pasan; sin ella, 12 pasan |
+| AC-CO2 | *(RF-CO3)* Ningún monto, %, plazo ni cifra escrito a mano en `config/negocios.js` ni en `components/negocios/` | `grep` de tasks 1.1 | 1 | ✅ test de literales |
 
 ### Hero y confianza
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
-| AC-H1 | *(RF-H1/2/3)* Eyebrow, H1 y bajada como en `design.md` §11 | Inspección | 1 | ⬜ |
-| AC-H2 | *(RF-H4)* El "desde" del hero es el menor precio por calco vigente y la suelta, ambos del config: cambiar `NEGOCIO.price` en local cambia el hero | Prueba local | 1 | ⬜ |
-| AC-H3 | *(RF-H6)* La imagen del hero es una foto real listada en `data/negociosFotos.js` | Revisión del archivo | 1 | ⬜ |
-| AC-H4 | *(RF-H7)* A 375 × 667, H1 + precio + CTA primario sin scroll | Captura | 1 | ⬜ |
-| AC-T1 | *(RF-T1)* Los 4 datos: desde 100 unidades, muestra gratis antes de producir, 3 a 5 días hábiles (de `shipping.produccionVolumen`) y la cuenta de `data/marcas.js` | Revisión + cambiar uno en local | 1 | ⬜ |
+| AC-H1 | *(RF-H1/2/3)* Eyebrow, H1 y bajada como en `design.md` §11 | Inspección | 1 | ✅ |
+| AC-H2 | *(RF-H4)* El "desde" del hero es el menor precio por calco vigente y la suelta, ambos del config: cambiar `NEGOCIO.price` en local cambia el hero | Prueba local | 1 | ✅ el test fija la derivación (NEGOCIO y priceForSize) |
+| AC-H3 | *(RF-H6)* La imagen del hero es una foto real listada en `data/negociosFotos.js` | Revisión del archivo | 1 | ✅ `negocio-muestra.webp` (960 × 720) |
+| AC-H4 | *(RF-H7)* A 375 × 667, H1 + precio + CTA primario sin scroll | Captura | 1 | ✅ el CTA termina en 611 px |
+| AC-T1 | *(RF-T1)* Los 4 datos: desde 100 unidades, muestra gratis antes de producir, 3 a 5 días hábiles (de `shipping.produccionVolumen`) y la cuenta de `data/marcas.js` | Revisión + cambiar uno en local | 1 | ✅ test |
 
 ### Cotizador
 
@@ -68,7 +68,7 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 | AC-C12 | *(RF-C14)* Se completa con teclado solo; el lector de pantalla anuncia el precio al cambiar | Teclado + VoiceOver | 2 | ⬜ |
 | AC-C13 | *(RF-C15)* Cambiar un escalón en local (los dos lados) cambia el precio del cotizador sin tocar otro archivo | Prueba local | 2 | ⬜ |
 | AC-C15 | *(RF-C16)* Sin razón social no se puede agregar al carrito; con razón social y CUIT, los dos llegan al mail y al CRM | Recorrido + pedido de prueba | 2 | ⬜ |
-| AC-P2 | *(RF-P3)* Pedido de 100+ calcos (cualquier producto): checkout, mail y FAQ dicen 3 a 5 días hábiles; con menos de 100, 2 a 3 | Pedido de prueba de 120 sueltas, de 30 y de una línea de escala | 1 | ⬜ |
+| AC-P2 | *(RF-P3)* Pedido de 100+ calcos (cualquier producto): checkout, mail y FAQ dicen 3 a 5 días hábiles; con menos de 100, 2 a 3 | Pedido de prueba de 120 sueltas, de 30 y de una línea de escala | 1 | ✅ carrito y checkout en el navegador (100 → 3 a 5; 3 → 2 a 3); mail por test de `customerTimeline` (no se mandó uno real) |
 | AC-C14 | *(D-11)* Agregar dos veces seguidas no duplica el pedido sin querer | Recorrido | 2 | ⬜ |
 
 ### Precios y contenido
@@ -80,9 +80,9 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 | AC-U1 | *(RF-U1)* 6 usos; ninguna imagen de stock | Inspección | 3 | ⬜ |
 | AC-G1 | *(RF-G1)* Con la lista de fotos vacía, la galería no está ni en el DOM ni en el HTML | `curl` + DOM | 3 | ⬜ |
 | AC-M1 | *(RF-M1/2/3)* Una card por material de `MATERIALES`; el holográfico dice packs de 100 en 4 y 6 cm | Inspección | 3 | ⬜ |
-| AC-P1 | *(RF-P1/2, RF-F3)* 4 pasos con la vista previa gratis en el paso 3; plazo del config; "muestra" siempre aclarada como vista previa digital; `/personalizados` y la tienda no mencionan la vista previa | Test de copy + inspección | 1 | ⬜ |
+| AC-P1 | *(RF-P1/2, RF-F3)* 4 pasos con la vista previa gratis en el paso 3; plazo del config; "muestra" siempre aclarada como vista previa digital; `/personalizados` y la tienda no mencionan la vista previa | Test de copy + inspección | 1 | ✅ test + navegador; /personalizados no la menciona |
 | AC-R1 | *(RF-R1)* "¿Pedís calcos todos los meses?" no se monta sin N-4 resuelto | Inspección | 3 | ⬜ |
-| AC-S1 | *(RF-S1)* Marcas, cifras y testimonios reales; un componente sin datos no se monta | Inspección | 1–3 | ⬜ |
+| AC-S1 | *(RF-S1)* Marcas, cifras y testimonios reales; un componente sin datos no se monta | Inspección | 1–3 | ✅ Fase 1: ticker de 35 marcas reales |
 | AC-K1 | *(RF-K1)* Banda de pedidos grandes con Pedir presupuesto y Hablar por WhatsApp | Inspección | 2 | ⬜ |
 | AC-F1 | *(RF-F1/2)* Solo se ven (y van al JSON-LD) las preguntas con `publicar: true`; "¿Puedo pedir factura?" responde "Sí, emitimos factura C." | DOM + JSON-LD | 3 | ⬜ |
 
@@ -133,13 +133,13 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 | ID | Criterio | Cómo se verifica | Resultado |
 |---|---|---|---|
-| ANF-1 | **Mobile** — todo a 375 px sin scroll horizontal; targets ≥ 44 px | DevTools + iPhone SE real | ⬜ |
-| ANF-2 | **Performance** — LCP de `/negocio` y del Home B2B ≤ LCP del Home actual; chunk principal +≤ 1 kB gzip | Arnés CDP con GPU, mediana de 3 · `vite build` | ⬜ |
-| ANF-3 | **Accesibilidad** — `aria-label`, foco visible, AA, `prefers-reduced-motion` | Teclado + Lighthouse a11y ≥ el actual | ⬜ |
-| ANF-4 | **Compatibilidad** — un carrito guardado antes sigue andando y llega al checkout | `localStorage` con un carrito de producción | ⬜ |
-| ANF-5 | **Sin dependencias nuevas** | `git diff -- '*package.json'` vacío | ⬜ |
-| ANF-6 | **Sin secretos en el bundle** | `grep` de claves sobre `frontend/dist` | ⬜ |
-| ANF-7 | **Rollback** — cada interruptor de `design.md` §8 apaga su pieza sin otro cambio | Probar cada uno en local | ⬜ |
+| ANF-1 | **Mobile** — todo a 375 px sin scroll horizontal; targets ≥ 44 px | DevTools + iPhone SE real | ✅ /negocio sin desborde a 375 px |
+| ANF-2 | **Performance** — LCP de `/negocio` y del Home B2B ≤ LCP del Home actual; chunk principal +≤ 1 kB gzip | Arnés CDP con GPU, mediana de 3 · `vite build` | ⚠️ chunk principal +0,4 kB gzip (99,1 → 99,5); LCP de /negocio sin medir en el arnés CDP (queda para la Fase 6) |
+| ANF-3 | **Accesibilidad** — `aria-label`, foco visible, AA, `prefers-reduced-motion` | Teclado + Lighthouse a11y ≥ el actual | ✅ parcial: botones de 48 px, `alt` en la foto, `aria-label` en la barra; sin Lighthouse |
+| ANF-4 | **Compatibilidad** — un carrito guardado antes sigue andando y llega al checkout | `localStorage` con un carrito de producción | ✅ carritos de Negocio y de calcos sueltas cargados desde `localStorage` |
+| ANF-5 | **Sin dependencias nuevas** | `git diff -- '*package.json'` vacío | ✅ |
+| ANF-6 | **Sin secretos en el bundle** | `grep` de claves sobre `frontend/dist` | ✅ sin variables nuevas |
+| ANF-7 | **Rollback** — cada interruptor de `design.md` §8 apaga su pieza sin otro cambio | Probar cada uno en local | ⏭️ la Fase 1 no tiene interruptor: se vuelve atrás con un revert |
 | ANF-8 | **Navegadores reales** — Safari iOS, Chrome Android, navegador de Instagram | Dispositivos | ⬜ |
 
 ---
@@ -164,16 +164,16 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 | ID | Criterio | Resultado |
 |---|---|---|
-| REG-1 | La suite completa sigue pasando (anotar el número) | ⬜ |
-| REG-2 | Compra por **Mercado Pago** de punta a punta, B2C y B2B | ⬜ |
-| REG-3 | Compra por **transferencia** de punta a punta, B2C y B2B | ⬜ |
-| REG-4 | Envío bien calculado en las tres zonas, y la promo de 100 sigue pagando envío fuera de Rosario | ⬜ |
-| REG-5 | Ningún checkout se rechaza con `price_mismatch` | ⬜ |
-| REG-6 | El carrito sobrevive al refresh | ⬜ |
-| REG-7 | `purchase` se dispara una sola vez | ⬜ |
-| REG-8 | El `value` del `purchase` es lo pagado | ⬜ |
-| REG-9 | El Home **control** es idéntico al de hoy (captura antes/después) | ⬜ |
-| REG-10 | `/personalizados`, `/mayorista` (armador), tienda y popup funcionan como antes | ⬜ |
+| REG-1 | La suite completa sigue pasando (anotar el número) | ✅ 796 pasan, 17 salteados |
+| REG-2 | Compra por **Mercado Pago** de punta a punta, B2C y B2B | ⚠️ sin compra real; `pricing.js` sin cambios y el checkout renderiza con carritos de 3 y de 100 |
+| REG-3 | Compra por **transferencia** de punta a punta, B2C y B2B | ⚠️ ídem REG-2 |
+| REG-4 | Envío bien calculado en las tres zonas, y la promo de 100 sigue pagando envío fuera de Rosario | ✅ `envio.test.js` verde; costos y umbrales sin cambios |
+| REG-5 | Ningún checkout se rechaza con `price_mismatch` | ✅ paridad verde |
+| REG-6 | El carrito sobrevive al refresh | ✅ |
+| REG-7 | `purchase` se dispara una sola vez | ⏭️ no se tocó |
+| REG-8 | El `value` del `purchase` es lo pagado | ⏭️ no se tocó |
+| REG-9 | El Home **control** es idéntico al de hoy (captura antes/después) | ✅ el cuerpo del Home no cambió; cambian header y footer, que son de esta fase |
+| REG-10 | `/personalizados`, `/mayorista` (armador), tienda y popup funcionan como antes | ✅ /personalizados, /categorias, ficha y /mayorista sin errores; el popup no se tocó |
 
 ---
 

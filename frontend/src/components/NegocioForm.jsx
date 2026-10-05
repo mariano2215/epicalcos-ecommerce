@@ -21,8 +21,12 @@ const MUESTRA_SRC = '/images/negocio-muestra.webp';
  * Promo Negocio: 100 calcos de un solo diseño (el logo del cliente) en 6 cm a $39.999
  * (precio de lista $96.999). El logo se sube acá (va con el pedido) o, si no, se
  * coordina por WhatsApp después de la compra.
+ *
+ * `conFoto={false}` (spec 031): /negocio ya muestra esta misma foto en su hero,
+ * y repetida dos pantallas más abajo no suma nada. El título es `h2` porque el
+ * `h1` de la página es el del hero.
  */
-export default function NegocioForm() {
+export default function NegocioForm({ conFoto = true }) {
   const { addNegocio } = useCart();
   const navigate = useNavigate();
   const [business, setBusiness] = useState('');
@@ -59,7 +63,7 @@ export default function NegocioForm() {
   return (
     <div className="grid lg:grid-cols-2 gap-6 items-start">
       <div className="card-glass overflow-hidden">
-        {muestraOk && (
+        {conFoto && muestraOk && (
           <div className="relative">
             <img
               src={MUESTRA_SRC}
@@ -78,7 +82,7 @@ export default function NegocioForm() {
         )}
         <div className="p-6 md:p-8">
         <span className="badge badge-new mb-3">Para tu negocio</span>
-        <h1 className="font-display font-extrabold text-3xl md:text-4xl">Promo Negocio</h1>
+        <h2 className="font-display font-extrabold text-3xl md:text-4xl">Promo Negocio</h2>
         <p className="text-white/80 mt-3">
           <strong className="text-white">100 calcos</strong> de un solo diseño (tu logo o el arte de tu
           marca) en <strong className="text-white">6 cm</strong>.

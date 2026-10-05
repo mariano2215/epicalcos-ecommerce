@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import AnnouncementBar from './AnnouncementBar.jsx';
 import BuscadorModal from './BuscadorModal.jsx';
 import { useCart } from '../context/CartContext.jsx';
@@ -10,7 +10,11 @@ import {
   PROMO_ARGENTINA,
   PROMO_ARGENTINA_END_MS
 } from '../config/pricing.js';
-import { navLinks, site } from '../config/site.js';
+import { navLinks, site, COTIZAR_HREF } from '../config/site.js';
+import { trackWholesaleClick } from '../lib/analytics.js';
+
+/** Páginas de negocio: ahí la tira suma "desde 100 unidades" (spec 031, RF-N5). */
+const PAGINAS_NEGOCIO = ['/negocio', '/mayorista'];
 
 /** Píxeles de scroll desde los que el header se compacta (como mínimo: ver abajo). */
 const UMBRAL_COMPACTO = 80;
@@ -29,6 +33,8 @@ export default function Header() {
   const promoActive = usePromoActive();
   const mayoristaPromoActive = useMayoristaPromoActive();
   const argentinaPromoActive = useArgentinaPromoActive();
+  const { pathname } = useLocation();
+  const esNegocio = PAGINAS_NEGOCIO.includes(pathname);
 
   // Header reducido al scrollear: en celular, después del primer scroll lo único
   // que hace falta arriba es volver al inicio, buscar y ver el carrito. Todo lo
@@ -179,6 +185,17 @@ export default function Header() {
             <span>Buscar</span>
           </button>
 
+          {/* COTIZAR (spec 031, RF-N1): el CTA de negocio, separado de los
+              links porque es una acción, no un lugar. Solo desde lg: en el
+              celular el header ya tiene Buscar, carrito y menú, y un cuarto
+              botón aplastaría a "Buscar"; ahí vive dentro del menú. */}
+          <Link
+            to={COTIZAR_HREF}
+            onClick={() => trackWholesaleClick('header_cotizar')}
+            className="hidden lg:inline-flex btn-primary !py-2 !px-4 min-h-[44px] whitespace-nowrap"
+          >
+            Cotizar
+          </Link>
           <button onClick={openDrawer} className="btn-secondary !py-2 !px-3 relative min-h-[44px] min-w-[44px]" aria-label="Abrir carrito">
             <span aria-hidden>🛒</span>
             <span className="hidden lg:inline">Carrito</span>
@@ -229,6 +246,16 @@ export default function Header() {
                 </NavLink>
               )
             )}
+            <Link
+              to={COTIZAR_HREF}
+              onClick={() => {
+                setOpen(false);
+                trackWholesaleClick('menu_cotizar');
+              }}
+              className="btn-primary mt-2 min-h-[44px]"
+            >
+              Cotizar mis calcos
+            </Link>
           </div>
         </div>
       )}
@@ -243,7 +270,7 @@ export default function Header() {
           Se recoge al scrollear: pasado el primer scroll las dudas ya se leyeron
           y esos ~35 px valen más para el producto. El `div` es para medirla
           (el umbral de arriba); compactado queda vacío y no ocupa nada. */}
-      <div ref={tiraRef}>{!compacto && <AnnouncementBar />}</div>
+      <div ref={tiraRef}>{!compacto && <AnnouncementBar negocio={esNegocio} />}</div>
     </header>
 
     <BuscadorModal abierto={buscando} onCerrar={() => setBuscando(false)} />

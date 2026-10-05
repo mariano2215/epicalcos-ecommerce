@@ -28,13 +28,17 @@ const PROMO_END_LABEL = CON_FECHA ? endLabel(PROMO_MAYORISTA_END_MS, 'que se ago
 export default function Mayorista() {
   const promoActive = useMayoristaPromoActive();
 
+  // Spec 031: "mayorista" queda como keyword y argumento de precio, así que va
+  // en el título. ⚠️ La fecha de cierre se nombra SOLO si la promo la tiene:
+  // desde la spec 017 no tiene, y hasta el 5/10/2026 la descripción y el
+  // subtítulo de la página decían "hasta el null" (en producción, a la vista).
   useSeo({
     title: promoActive
-      ? `Pack Mayorista · ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)}`
-      : 'Pack Mayorista',
+      ? `Calcos mayoristas · ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)}`
+      : 'Calcos mayoristas · Pack desde 100 calcos',
     description: promoActive
-      ? `Promo por tiempo limitado: ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)}, eligiendo ${PROMO_MAYORISTA_100.qty} diseños distintos del catálogo o subiendo los tuyos. En 4 y 6 cm, hasta el ${PROMO_END_LABEL}. Pagás online con Mercado Pago.`
-      : 'Armá tu pack mayorista desde 100 calcos, eligiendo del catálogo o subiendo tus propios diseños. 50% de descuento en todos los tamaños. Pagás online con Mercado Pago.'
+      ? `Calcos mayoristas: ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)}, eligiendo ${PROMO_MAYORISTA_100.qty} diseños distintos del catálogo o subiendo los tuyos. En 4 y 6 cm${CON_FECHA ? `, hasta el ${PROMO_END_LABEL}` : ''}. Pagás con Mercado Pago o por transferencia.`
+      : 'Armá tu pack mayorista desde 100 calcos, eligiendo del catálogo o subiendo tus propios diseños. 50% de descuento en todos los tamaños. Pagás con Mercado Pago o por transferencia.'
   });
 
   return (
@@ -83,7 +87,7 @@ export default function Mayorista() {
             title="Pack Mayorista"
             subtitle={
               promoActive
-                ? `Elegí ${PROMO_MAYORISTA_100.qty} calcos (del catálogo o con tus propios diseños) en 4 o 6 cm y pagás ${formatPrice(PROMO_MAYORISTA_100.price)}. Promo hasta el ${PROMO_END_LABEL}.`
+                ? `Elegí ${PROMO_MAYORISTA_100.qty} calcos (del catálogo o con tus propios diseños) en 4 o 6 cm y pagás ${formatPrice(PROMO_MAYORISTA_100.price)}.${CON_FECHA ? ` Promo hasta el ${PROMO_END_LABEL}.` : ''}`
                 : 'Elegí 100 calcos o más (del catálogo o con tus propios diseños), en un solo tamaño, y llevate un 50% de descuento. Aprovechá el 4 cm.'
             }
           />

@@ -3,7 +3,7 @@
  * Todos los datos comerciales viven acá — un solo lugar para editar.
  */
 import { formatPrice } from '../lib/formato.js';
-import { TRANSFER_OFF, esCategoriaEn2x1 } from './pricing.js';
+import { TRANSFER_OFF, esCategoriaEn2x1, NEGOCIO } from './pricing.js';
 
 export const site = {
   name: 'EPICALCOS',
@@ -70,7 +70,24 @@ export const shipping = {
    */
   production: '2 a 3 días hábiles',
   deliveryRosario: '2 a 3 días hábiles',
-  deliveryInterior: '5 a 7 días hábiles'
+  deliveryInterior: '5 a 7 días hábiles',
+
+  /**
+   * Plazo de producción de los pedidos GRANDES (spec 031, RF-P3). Mariano,
+   * 5/10/2026: "aplica para todo, los 3 a 5 días siendo 100 calcos o más". Es
+   * de cualquier producto —calcos de catálogo, personalizados, packs, Negocio—:
+   * lo que manda es cuántas calcos tiene el pedido, no qué página lo armó.
+   * Corre desde que se aprueba la vista previa y se acredita el pago.
+   *
+   * Los `delivery*` de arriba suman producción + correo con el plazo corto, así
+   * que NO valen para estos pedidos: con 100+ se dice la producción y que
+   * después se despacha, sin inventar un total.
+   *
+   * ⚠️ Espejado en netlify/functions/lib/plazoProduccion.js (el mail al
+   * cliente). Cómo se cuentan las calcos: lib/plazoProduccion.js.
+   */
+  produccionVolumen: '3 a 5 días hábiles',
+  produccionVolumenDesde: 100
 };
 
 /** Provincias y jurisdicciones de Argentina (orden alfabético) para el select del checkout. */
@@ -261,8 +278,11 @@ export const devoluciones = {
  * @param {number} [now]
  * @returns {string[]}
  */
-export function anunciosVigentes(now = Date.now()) {
+export function anunciosVigentes(now = Date.now(), { negocio = false } = {}) {
   return [
+    // Solo en las páginas de negocio (spec 031, RF-N5): ahí es la duda #1 —
+    // "¿me lo hacen con mi logo y desde cuánto?"—. En la tienda sería ruido.
+    negocio && `🏷️ Calcos con tu logo desde ${NEGOCIO.qty} unidades`,
     `🚚 Envío gratis desde ${formatPrice(shipping.freeShippingThresholdRosario)} en Rosario ` +
       `y desde ${formatPrice(shipping.freeShippingThresholdNational)} al resto del país`,
     esCategoriaEn2x1('argentina', now) && '🇦🇷 2x1 en calcos de Argentina',
@@ -302,40 +322,63 @@ export const isSectionHidden = (slugOrPath) =>
 /** Saca de una lista de links los que apuntan a una sección oculta. */
 const visibles = (links) => links.filter((l) => !isSectionHidden(l.to));
 
+/**
+ * Navegación con jerarquía de negocio (spec 031, RF-N1 / D-6): primero lo que
+ * vende a marcas y negocios, la tienda después y a un click.
+ *
+ * Hasta el 5/10/2026 eran Inicio · Categorías · Personalizados · Mayorista ·
+ * Negocio · Contacto · FAQ: siete puertas del mismo peso, y la de negocios era
+ * la quinta. Lo que salió del nav no desapareció: Mayorista y Contacto están en
+ * el footer, y el logo lleva al inicio.
+ *
+ * "Con tu diseño" (/personalizados) se queda a propósito: es el camino del
+ * negocio que necesita MENOS de 100 calcos, y tiene tráfico propio.
+ * "Precios" y "Preguntas" son anclas: `hash` hace que el header use un Link
+ * común (no NavLink) y `ScrollToHash` (App.jsx) baje hasta la sección.
+ * Mientras no exista el FAQ de negocios (Fase 3), "Preguntas" va al del Home.
+ *
+ * ⚠️ El botón "Cotizar" NO está acá: es un CTA, no un link de navegación, y el
+ * header lo dibuja aparte (ver Header.jsx).
+ */
 export const navLinks = visibles([
-  { to: '/', label: 'Inicio' },
-  { to: '/categorias', label: 'Categorías' },
-  // "Packs" y no "Armá tu pack": con 8 links, la etiqueta larga parte el nav en
-  // dos líneas a 1024 px (el breakpoint donde deja de mostrarse la hamburguesa).
-  // La página sí se titula "Armá tu pack".
-  { to: '/armar-pack', label: 'Packs' },
-  { to: '/personalizados', label: 'Personalizados' },
-  { to: '/mayorista', label: 'Mayorista' },
-  { to: '/negocio', label: 'Negocio' },
-  // "Imprimibles" y no "Archivos imprimibles": el nav ya venía justo de ancho
-  // (ver el comentario de "Packs" acá arriba) y la etiqueta larga lo parte en dos.
-  { to: '/archivos-imprimibles', label: 'Imprimibles' },
-  { to: '/contacto', label: 'Contacto' },
-  // FAQ es una sección del Home (id="faq"); el hash hace que el header scrollee hasta ahí.
-  { to: '/#faq', label: 'FAQ', hash: true }
+  { to: '/negocio', label: 'Para negocios' },
+  { to: '/negocio#precios', label: 'Precios', hash: true },
+  { to: '/personalizados', label: 'Con tu diseño' },
+  { to: '/categorias', label: 'Tienda' },
+  { to: '/#faq', label: 'Preguntas', hash: true }
 ]);
 
+/** A dónde lleva "Cotizar" (header y CTAs): el bloque de compra de /negocio. */
+export const COTIZAR_HREF = '/negocio#cotizar';
+
+/**
+ * Footer en cuatro grupos (spec 031, RF-N4): Productos · Ayuda · EPICALCOS ·
+ * Legal. Los canales externos de EPICALCOS (mail, WhatsApp, Instagram) los
+ * dibuja Footer.jsx con sus íconos; acá van solo las rutas internas.
+ *
+ * ⚠️ `ayuda` lo lee también lib/personalizadosEstatico.js para los links del
+ * HTML prerenderizado de /personalizados: no renombrar la clave.
+ */
 export const footerLinks = {
-  tienda: visibles([
-    { to: '/categorias', label: 'Todas las categorías' },
+  productos: visibles([
+    { to: '/negocio', label: 'Calcos para negocios' },
+    { to: '/mayorista', label: 'Mayorista: pedidos grandes' },
+    { to: '/personalizados', label: 'Calcos con tu diseño' },
+    { to: '/categorias', label: 'Tienda' },
     { to: '/armar-pack', label: 'Armá tu pack' },
-    { to: '/personalizados', label: 'Personalizados' },
-    { to: '/mayorista', label: 'Pack Mayorista x100' },
-    { to: '/negocio', label: 'Negocio' },
     { to: '/archivos-imprimibles', label: 'Archivos imprimibles' },
     { to: '/tatuajes', label: 'Tatuajes temporales' },
     { to: '/polaroid', label: 'Fotos Polaroid' }
   ]),
   ayuda: [
-    { to: '/contacto', label: 'Contacto' },
+    { to: '/negocio#como-funciona', label: 'Cómo funciona' },
+    { to: '/#faq', label: 'Preguntas frecuentes' },
     { to: '/politicas/envios', label: 'Envíos' },
-    { to: '/politicas/cambios', label: 'Cambios y devoluciones' },
-    { to: '/politicas/privacidad', label: 'Privacidad' },
-    { to: '/terminos-y-condiciones', label: 'Términos y condiciones' }
+    { to: '/politicas/cambios', label: 'Cambios y devoluciones' }
+  ],
+  epicalcos: [{ to: '/contacto', label: 'Contacto' }],
+  legal: [
+    { to: '/terminos-y-condiciones', label: 'Términos y condiciones' },
+    { to: '/politicas/privacidad', label: 'Privacidad' }
   ]
 };

@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `031-calcos-para-negocios` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `NO INICIADA` |
+| **Estado** | `EN CURSO` — Fase 1 implementada el 05/10/2026 |
 
 ---
 
@@ -36,38 +36,38 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 
 ## Fase 0 — Preparación (al arrancar cada fase)
 
-- [ ] **0.1** `git fetch` y `git status`: anotar el WIP ajeno que haya en el árbol y no tocarlo
+- [x] **0.1** `git fetch` y `git status`: anotar el WIP ajeno que haya en el árbol y no tocarlo
   - *Verificación*: la lista de archivos ajenos está escrita en la Bitácora
-- [ ] **0.2** Releer los archivos de la fase y sus tests
-- [ ] **0.3** Suite en verde antes de empezar
+- [x] **0.2** Releer los archivos de la fase y sus tests
+- [x] **0.3** Suite en verde antes de empezar
   ```bash
   npm test
   ```
   - *Verificación*: pasan todos (anotar el número)
-- [ ] **0.4** Pasar a `requirements.md` §12 las respuestas de `BUSINESS-TODOS.md` que haya, con fecha. Las que falten se implementan con la opción recomendada **solo** si no publican un dato inventado; si no, la pieza queda apagada
+- [x] **0.4** Pasar a `requirements.md` §12 las respuestas de `BUSINESS-TODOS.md` que haya, con fecha. Las que falten se implementan con la opción recomendada **solo** si no publican un dato inventado; si no, la pieza queda apagada
 
 ---
 
 ## Fase 1 — Posicionamiento
 
-- [ ] **1.1** `config/negocios.js`: copy de `design.md` §11, cantidades del cotizador, usos, pasos, preguntas (`publicar: false` en las que dependen de un TODO), mensajes de WhatsApp, SEO de `/negocio` y `/mayorista`. Montos interpolados de `config/pricing.js`
+- [x] **1.1** `config/negocios.js`: copy de `design.md` §11, cantidades del cotizador, usos, pasos, preguntas (`publicar: false` en las que dependen de un TODO), mensajes de WhatsApp, SEO de `/negocio` y `/mayorista`. Montos interpolados de `config/pricing.js`
   - *Verificación*: `grep -nE '\$[0-9]|[0-9]+ ?%' frontend/src/config/negocios.js` no encuentra montos ni porcentajes escritos a mano
-- [ ] **1.2** Test de copy prohibido: falla si `config/negocios.js` o `components/negocios/**` contienen "archivo perfecto", "boceto", "muestra" sin "vista previa" en la misma frase, un código de cupón o las frases genéricas de RF-CO1; y si las páginas de menos de 100 (`/personalizados`, tienda) mencionan la vista previa
+- [x] **1.2** Test de copy prohibido: falla si `config/negocios.js` o `components/negocios/**` contienen "archivo perfecto", "boceto", "muestra" sin "vista previa" en la misma frase, un código de cupón o las frases genéricas de RF-CO1; y si las páginas de menos de 100 (`/personalizados`, tienda) mencionan la vista previa
   - *Verificación*: el test falla al agregar a mano "No hace falta que tu archivo esté perfecto" y pasa al sacarlo
-- [ ] **1.3** `data/negociosFotos.js` con `negocio-muestra.webp` (dimensiones reales y `alt`) y el resto de las listas vacías
-- [ ] **1.4** `config/site.js`: `navLinks` (D-6), `footerLinks` en 4 grupos, `anunciosVigentes(now, { negocio })`, `shipping.produccionVolumen = '3 a 5 días hábiles'` y `produccionVolumenDesde = 100` (N-3/N-19). **No** tocar costos ni umbrales
+- [x] **1.3** `data/negociosFotos.js` con `negocio-muestra.webp` (dimensiones reales y `alt`) y el resto de las listas vacías
+- [x] **1.4** `config/site.js`: `navLinks` (D-6), `footerLinks` en 4 grupos, `anunciosVigentes(now, { negocio })`, `shipping.produccionVolumen = '3 a 5 días hábiles'` y `produccionVolumenDesde = 100` (N-3/N-19). **No** tocar costos ni umbrales
   - *Verificación*: `git diff frontend/src/config/site.js` no toca ningún costo ni umbral de envío; `anuncios.test.js` actualizado y en verde
-- [ ] **1.5** `Header.jsx`: botón **Cotizar** (→ `/negocio`; en Fase 2 → `#cotizador`) y la tira con `negocio` en `/negocio` y `/mayorista`
+- [x] **1.5** `Header.jsx`: botón **Cotizar** (→ `/negocio`; en Fase 2 → `#cotizador`) y la tira con `negocio` en `/negocio` y `/mayorista`
   - *Verificación*: a 1024 px el nav entra en una línea; a 375 px "Cotizar" está en el menú
-- [ ] **1.6** `Footer.jsx`: 4 grupos; las secciones de `HIDDEN_SECTIONS` siguen sin aparecer
-- [ ] **1.7** `components/negocios/HeroNegocio.jsx`, `BarraConfianza.jsx`, `ComoFunciona.jsx`, `CtaFinalNegocio.jsx`
+- [x] **1.6** `Footer.jsx`: 4 grupos; las secciones de `HIDDEN_SECTIONS` siguen sin aparecer
+- [x] **1.7** `components/negocios/HeroNegocio.jsx`, `BarraConfianza.jsx`, `ComoFunciona.jsx`, `CtaFinalNegocio.jsx`
   - *Verificación*: 375 × 667: H1, precio "desde" y CTA visibles sin scroll (captura)
-- [ ] **1.8** `routes/Negocio.jsx`: hero → confianza → marcas → **Promo Negocio** (`NegocioForm` tal cual) → cómo funciona → CTA final. `useSeo` con el título nuevo
-- [ ] **1.8b** Plazo de 100+ (RF-P3): `CheckoutForm` muestra `produccionVolumen` con 100+ calcos en el carrito; FAQ general con la línea de 100+; `notify.js → customerTimeline()` cuenta calcos desde los ids + test del mail
+- [x] **1.8** `routes/Negocio.jsx`: hero → confianza → marcas → **Promo Negocio** (`NegocioForm` tal cual) → cómo funciona → CTA final. `useSeo` con el título nuevo
+- [x] **1.8b** Plazo de 100+ (RF-P3): `CheckoutForm` muestra `produccionVolumen` con 100+ calcos en el carrito; FAQ general con la línea de 100+; `notify.js → customerTimeline()` cuenta calcos desde los ids + test del mail
   - *Verificación*: pedido de 120 calcos sueltas → "3 a 5 días hábiles"; pedido de 30 → "2 a 3 días hábiles"; una línea de Negocio (100) → "3 a 5"
-- [ ] **1.9** `analytics.js`: `trackHeroCta({ pagina, cta })`; los CTAs del hero lo llaman
-- [ ] **1.10** Documentar en `docs/analytics.md` el evento nuevo
-- [ ] **1.11** Validar Fase 1 contra `acceptance.md` y reportar · commit + push
+- [x] **1.9** `analytics.js`: `trackHeroCta({ pagina, cta })`; los CTAs del hero lo llaman
+- [x] **1.10** Documentar en `docs/analytics.md` el evento nuevo
+- [x] **1.11** Validar Fase 1 contra `acceptance.md` y reportar · commit + push
 
 ---
 
@@ -176,3 +176,15 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 
 | Fecha | Qué cambió respecto al diseño | Motivo |
 |---|---|---|
+| 05/10/2026 | WIP ajeno al arrancar la Fase 1: `docs/analytics.md`, `Reveal.jsx`, `index.css`, `netlify.toml` y `specs/030/requirements.md` (spec 030, otra sesión) | No se tocaron; `analytics.md` se commiteó solo con la sección propia |
+| 05/10/2026 | Hero: el segundo CTA es "Hablar por WhatsApp" y no "Ver precios" | Hasta la Fase 2 los precios están en el mismo bloque que "Cotizar": dos botones al mismo lugar |
+| 05/10/2026 | "Cotizar" lleva a `/negocio#cotizar` (no `#cotizador`) y "Precios" a `/negocio#precios` | Las dos anclas ya existen sobre el bloque de compra y la Fase 2 las reusa: los links no cambian |
+| 05/10/2026 | Nav "Preguntas" → `/#faq` (el FAQ del Home) | El FAQ de negocio es de la Fase 3 |
+| 05/10/2026 | `config/negocios.js` sin usos, preguntas ni cantidades del cotizador | Se suman cuando se usan (Fases 2 y 3), para no publicar datos muertos |
+| 05/10/2026 | El test 1.2 no revisa "vista previa" en `/personalizados` | El configurador tiene un componente `VistaPrevia` (la calco en pantalla) que no es la muestra: daría falso positivo. Verificado a mano: `/personalizados` no menciona la muestra gratis |
+| 05/10/2026 | El mail de 100+ dice el plazo pero no promete la vista previa | Un pedido de 120 calcos de catálogo no tiene diseño propio que previsualizar: prometerla en todo mail de 100+ sería falso |
+| 05/10/2026 | Paso 1 de "Cómo funciona" sin "cuantas más pedís, mejor el precio" | Recién es verdad con la escala de la spec 032; hoy el precio es plano desde 100. Lo frena un test |
+| 05/10/2026 | Migas de pan ocultas en el celular | Le devuelven al hero los ~50 px que hacen que el CTA termine en 611 px (RF-H7) |
+| 05/10/2026 | `NegocioForm`: prop `conFoto` y su título pasa de `h1` a `h2` | La foto ya está en el hero y la página tiene un solo `h1` |
+| 05/10/2026 | Arreglo fuera de plan: `/mayorista` mostraba "Promo hasta el null." en la página y en la descripción para Google | Mismas líneas que la tarea de SEO; verificado en producción antes de tocarlo |
+| 05/10/2026 | Se agregó un `vite build` a la verificación | Un error de compilación propio en `Checkout.jsx` (variable `items` duplicada) pasó la suite —no hay tests de componentes— y lo atrapó el navegador |

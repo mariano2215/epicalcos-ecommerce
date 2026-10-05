@@ -527,6 +527,22 @@ umbral"*, con el caso de Buenos Aires como test de regresión.
 - **Producción**: 2 a 3 días hábiles (igual para todo destino, desde el pago).
 - **Entrega Rosario**: 2 a 3 días hábiles.
 - **Entrega interior**: 5 a 7 días hábiles (producción + correo).
+- **Pedidos de 100 calcos o más: 3 a 5 días hábiles de producción** (Mariano,
+  5/10/2026, spec 031 RF-P3), de cualquier producto, desde que se aprueba la
+  vista previa y se acredita el pago. Lo dicen el carrito, el checkout, el mail
+  al cliente y el FAQ (`shipping.produccionVolumen` / `produccionVolumenDesde`,
+  espejado en `netlify/functions/lib/plazoProduccion.js`). Con 100+ no se da un
+  total de entrega: los de arriba están armados con el plazo corto.
+- Las calcos del pedido se cuentan desde el id de cada línea
+  (`lib/plazoProduccion.js`): sueltas y personalizadas por unidad, Negocio y el
+  pack x100 de a 100, la escala por la cantidad de su id; fijos y digitales no
+  cuentan.
+
+### Vista previa (MUESTRA GRATIS) — pedidos de 100+
+Desde el 5/10/2026 (spec 031, Mariano): con 100 calcos o más se manda una
+**vista previa digital por WhatsApp antes de producir**, gratis, y se produce
+cuando el cliente la aprueba. Se comunica como "MUESTRA GRATIS" aclarando
+siempre que es digital. Con menos de 100 no hay vista previa y no se menciona.
 
 Producción y entrega se comunican **por separado** a propósito: antes el interior
 mostraba "producción: 5 a 7 días", que era un plazo de taller inflado.

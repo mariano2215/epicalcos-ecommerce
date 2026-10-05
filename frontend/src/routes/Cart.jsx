@@ -7,6 +7,7 @@ import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import FreeShippingProgress from '../components/FreeShippingProgress.jsx';
 import AvisoTransferencia from '../components/AvisoTransferencia.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
+import { esPedidoVolumen } from '../lib/plazoProduccion.js';
 import SocialProof from '../components/SocialProof.jsx';
 import SuggestedStickers from '../components/SuggestedStickers.jsx';
 import { useCuponEnCarrito, CuponEnCarritoLinea } from '../components/popup/CuponEnCarrito.jsx';
@@ -282,6 +283,7 @@ export default function Cart() {
             ) : (
               <ShippingInfo
                 subtotal={physicalSubtotal}
+                pedidoVolumen={esPedidoVolumen(items)}
                 className="mt-4 !bg-transparent !border-white/10"
               />
             )}

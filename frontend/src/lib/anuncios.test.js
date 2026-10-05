@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { anunciosVigentes, shipping, devoluciones } from '../config/site.js';
 import {
+  NEGOCIO,
   TRANSFER_PCT,
   PROMO_2X1_START_MS,
   esCategoriaEn2x1,
@@ -73,6 +74,15 @@ describe('tira de anuncios', () => {
     const transferencia = anunciosVigentes().find((t) => t.includes(`${TRANSFER_PCT}%`));
     if (!transferencia) return; // el mensaje es opcional; si está, tiene que estar completo
     expect(transferencia.toLowerCase()).toContain('transferencia');
+  });
+
+  it('"desde 100 unidades" solo en las páginas de negocio (spec 031, RF-N5), y primero', () => {
+    const tienda = anunciosVigentes();
+    const negocio = anunciosVigentes(Date.now(), { negocio: true });
+    expect(tienda.some((t) => /desde \d+ unidades/.test(t))).toBe(false);
+    expect(negocio[0]).toBe(`🏷️ Calcos con tu logo desde ${NEGOCIO.qty} unidades`);
+    // Lo demás no cambia: envío gratis, garantía y transferencia siguen ahí.
+    expect(negocio.slice(1)).toEqual(tienda);
   });
 
   it('el 2x1 de Argentina se anuncia solo mientras está vivo', () => {

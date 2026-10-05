@@ -288,6 +288,27 @@ los `add_to_cart` y `purchase` que ya existen. `view_item` y `add_to_cart` de
 `/polaroid` reportan el precio de la variante elegida, con el volumen ya
 aplicado en el `add_to_cart`.
 
+#### Negocios (spec 031, desde el 5/10/2026)
+
+`/negocio` pasó a ser la landing de calcos para negocios (Fase 1). Un evento
+nuevo y orígenes nuevos en dos que ya existían:
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `hero_cta_click` | Click en un CTA del hero de negocio | `pagina` (`negocio`; `home_b2b` desde la Fase 3), `cta` (`cotizar` / `whatsapp`) |
+| `wholesale_click` | Botón "Cotizar" del header, del menú del celular y del CTA final | `origen`: `header_cotizar`, `menu_cotizar`, `negocio_cta_final` |
+| `whatsapp_click` | WhatsApp con mensaje de negocio precargado | `whatsapp_context`: `negocio_hero`, `negocio_cta_final` |
+
+El CTA de WhatsApp del hero manda **los dos**: `hero_cta_click` (qué hero
+funciona) y `whatsapp_click` (de dónde vienen las consultas). No se suman: son
+preguntas distintas.
+
+**Cómo leerlo:** visitas a `/negocio` → `hero_cta_click` → `add_to_cart` de
+`negocio:` → `purchase`. Para comparar antes/después, `/negocio` era hasta el
+5/10/2026 el formulario de la Promo Negocio solo: la serie del hero arranca ese
+día. El mismo día la transferencia bajó de 20 % a 10 % (todas las páginas): una
+diferencia en conversión por transferencia no se le puede atribuir al hero.
+
 #### Formulario de contacto (spec 012)
 
 | Evento | Cuándo | Parámetro |

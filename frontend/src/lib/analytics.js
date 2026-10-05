@@ -643,6 +643,18 @@ export function trackWholesaleClick(origen = 'home') {
 }
 
 /**
+ * Click en un CTA de un hero de negocio (spec 031). `pagina` dice qué hero
+ * ('negocio' hoy; 'home_b2b' con la Fase 3) y `cta` cuál de los botones
+ * ('cotizar' / 'whatsapp'). Sirve para leer si el hero empuja a comprar o a
+ * preguntar. El de WhatsApp manda ADEMÁS su `whatsapp_click` de siempre:
+ * son preguntas distintas (qué hero funciona vs. de dónde vienen las consultas).
+ */
+export function trackHeroCta({ pagina, cta }) {
+  pushDataLayer({ event: 'hero_cta_click', pagina, cta });
+  debug('hero_cta_click', pagina, cta);
+}
+
+/**
  * El carrito cruzó un umbral y desbloqueó un beneficio.
  *
  * ⚠️ `promo` es SIEMPRE el nombre del beneficio real ('envio_gratis' /

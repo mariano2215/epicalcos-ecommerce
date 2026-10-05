@@ -57,7 +57,7 @@ function validate(form, digitalOnly = false) {
  * método que viaja al backend pasa a ser 'digital' (ver `isDigitalOnly` en
  * netlify/functions/lib/pricing.js, que además lo re-decide del lado del server).
  */
-export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false, digitalOnly = false }) {
+export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false, digitalOnly = false, pedidoVolumen = false }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
   const shippingMethod = digitalOnly ? 'digital' : form.shippingMethod;
@@ -243,13 +243,23 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
           <p className="text-xs text-white/50">
             📦 Calculamos el envío automáticamente según tu ciudad y provincia — lo ves en el resumen del pedido.
           </p>
-          <p className="text-xs text-white/50">
-            ⚡ Producción: <strong className="text-white/70">{shippingCfg.production}</strong> · 🚚 entrega estimada:{' '}
-            <strong className="text-white/70">
-              {zone === 'interior' ? shippingCfg.deliveryInterior : shippingCfg.deliveryRosario}
-            </strong>
-            {zone === 'interior' && ' (incluye el correo)'}
-          </p>
+          {/* Con 100 calcos o más el plazo de producción es otro (spec 031,
+              RF-P3) y los totales de entrega del config —armados con el plazo
+              corto— dejan de valer: se dice la producción y nada inventado. */}
+          {pedidoVolumen ? (
+            <p className="text-xs text-white/50">
+              ⚡ Producción: <strong className="text-white/70">{shippingCfg.produccionVolumen}</strong> (pedidos
+              de {shippingCfg.produccionVolumenDesde} calcos o más) · 🚚 después lo despachamos y te avisamos.
+            </p>
+          ) : (
+            <p className="text-xs text-white/50">
+              ⚡ Producción: <strong className="text-white/70">{shippingCfg.production}</strong> · 🚚 entrega estimada:{' '}
+              <strong className="text-white/70">
+                {zone === 'interior' ? shippingCfg.deliveryInterior : shippingCfg.deliveryRosario}
+              </strong>
+              {zone === 'interior' && ' (incluye el correo)'}
+            </p>
+          )}
         </>
       )}
 

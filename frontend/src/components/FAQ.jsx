@@ -82,7 +82,11 @@ const faqs = [
   {
     tag: 'general',
     q: '¿Cuánto tarda la producción?',
-    a: 'En Rosario, 2 a 3 días hábiles desde la confirmación del pago. Al resto del país, 5 a 7 días hábiles incluyendo el tiempo del correo.'
+    // La frase de 100+ sale del config (spec 031, RF-P3): es el mismo plazo que
+    // dicen el checkout y el mail de esos pedidos.
+    a:
+      'En Rosario, 2 a 3 días hábiles desde la confirmación del pago. Al resto del país, 5 a 7 días hábiles incluyendo el tiempo del correo. ' +
+      `Los pedidos de ${shipping.produccionVolumenDesde} calcos o más llevan ${shipping.produccionVolumen} de producción desde que se confirma y se abona, más el envío.`
   },
   {
     tag: 'general',
@@ -128,7 +132,7 @@ const faqs = [
   {
     tag: 'mayorista',
     q: '¿Cuánto tarda un pedido de 100+ calcos?',
-    a: 'La producción de 100 calcos toma entre 3 y 5 días hábiles. Para volúmenes mayores coordinamos tiempos con anticipación.'
+    a: `La producción de un pedido de ${shipping.produccionVolumenDesde} calcos o más lleva ${shipping.produccionVolumen} desde que se confirma y se abona. Para volúmenes mayores coordinamos tiempos con anticipación.`
   },
   {
     tag: 'mayorista',

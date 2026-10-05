@@ -1,35 +1,58 @@
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
 import NegocioForm from '../components/NegocioForm.jsx';
-import { useSeo } from '../lib/seo.js';
-import { formatPrice } from '../lib/formato.js';
-import { NEGOCIO } from '../config/pricing.js';
+import HeroNegocio from '../components/negocios/HeroNegocio.jsx';
+import BarraConfianza from '../components/negocios/BarraConfianza.jsx';
+import ComoFunciona from '../components/negocios/ComoFunciona.jsx';
+import CtaFinalNegocio from '../components/negocios/CtaFinalNegocio.jsx';
+import { useSeo, abs } from '../lib/seo.js';
+import { SEO } from '../config/negocios.js';
+import { FOTO_HERO } from '../data/negociosFotos.js';
 
+/**
+ * /negocio — calcos para negocios (spec 031, Fase 1).
+ *
+ *   qué es y cuánto sale → por qué confiar → quiénes ya compraron →
+ *   comprar → cómo sigue → cerrar
+ *
+ * Hasta el 5/10/2026 la página era el formulario de la Promo Negocio con el
+ * ticker de marcas arriba. Las marcas siguen yendo ANTES del formulario (el
+ * que llega de un anuncio sin conocer la marca necesita ver quiénes ya
+ * compraron antes de encargar 100 calcos de su logo), pero ahora las precede un
+ * hero que dice qué es esto y cuánto sale.
+ *
+ * El bloque de compra sigue siendo la Promo Negocio de siempre: el cotizador
+ * con cantidades, tamaños y materiales llega en la Fase 2 y ocupa este mismo
+ * lugar. Por eso las anclas `#cotizar` (botón "Cotizar" del header y CTAs) y
+ * `#precios` (nav) apuntan acá desde ya: cuando cambie el contenido, los links
+ * siguen sirviendo.
+ */
 export default function Negocio() {
-  useSeo({
-    title: 'Negocio',
-    // Los precios salen de NEGOCIO: escritos a mano quedaron viejos con la spec 027.
-    description: `Promo Negocio: ${NEGOCIO.qty} calcos de tu logo en 6 cm por ${formatPrice(NEGOCIO.price)} (antes ${formatPrice(NEGOCIO.listPrice)}). Ideal para bares, kioscos, marcas y emprendimientos. Pagás online con Mercado Pago.`
-  });
+  useSeo({ title: SEO.negocio.title, description: SEO.negocio.description, image: abs(FOTO_HERO.src) });
 
   return (
     <div className="page-gradient min-h-screen">
-      {/* La prueba social va PRIMERO acá, al revés que en el Home, que la
-          muestra al final. A esta página se llega desde un anuncio y sin
-          conocer la marca: el que está evaluando encargar 100 calcos de su
-          logo necesita ver quiénes ya lo hicieron ANTES que el formulario.
-          Es la única diferencia de orden entre las dos páginas que usan el
-          componente. */}
+      {/* Las migas, solo desde sm: en el celular le comían al hero los 50 px
+          que hacen que "Cotizar mis calcos" entre sin scrollear (RF-H7), y ahí
+          el logo del header ya lleva al inicio. */}
+      <div className="container-app pt-6 hidden sm:block">
+        <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Calcos para negocios' }]} />
+      </div>
+
+      <HeroNegocio />
+      <BarraConfianza />
       <MarcasConfiaron />
 
       {/* `pb-10` y no `py-10`: la sección de marcas ya trae su propio espacio
           abajo, y con los dos el formulario quedaba flotando. */}
-      <div className="container-app pb-10">
-        <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Categorías', to: '/categorias' }, { name: 'Negocio' }]} />
-        <div className="mt-6">
-          <NegocioForm />
+      <section id="cotizar" className="container-app pb-10 scroll-mt-24">
+        <div id="precios" className="scroll-mt-24">
+          <NegocioForm conFoto={false} />
         </div>
-      </div>
+      </section>
+
+      <ComoFunciona />
+      <CtaFinalNegocio />
     </div>
   );
 }

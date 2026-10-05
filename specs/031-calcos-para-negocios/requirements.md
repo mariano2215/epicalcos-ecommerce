@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `031-calcos-para-negocios` |
-| **Estado** | `READY FOR REVIEW` — respuestas del 5/10/2026 incorporadas (§12); la Fase 2 depende de la spec 032 (escala de precios). Espera el "Implementá la spec 031 — Fase N" |
+| **Estado** | `IN PROGRESS` — Fase 1 implementada y validada el 05/10/2026 ("Implementá la spec 031 — Fase 1"). La Fase 2 depende de la spec 032 |
 | **Fecha** | 05/10/2026 |
 | **Autor** | Claude Code, a partir del "prompt maestro" de Mariano |
 

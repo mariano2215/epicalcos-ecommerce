@@ -33,10 +33,11 @@ import { anunciosVigentes } from '../config/site.js';
  *   acertar en el celular. La política de cambios ya está enlazada desde la
  *   ficha de producto, el footer y el FAQ.
  */
-export default function AnnouncementBar() {
+export default function AnnouncementBar({ negocio = false }) {
   // Se recalcula en cada render a propósito: el header re-renderiza al
   // scrollear, y así un 2x1 que se apaga deja de anunciarse sin recargar.
-  const anuncios = anunciosVigentes();
+  // `negocio`: en las páginas de negocio suma "desde 100 unidades" (spec 031).
+  const anuncios = anunciosVigentes(Date.now(), { negocio });
   if (!anuncios.length) return null;
 
   const grupo = (copia) => (

@@ -31,6 +31,7 @@
  */
 
 import { digitalDeliveries, needsManualDelivery, tieneArchivosDigitales, linkEntrega } from './digital.js';
+import { esPedidoVolumen, PRODUCCION_VOLUMEN, PRODUCCION_VOLUMEN_DESDE } from './plazoProduccion.js';
 
 const DEFAULT_TO = 'epicalcos@gmail.com';
 const DEFAULT_FROM = 'EPICALCOS <onboarding@resend.dev>';
@@ -393,9 +394,24 @@ ${pendingTransfer ? '\nESPERANDO COMPROBANTE (WhatsApp). Datos que le dimos:\n' 
 /**
  * Plazo estimado según el método/zona de entrega (etiqueta de shippingMethodLabel).
  * Espejo de shipping.productionDays* en frontend/src/config/site.js.
+ *
+ * Pedidos de 100 calcos o más (spec 031, RF-P3): 3 a 5 días hábiles de
+ * producción, de cualquier producto. Hasta el 5/10/2026 este mail le prometía
+ * "2 a 3 días" también a quien compraba 100 calcos de Negocio. Con 100+ no se
+ * da un total de entrega: se dice la producción y que después se despacha,
+ * porque los totales de abajo están armados con el plazo corto.
+ *
+ * Exportada para el test (frontend/src/lib/plazoProduccion.test.js).
  */
-function customerTimeline(o) {
+export function customerTimeline(o) {
   const method = String(o.shippingMethod || '');
+  if (esPedidoVolumen(o.items)) {
+    const porque = `es el plazo de los pedidos de ${PRODUCCION_VOLUMEN_DESDE} calcos o más`;
+    if (/retiro/i.test(method)) {
+      return `Tu pedido va a estar listo en ${PRODUCCION_VOLUMEN} (${porque}). Te escribimos por WhatsApp para coordinar el retiro.`;
+    }
+    return `Tu pedido entra en producción: ${PRODUCCION_VOLUMEN} (${porque}). Después lo despachamos y te avisamos.`;
+  }
   if (/retiro/i.test(method)) {
     return 'Tu pedido va a estar listo en 2 a 3 días hábiles. Te escribimos por WhatsApp para coordinar el retiro.';
   }

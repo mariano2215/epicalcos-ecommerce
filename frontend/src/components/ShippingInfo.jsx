@@ -22,14 +22,17 @@ import { trackShippingCalculated } from '../lib/analytics.js';
  * cambiaría el resultado, y prometer una precisión que no existe es peor que no
  * tener la calculadora.
  *
- * @param {{ subtotal?: number, defaultOpen?: boolean, className?: string }} props
+ * @param {{ subtotal?: number, defaultOpen?: boolean, className?: string, pedidoVolumen?: boolean }} props
  *        `subtotal` (opcional) hace que la calculadora conozca el carrito y
  *        pueda decir "te faltan $X para el envío gratis".
+ *        `pedidoVolumen` (opcional): el carrito tiene 100 calcos o más y lleva
+ *        el plazo de producción de los pedidos grandes (spec 031, RF-P3).
  */
 export default function ShippingInfo({
   subtotal = 0,
   defaultOpen = false,
-  className = ''
+  className = '',
+  pedidoVolumen = false
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [city, setCity] = useState('');
@@ -61,14 +64,31 @@ export default function ShippingInfo({
         <div className="flex gap-3">
           <dt className="text-white/50 shrink-0 w-24">⚡ Producción</dt>
           <dd className="text-white/80">
-            <strong className="text-white">{shipping.production}</strong> desde que se confirma el pago.
+            {pedidoVolumen ? (
+              <>
+                <strong className="text-white">{shipping.produccionVolumen}</strong> desde que se confirma el
+                pago (pedidos de {shipping.produccionVolumenDesde} calcos o más).
+              </>
+            ) : (
+              <>
+                <strong className="text-white">{shipping.production}</strong> desde que se confirma el pago.
+              </>
+            )}
           </dd>
         </div>
         <div className="flex gap-3">
           <dt className="text-white/50 shrink-0 w-24">🚚 Entrega</dt>
           <dd className="text-white/80">
-            Rosario <strong className="text-white">{shipping.deliveryRosario}</strong> · resto del país{' '}
-            <strong className="text-white">{shipping.deliveryInterior}</strong> (incluye el correo).
+            {/* Los totales de entrega están armados con el plazo corto: con
+                100+ no valen, así que se dice cómo sale y no un total inventado. */}
+            {pedidoVolumen ? (
+              'Al terminar la producción lo despachamos: motomensajería en Rosario, Correo Argentino al resto del país.'
+            ) : (
+              <>
+                Rosario <strong className="text-white">{shipping.deliveryRosario}</strong> · resto del país{' '}
+                <strong className="text-white">{shipping.deliveryInterior}</strong> (incluye el correo).
+              </>
+            )}
           </dd>
         </div>
         <div className="flex gap-3">

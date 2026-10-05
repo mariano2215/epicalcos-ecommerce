@@ -30,6 +30,7 @@ import { stashPurchase } from '../lib/purchaseTracking.js';
 import { setAdvancedMatching } from '../lib/advancedMatching.js';
 import { useSeo } from '../lib/seo.js';
 import { buildDesignSummary, especificacionDisenos } from '../lib/resumenPedido.js';
+import { esPedidoVolumen } from '../lib/plazoProduccion.js';
 
 /**
  * Guarda la especificación de los ítems con diseño/fotos (+ nombre del comprador) en
@@ -386,6 +387,9 @@ export default function Checkout() {
               errorMsg={errorMsg}
               percentBlocked={couponAnulaTodo(appliedCoupon)}
               digitalOnly={digitalOnly}
+              // `items` son las líneas ya precificadas: traen id y quantity, que es
+              // todo lo que necesita el conteo de calcos (spec 031, RF-P3).
+              pedidoVolumen={esPedidoVolumen(items)}
             />
           </div>
 
