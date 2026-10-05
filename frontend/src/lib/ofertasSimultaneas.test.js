@@ -30,7 +30,7 @@ const T = TRANSFER_DISCOUNT;
 // vuelven a correr solos al prenderlo — ver `con3x2` en promoPricing.test.js.
 const con3x2 = it.runIf(PROMO_3X2.activa);
 describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)', () => {
-  con3x2('CF-25 · 3 calcos 6cm + transferencia + EPICA10: 3x2 y después 25 % (15 + 10)', () => {
+  con3x2('CF-25 · 3 calcos 6cm + transferencia + EPICA10: 3x2 y después transferencia + cupón (10 + 10 desde el 5/10/2026)', () => {
     // Hasta la spec 027 la transferencia pedía 10 calcos y acá corría solo el
     // cupón. Ahora corren los dos desde 1, topeados en PROMO_3X2.percentCap.
     const keep = 2 / 3;
@@ -43,9 +43,12 @@ describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)',
     expect(res.itemsTotal).toBe(unit * 3);
   });
 
-  con3x2('CF-25b · con 12 calcos, igual: 3x2 y 25 %', () => {
+  // Hasta el 5/10/2026 este caso usaba el tope directo (`1 − percentCap`):
+  // con 20 % + EPICA10 la suma ERA el tope. Con 10 % de transferencia la suma
+  // queda abajo, así que el % que corre es el menor de los dos — igual que CF-25.
+  con3x2('CF-25b · con 12 calcos, igual: 3x2 y transferencia + cupón, topeado', () => {
     const keep = (12 - 4) / 12;
-    const unit = round(P6 * keep * (1 - PROMO_3X2.percentCap));
+    const unit = round(P6 * keep * (1 - Math.min(T + 0.1, PROMO_3X2.percentCap)));
     const res = validateAndPriceOrder({
       items: [{ id: 'sticker:goku:6cm', title: 'Goku', quantity: 12, unit_price: unit }],
       shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10', couponIssuedAt: Date.now()
@@ -53,9 +56,11 @@ describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)',
     expect(res.ok).toBe(true);
   });
 
-  it('CF-26 · el tope es 30 % y entra justo transferencia + EPICA10 (spec 029)', () => {
-    expect(T).toBe(0.2);
-    expect(Math.min(T + findCoupon('EPICA10').discount, PROMO_3X2.percentCap)).toBeCloseTo(0.3, 10);
+  // Con la spec 029 el tope de 30 % entraba JUSTO con 20 % + EPICA10. Desde el
+  // 5/10/2026 la transferencia es 10 %: suman 20 % y el tope no muerde.
+  it('CF-26 · el tope es 30 % y transferencia + EPICA10 entran enteros (20 %)', () => {
+    expect(T).toBe(0.1);
+    expect(Math.min(T + findCoupon('EPICA10').discount, PROMO_3X2.percentCap)).toBeCloseTo(0.2, 10);
     expect(PROMO_3X2.percentCap).toBeLessThan(MAX_STICKER_DISCOUNT);
   });
 
@@ -66,7 +71,7 @@ describe('acceptance spec 017 — criterios numéricos (reglas de la spec 027)',
       items: [{ id: 'sticker:disney-1:6cm', title: 'D', quantity: 2, unit_price: round(P6 * 0.5) }],
       shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPI50'
     });
-    expect(res.ok).toBe(true); // 50% plano, SIN el 2x1 ni el 20 % encima
+    expect(res.ok).toBe(true); // 50% plano, SIN el 2x1 ni la transferencia encima
   });
 
   it('CF-16/17 · mayorista viva a precio fijo: el cupón no la toca, la transferencia sí', () => {

@@ -244,9 +244,10 @@ describe('promo3x2 — mecánica y paridad frontend ↔ backend', () => {
     expect(Number.isFinite(BE_END)).toBe(false);
     // El tope subió a 20 % para que EPICA10 pueda acumular sobre la promo, a
     // 25 % con la spec 027 y a 30 % con la 029 (20 % de transferencia + 10 % del cupón).
+    // Desde el 5/10/2026 la transferencia es 10 % y el tope quedó en 30 %: sobra.
     expect(PROMO_PERCENT_CAP).toBe(0.3);
     expect(BE_TRANSFER_DISCOUNT).toBe(TRANSFER_DISCOUNT);
-    expect(TRANSFER_DISCOUNT).toBe(0.2);
+    expect(TRANSFER_DISCOUNT).toBe(0.1);
     // El tope tiene que dejar entrar la transferencia MÁS el cupón: si uno sube
     // y el otro no, EPICA10 deja de sumar mientras corre una N x M.
     expect(PROMO_PERCENT_CAP).toBeGreaterThanOrEqual(TRANSFER_DISCOUNT + COUPONS.EPICA10.discount - 1e-9);
@@ -371,39 +372,40 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
   // "fuera de promo" siga corriendo con el 3x2 apagado.
   const bulkCart = [{ id: 'sticker:goku:6cm', title: 'Goku x10', type: 'sticker', basePrice: P6, quantity: 10 }];
 
-  it('fuera de promo: 20 % + EPICA10 = 30 % acumulable', () => {
-    // Transferencia 20% + EPICA10 10% = 30% (tope 90%).
+  it('fuera de promo: 10 % + EPICA10 = 20 % acumulable', () => {
+    // Transferencia 10% + EPICA10 10% = 20% (tope 90%).
     vi.useFakeTimers();
     vi.setSystemTime(AFTER_PROMO);
     const items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.7));
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.8));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
-  con3x2('en promo: 3x2 y encima el % topeado en 30 %', () => {
+  con3x2('en promo: 3x2 y encima el %, bajo el tope de 30 %', () => {
     // 10 unidades → 3 gratis (keep = 0.7). El tope es 30 % desde la spec 029,
-    // así que transferencia (20 %) + EPICA10 (10 %) entran los dos encima del 3x2.
+    // así que transferencia (10 % desde el 5/10/2026) + EPICA10 (10 %) entran
+    // los dos enteros encima del 3x2.
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
     const items = clientItems(bulkCart, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.7 * 0.7));
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.7 * 0.8));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
   con3x2('promo activa + transferencia con 12 calcos: el 3x2 SÍ se combina con el % por transferencia', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO);
-    // 12 calcos de catálogo de 6cm por transferencia: corre el 3x2 y encima el 20%.
+    // 12 calcos de catálogo de 6cm por transferencia: corre el 3x2 y encima el % (T).
     const doce = [{ id: 'sticker:goku:6cm', title: 'Goku 6cm', type: 'sticker', basePrice: P6, quantity: 12 }];
     const keep = (12 - 4) / 12; // 12 unidades → 4 gratis, todas del mismo precio
     const items = clientItems(doce, { paymentMethod: 'transferencia' });
     expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * keep * (1 - T)));
     expect(validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia' }).ok).toBe(true);
 
-    // Con un cupón encima el precio baja más (spec 017): 20 % de transferencia
-    // + 10 % del cupón = 30 %, que es justo el tope (spec 029).
+    // Con un cupón encima el precio baja más (spec 017): 10 % de transferencia
+    // + 10 % del cupón = 20 %, bajo el tope de 30 % (spec 029).
     const conCupon = clientItems(doce, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(conCupon, 'sticker:goku:6cm')).toBe(round(P6 * keep * 0.7));
+    expect(price(conCupon, 'sticker:goku:6cm')).toBe(round(P6 * keep * 0.8));
     expect(validateAndPriceOrder({ items: conCupon, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok).toBe(true);
   });
 
@@ -570,7 +572,7 @@ describe('checkout end-to-end: lo que manda el cliente == lo que valida el serve
       validateAndPriceOrder({ items: linea(conTransferencia), shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10' }).ok
     ).toBe(true);
 
-    // Al precio de lista, pagando por transferencia, ya no pasa (le toca el 20 %)…
+    // Al precio de lista, pagando por transferencia, ya no pasa (le toca el %)…
     const sinDescuento = validateAndPriceOrder({ items: linea(MAYORISTA100_PRICE), shipping: retiro, paymentMethod: 'transferencia' });
     expect(sinDescuento.error).toBe('price_mismatch');
     // …y el cupón no se le suma: con transferencia + cupón tampoco. Sale de las
@@ -673,7 +675,7 @@ describe('archivos imprimibles (producto digital)', () => {
     });
     expect(conCupon.error).toBe('price_mismatch');
 
-    // Por transferencia: el 20 %, y nada más (el cupón no se suma).
+    // Por transferencia: el %, y nada más (el cupón no se suma).
     const conTransferencia = validateAndPriceOrder({
       items: [linea(round(pack.price * (1 - T)))], shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10'
     });
@@ -829,7 +831,7 @@ describe('EPI50 — cupón exclusivo de 50 % off por menor (spec 009)', () => {
     // El test que protege de que los flags de EPI50 se filtren al otro cupón.
     const carrito = [catalogo('6cm', 12), personalizado('6cm', 2)];
     const items = cotizar(carrito, { coupon: 'EPICA10', paymentMethod: 'transferencia' });
-    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.7)); // 20 % + 10 % = 30 %
+    expect(price(items, 'sticker:goku:6cm')).toBe(round(P6 * 0.8)); // 10 % + 10 % = 20 %
     expect(price(items, 'custom:6cm:silueta:1')).toBe(round(P6 * (1 - T))); // el cupón no, la transferencia sí
     expect(couponAnulaTodo('EPICA10')).toBe(false);
     expect(couponIncluyeCustom('EPICA10')).toBe(false);
@@ -1008,22 +1010,22 @@ describe('promo ARGENTINA 50% (lun 17 · mar 18 · mié 19 de agosto de 2026)', 
     expect(res.ok).toBe(true);
   });
 
-  it('ACUMULA: 50% + 20% por transferencia = 70% (y el resto solo 20%)', () => {
+  it('ACUMULA: 50% + 10% por transferencia = 60% (y el resto solo 10%)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
     const items = clientItems(carritoAr, { paymentMethod: 'transferencia' });
-    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 * 0.3));
-    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(P6 * 0.8));
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 * 0.4));
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(P6 * 0.9));
     const res = validateAndPriceOrder({ items, shipping: retiro, paymentMethod: 'transferencia' });
     expect(res.ok).toBe(true);
   });
 
-  it('ACUMULA: 50% + transferencia + EPICA10 = 80%', () => {
+  it('ACUMULA: 50% + transferencia + EPICA10 = 70%', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
     const items = clientItems(carritoAr, { paymentMethod: 'transferencia', coupon: 'EPICA10' });
-    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 * 0.2));
-    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(P6 * 0.7));
+    expect(price(items, 'sticker:argentina-72:6cm')).toBe(round(P6 * 0.3));
+    expect(price(items, 'sticker:anime-3:6cm')).toBe(round(P6 * 0.8));
     const res = validateAndPriceOrder({
       items, shipping: retiro, paymentMethod: 'transferencia', couponCode: 'EPICA10'
     });
@@ -1199,17 +1201,17 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
     expect(conMP - conTransferencia).toBeLessThan(formulaVieja);
     // La que usa ahora (transferSavings = cobro MP − cobro transferencia): con
     // 3x2 el % corre sobre lo que queda después de la agrupación, y redondea
-    // POR UNIDAD — no es "el 20 % del total" (difieren en el redondeo).
+    // POR UNIDAD — no es "el % del total" (difieren en el redondeo).
     const keep = 0.7; // 10 unidades → 3 gratis
     const porUnidad = round(P6 * keep) - round(P6 * keep * (1 - T));
     expect(conMP - conTransferencia).toBe(10 * porUnidad);
   });
 
-  it('T-6 · cupón + transferencia + promo acumulan 80% y quedan bajo el tope', () => {
+  it('T-6 · cupón + transferencia + promo acumulan 70% y quedan bajo el tope', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURANTE);
     const rate = ARGENTINA_DISCOUNT + T + COUPONS.EPICA10.discount;
-    expect(rate).toBeCloseTo(0.8, 10);
+    expect(rate).toBeCloseTo(0.7, 10);
     expect(rate).toBeLessThan(MAX_STICKER_DISCOUNT);
 
     const res = validateAndPriceOrder({
@@ -1219,7 +1221,7 @@ describe('el carrito muestra lo que el cliente paga (spec 001)', () => {
       couponCode: 'EPICA10'
     });
     expect(res.ok).toBe(true);
-    expect(res.items[0].unit_price).toBe(round(P6 * 0.2));
+    expect(res.items[0].unit_price).toBe(round(P6 * 0.3));
   });
 
   it('T-7 · packs, custom, negocio, fixed y digital NO reciben el 50%', () => {
@@ -1635,7 +1637,7 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
     vi.useFakeTimers();
     vi.setSystemTime(DURING_PROMO); // 3x2 y 2x1 vivas
     const lista = precioPolaroidLista('polaroid-x10-7x10-iman');
-    // EPI50 es exclusivo: anula todo, también el 20 % — y a la Polaroid no la alcanza.
+    // EPI50 es exclusivo: anula todo, también la transferencia — y a la Polaroid no la alcanza.
     const res = validateAndPriceOrder({
       items: [{ id: 'fixed:polaroid-x10-7x10-iman', title: 'Polaroid', quantity: 1, unit_price: lista }],
       shipping: retiro,
@@ -1643,9 +1645,9 @@ describe('Polaroid · imantadas y descuento por volumen (spec 019)', () => {
       couponCode: 'EPI50'
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(lista); // ni el 50 %, ni el 20 %, ni el N x M
+    expect(res.itemsTotal).toBe(lista); // ni el 50 %, ni la transferencia, ni el N x M
 
-    // Sin cupón, por transferencia: el 20 %, encima del volumen si corre.
+    // Sin cupón, por transferencia: el %, encima del volumen si corre.
     const dos = precioPolaroidPack('7x10', true, 2);
     const conTransferencia = validateAndPriceOrder({
       items: [{ id: 'fixed:polaroid-x10-7x10-iman', title: 'Polaroid', quantity: 2, unit_price: round(dos * (1 - T)) }],

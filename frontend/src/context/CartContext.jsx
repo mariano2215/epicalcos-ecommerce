@@ -474,10 +474,10 @@ export function CartProvider({ children }) {
    * Recalcula los items con el precio real según el medio de pago y el cupón
    * aplicado en el checkout.
    *
-   * TRANSFERENCIA: 20 % a TODO producto, desde 1 unidad (spec 029, 1/10/2026;
-   * 15 % desde la 027) — packs, negocio, fijos y digitales incluidos, que no
-   * tienen ningún otro %. Hasta el 26/9 era 10 % y solo en calcos de catálogo
-   * desde 10.
+   * TRANSFERENCIA: `TRANSFER_DISCOUNT` (10 % desde el 5/10/2026; 20 % con la
+   * spec 029, 15 % con la 027) a TODO producto, desde 1 unidad — packs,
+   * negocio, fijos y digitales incluidos, que no tienen ningún otro %. Hasta el
+   * 26/9 era 10 % y solo en calcos de catálogo desde 10.
    *
    * FUERA de la promo: a los calcos sueltos se les SUMA la transferencia MÁS el
    * cupón (acumulables, tope 90 %); a un personalizado suelto, solo la
@@ -492,8 +492,8 @@ export function CartProvider({ children }) {
    * (decisión del 20/8/2026). Cambió porque el popup ahora entrega EPICA10 con
    * un contador de 10 minutos, y un contador sobre un cupón que descuenta $0 es
    * una promesa rota. Por eso `percentCap` pasó de 0.10 a 0.20, a 0.25 con la
-   * spec 027 y a 0.30 con la 029: tiene que entrar el 20 % de transferencia MÁS
-   * el 10 % del cupón.
+   * spec 027 y a 0.30 con la 029: tenía que entrar el 20 % de transferencia MÁS
+   * el 10 % del cupón (desde el 5/10/2026 son 10 % + 10 % y el tope sobra).
    * Espejado en netlify/functions/lib/pricing.js.
    *
    * Con un CUPÓN DE BUNDLE (N x M): manda el bundle del cupón — cada N,

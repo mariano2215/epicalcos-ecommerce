@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { anunciosVigentes, shipping, devoluciones } from '../config/site.js';
 import {
-  BULK_THRESHOLD,
+  TRANSFER_PCT,
   PROMO_2X1_START_MS,
   esCategoriaEn2x1,
   isArgentinaPromoActive
@@ -63,11 +63,16 @@ describe('tira de anuncios', () => {
     expect(envio.toLowerCase()).toContain('rosario');
   });
 
-  it('el 10% nunca se anuncia sin sus dos condiciones', () => {
-    const transferencia = anunciosVigentes().find((t) => t.includes('10%'));
+  // Hasta el 26/9/2026 el 10 % era "desde 10 calcos" y este test exigía las dos
+  // condiciones (transferencia y el mínimo). Desde la spec 027 no hay mínimo, así
+  // que la condición que no puede faltar es una sola: que es pagando por
+  // transferencia. El % sale de TRANSFER_PCT (10 % desde el 5/10/2026): con el
+  // número escrito acá, el test quedaba buscando un % que la tira ya no decía y
+  // pasaba sin verificar nada.
+  it('el % por transferencia nunca se anuncia sin su condición', () => {
+    const transferencia = anunciosVigentes().find((t) => t.includes(`${TRANSFER_PCT}%`));
     if (!transferencia) return; // el mensaje es opcional; si está, tiene que estar completo
     expect(transferencia.toLowerCase()).toContain('transferencia');
-    expect(transferencia).toContain(String(BULK_THRESHOLD));
   });
 
   it('el 2x1 de Argentina se anuncia solo mientras está vivo', () => {

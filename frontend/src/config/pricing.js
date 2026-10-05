@@ -13,23 +13,26 @@ export const SIZES = [
 export const DEFAULT_SIZE = '6cm';
 
 /**
- * Descuento por transferencia bancaria: 20 % a TODO producto del pedido
+ * Descuento por transferencia bancaria: 10 % a TODO producto del pedido
  * —calcos, personalizados, packs, Negocio, holográfico, Polaroid, tatuajes,
- * imprimibles—, desde 1 unidad (spec 029, 1/10/2026). No toca el envío. Pagando
- * con Mercado Pago el precio es siempre el de vidriera.
+ * imprimibles—, desde 1 unidad. No toca el envío. Pagando con Mercado Pago el
+ * precio es siempre el de vidriera.
  *
  * Historia: hasta el 26/9/2026 era un 10 % "por volumen" (solo calcos de
  * catálogo y desde 10, BULK_THRESHOLD); la spec 027 lo llevó a 15 % a todo
- * producto y la 029 a 20 %. Todo texto del sitio sale de acá (`TRANSFER_PCT`,
- * `TRANSFER_OFF`): no se escribe el % a mano en ningún lado, para que no vuelva
- * a pasar lo del 10 % desparramado en 16 archivos — gracias a eso, el paso a
- * 20 % fue cambiar este número.
+ * producto, la 029 a 20 % (1/10/2026) y el 5/10/2026 Mariano lo bajó a 10 %
+ * ("pagando con transferencia tenés un 10 % de descuento en todos los
+ * pedidos"), el mismo día que aprobó la escala por volumen de la spec 032.
+ * Sigue alcanzando a todo producto y desde 1 unidad: lo único que cambió es el
+ * número. Todo texto del sitio sale de acá (`TRANSFER_PCT`, `TRANSFER_OFF`): no
+ * se escribe el % a mano en ningún lado, para que no vuelva a pasar lo del 10 %
+ * desparramado en 16 archivos — gracias a eso, cada cambio fue este número.
  *
  * ⚠️ ESPEJO OBLIGATORIO: TRANSFER_DISCOUNT en netlify/functions/lib/pricing.js.
  */
-export const TRANSFER_DISCOUNT = 0.2;
+export const TRANSFER_DISCOUNT = 0.1;
 export const TRANSFER_PAYMENT_METHOD = 'transferencia';
-/** El % para mostrar: `20`. */
+/** El % para mostrar: `10`. */
 export const TRANSFER_PCT = Math.round(TRANSFER_DISCOUNT * 100);
 /** El beneficio en una frase corta, con la condición adentro (nunca "20% off" a secas). */
 export const TRANSFER_OFF = `${TRANSFER_PCT}% OFF pagando por transferencia`;
@@ -37,7 +40,7 @@ export const TRANSFER_OFF = `${TRANSFER_PCT}% OFF pagando por transferencia`;
 /**
  * Cupones de descuento sobre calcos sueltos (type === 'sticker'). Un cupón de %
  * es ACUMULABLE con el descuento por transferencia: los descuentos se SUMAN (ej.
- * transferencia 20 % + EPICA10 10 % = 30 % off), con un tope de seguridad
+ * transferencia 10 % + EPICA10 10 % = 20 % off), con un tope de seguridad
  * (MAX_STICKER_DISCOUNT).
  *
  * Un cupón con `bundle` NO es de %: aplica un "N x M" (cada `buy` unidades
@@ -225,9 +228,11 @@ export const PROMO_3X2 = {
   pay: 2,
   /**
    * Tope del descuento en % que corre ENCIMA de la agrupación N x M.
-   * 0.30 = el 20 % por transferencia + el 10 % de EPICA10, que es el máximo
-   * que se puede acumular hoy (spec 029, 1/10/2026). Era 0.10 hasta el 7/9/2026,
-   * 0.20 hasta el 26/9/2026 y 0.25 hasta el 1/10/2026. Si sube el % por
+   * 0.30 = lo que daban el 20 % por transferencia + el 10 % de EPICA10 con la
+   * spec 029 (1/10/2026). Era 0.10 hasta el 7/9/2026, 0.20 hasta el 26/9/2026 y
+   * 0.25 hasta el 1/10/2026. Desde el 5/10/2026 la transferencia es 10 %, así
+   * que lo acumulable es 20 % y el tope no muerde: se dejó en 0.30 a propósito,
+   * porque bajarlo sería cambiar una promo que nadie pidió cambiar. Si sube el % por
    * transferencia y este tope no, el cupón deja de sumar mientras corre una
    * N x M — sin que ningún precio de lista haya cambiado.
    */

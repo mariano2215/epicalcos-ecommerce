@@ -84,20 +84,23 @@ describe('AC-1 · la tabla de precios de la spec 029 (requirements §9.1)', () =
   });
 });
 
-describe('AC-2…4 · 20 % por transferencia, desde 1, sobre todo producto, sin tocar el envío', () => {
-  it('AC-2 · 1 calco de 6 cm: $2.100 → $1.680', () => {
-    expect(TRANSFER_DISCOUNT).toBe(0.2);
+// Desde el 5/10/2026 la transferencia es 10 % (era 20 % con la spec 029). Las
+// reglas de alcance no cambiaron —todo producto, desde 1, sin tocar el envío—:
+// estos tests siguen verificando eso, con el número nuevo.
+describe('AC-2…4 · 10 % por transferencia, desde 1, sobre todo producto, sin tocar el envío', () => {
+  it('AC-2 · 1 calco de 6 cm: $2.100 → $1.890', () => {
+    expect(TRANSFER_DISCOUNT).toBe(0.1);
     const res = validateAndPriceOrder({
-      items: [{ id: 'sticker:marvel-1:6cm', title: 'M', quantity: 1, unit_price: 1680 }],
+      items: [{ id: 'sticker:marvel-1:6cm', title: 'M', quantity: 1, unit_price: 1890 }],
       shipping: retiro,
       paymentMethod: 'transferencia'
     });
     expect(res.ok).toBe(true);
-    expect(res.itemsTotal).toBe(1680);
-    expect(conT(priceForSize('6cm'))).toBe(1680);
+    expect(res.itemsTotal).toBe(1890);
+    expect(conT(priceForSize('6cm'))).toBe(1890);
   });
 
-  it('AC-3 · packs, Negocio, holográfico, Polaroid, tatuajes, imprimibles y personalizados: −20 %', () => {
+  it('AC-3 · packs, Negocio, holográfico, Polaroid, tatuajes, imprimibles y personalizados: −10 %', () => {
     const p6 = priceForSize('6cm');
     const iman7x10 = POLAROID_SIZES.find((s) => s.id === '7x10').priceIman;
     const lineas = [
@@ -149,10 +152,10 @@ describe('AC-2…4 · 20 % por transferencia, desde 1, sobre todo producto, sin 
 });
 
 describe('AC-5…7 · cómo se combina', () => {
-  it('AC-5 · EPICA10 + transferencia = 30 %', () => {
+  it('AC-5 · EPICA10 + transferencia = 20 %', () => {
     const p6 = priceForSize('6cm');
     const res = validateAndPriceOrder({
-      items: [{ id: 'sticker:marvel-1:6cm', title: 'M', quantity: 1, unit_price: round(p6 * 0.7) }],
+      items: [{ id: 'sticker:marvel-1:6cm', title: 'M', quantity: 1, unit_price: round(p6 * 0.8) }],
       shipping: retiro,
       paymentMethod: 'transferencia',
       couponCode: 'EPICA10',
@@ -161,11 +164,13 @@ describe('AC-5…7 · cómo se combina', () => {
     expect(res.ok, `${res.error} ${res.detail || ''}`).toBe(true);
   });
 
-  con3x2('AC-5b · con el 3x2, EPICA10 + transferencia = 30 % encima (el tope)', () => {
+  // Con 10 % de transferencia, transferencia + EPICA10 suman 20 %: el tope de
+  // 30 % ya no muerde, pero se sigue verificando que los dos entren enteros.
+  con3x2('AC-5b · con el 3x2, EPICA10 + transferencia = 20 % encima (bajo el tope de 30 %)', () => {
     vi.setSystemTime(new Date('2026-09-10T12:00:00-03:00'));
     expect(PROMO_3X2.percentCap).toBe(0.3);
     const p6 = priceForSize('6cm');
-    const unit = round(p6 * (2 / 3) * 0.7);
+    const unit = round(p6 * (2 / 3) * 0.8);
     const res = validateAndPriceOrder({
       items: [{ id: 'sticker:marvel-1:6cm', title: 'M', quantity: 3, unit_price: unit }],
       shipping: retiro,
@@ -176,7 +181,7 @@ describe('AC-5…7 · cómo se combina', () => {
     expect(res.ok).toBe(true);
   });
 
-  it('AC-6 · EPI50 + transferencia: ningún 20 %, en ninguna línea', () => {
+  it('AC-6 · EPI50 + transferencia: ningún 10 %, en ninguna línea', () => {
     const res = validateAndPriceOrder({
       items: [
         { id: 'sticker:marvel-1:6cm', title: 'M', quantity: 1, unit_price: round(priceForSize('6cm') * 0.5) },
@@ -190,11 +195,12 @@ describe('AC-5…7 · cómo se combina', () => {
   });
 
   // Argentina venció el 19/8/2026; el caso queda por si se reactiva (sumaría
-  // 50 % + 20 % = 70 %, que es justo por qué no se reactivó en septiembre).
-  it('Argentina + transferencia = 70 %', () => {
+  // 50 % + 10 % = 60 %; con el 20 % de entonces daba 70 %, que es justo por qué
+  // no se reactivó en septiembre).
+  it('Argentina + transferencia = 60 %', () => {
     vi.setSystemTime(new Date('2026-08-18T12:00:00-03:00')); // promo Argentina viva
     const res = validateAndPriceOrder({
-      items: [{ id: 'sticker:argentina-72:6cm', title: 'A', quantity: 1, unit_price: round(priceForSize('6cm') * 0.3) }],
+      items: [{ id: 'sticker:argentina-72:6cm', title: 'A', quantity: 1, unit_price: round(priceForSize('6cm') * 0.4) }],
       shipping: retiro,
       paymentMethod: 'transferencia'
     });

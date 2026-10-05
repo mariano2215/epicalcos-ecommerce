@@ -11,12 +11,13 @@
 
 // --- Espejo de frontend/src/config/pricing.js ---
 export const SIZE_PRICES = { '4cm': 1600, '6cm': 2100, '9cm': 2650 };
-// Descuento por transferencia (spec 029, 1/10/2026): 20 % a TODO producto del
-// pedido —calcos, personalizados, packs, Negocio, holográfico, Polaroid,
-// tatuajes, imprimibles—, desde 1 unidad. No toca el envío. Fue 15 % del 26/9
-// al 1/10 (spec 027) y, antes, 10 % solo en calcos de catálogo y desde 10.
+// Descuento por transferencia: 10 % a TODO producto del pedido —calcos,
+// personalizados, packs, Negocio, holográfico, Polaroid, tatuajes,
+// imprimibles—, desde 1 unidad (Mariano, 5/10/2026). No toca el envío. Fue 20 %
+// del 1/10 al 5/10 (spec 029), 15 % del 26/9 al 1/10 (spec 027) y, antes, 10 %
+// solo en calcos de catálogo y desde 10.
 // ⚠️ Espejo de TRANSFER_DISCOUNT en frontend/src/config/pricing.js.
-export const TRANSFER_DISCOUNT = 0.2;
+export const TRANSFER_DISCOUNT = 0.1;
 const TRANSFER_PAYMENT_METHOD = 'transferencia';
 
 // Cupones de descuento (solo calcos sueltos). El cupón de % es ACUMULABLE con

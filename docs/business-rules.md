@@ -9,6 +9,11 @@ Reglas comerciales **tal como están implementadas hoy**, extraídas del código
 
 Moneda: **ARS**. Todos los importes son enteros (`round = Math.round`).
 
+> **5/10/2026**: la transferencia bajó a **10 %** (decisión de Mariano: *"pagando
+> con transferencia tenés un 10 % de descuento en todos los pedidos"*). Mismo
+> alcance que antes —todo producto, desde 1 unidad, sin tocar el envío—; cambió
+> solo el número (`TRANSFER_DISCOUNT`, espejado). Ver §2.
+>
 > **Spec 029 (1/10/2026)**: todos los precios de producto subieron ~10 %
 > (redondeados, tabla en `specs/029-precios-mas-10-y-transferencia-20/requirements.md`
 > §9.1) y el descuento por transferencia pasó a **20 % en cualquier compra,
@@ -52,7 +57,7 @@ carrito completo.
   **en total**, repartidas entre ellos — se cobra un solo pack. No existe la
   calco holográfica suelta. Viaja como `negocio:vinilo-holografico:{tamano}:{ts}`
   (a `NEGOCIO.price`) + su recargo `fixed:material-holografico:{ts}`; ninguna
-  de las dos entra en el 3x2 ni en el cupón; sí en el 20 % por transferencia. El
+  de las dos entra en el 3x2 ni en el cupón; sí en el % por transferencia (10 %). El
   servidor rechaza una `custom:` holográfica y un pack en 9 cm. (Del 22 al
   26/9/2026 el recargo era de $15.000 **por diseño** con cualquier cantidad:
   esas líneas se sacan solas de los carritos guardados.)
@@ -63,7 +68,7 @@ carrito completo.
 - Cortes (no afectan el precio): silueta, cuadrado, círculo.
 - El único beneficio por cantidad es el **3x2** vigente (el configurador lo
   muestra calculado igual que el servidor). Pagando por transferencia tienen
-  además el 20 % (desde la spec 027; antes el % por transferencia no los alcanzaba).
+  además el % por transferencia (10 %; desde la spec 027 los alcanza).
 - Con cantidades altas se recomienda la **Promo Negocio** cuando lo que suman
   las copias de un diseño alcanza su precio (con el 3x2 vivo: 38 en 6 cm, 29 en
   9 cm, 50 en 4 cm; sin el 3x2: 26, 20 y 34). La promo se puede tomar aunque el cliente quiera menos de 100
@@ -109,7 +114,7 @@ carrito completo.
 - Se cuenta **por línea**, no sumando todas las Polaroid del carrito: dos líneas
   de 10 fotos no llegan al descuento.
 - Es el **único** producto de precio fijo cuyo precio depende de la cantidad.
-  Cupones y promos N×M no lo tocan; el 20 % por transferencia sí, sobre el
+  Cupones y promos N×M no lo tocan; el % por transferencia (10 %) sí, sobre el
   precio ya descontado por volumen (spec 027).
 
 | Tamaño | 10 comunes | 10 imantadas | 20 comunes | 20 imantadas |
@@ -126,7 +131,7 @@ carrito completo.
 | Pack de stickers imprimibles | $12.999 (lista $52.999, −75 %) | `digital:pack-stickers` |
 
 Reglas propias, todas verificadas en el servidor:
-- **No participa** de cupones ni de promos N×M. Sí del 20 % por transferencia
+- **No participa** de cupones ni de promos N×M. Sí del % por transferencia (10 %)
   (desde la spec 027).
 - **No suma para el envío gratis** (`physicalTotal` lo excluye).
 - **Cantidad siempre 1**: `addDigital` no acumula y el servidor rechaza
@@ -149,22 +154,25 @@ Alcance de cupones y promos: líneas `sticker` (catálogo) y, en promos N×M,
 también `custom` (personalizados). Packs, negocio y fijos ya traen su precio
 final. **La transferencia es la excepción: alcanza a todo producto.**
 
-### Descuento por transferencia (spec 029)
-`TRANSFER_DISCOUNT = 0.2` · `TRANSFER_PAYMENT_METHOD = 'transferencia'`
+### Descuento por transferencia (5/10/2026)
+`TRANSFER_DISCOUNT = 0.1` · `TRANSFER_PAYMENT_METHOD = 'transferencia'`
 
-**20 % off en cualquier compra, desde 1 unidad**, pagando por transferencia
+**10 % off en cualquier compra, desde 1 unidad**, pagando por transferencia
 bancaria: calcos, personalizados, packs, Negocio, pack holográfico (y su
 recargo), Polaroid, tatuajes e imprimibles. **No** se descuenta el envío. Con
 Mercado Pago el precio es siempre el de vidriera.
 
 - Se **suma** a un cupón de % (EPICA10) y corre **encima** del 3x2/2x1 y de
-  Argentina: con EPICA10 da **30 %**. Mientras corre una promo N×M, lo que
-  suman transferencia + cupón queda topeado en **30 %** (`percentCap`).
+  Argentina: con EPICA10 da **20 %**. Mientras corre una promo N×M, lo que
+  suman transferencia + cupón queda topeado en **30 %** (`percentCap`): con
+  10 % + 10 % el tope no muerde. Se dejó en 30 % a propósito (bajarlo sería
+  cambiar una promo que nadie pidió cambiar).
 - Con un cupón que **anula todo** (EPI50, o uno de bundle) no corre, en ninguna
   línea: ese cupón es el único descuento.
 - El envío gratis se mide sobre el subtotal **ya descontado**.
 
-> Fue **15 %** del 26/9 al 1/10/2026 (spec 027). Hasta el 26/9/2026 era un
+> Fue **20 %** del 1/10 al 5/10/2026 (spec 029) y **15 %** del 26/9 al 1/10/2026
+> (spec 027). Hasta el 26/9/2026 era un
 > **10 % "por volumen"**: solo calcos de catálogo y desde 10 unidades
 > (`BULK_THRESHOLD`/`BULK_DISCOUNT`, ya no existen).
 
@@ -182,8 +190,8 @@ Mercado Pago el precio es siempre el de vidriera.
   la spec 026, se ve en el acceso "🎁 10% OFF activo" de quien ya lo tiene). El sitio
   igual lo acepta si alguien lo escribe: "oculto" es no publicitarlo, no un
   secreto criptográfico — viaja en el bundle JS.
-- **Acumulable** con el 20 % por transferencia: los porcentajes **se suman**
-  (transferencia 20 % + EPICA10 10 % = 30 % off). Salvo los `exclusivo`, abajo.
+- **Acumulable** con el % por transferencia (10 %): los porcentajes **se suman**
+  (transferencia 10 % + EPICA10 10 % = 20 % off). Salvo los `exclusivo`, abajo.
 - ✅ **Durante una promo N×M el cupón de % SÍ descuenta** (spec 017, 7/9/2026).
   Esto **revirtió** la decisión del 20/8/2026, que era la contraria. El motivo:
   el popup ahora entrega `EPICA10` con un contador de 10 minutos, y un contador
@@ -266,7 +274,7 @@ web mientras está apagada:
   (§3.1-bis).
 - El tope de 30 % para transferencia + cupón solo existe mientras corre alguna
   promo N×M. Con las dos apagadas vuelve a `MAX_STICKER_DISCOUNT`; hoy no
-  cambia ningún precio, porque 20 % + 10 % ya da 30 %.
+  cambia ningún precio, porque 10 % + 10 % = 20 % queda debajo de los dos topes.
 - Los tests de su mecánica se saltean solos (`con3x2` en
   `promoPricing.test.js`) y vuelven a correr al prenderla.
 
@@ -287,7 +295,7 @@ en promo es elegible para las dos, y el reparto lo decide `repartoPromos()`.
 
 | Con la promo corriendo | ¿Se suma? |
 |---|---|
-| 20 % por transferencia (desde 1, todo producto — specs 027 y 029) | **sí** |
+| % por transferencia (10 % desde el 5/10/2026; desde 1, todo producto) | **sí** |
 | Cupones de % (`EPICA10`) | **sí** — cambió el 7/9/2026, antes no sumaba |
 | Tope de los dos juntos | `percentCap = 0.30` (0.25 hasta la spec 029; 0.20 hasta la 027; 0.10 hasta la 017) |
 | `EPI50` | **no se suma: la reemplaza.** Es `exclusivo`, anula la agrupación N×M y corre su 50 % |
@@ -339,7 +347,7 @@ con el óptimo real. Los tests están en `src/lib/reparto.test.js`.
 - **Solo en 4 y 6 cm.** Si el cliente elige 9 cm, el armador vuelve al pack
   mayorista de siempre.
 - Línea: `pack:mayorista100:{size}:{ts}` con `quantity = 1` (1 línea = 1 pack).
-- **No participa** de cupones ni de promos N×M; sí del 20 % por transferencia.
+- **No participa** de cupones ni de promos N×M; sí del % por transferencia (10 %).
 - **Paga envío como cualquier pedido**: lo decide el umbral, no la promo.
   $52.999 cruza el umbral de Rosario ($35.000) pero no el nacional ($55.000),
   así que suma $6.500 a ciudades próximas y $8.500 al interior (ver §5). Lo
@@ -444,7 +452,8 @@ Línea `pack:personalizados:{size}:{ts}`, mínimo 10 unidades, 10 % ya incluido.
 > configurador nuevo emite líneas `custom:` **sin mínimo y sin descuento**, y
 > esta rama `pack:personalizados` sigue viva porque **las 10 unidades son el
 > umbral para acceder al 10 % off** del pack (que ya viene en el precio; el
-> % por transferencia se suma aparte desde la spec 027; 20 % desde la 029).
+> % por transferencia se suma aparte desde la spec 027; 20 % desde la 029 y
+> 10 % desde el 5/10/2026).
 > No es código residual: son dos ofertas distintas para el mismo producto.
 
 ### Promo Negocio
@@ -650,7 +659,7 @@ vuelve a decir "no aceptamos devoluciones".
 
 Marquesina con cuatro respuestas a dudas de compra: envío gratis (los **dos**
 umbrales), 2x1 en calcos de Argentina (**solo mientras el 2x1 está vivo**), los
-días de garantía y el 20 % por transferencia con su condición (`TRANSFER_OFF`). Se ve
+días de garantía y el % por transferencia (10 %) con su condición (`TRANSFER_OFF`). Se ve
 **también con banner de promo** y se recoge al scrollear.
 
 Argentina se anuncia por el **2x1**, nunca por un %: la promo del 50 % venció el
