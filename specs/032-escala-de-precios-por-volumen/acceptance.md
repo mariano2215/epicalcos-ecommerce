@@ -22,7 +22,7 @@ Se reporta el resultado **real** de cada punto (`CLAUDE.md` regla 15).
 | AC-5 | *(RF-5)* Total no decreciente para toda cantidad 100–1.000 | Test que recorre el rango | ⬜ |
 | AC-6 | *(RF-6/7)* DTF UV = vinilo blanco; holográfico con su fila, sin línea de recargo aparte; **ningún 9 cm** en la escala | Test | ⬜ |
 | AC-7 | *(RF-9)* El servidor acepta cada línea emitida y rechaza 99, 1.001, 240, cualquier 9 cm, material inválido y `quantity ≠ 1` | Test con `validateAndPriceOrder()` | ⬜ |
-| AC-8 | *(RF-10/11)* Transferencia −20 % sí; `EPICA10` no | Test | ⬜ |
+| AC-8 | *(RF-10/11)* Transferencia −10 % sí; `EPICA10` no | Test | ⬜ |
 | AC-9 | *(RF-12)* 250 calcos de 6 cm en `/mayorista` = $118.999, igual que el cotizador; `/mayorista` no ofrece 9 cm | Recorrido + checkout local | ⬜ |
 | AC-10 | *(RF-13)* 3 diseños, 300 calcos en 6 cm en `/personalizados` → $142.799 (escala); 100+ en 9 cm sigue suelta con la sugerencia de 4 o 6 cm | Recorrido | ⬜ |
 | AC-14 | La tabla del config es exactamente: 4 y 6 cm $52.999 / $118.999 / $211.999 / $370.999 · holográfico $72.999 / $163.999 / $291.999 / $510.999 | Test | ⬜ |

@@ -341,7 +341,7 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 | Promo x100 (exactamente 100, 4 y 6 cm, diseños mezclados) | §3.2 | no |
 | Pack mayorista (desde 100, 50 % OFF) | §4 | no |
 | Pack holográfico (100 en total, 4 y 6 cm, + recargo) | §1 | no |
-| 20 % OFF por transferencia en todo | §2 | no |
+| % OFF por transferencia en todo (10 % desde el 5/10/2026) | §2 | no |
 | Ninguna promo regala el envío | §5 | no |
 | Sin pedido mínimo | §6 | no — "desde 100" es el mínimo **del precio de negocio**, no de la tienda |
 | Revisión de cada archivo antes de producir | memoria de decisiones de copy | **sí** — desde el 5/10/2026, con 100+ calcos se manda además una vista previa digital gratis (RF-P2) |

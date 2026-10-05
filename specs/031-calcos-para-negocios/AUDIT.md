@@ -23,7 +23,7 @@ reposicionamiento; todos cambian **cómo** se hace.
    promo x100, $52.999 cada 100). La sección "Cuantos más pedís, menos pagás"
    mostraría cuatro filas con el mismo precio. Lo que **sí** es real y es
    fuerte: **suelta, la calco de 6 cm vale $2.100; desde 100, $530 (−75 %)**, y
-   $424 pagando por transferencia. Una escalera 250/500/1.000 es una decisión de
+   $477 pagando por transferencia (10 %, desde el 5/10/2026). Una escalera 250/500/1.000 es una decisión de
    precios (spec aparte, espejo en el servidor) — ver `BUSINESS-TODOS.md` N-1.
    **→ 5/10/2026: Mariano eligió la escala.** Tabla para aprobar en la spec
    [`032-escala-de-precios-por-volumen`](../032-escala-de-precios-por-volumen/requirements.md).
@@ -84,7 +84,7 @@ reposicionamiento; todos cambian **cómo** se hace.
 | Estado | Un solo `CartContext` (`useReducer`), persistido en `localStorage` `epicalcos.cart.v2` | `context/CartContext.jsx` |
 | Catálogo | 61 categorías, 3.397 diseños en JSON estático | `public/data/` |
 | Precios | Reglas escritas dos veces a propósito: cliente muestra, servidor revalida y rechaza (`price_mismatch`) | `config/pricing.js` ↔ `netlify/functions/lib/pricing.js` |
-| Checkout | Mercado Pago (preferencia + webhook firmado) y transferencia (20 % OFF) | `create-preference.js`, `create-order-transfer.js` |
+| Checkout | Mercado Pago (preferencia + webhook firmado) y transferencia (10 % OFF desde el 5/10/2026) | `create-preference.js`, `create-order-transfer.js` |
 | Subida de archivos | Directo a Cloudinary (unsigned, un preset por carpeta), hasta 100 archivos de 10 MB | `services/uploadService.js`, `components/personalizados/SubidaArchivo.jsx` |
 | Leads | Popup (cupón `EPICA10`) → `capture-lead.js`; formulario de `/contacto` → `contacto.js` (mail Resend + CRM, falla cerrado) | `netlify/functions/` |
 | CRM | Notion (pedidos) + CRM interno `app.epicalcos.com` por webhook HMAC (`lead.created`, `order.*`) | `_notion.js`, `lib/crmWebhook.js` |
@@ -119,7 +119,7 @@ números cambian.**
 | **Pack holográfico** | 100 en total, repartidas entre los diseños | 4 y 6 cm | Vinilo holográfico | $52.999 + $20.000 | **$730** | `/personalizados` |
 
 - **Suelta**, la misma calco personalizada vale $1.600 / $2.100 / $2.650 (4 / 6 / 9 cm).
-- **Transferencia: 20 % OFF en todo**, desde 1 unidad (Negocio queda en $42.399, $424 por calco).
+- **Transferencia: 10 % OFF en todo** desde el 5/10/2026 (era 20 % al escribir esta auditoría), desde 1 unidad: Negocio queda en $47.699, $477 por calco.
 - **Más de 100 de un diseño en 6 cm**: cada 100 es un pack; lo que sobra va suelto, salvo que ya cueste lo mismo que otro pack — entonces es otro pack. 250 copias → 3 packs, 300 calcos, $158.997.
 - **No hay precio para**: 100+ en DTF UV de 4 o 9 cm, varios diseños en DTF UV, holográfico de 9 cm. Hoy se cobran como sueltas o no se pueden pedir.
 

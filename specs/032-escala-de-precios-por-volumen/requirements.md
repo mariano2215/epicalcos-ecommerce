@@ -66,7 +66,7 @@ sin tocar el precio de 100 que ya se cobra hoy.
 ## 4. Fuera de scope
 
 - [ ] El precio de la calco **suelta** (de 1 a 99) y del catálogo
-- [ ] El 20 % por transferencia (sigue igual y corre encima de la escala)
+- [ ] El % por transferencia (10 % desde el 5/10/2026; corre encima de la escala)
 - [ ] Envíos y umbrales: la escala paga envío según el umbral, como todo
 - [ ] Cupones y promos N×M: no alcanzan a la escala (como hoy a los packs)
 - [ ] Más de 1.000 online
@@ -113,7 +113,7 @@ sin tocar el precio de 100 que ya se cobra hoy.
 | RF-7 | El holográfico existe solo en 4 y 6 cm y su precio de escalón ya incluye el recargo del material | 🔴 must |
 | RF-8 | Los pedidos se pueden hacer con **uno o varios diseños** al mismo precio de escalón (como la promo x100 de hoy) | 🔴 must |
 | RF-9 | El servidor cobra exactamente lo mismo que muestra el sitio, para cada tamaño, material y cantidad de 100 a 1.000; si no coincide, rechaza | 🔴 must |
-| RF-10 | El 20 % por transferencia corre encima del precio de la escala | 🔴 must |
+| RF-10 | El % por transferencia (10 %) corre encima del precio de la escala | 🔴 must |
 | RF-11 | Ni cupones ni promos N×M alcanzan a la escala | 🔴 must |
 | RF-12 | El armador de `/mayorista` con 100 o más calcos cobra con la escala y **no ofrece 9 cm** | 🔴 must |
 | RF-13 | El configurador de `/personalizados` con 100 o más calcos en 4 o 6 cm (uno o varios diseños) cobra con la escala; en 9 cm se cobra suelta y sugiere 4 o 6 cm | 🔴 must |
@@ -141,23 +141,23 @@ sin tocar el precio de 100 que ya se cobra hoy.
 Base: el precio de 100 que se cobra hoy, que pasa a ser **el precio fijo de
 negocio** (P-3). Cada escalón baja el precio **por calco** 10 / 20 / 30 %
 contra el de 100. Montos redondeados a …999 (criterio de las specs 027/029).
-Precios de Mercado Pago; por transferencia, −20 % encima.
+Precios de Mercado Pago; por transferencia, −10 % encima (Mariano, 5/10/2026: la transferencia pasó de 20 % a 10 % en todos los pedidos).
 
 **Solo 4 y 6 cm** (P-6: *"Sacar 9 cm de calcos mayoristas"*).
 
 | Cantidad | 4 y 6 cm (vinilo blanco o DTF UV) | por calco | Se muestra | Por transferencia |
 |---|---|---|---|---|
-| 100 | **$52.999** | $530 | **MUESTRA GRATIS** (sin %) | $42.399 ($424 c/u) |
-| 250 | **$118.999** | $476 | **10 % OFF** | $95.199 ($381 c/u) |
-| 500 | **$211.999** | $424 | **20 % OFF** | $169.599 ($339 c/u) |
-| 1.000 | **$370.999** | $371 | **30 % OFF** | $296.799 ($297 c/u) |
+| 100 | **$52.999** | $530 | **MUESTRA GRATIS** (sin %) | $47.699 ($477 c/u) |
+| 250 | **$118.999** | $476 | **10 % OFF** | $107.099 ($428 c/u) |
+| 500 | **$211.999** | $424 | **20 % OFF** | $190.799 ($382 c/u) |
+| 1.000 | **$370.999** | $371 | **30 % OFF** | $333.899 ($334 c/u) |
 
 | Cantidad | Holográfico (4 y 6 cm) | por calco | Se muestra | Por transferencia |
 |---|---|---|---|---|
-| 100 | **$72.999** | $730 | **MUESTRA GRATIS** (sin %) | $58.399 ($584 c/u) |
-| 250 | **$163.999** | $656 | **10 % OFF** | $131.199 ($525 c/u) |
-| 500 | **$291.999** | $584 | **20 % OFF** | $233.599 ($467 c/u) |
-| 1.000 | **$510.999** | $511 | **30 % OFF** | $408.799 ($409 c/u) |
+| 100 | **$72.999** | $730 | **MUESTRA GRATIS** (sin %) | $65.699 ($657 c/u) |
+| 250 | **$163.999** | $656 | **10 % OFF** | $147.599 ($590 c/u) |
+| 500 | **$291.999** | $584 | **20 % OFF** | $262.799 ($526 c/u) |
+| 1.000 | **$510.999** | $511 | **30 % OFF** | $459.899 ($460 c/u) |
 
 Descartada: la opción A (−10 / −15 / −20 %).
 
@@ -205,7 +205,7 @@ DTF UV y holográfico.
 | Regla | Ref. | ¿Se modifica? |
 |---|---|---|
 | Precio de la calco suelta (incluida la de 9 cm) | `business-rules.md` §1 | no |
-| 20 % por transferencia | §2 | no |
+| % por transferencia (10 % desde el 5/10/2026) | §2 | no |
 | Ninguna promo regala el envío | §5 | no |
 | Envío gratis desde el umbral | §5 | no — 250+ lo cruza solo por monto, que es la regla |
 | La promo de 100 y Negocio debajo del umbral nacional | `envio.test.js` | no — se suma el escalón de 100 al test |

@@ -110,7 +110,7 @@ Con la opción B, el total es **no decreciente** de 100 a 1.000 (RF-5): lo
 verifica un test que recorre todas las cantidades. Si una tabla futura lo
 rompiera, el test frena el deploy.
 
-**Transferencia**: el servidor descuenta por línea (`round(base × 0,8)` con
+**Transferencia**: el servidor descuenta por línea (`round(base × (1 − TRANSFER_DISCOUNT))`, hoy × 0,9, con
 `quantity 1`), igual que a Negocio. El sitio usa el mismo cálculo.
 
 **Línea**:
