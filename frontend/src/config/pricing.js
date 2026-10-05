@@ -863,6 +863,85 @@ export const PERSONALIZADOS_DISCOUNT = 0.10;
  */
 export const NEGOCIO = { qty: 100, size: '6cm', price: 52999, listPrice: 127999 };
 
+/**
+ * ─── ESCALA DE PRECIOS POR VOLUMEN (spec 032, 5/10/2026) ──────────────────────
+ * Mariano: "mientras más cantidad, más barato te sale, lo único que se
+ * mantiene es la calidad". Tabla aprobada el 5/10/2026 ("Opción B"): cada
+ * escalón baja el precio POR CALCO 10 / 20 / 30 % contra el de 100, y el de
+ * 100 es el que ya se cobraba (Promo Negocio / promo x100), que pasa a ser el
+ * precio fijo de negocio. Montos TOTALES, redondeados a …999.
+ *
+ * SIN 9 cm: Mariano sacó el 9 cm de la venta por mayor (sigue suelto). Vinilo
+ * blanco y DTF UV comparten fila (valen lo mismo, como sueltas); el
+ * holográfico tiene la suya, con el recargo del material adentro.
+ *
+ * La línea del carrito es `volumen:{tamano}:{material}:{cantidad}:{ts}` con
+ * `quantity: 1`: la cantidad va en el id porque el precio depende del total
+ * (no es unitario × cantidad) y el servidor solo confía en el id.
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (ESCALA_VOLUMEN y
+ * precioVolumen). Un escalón distinto en un lado rechaza el checkout con
+ * `price_mismatch`. Lo verifica `src/lib/escalaVolumen.test.js` para cada
+ * cantidad de 100 a 1.000.
+ */
+export const ESCALA_ESCALONES = [100, 250, 500, 1000];
+export const ESCALA_VOLUMEN = {
+  '4cm': { 100: 52999, 250: 118999, 500: 211999, 1000: 370999 },
+  '6cm': { 100: 52999, 250: 118999, 500: 211999, 1000: 370999 },
+  holografico: { 100: 72999, 250: 163999, 500: 291999, 1000: 510999 }
+};
+/** Materiales de la escala: los mismos ids que `MATERIALES` de config/personalizados.js. */
+export const ESCALA_MATERIALES = ['vinilo-blanco', 'dtf-uv', 'vinilo-holografico'];
+export const ESCALA_MIN = ESCALA_ESCALONES[0];
+export const ESCALA_MAX = ESCALA_ESCALONES[ESCALA_ESCALONES.length - 1];
+
+/** La fila de la escala para un tamaño y material, o `null` si no se vende por mayor (9 cm). */
+export function filaEscala(tamano, material = 'vinilo-blanco') {
+  if (!ESCALA_MATERIALES.includes(material)) return null;
+  if (!ESCALA_VOLUMEN[tamano]) return null;
+  return material === 'vinilo-holografico' ? ESCALA_VOLUMEN.holografico : ESCALA_VOLUMEN[tamano];
+}
+
+/**
+ * % de descuento de un escalón contra el de 100 (lo que muestra la web: 10 /
+ * 20 / 30). Sale del MONTO, nunca escrito a mano: si cambia un escalón, cambia
+ * el %. El de 100 da 0 — ahí la web muestra MUESTRA GRATIS, no un %.
+ */
+export function pctEscalon(fila, escalon) {
+  if (!fila?.[escalon] || !fila[ESCALA_MIN]) return 0;
+  const unitario = fila[escalon] / escalon;
+  const base = fila[ESCALA_MIN] / ESCALA_MIN;
+  return Math.round((1 - unitario / base) * 100);
+}
+
+/**
+ * Precio de un pedido por volumen. Entre escalones se cobra el precio por
+ * calco del escalón alcanzado; si el escalón siguiente cuesta lo mismo o menos,
+ * se cotiza ESE y el cliente se lleva su cantidad ("pedís 240, te llevás 250").
+ * Así agregar una calco nunca baja el total (lo verifica el test).
+ *
+ * @returns {null | { total: number, cantidadLlevada: number, escalon: number,
+ *   unitario: number, pct: number }} `null` fuera de la escala (menos de 100,
+ *   más de 1.000, 9 cm o material desconocido)
+ */
+export function precioVolumen({ tamano, material = 'vinilo-blanco', cantidad }) {
+  const fila = filaEscala(tamano, material);
+  const q = Number(cantidad);
+  if (!fila || !Number.isInteger(q) || q < ESCALA_MIN || q > ESCALA_MAX) return null;
+  let i = ESCALA_ESCALONES.length - 1;
+  while (ESCALA_ESCALONES[i] > q) i--;
+  let escalon = ESCALA_ESCALONES[i];
+  let total = Math.round((q * fila[escalon]) / escalon);
+  let cantidadLlevada = q;
+  const siguiente = ESCALA_ESCALONES[i + 1];
+  if (siguiente && fila[siguiente] <= total) {
+    escalon = siguiente;
+    total = fila[siguiente];
+    cantidadLlevada = siguiente;
+  }
+  return { total, cantidadLlevada, escalon, unitario: Math.round(total / cantidadLlevada), pct: pctEscalon(fila, escalon) };
+}
+
 /** Productos de precio fijo. */
 export const TATUAJES = { id: 'tatuajes-hoja', name: 'Tatuajes temporales · x hoja', price: 16000 };
 /**

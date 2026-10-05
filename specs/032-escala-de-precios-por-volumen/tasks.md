@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `032-escala-de-precios-por-volumen` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `NO INICIADA` |
+| **Estado** | `EN CURSO` — Fase 1 publicada el 05/10/2026; Fase 2 sin empezar |
 
 ---
 
@@ -21,13 +21,13 @@ ajeno queda sin publicar.
 
 ## Fase 1 — Tabla, función y servidor (nada la emite todavía)
 
-- [ ] **1.1** `ESCALA_VOLUMEN` en `config/pricing.js` con la tabla de `requirements.md` §9.1 (opción B, 4 y 6 cm + holográfico)
-- [ ] **1.2** `precioVolumen()` y `pctEscalon()` en `config/pricing.js` con el comentario del espejo
-- [ ] **1.3** Espejo en `netlify/functions/lib/pricing.js` + rama `volumen` en `lineBase()`
-- [ ] **1.4** Tests de `design.md` §5 (paridad 100–1.000, monotonía, servidor acepta/rechaza, cupón no, transferencia sí, umbral)
+- [x] **1.1** `ESCALA_VOLUMEN` en `config/pricing.js` con la tabla de `requirements.md` §9.1 (opción B, 4 y 6 cm + holográfico)
+- [x] **1.2** `precioVolumen()` y `pctEscalon()` en `config/pricing.js` con el comentario del espejo
+- [x] **1.3** Espejo en `netlify/functions/lib/pricing.js` + rama `volumen` en `lineBase()`
+- [x] **1.4** Tests de `design.md` §5 (paridad 100–1.000, monotonía, servidor acepta/rechaza, cupón no, transferencia sí, umbral)
   - *Verificación*: cambiar un monto en un solo lado hace fallar la suite
-- [ ] **1.5** `lib/precioVigente.js` re-precia `volumen:` + test
-- [ ] **1.6** Suite completa en verde, con las 4 combinaciones de interruptores 3x2/2x1 (memoria de precios)
+- [x] **1.5** `lib/precioVigente.js` re-precia `volumen:` + test
+- [x] **1.6** Suite completa en verde, con las 4 combinaciones de interruptores 3x2/2x1 (memoria de precios)
 - [ ] **1.7** `docs/business-rules.md`: sección de la escala + fila en la tabla del espejo (§8)
 - [ ] **1.8** Commit + push
 
@@ -50,3 +50,5 @@ ajeno queda sin publicar.
 
 | Fecha | Qué cambió respecto al diseño | Motivo |
 |---|---|---|
+| 05/10/2026 | Fase 1 publicada sin la 1.7 (business-rules.md) | Se cortó por límite de uso. Ningún camino emite todavía líneas `volumen:`: el servidor ya las acepta, el sitio sigue cobrando como antes |
+| 05/10/2026 | Pendiente para la Fase 2 (configurador): `repartoVolumen()` en `lib/precioPersonalizados.js` — 100 a 1.000 en una línea; menos de 100, escalón de 100 si las sueltas ya cuestan eso; más de 1.000, de a 1.000; holográfico siempre escala desde 100; sin "ahorrás %" contra la suelta (se muestra el % de la escala y MUESTRA GRATIS en 100) | Diseño cerrado en la sesión, código no publicado |

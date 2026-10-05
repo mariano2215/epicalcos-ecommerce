@@ -416,6 +416,49 @@ function customMaterialYDiseno(parts) {
   return { material: CUSTOM_MATERIAL_POR_DEFECTO, disenoId: parts[parts.length - 1] };
 }
 
+// --- Escala de precios por volumen (spec 032, 5/10/2026) ---
+// ⚠️ ESPEJO de ESCALA_VOLUMEN / precioVolumen en frontend/src/config/pricing.js.
+// Opción B aprobada por Mariano: −10 / −20 / −30 % por calco contra el escalón
+// de 100. Sin 9 cm (no se vende por mayor). Vinilo blanco y DTF UV comparten
+// fila; el holográfico tiene la suya, con el recargo adentro (por eso la rama
+// `volumen` de lineBase NO pide la línea de recargo holográfico).
+// La verifica frontend/src/lib/escalaVolumen.test.js para cada cantidad.
+export const ESCALA_ESCALONES = [100, 250, 500, 1000];
+export const ESCALA_VOLUMEN = {
+  '4cm': { 100: 52999, 250: 118999, 500: 211999, 1000: 370999 },
+  '6cm': { 100: 52999, 250: 118999, 500: 211999, 1000: 370999 },
+  holografico: { 100: 72999, 250: 163999, 500: 291999, 1000: 510999 }
+};
+const ESCALA_MIN = ESCALA_ESCALONES[0];
+const ESCALA_MAX = ESCALA_ESCALONES[ESCALA_ESCALONES.length - 1];
+
+function filaEscala(tamano, material) {
+  if (!CUSTOM_MATERIALES.includes(material)) return null;
+  if (!ESCALA_VOLUMEN[tamano]) return null;
+  return material === CUSTOM_MATERIAL_HOLOGRAFICO ? ESCALA_VOLUMEN.holografico : ESCALA_VOLUMEN[tamano];
+}
+
+// Entre escalones: el precio por calco del escalón alcanzado; si el siguiente
+// cuesta lo mismo o menos, se cobra el siguiente (y el cliente se lleva esa
+// cantidad). Misma cuenta y mismo redondeo que el frontend.
+export function precioVolumen({ tamano, material = CUSTOM_MATERIAL_POR_DEFECTO, cantidad }) {
+  const fila = filaEscala(tamano, material);
+  const q = Number(cantidad);
+  if (!fila || !Number.isInteger(q) || q < ESCALA_MIN || q > ESCALA_MAX) return null;
+  let i = ESCALA_ESCALONES.length - 1;
+  while (ESCALA_ESCALONES[i] > q) i--;
+  let escalon = ESCALA_ESCALONES[i];
+  let total = Math.round((q * fila[escalon]) / escalon);
+  let cantidadLlevada = q;
+  const siguiente = ESCALA_ESCALONES[i + 1];
+  if (siguiente && fila[siguiente] <= total) {
+    escalon = siguiente;
+    total = fila[siguiente];
+    cantidadLlevada = siguiente;
+  }
+  return { total, cantidadLlevada, escalon };
+}
+
 // --- Espejo de frontend/src/config/site.js (envío) ---
 // ⚠️ El test frontend/src/lib/envio.test.js verifica que estos números sean los
 // mismos que los de frontend/src/config/site.js.
@@ -553,6 +596,21 @@ function lineBase(id, quantity) {
       return { base: NEGOCIO_PRICE, kind, discountable: false, material, disenoId: parts[parts.length - 1] };
     }
     return { base: NEGOCIO_PRICE, kind, discountable: false };
+  }
+
+  // volumen:{tamano}:{material}:{cantidad}:{ts} — escala por volumen (spec
+  // 032). 1 línea = 1 pedido: la cantidad va en el id y el precio es el TOTAL.
+  // Se rechaza una cantidad que el sitio nunca emitiría (ej. 240: el sitio
+  // cotiza 250 y manda 250), un 9 cm y cualquier material fuera de la lista.
+  if (kind === 'volumen') {
+    if (quantity !== 1) return { error: 'escala por volumen: 1 unidad por línea' };
+    const material = parts[2];
+    if (!CUSTOM_MATERIALES.includes(material)) return { error: `material inválido en "${id}"` };
+    const cantidad = Number(parts[3]);
+    const p = precioVolumen({ tamano: parts[1], material, cantidad });
+    if (!p || p.cantidadLlevada !== cantidad)
+      return { error: 'la cantidad no está en la escala por volumen — recargá la página' };
+    return { base: p.total, kind, discountable: false };
   }
 
   if (kind === 'fixed') {

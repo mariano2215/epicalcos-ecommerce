@@ -23,6 +23,7 @@ import {
   WHOLESALE_DISCOUNT,
   PERSONALIZADOS_DISCOUNT,
   precioPolaroidLista,
+  precioVolumen,
   round
 } from '../config/pricing.js';
 import { RECARGO_HOLOGRAFICO } from '../config/personalizados.js';
@@ -48,6 +49,14 @@ export function precioBaseVigente(line) {
     }
     case 'negocio':
       return NEGOCIO.price;
+    case 'volumen': {
+      // Escala por volumen (spec 032): el total sale de la tabla para esa
+      // cantidad. Si la cantidad ya no es válida (la tabla cambió), se deja el
+      // guardado y el servidor pide recargar: inventarle otra cantidad sería
+      // cambiarle el pedido al cliente.
+      const p = precioVolumen({ tamano: parts[1], material: parts[2], cantidad: Number(parts[3]) });
+      return p && p.cantidadLlevada === Number(parts[3]) ? p.total : guardado;
+    }
     case 'fixed': {
       if (parts[1] === TATUAJES.id) return TATUAJES.price;
       if (parts[1] === RECARGO_HOLOGRAFICO.id) return RECARGO_HOLOGRAFICO.precio;
