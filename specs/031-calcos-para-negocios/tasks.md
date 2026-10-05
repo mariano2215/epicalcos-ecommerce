@@ -52,10 +52,10 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 
 - [ ] **1.1** `config/negocios.js`: copy de `design.md` §11, cantidades del cotizador, usos, pasos, preguntas (`publicar: false` en las que dependen de un TODO), mensajes de WhatsApp, SEO de `/negocio` y `/mayorista`. Montos interpolados de `config/pricing.js`
   - *Verificación*: `grep -nE '\$[0-9]|[0-9]+ ?%' frontend/src/config/negocios.js` no encuentra montos ni porcentajes escritos a mano
-- [ ] **1.2** Test de copy prohibido: falla si `config/negocios.js` o `components/negocios/**` contienen "archivo perfecto", "boceto", "muestra previa", "aprobación previa", un código de cupón o las frases genéricas de RF-CO1
+- [ ] **1.2** Test de copy prohibido: falla si `config/negocios.js` o `components/negocios/**` contienen "archivo perfecto", "boceto", "muestra" sin "vista previa" en la misma frase, un código de cupón o las frases genéricas de RF-CO1; y si las páginas de menos de 100 (`/personalizados`, tienda) mencionan la vista previa
   - *Verificación*: el test falla al agregar a mano "No hace falta que tu archivo esté perfecto" y pasa al sacarlo
 - [ ] **1.3** `data/negociosFotos.js` con `negocio-muestra.webp` (dimensiones reales y `alt`) y el resto de las listas vacías
-- [ ] **1.4** `config/site.js`: `navLinks` (D-6), `footerLinks` en 4 grupos, `anunciosVigentes(now, { negocio })`, `shipping.produccionNegocio = '5 días hábiles'` (N-3). **No** tocar costos ni umbrales
+- [ ] **1.4** `config/site.js`: `navLinks` (D-6), `footerLinks` en 4 grupos, `anunciosVigentes(now, { negocio })`, `shipping.produccionVolumen = '3 a 5 días hábiles'` y `produccionVolumenDesde = 100` (N-3/N-19). **No** tocar costos ni umbrales
   - *Verificación*: `git diff frontend/src/config/site.js` no toca ningún costo ni umbral de envío; `anuncios.test.js` actualizado y en verde
 - [ ] **1.5** `Header.jsx`: botón **Cotizar** (→ `/negocio`; en Fase 2 → `#cotizador`) y la tira con `negocio` en `/negocio` y `/mayorista`
   - *Verificación*: a 1024 px el nav entra en una línea; a 375 px "Cotizar" está en el menú
@@ -63,6 +63,8 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 - [ ] **1.7** `components/negocios/HeroNegocio.jsx`, `BarraConfianza.jsx`, `ComoFunciona.jsx`, `CtaFinalNegocio.jsx`
   - *Verificación*: 375 × 667: H1, precio "desde" y CTA visibles sin scroll (captura)
 - [ ] **1.8** `routes/Negocio.jsx`: hero → confianza → marcas → **Promo Negocio** (`NegocioForm` tal cual) → cómo funciona → CTA final. `useSeo` con el título nuevo
+- [ ] **1.8b** Plazo de 100+ (RF-P3): `CheckoutForm` muestra `produccionVolumen` con 100+ calcos en el carrito; FAQ general con la línea de 100+; `notify.js → customerTimeline()` cuenta calcos desde los ids + test del mail
+  - *Verificación*: pedido de 120 calcos sueltas → "3 a 5 días hábiles"; pedido de 30 → "2 a 3 días hábiles"; una línea de Negocio (100) → "3 a 5"
 - [ ] **1.9** `analytics.js`: `trackHeroCta({ pagina, cta })`; los CTAs del hero lo llaman
 - [ ] **1.10** Documentar en `docs/analytics.md` el evento nuevo
 - [ ] **1.11** Validar Fase 1 contra `acceptance.md` y reportar · commit + push
@@ -82,11 +84,9 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 ### Interfaz
 - [ ] **2.5** `GrupoOpciones.jsx` (radio-group accesible, 44 px, foco visible, `aria-live` para el precio)
 - [ ] **2.6** `PrecioPedido.jsx`: total, por calco, % del escalón (referencia de P-2 de la 032), transferencia, "te llevás N" cuando sube de escalón
-- [ ] **2.7** `Cotizador.jsx`: pasos → precio → **Subir diseño y continuar** (`SubidaArchivo` con el preset de Negocio) → razón social (obligatoria) y CUIT (opcional) → **Agregar al carrito** con `addNegocio` → CTA "Ver carrito" (D-11). Salidas a presupuesto (+1.000 y sin precio) y a WhatsApp
+- [ ] **2.7** `Cotizador.jsx`: tamaños 4 y 6 cm, vinilo blanco preseleccionado con "Recomendado"; pasos → precio → **Subir diseño y continuar** (`SubidaArchivo` con el preset de Negocio) → razón social (obligatoria) y CUIT (opcional) → **Agregar al carrito** con `addNegocio` → CTA "Ver carrito" (D-11). Salidas a presupuesto (+1.000 y sin precio) y a WhatsApp
   - *Verificación*: 3 diseños × 250 en 6 cm → una línea `volumen:` con el precio del escalón → checkout MP sin `price_mismatch` (local)
 - [ ] **2.8** `EscalaVolumen.jsx` (RF-E1)
-- [ ] **2.8b** Plazo de negocio (RF-P3): `shipping.produccionNegocio` en `config/site.js`, `CheckoutForm` lo muestra con líneas de negocio, `notify.js → customerTimeline()` lo escribe en el mail + test del mail
-  - *Verificación*: un pedido con una línea `volumen:` recibe "5 días hábiles"; uno de calcos sueltas sigue recibiendo el plazo de la tienda
 - [ ] **2.9** `PedidosGrandes.jsx`
 
 ### Presupuesto
@@ -164,11 +164,11 @@ Aprobar una fase no aprueba la siguiente. Ver [`specs/README.md`](../README.md).
 |---|---|---|
 | El configurador cotiza varios diseños × 100 como sueltas ($630.000 vs. $158.997) | `lib/precioPersonalizados.js:226` | Lo resuelve la spec 032 (RF-13): el configurador usa la escala con 100+ |
 | FAQ con la frase prohibida "archivo perfecto" | `components/FAQ.jsx:75` | Quick win Q-1 |
-| FAQ con plazos contradictorios (2–3 vs. 3–5 días) | `components/FAQ.jsx:84,131` | Quick win Q-2 tras N-3 |
+| FAQ general sin el plazo de 100+ (el mayorista ya dice 3 a 5, que es el correcto) | `components/FAQ.jsx:84` | Se resuelve en la tarea 1.8b |
 | FAQ promete beneficios por recompra y ajuste de logos sin confirmar | `components/FAQ.jsx:126,136` | Q-3 tras N-4 y N-5 |
 | Dos referencias de ahorro para Negocio (59 % vs. 75 %) | `NegocioForm.jsx:15` | Unificar con la referencia que se elija en P-2 de la 032 |
 | Los Términos muestran en producción una nota "[REVISAR] … (CUIL persona humana)" que no cuadra con la factura C | `routes/legal/Terminos.jsx:100-104`, `site.taxIdType` | Texto: actualizar con la condición fiscal real (N-20) |
-| El mail al cliente escribe los plazos a mano (2–3 / 5–7 días) | `netlify/functions/lib/notify.js` `customerTimeline()` | Si los 5 días pasan a toda la tienda (N-19), leerlos del mismo lugar que el sitio |
+| El mail al cliente escribe los plazos a mano (2–3 / 5–7 días) | `netlify/functions/lib/notify.js` `customerTimeline()` | Se resuelve en la tarea 1.8b (100+ desde los ids) |
 
 ---
 

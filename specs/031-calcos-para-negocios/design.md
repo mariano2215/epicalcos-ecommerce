@@ -118,9 +118,9 @@ Los nombres de archivo siguen la convención del repo: en español.
 | `frontend/src/config/site.js` | `navLinks` nuevo (D-6); `footerLinks` en 4 grupos; `anunciosVigentes(now, { negocio })` suma "Calcos con tu logo desde 100 unidades" en páginas B2B. **El bloque de envíos no se toca** | 🟡 (módulo compartido, 40 importadores; el bloque espejado queda intacto) | 1 |
 | `frontend/src/components/Header.jsx` | Botón **Cotizar** (→ `/negocio#cotizador`), `negocio` a la tira según la ruta | 🟡 | 1 |
 | `frontend/src/components/Footer.jsx` | Renderiza los 4 grupos | 🟢 | 1 |
-| `frontend/src/config/site.js` → `shipping` | Suma `produccionNegocio: '5 días hábiles'` (N-3) **sin tocar** costos ni umbrales (lo espejado) | 🟡 | 1 |
-| `frontend/src/components/CheckoutForm.jsx` | Con líneas de negocio en el carrito, muestra `produccionNegocio` en vez de `production` (RF-P3) | 🟡 camino de compra, solo texto | 2 |
-| `netlify/functions/lib/notify.js` → `customerTimeline()` | Pedido con líneas `negocio:`/`volumen:`/`pack:` de 100+: "Tu pedido entra en producción: 5 días hábiles desde que se confirma el pago" + el envío. Hoy los plazos están escritos a mano ahí | 🟡 mail al cliente | 2 |
+| `frontend/src/config/site.js` → `shipping` | Suma `produccionVolumen: '3 a 5 días hábiles'` y `produccionVolumenDesde: 100` (calcos del pedido) **sin tocar** costos ni umbrales (lo espejado) | 🟡 | 1 |
+| `frontend/src/components/CheckoutForm.jsx` + `components/FAQ.jsx` | Con 100+ calcos en el carrito, el checkout muestra `produccionVolumen`; la FAQ general suma "Pedidos de 100 calcos o más: 3 a 5 días hábiles" (RF-P3) | 🟡 camino de compra, solo texto | 1 |
+| `netlify/functions/lib/notify.js` → `customerTimeline()` | Cuenta las calcos del pedido **desde los ids** (`sticker`/`custom`/`pack:mayorista` = `quantity`; `negocio`/`mayorista100` = 100; `volumen` = la cantidad del id; fijos y digitales no cuentan) y con 100+ escribe "Tu pedido entra en producción: 3 a 5 días hábiles desde que se confirma el pago. Antes te mandamos la vista previa por WhatsApp" + el envío. Hoy los plazos están escritos a mano ahí | 🟡 mail al cliente | 1 |
 | `frontend/src/routes/Negocio.jsx` | Pasa a landing B2B (RF-NE1). `NegocioForm.jsx` queda en el repo sin montar (criterio: no se borra) | 🟡 | 1–3 |
 | `frontend/src/routes/Mayorista.jsx` | Banda de pedidos grandes + presupuesto arriba del armador | 🟢 | 3 |
 | `frontend/src/routes/Home.jsx` | `useExperiment('home_b2b')` → control (el de hoy, intacto) o `<HomeB2B/>` lazy | 🟡 | 3 |
@@ -175,8 +175,8 @@ cotizarPedidoNegocio({
 ```
 
 - `'mas'` → `presupuesto / mas_de_1000`.
-- `precioVolumen()` devuelve `null` (holográfico en 9 cm, o DTF UV fuera de lo
-  que apruebe P-4 de la 032) → `presupuesto / sin_precio_online`.
+- El cotizador no ofrece 9 cm (no se vende por mayor). Si `precioVolumen()`
+  devolviera `null` igual, cae en `presupuesto / sin_precio_online`.
 - Nada se persiste: se recalcula en cada render desde el config, igual que
   `precioVidrieraLinea()` (RF-C15).
 - `totalTransferencia = round(total × (1 − TRANSFER_DISCOUNT))`: la línea es
@@ -373,13 +373,15 @@ Todo vive en `config/negocios.js`; los montos se interpolan del config.
 | Escala | Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad. |
 | Factura | Emitimos factura C. |
 | Usos | Un detalle chico que hace que tu marca aparezca en todas partes. |
-| Cómo funciona | Pedir tus calcos es así: 1 Elegí cantidad y tamaño · 2 Subí tu diseño · 3 Revisamos tu archivo y te escribimos si hay algo para ajustar · 4 Producimos en {5 días hábiles} desde que se confirma y se abona el pedido, y te lo mandamos (o lo retirás en Rosario) |
+| Cómo funciona | Pedir tus calcos es así: 1 Elegí cantidad, tamaño y material · 2 Subí tu diseño · 3 Te mandamos una vista previa gratis por WhatsApp y la aprobás · 4 Producimos en {3 a 5 días hábiles} desde que se confirma y se abona el pedido, y te lo mandamos (o lo retirás en Rosario) |
+| Muestra gratis | MUESTRA GRATIS — vista previa digital antes de producir. (En la fila de 100 de la escala, en la barra de confianza y en el paso 3) |
+| Material | Vinilo blanco · **Recomendado** — el clásico para calcos, resistente al agua y al sol. DTF UV: mismo precio |
 | Pedidos grandes | ¿Necesitás 1.000, 5.000 o más? Contanos qué necesitás y te armamos una propuesta. |
 | Recurrentes | ¿Pedís calcos todos los meses? — (beneficios según N-4) |
 | CTA final | Tu marca también puede ser calco. — Empezá tu pedido desde 100 unidades. |
 | Barra móvil | Desde 100 unidades · **Cotizar** |
 | Hooks para anuncios/secciones | "Pegá tu marca en cada pedido." · "Tu packaging también habla de tu negocio." · "¿Mandás pedidos todos los días? Mandá tu marca con ellos." · "Calcos para negocios que necesitan más de diez." |
 
-Verificado contra RF-CO2: ninguna frase dice "archivo perfecto", boceto,
-muestra ni aprobación previa. El "100" del H1 alternativo y de la barra sale de
+Verificado contra RF-CO2: ninguna frase dice "archivo perfecto" ni "boceto";
+"muestra" aparece siempre como "muestra gratis — vista previa digital". El "100" del H1 alternativo y de la barra sale de
 `NEGOCIO.qty`.

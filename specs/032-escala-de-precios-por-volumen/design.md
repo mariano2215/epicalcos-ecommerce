@@ -17,7 +17,7 @@
 | ¿Cómo la cobra el servidor? | `lineBase()` deriva el precio **solo del id**. Una rama nueva por prefijo no toca las demás |
 | ¿Carritos guardados? | `lib/precioVigente.js` re-precia por id al hidratar; un id que no reconoce lo deja como está |
 | ¿Tests que lo cubran? | `promoPricing`, `precioPersonalizados`, `envio` (incluido "la promo de 100 y Negocio debajo del umbral nacional") |
-| ¿Envíos? | El mail al cliente escribe los plazos a mano (`notify.js → customerTimeline`): no depende de esta spec, pero sí de la respuesta de 5 días hábiles (spec 031) |
+| ¿Envíos? | El mail al cliente escribe los plazos a mano (`notify.js → customerTimeline`): no depende de esta spec: el plazo de 3 a 5 días hábiles para pedidos de 100+ lo implementa la spec 031 (RF-P3), contando calcos desde los ids, incluida la línea `volumen:` |
 
 ---
 
@@ -56,8 +56,8 @@ frontend/src/config/pricing.js                 netlify/functions/lib/pricing.js
 | `frontend/src/config/pricing.js` | `ESCALA_VOLUMEN`, `ESCALA_ESCALONES = [100, 250, 500, 1000]`, `precioVolumen()`, `pctEscalon()` | 🔴 camino de precios (47 importadores; solo se **agrega**) |
 | `netlify/functions/lib/pricing.js` | Espejo de la tabla y la función; rama `volumen` en `lineBase()` | 🔴 revalida todos los checkouts (solo se agrega una rama) |
 | `frontend/src/lib/precioVigente.js` | Re-precia `volumen:` | 🟡 |
-| `frontend/src/components/PackBuilder.jsx` | Con 100+ (y la escala más barata o igual), emite `volumen:` en vez de `pack:mayorista`/`mayorista100` | 🟡 `/mayorista` |
-| `frontend/src/lib/precioPersonalizados.js` + `lib/borradorPersonalizado.js` + `components/personalizados/BotonCta.jsx` | Con 100+ unidades (uno o varios diseños), cotiza y emite `volumen:` | 🟡 código de la spec 023 en curso — coordinar |
+| `frontend/src/components/PackBuilder.jsx` | Con 100+ emite `volumen:` en vez de `pack:mayorista`/`mayorista100`; en `/mayorista` deja de ofrecer 9 cm (prop `tamanos`, el armador de `/armar-pack` no cambia) | 🟡 `/mayorista` |
+| `frontend/src/lib/precioPersonalizados.js` + `lib/borradorPersonalizado.js` + `components/personalizados/BotonCta.jsx` | Con 100+ unidades en 4 o 6 cm (uno o varios diseños), cotiza y emite `volumen:`; en 9 cm sigue suelta y sugiere 4 o 6 cm | 🟡 código de la spec 023 en curso — coordinar |
 | `frontend/src/lib/resumenPedido.js` | Rótulo de la línea de escala para mail/CRM | 🟢 |
 | `frontend/src/config/metaCatalog.js` | Nada: usa el SKU de Negocio por `addNegocio` | 🟢 |
 | `docs/business-rules.md` | Sección nueva "Escala por volumen" y tabla del §8 (espejo) | 🟢 |
@@ -77,12 +77,12 @@ frontend/src/config/pricing.js                 netlify/functions/lib/pricing.js
 
 ```js
 // config/pricing.js — ⚠️ ESPEJO en netlify/functions/lib/pricing.js
-// Montos TOTALES por escalón (Mercado Pago). Valores de la opción aprobada en §9.1.
+// Montos TOTALES por escalón (Mercado Pago). Opción B, aprobada el 5/10/2026.
+// SIN 9 cm: Mariano sacó el 9 cm de la venta por mayor (requirements §9.4).
 export const ESCALA_VOLUMEN = {
-  '4cm': { 100: 52999, 250: 118999, 500: 224999, 1000: 423999 },   // ← opción A, a confirmar
-  '6cm': { 100: 52999, 250: 118999, 500: 224999, 1000: 423999 },
-  '9cm': { 100: 132500, 250: 297999, 500: 562999, 1000: 1059999 },
-  holografico: { 100: 72999, 250: 163999, 500: 309999, 1000: 583999 } // solo 4 y 6 cm
+  '4cm': { 100: 52999, 250: 118999, 500: 211999, 1000: 370999 },
+  '6cm': { 100: 52999, 250: 118999, 500: 211999, 1000: 370999 },
+  holografico: { 100: 72999, 250: 163999, 500: 291999, 1000: 510999 } // 4 y 6 cm
 };
 ```
 
@@ -92,12 +92,13 @@ precioVolumen({ tamano, material, cantidad }) → null | {
   cantidadLlevada,   // ≥ cantidad: sube al escalón siguiente si cuesta igual o menos (RF-4)
   escalon,           // 100 | 250 | 500 | 1000
   unitario,          // total / cantidadLlevada, redondeado
-  pct                // según P-2, derivado del total
+  pct                // % contra el escalón de 100, derivado del total; 0 en el de 100
+                     // (ahí la web muestra MUESTRA GRATIS, no un %)
 }
 ```
 
-1. `null` si `cantidad < 100`, `cantidad > 1000`, tamaño inválido, o
-   holográfico en 9 cm.
+1. `null` si `cantidad < 100`, `cantidad > 1000`, o el tamaño no es 4 ni 6 cm
+   (9 cm no se vende por mayor, con ningún material).
 2. Fila: `holografico` si el material es holográfico; si no, el tamaño (vinilo
    blanco y DTF UV comparten fila).
 3. `escalon` = el mayor escalón ≤ `cantidad`.
@@ -105,7 +106,7 @@ precioVolumen({ tamano, material, cantidad }) → null | {
 5. Si hay escalón siguiente y `fila[siguiente] ≤ total` → `total =
    fila[siguiente]`, `cantidadLlevada = siguiente`.
 
-Con la opción A, el total es **no decreciente** de 100 a 1.000 (RF-5): lo
+Con la opción B, el total es **no decreciente** de 100 a 1.000 (RF-5): lo
 verifica un test que recorre todas las cantidades. Si una tabla futura lo
 rompiera, el test frena el deploy.
 
@@ -156,7 +157,8 @@ if (kind === 'volumen') {
 |---|---|
 | `promoPricing.test.js` (o `escalaVolumen.test.js` nuevo) | Las dos tablas son idénticas; `precioVolumen` da lo mismo en los dos lados para **cada** cantidad 100–1.000 × tamaño × material |
 | ídem | Precio por calco estrictamente decreciente entre escalones (RF-2); total no decreciente en todo el rango (RF-5) |
-| ídem | `validateAndPriceOrder()` acepta cada línea emitida, con MP y con transferencia, y rechaza: cantidad 99, 1.001, 240 (no emitible), holográfico 9 cm, material inválido, `quantity 2` |
+| ídem | `validateAndPriceOrder()` acepta cada línea emitida, con MP y con transferencia, y rechaza: cantidad 99, 1.001, 240 (no emitible), **cualquier 9 cm**, material inválido, `quantity 2`. Sigue aceptando `pack:mayorista:9cm` (carritos guardados) |
+| ídem | `pct` = 0 / 10 / 20 / 30 en los cuatro escalones de cada fila |
 | ídem | Un cupón (`EPICA10`) no descuenta la línea; la transferencia sí |
 | `envio.test.js` | El escalón de 100 queda debajo del umbral nacional (se suma al test existente) |
 | `precioVigente` | Un carrito guardado con una línea de escala vieja se re-precia |

@@ -22,9 +22,11 @@ a este archivo, con fecha.
 |---|---|---|---|
 | N-1 | ¿Escala de precios por volumen? | **Sí.** *"Mientras más cantidad, más barato te sale, lo único que se mantiene es la calidad."* | Spec nueva [`032-escala-de-precios-por-volumen`](../032-escala-de-precios-por-volumen/requirements.md) con la tabla para aprobar |
 | N-2 | ¿Contra qué se calcula el ahorro? | *"Poner el % de descuento según el monto que se haga por cada cantidad."* | Cada escalón muestra su %; la referencia exacta es P-2 de la 032 |
-| N-3 | Plazo de producción | **5 días hábiles desde confirmado y abonado el pedido** | Copy B2B, checkout y mail de pedidos de negocio (RF-T1, RF-P1, RF-P3). Ver N-19 |
+| N-3 / N-19 | Plazo de producción | **3 a 5 días hábiles desde confirmado y abonado, para todo pedido de 100 calcos o más** (cualquier producto). Con menos de 100, 2 a 3 como hoy | Barra de confianza, cómo funciona, checkout, mail y FAQ (RF-T1, RF-P1, RF-P3) |
 | N-7 | Factura | **Factura C** | FAQ de negocio (RF-F2); CUIT opcional en cotizador y presupuesto. Ver N-20 |
-| N-10 | Combinaciones sin precio | Las cubre la escala de la 032 si se aprueba P-4 (DTF UV en todos los tamaños) | Cotizador |
+| N-10 | Combinaciones sin precio | Cubiertas: DTF UV y vinilo blanco salen lo mismo en la escala; **se recomienda vinilo blanco** | Cotizador (RF-C4) |
+| — | Escala (spec 032) | **Opción B** (−10/−20/−30 %), **sin 9 cm** en la venta por mayor, **sin descuento en 100** (va MUESTRA GRATIS), **$52.999 es el precio fijo** | Spec 032 `APPROVED` |
+| — | ¿Qué es la MUESTRA GRATIS? | **Vista previa digital por WhatsApp antes de producir**, en pedidos de 100+ | RF-P2, RF-P1 paso 3, RF-F3. Cambia la regla del 14/9 solo para 100+ |
 | N-11 | Obligatorios del formulario | **Nombre y apellido, razón social / empresa, mail y teléfono** (para negocios) | Presupuesto (RF-L1); razón social también al comprar desde el cotizador (RF-C16) |
 
 ---
@@ -52,7 +54,7 @@ a este archivo, con fecha.
 | N-16 | ¿Lista de precios por mail (lead magnet) sí o no? | Se puede armar con el config (los precios salen solos), pero es un mail más que mantener |
 | N-17 | ¿El Home B2B sale como A/B (recomendado) o reemplaza directo al actual? | Riesgo R-1 de la auditoría |
 | N-18 | Horario de atención por WhatsApp, si querés publicarlo | Expectativa de respuesta en el CTA de "Hablar por WhatsApp" |
-| **N-19** | **¿Los 5 días hábiles valen también para la tienda (calcos sueltas, catálogo)?** Hoy el sitio, el checkout y el mail prometen 2 a 3 días para todo, y los pedidos de Negocio/x100 que ya se venden reciben ese mismo plazo en el mail | Si es para todo: un valor del config + el mail. Si es solo negocios: plazo separado (lo que diseña la 031) |
+| N-21 | ¿La vista previa también para pedidos de menos de 100? (asumido: no) y ¿los 3 a 5 días cuentan desde que se aprueba? (asumido: sí) | Copy del paso 3 y del plazo |
 | N-20 | Factura C implica monotributo: ¿actualizamos la condición fiscal en los Términos? Hoy muestran en producción una nota "[REVISAR] … (CUIL persona humana)" | Texto legal; no lo cambio sin tu OK |
 
 ---
@@ -85,7 +87,7 @@ Cómo se cargan: van a `frontend/public/images/negocios/`, se corre
 | Propuesta del pedido | Por qué no | Decisión de |
 |---|---|---|
 | Sección "¿No sabés si tu archivo sirve? / no tengo el archivo perfecto" | *"NO volver a poner"* — siembra la duda justo al subir | Mariano, 15/8 y 14/9/2026 |
-| Paso "aprobación previa / muestra" en el proceso | No se manda boceto ni prueba, **y no se dice** | Mariano, 14/9/2026 |
+| ~~Paso "aprobación previa / muestra" en el proceso~~ | **Cambió el 5/10/2026:** con 100+ calcos se manda una vista previa digital gratis (MUESTRA GRATIS). Con menos de 100 sigue sin vista previa y no se dice | Mariano, 14/9/2026 → 5/10/2026 |
 | Fotos generadas, mockups o renders en lugar de fotos reales | Responden mal "¿cómo queda de verdad?" | Mariano, 14/9/2026 |
 | Envío gratis como beneficio de un pack | Ninguna promo regala el envío: manda el umbral | Mariano, 12/8/2026 |
 | Bajar tarifas de envío | Decisión tomada, no reabrir | Mariano, 11/8/2026 |

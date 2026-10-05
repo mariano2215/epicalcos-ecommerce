@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `032-escala-de-precios-por-volumen` |
-| **Estado** | `READY FOR REVIEW` — falta que Mariano apruebe la tabla de §9.1 (opción A, B u otros %) y las preguntas de §12 |
+| **Estado** | `APPROVED` — tabla (opción B) y preguntas aprobadas por Mariano el 05/10/2026. **Sigue sin autorizar la implementación**: falta el "Implementá la spec 032" |
 | **Fecha** | 05/10/2026 |
 | **Autor** | Claude Code, a partir de la respuesta de Mariano a la spec 031 (N-1) |
 
@@ -49,10 +49,11 @@ sin tocar el precio de 100 que ya se cobra hoy.
 
 ## 3. Scope
 
-- [ ] Escalones de **100, 250, 500 y 1.000** calcos, por tamaño (4, 6, 9 cm) y
-      material (vinilo blanco, DTF UV, vinilo holográfico)
+- [ ] Escalones de **100, 250, 500 y 1.000** calcos, en **4 y 6 cm** y
+      material (vinilo blanco, DTF UV, vinilo holográfico). **Sin 9 cm** (§9.4)
 - [ ] El precio de **100** es el que se cobra hoy, en cada tamaño y material
-- [ ] Cada escalón muestra su **% de descuento** (§9.2)
+- [ ] Cada escalón muestra su **% de descuento** contra el de 100; el de 100
+      muestra **MUESTRA GRATIS** (§9.2)
 - [ ] Cantidades entre escalones (ej. 300), para los caminos que permiten
       cantidad libre
 - [ ] Más de 1.000: sin precio online, se pide presupuesto (spec 031, N-8)
@@ -103,19 +104,19 @@ sin tocar el precio de 100 que ya se cobra hoy.
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-1 | Existe una tabla de precios por escalón (100 / 250 / 500 / 1.000) para cada tamaño y material que se vende, con los valores aprobados en §9.1 | 🔴 must |
+| RF-1 | Existe una tabla de precios por escalón (100 / 250 / 500 / 1.000) para 4 y 6 cm y cada material, con los valores aprobados en §9.1. **No hay 9 cm** | 🔴 must |
 | RF-2 | El precio por calco **baja** en cada escalón, en todos los tamaños y materiales | 🔴 must |
-| RF-3 | Cada escalón tiene un **% de descuento** calculado a partir de su monto (§9.2), nunca escrito a mano | 🔴 must |
+| RF-3 | Cada escalón de 250+ tiene un **% de descuento contra el de 100** calculado a partir de su monto (§9.2), nunca escrito a mano. El de 100 no muestra % | 🔴 must |
 | RF-4 | Entre dos escalones se cobra el precio por calco del escalón alcanzado; si llevar el escalón siguiente cuesta lo mismo o menos, se cotiza el siguiente y el cliente se lleva esa cantidad ("pedís 240, te llevás 250 por $X") | 🔴 must |
 | RF-5 | Agregar una calco nunca baja el total del pedido (no hay "saltos" donde 249 cuesta más que 250) | 🔴 must |
-| RF-6 | Vinilo blanco y DTF UV valen lo mismo en todos los tamaños (como en la calco suelta) | 🔴 must |
+| RF-6 | Vinilo blanco y DTF UV valen lo mismo; vinilo blanco es el recomendado (§9.3) | 🔴 must |
 | RF-7 | El holográfico existe solo en 4 y 6 cm y su precio de escalón ya incluye el recargo del material | 🔴 must |
 | RF-8 | Los pedidos se pueden hacer con **uno o varios diseños** al mismo precio de escalón (como la promo x100 de hoy) | 🔴 must |
 | RF-9 | El servidor cobra exactamente lo mismo que muestra el sitio, para cada tamaño, material y cantidad de 100 a 1.000; si no coincide, rechaza | 🔴 must |
 | RF-10 | El 20 % por transferencia corre encima del precio de la escala | 🔴 must |
 | RF-11 | Ni cupones ni promos N×M alcanzan a la escala | 🔴 must |
-| RF-12 | El armador de `/mayorista` con 100 o más calcos cobra con la escala | 🔴 must |
-| RF-13 | El configurador de `/personalizados` con 100 o más calcos (uno o varios diseños) cobra con la escala | 🔴 must |
+| RF-12 | El armador de `/mayorista` con 100 o más calcos cobra con la escala y **no ofrece 9 cm** | 🔴 must |
+| RF-13 | El configurador de `/personalizados` con 100 o más calcos en 4 o 6 cm (uno o varios diseños) cobra con la escala; en 9 cm se cobra suelta y sugiere 4 o 6 cm | 🔴 must |
 | RF-14 | Un carrito guardado con una línea de la escala se re-precia al cargar si la escala cambió | 🔴 must |
 | RF-15 | El escalón de 100 queda **debajo** del umbral nacional de envío gratis (regla del 1/10/2026) | 🔴 must |
 | RF-16 | En el mail al vendedor y en el CRM, la línea dice escalón, cantidad, tamaño, material y cuántos diseños | 🟡 should |
@@ -135,84 +136,75 @@ sin tocar el precio de 100 que ya se cobra hoy.
 
 ## 9. Reglas de negocio
 
-### 9.1 La tabla — ⛔ requiere aprobación de Mariano antes de implementar
+### 9.1 La tabla — ✅ aprobada por Mariano el 05/10/2026 ("Opción B")
 
-Base: el precio de 100 que se cobra **hoy** en cada tamaño (no cambia). Cada
-escalón baja el precio **por calco** un % contra el de 100. Los montos se
-redondean a …999 (criterio de las specs 027/029); el 100 de 9 cm se deja en el
-valor de hoy. Precios de Mercado Pago; debajo, por transferencia (−20 %).
+Base: el precio de 100 que se cobra hoy, que pasa a ser **el precio fijo de
+negocio** (P-3). Cada escalón baja el precio **por calco** 10 / 20 / 30 %
+contra el de 100. Montos redondeados a …999 (criterio de las specs 027/029).
+Precios de Mercado Pago; por transferencia, −20 % encima.
 
-**Opción A — escalones de −10 % / −15 % / −20 % por calco** *(conservadora)*
+**Solo 4 y 6 cm** (P-6: *"Sacar 9 cm de calcos mayoristas"*).
 
-| Cantidad | 4 y 6 cm | por calco | 9 cm | por calco | Holográfico (4 y 6 cm) | por calco |
-|---|---|---|---|---|---|---|
-| 100 | **$52.999** | $530 | **$132.500** | $1.325 | **$72.999** | $730 |
-| 250 | **$118.999** | $476 | **$297.999** | $1.192 | **$163.999** | $656 |
-| 500 | **$224.999** | $450 | **$562.999** | $1.126 | **$309.999** | $620 |
-| 1.000 | **$423.999** | $424 | **$1.059.999** | $1.060 | **$583.999** | $584 |
-| *1.000 por transferencia* | *$339.199* | *$339* | *$847.999* | *$848* | *$467.199* | *$467* |
+| Cantidad | 4 y 6 cm (vinilo blanco o DTF UV) | por calco | Se muestra | Por transferencia |
+|---|---|---|---|---|
+| 100 | **$52.999** | $530 | **MUESTRA GRATIS** (sin %) | $42.399 ($424 c/u) |
+| 250 | **$118.999** | $476 | **10 % OFF** | $95.199 ($381 c/u) |
+| 500 | **$211.999** | $424 | **20 % OFF** | $169.599 ($339 c/u) |
+| 1.000 | **$370.999** | $371 | **30 % OFF** | $296.799 ($297 c/u) |
 
-**Opción B — escalones de −10 % / −20 % / −30 % por calco** *(más agresiva)*
+| Cantidad | Holográfico (4 y 6 cm) | por calco | Se muestra | Por transferencia |
+|---|---|---|---|---|
+| 100 | **$72.999** | $730 | **MUESTRA GRATIS** (sin %) | $58.399 ($584 c/u) |
+| 250 | **$163.999** | $656 | **10 % OFF** | $131.199 ($525 c/u) |
+| 500 | **$291.999** | $584 | **20 % OFF** | $233.599 ($467 c/u) |
+| 1.000 | **$510.999** | $511 | **30 % OFF** | $408.799 ($409 c/u) |
 
-| Cantidad | 4 y 6 cm | por calco | 9 cm | por calco | Holográfico (4 y 6 cm) | por calco |
-|---|---|---|---|---|---|---|
-| 100 | **$52.999** | $530 | **$132.500** | $1.325 | **$72.999** | $730 |
-| 250 | **$118.999** | $476 | **$297.999** | $1.192 | **$163.999** | $656 |
-| 500 | **$211.999** | $424 | **$529.999** | $1.060 | **$291.999** | $584 |
-| 1.000 | **$370.999** | $371 | **$926.999** | $927 | **$510.999** | $511 |
-| *1.000 por transferencia* | *$296.799* | *$297* | *$741.599* | *$742* | *$408.799* | *$409* |
+Descartada: la opción A (−10 / −15 / −20 %).
 
-> ⚠️ Desde acá no se puede validar el margen: los costos de producción no están
-> en el repo (`business-rules.md` §10). La elección entre A, B u otros % es de
-> Mariano. Cada escalón es **un** número en el config: cambiarlo después es
-> barato.
+Verificado con un script sobre esta tabla (5/10/2026): el precio por calco baja
+en cada escalón y, de 100 a 1.000, agregar calcos nunca baja el total.
 
-> ⚠️ 4 y 6 cm valen lo mismo porque hoy la promo x100 cobra los dos a $52.999.
-> Si se quiere que 4 cm sea más barato, es otra fila.
+### 9.2 El % que se muestra — ✅ resuelto
 
-> ⚠️ 9 cm arranca en $132.500 (el pack mayorista de hoy, 50 % OFF): 2,5 veces el
-> de 6 cm. Es lo que se cobra hoy; se señala porque en la tabla salta a la vista.
+**Contra el precio de 100**, derivado del monto de cada escalón:
+`round((1 − (total / cantidad) / (total100 / 100)) × 100)` → 10 / 20 / 30 %.
+El escalón de 100 **no muestra descuento**: muestra **MUESTRA GRATIS** (la
+vista previa digital que define la spec 031). Vale igual para vinilo blanco,
+DTF UV y holográfico.
 
-### 9.2 El % que se muestra
+### 9.3 Materiales
 
-"El % de descuento según el monto de cada cantidad" admite dos lecturas. Las
-dos salen del monto, ninguna se escribe a mano:
+- **Vinilo blanco y DTF UV valen lo mismo** (P-4). **Vinilo blanco es el
+  recomendado** para calcos: es el que aparece elegido por defecto y con la
+  etiqueta "Recomendado".
+- Holográfico: su propia fila, recargo incluido, 4 y 6 cm.
 
-| Escalón (4 y 6 cm, opción A) | Contra la calco suelta ($2.100 en 6 cm) | Contra el precio de 100 |
-|---|---|---|
-| 100 | 75 % OFF | — (precio base) |
-| 250 | 77 % OFF | 10 % menos por calco |
-| 500 | 79 % OFF | 15 % menos por calco |
-| 1.000 | 80 % OFF | 20 % menos por calco |
+### 9.4 Sin 9 cm en la venta por mayor
 
-- **Contra la suelta** (recomendado): todos los escalones tienen un %, es la
-  misma referencia que ya usa el configurador (la "suelta" es un precio real del
-  sitio) y da los números más grandes. Contra: entre escalones el % se mueve
-  pocos puntos, así que lo que muestra la escala es el **precio por calco**
-  bajando.
-- **Contra el precio de 100**: la escalera se lee sola (−10 / −15 / −20 %) y
-  vale igual para todos los materiales, pero el de 100 no muestra ningún
-  descuento.
+- La escala no tiene 9 cm: el cotizador no lo ofrece y el servidor rechaza una
+  línea de escala en 9 cm.
+- El armador de `/mayorista` deja de ofrecer 9 cm.
+- La calco de 9 cm **suelta** sigue a la venta como hoy (catálogo y
+  `/personalizados`). En `/personalizados`, con 100 copias o más en 9 cm, no
+  hay precio por volumen: se cobra suelta y se sugiere 4 o 6 cm.
+- El servidor **sigue aceptando** `pack:mayorista:9cm`, para no trabar los
+  carritos guardados que la tengan.
 
-Con la referencia "suelta", el holográfico es la excepción: no existe
-holográfico suelto, así que muestra su % contra su escalón de 100, y lo dice el
-texto.
-
-### 9.3 Cómo convive con lo que ya existe
+### 9.5 Cómo convive con lo que ya existe
 
 | Producto de hoy | Qué pasa |
 |---|---|
-| Promo Negocio (100, 1 diseño, 6 cm) | Sigue igual: vale lo mismo que el escalón de 100. Los carritos guardados siguen andando |
-| Promo x100 (100 exactas, 4 y 6 cm) | Ídem. ⚠️ Con la escala, $52.999 por 100 en 4 y 6 cm pasa a ser **precio de lista permanente**, no "promo": apagar la x100 ya no lo sube (P-3) |
-| Pack mayorista 50 % (9 cm, o 4/6 sin la x100) | Con 100+ el armador pasa a la escala. Hasta 249 en 9 cm cobra igual que hoy |
-| Pack holográfico (100, 4 y 6 cm) | Ídem Negocio: el escalón de 100 vale lo mismo |
-| Configurador con 100+ copias | Pasa a la escala, con uno o varios diseños (arregla el hallazgo H-2 de la 031) |
+| Promo Negocio (100, 1 diseño, 6 cm) | Sigue igual: vale lo mismo que el escalón de 100 |
+| Promo x100 (100 exactas, 4 y 6 cm) | Ídem. $52.999 por 100 en 4 y 6 cm es el **precio fijo** (P-3): ya no depende del interruptor de la promo |
+| Pack mayorista 50 % | El armador pasa a la escala con 100+ (4 y 6 cm) y deja de ofrecer 9 cm |
+| Pack holográfico (100, 4 y 6 cm) | Vale lo mismo que el escalón de 100 |
+| Configurador con 100+ copias | Pasa a la escala en 4 y 6 cm, con uno o varios diseños (arregla H-2 de la 031) |
 
-### 9.4 Reglas que se respetan
+### 9.6 Reglas que se respetan
 
 | Regla | Ref. | ¿Se modifica? |
 |---|---|---|
-| Precio de la calco suelta | `business-rules.md` §1 | no |
+| Precio de la calco suelta (incluida la de 9 cm) | `business-rules.md` §1 | no |
 | 20 % por transferencia | §2 | no |
 | Ninguna promo regala el envío | §5 | no |
 | Envío gratis desde el umbral | §5 | no — 250+ lo cruza solo por monto, que es la regla |
@@ -230,10 +222,11 @@ texto.
 | Caso | Comportamiento esperado |
 |---|---|
 | 240 calcos de 6 cm (opción A) | 240 × $530 = $127.198 > $118.999 → se cotiza el escalón de 250 y se lleva 250 |
-| 300 calcos de 6 cm | 300 × ($118.999 / 250) = $142.799 (escalón 250) |
+| 300 calcos de 6 cm | 300 × ($118.999 / 250) = $142.799 (escalón 250, 10 % OFF) |
+| 100+ en 9 cm | Sin escala: el cotizador no lo ofrece; el servidor rechaza `volumen:9cm…`; `/personalizados` lo cobra suelto |
+| Carrito guardado con `pack:mayorista:9cm` | Se sigue pudiendo pagar |
 | 99 calcos | No es escala: precio suelto (como hoy) |
 | 1.001 calcos | Sin precio online → presupuesto |
-| Holográfico 9 cm | No se puede pedir; el servidor lo rechaza |
 | Escala cambia con un carrito guardado | La línea se re-precia al cargar; el checkout cobra la vigente |
 | Un pedido mezcla la escala con calcos sueltas y cupón | El cupón alcanza solo a las sueltas; la transferencia a todo |
 | Cliente manda un id de escala con cantidad 50 o 5.000 | El servidor rechaza |
@@ -249,10 +242,23 @@ de archivo.
 
 ---
 
-## 12. Preguntas abiertas
+## 12. Preguntas
 
-- [ ] **P-1** ¿Opción **A**, **B** u otros % por escalón? *(bloquea)*
-- [ ] **P-2** ¿El % que se muestra es **contra la calco suelta** (recomendado) o **contra el precio de 100**? *(bloquea el copy, no el precio)*
-- [ ] **P-3** Con la escala, $52.999 por 100 en 4 y 6 cm deja de ser "promo" y pasa a ser el precio de lista de negocio. ¿OK? *(si no, el escalón de 100 de 4 cm tendría que ser el del pack mayorista sin promo: $80.000)*
-- [ ] **P-4** ¿DTF UV en **todos** los tamaños al precio del vinilo blanco (como en la suelta)? Hoy con 100+ solo existe en 6 cm con un diseño
-- [ ] **P-5** ¿Precio también entre escalones (RF-4, para el armador y el configurador) o **solo** 100 / 250 / 500 / 1.000 exactos? Recomendado: entre escalones, con el techo del escalón siguiente
+### Respondidas por Mariano el 05/10/2026
+
+- [x] **P-1** — **Opción B** (−10 / −20 / −30 % por calco).
+- [x] **P-2** — **No mostrar descuento en 100 calcos; agregar MUESTRA GRATIS.**
+      El % se calcula contra el precio de 100.
+- [x] **P-3** — **Sí, $52.999 por 100 es el precio fijado.**
+- [x] **P-4** — **DTF UV y vinilo blanco salen lo mismo. Recomendar vinilo
+      blanco.**
+- [x] **P-6** — **Sacar 9 cm de calcos mayoristas** (§9.4).
+- [x] "MUESTRA GRATIS" = **vista previa digital por WhatsApp antes de
+      producir** (respuesta a la pregunta del 5/10/2026). Se define en la spec
+      031.
+
+### Con default (sin respuesta explícita)
+
+- [ ] **P-5** — Precio también entre escalones, con el techo del escalón
+      siguiente (RF-4). Si Mariano prefiere solo cantidades exactas, el
+      armador y el configurador redondean al escalón.

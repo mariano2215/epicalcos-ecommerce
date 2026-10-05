@@ -38,7 +38,7 @@ nuevo de `/negocio`.
 | | |
 |---|---|
 | **Objetivo** | Tener los datos que el copy y el cotizador no pueden inventar |
-| **Entregables** | ✅ N-1, N-2, N-3, N-7, N-11 respondidas el 5/10/2026. Faltan: **tabla de la spec 032** (P-1…P-5), N-19 (¿5 días también para la tienda?), N-8/N-9 (con default), N-4/N-5, turno para las fotos (N-6), quick wins Q-1…Q-3 |
+| **Entregables** | ✅ Respondidas el 5/10/2026: N-1, N-2, N-3/N-19, N-7, N-10, N-11, la tabla de la 032 (opción B, sin 9 cm) y qué es la muestra gratis. Faltan: N-4, N-5, N-8/N-9 (con default), turno para las fotos (N-6), N-20 (Términos), N-21, quick win Q-1 |
 | **Depende de** | Mariano |
 | **Puede ir en paralelo** | Fase 1 (no depende de ninguna de estas respuestas salvo N-3 para el plazo, que tiene valor por defecto en el config) |
 

@@ -52,6 +52,9 @@ reposicionamiento; todos cambian **cómo** se hace.
      siquiera como "no mandamos boceto"). Lo publicable es: *revisamos cada
      archivo antes de producir y te escribimos por WhatsApp si hay algo para
      ajustar.*
+     **→ Cambió el 5/10/2026:** con 100 calcos o más se manda una vista previa
+     digital gratis por WhatsApp ("MUESTRA GRATIS"). Con menos de 100, sigue
+     sin vista previa y no se menciona.
    - Popup "10 % OFF" → popup B2B: el popup de la spec 026 está `IN PROGRESS`
      (falta QA en dispositivos). Esta spec no lo toca; la captura B2B va
      **inline** en las páginas de negocio (§8).

@@ -48,18 +48,18 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 | AC-H2 | *(RF-H4)* El "desde" del hero es el menor precio por calco vigente y la suelta, ambos del config: cambiar `NEGOCIO.price` en local cambia el hero | Prueba local | 1 | ⬜ |
 | AC-H3 | *(RF-H6)* La imagen del hero es una foto real listada en `data/negociosFotos.js` | Revisión del archivo | 1 | ⬜ |
 | AC-H4 | *(RF-H7)* A 375 × 667, H1 + precio + CTA primario sin scroll | Captura | 1 | ⬜ |
-| AC-T1 | *(RF-T1)* Los 4 datos de confianza salen de `brandStats`, `data/marcas.js` (cuenta) y `shipping.produccionNegocio` (5 días hábiles) | Revisión + cambiar uno en local | 1 | ⬜ |
+| AC-T1 | *(RF-T1)* Los 4 datos: desde 100 unidades, muestra gratis antes de producir, 3 a 5 días hábiles (de `shipping.produccionVolumen`) y la cuenta de `data/marcas.js` | Revisión + cambiar uno en local | 1 | ⬜ |
 
 ### Cotizador
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
-| AC-C1 | *(RF-C2/3/4)* Opciones: 100 · 250 · 500 · 1.000 · Más de 1.000; 4/6/9 cm; vinilo blanco, DTF UV, holográfico; holográfico + 9 cm no se puede elegir | Inspección | 2 | ⬜ |
+| AC-C1 | *(RF-C2/3/4)* Opciones: 100 · 250 · 500 · 1.000 · Más de 1.000; **4 y 6 cm** (sin 9 cm); vinilo blanco preseleccionado y "Recomendado", DTF UV y holográfico | Inspección | 2 | ⬜ |
 | AC-C2 | *(RF-C8)* Para cada tamaño × material × cantidad del cotizador, el total **es igual al peso** al que calcula `validateAndPriceOrder()` con MP y con transferencia | `cotizadorNegocio.test.js` | 2 | ⬜ |
 | AC-C3 | *(RF-C8)* Los totales del cotizador son los de la tabla aprobada en la spec 032 §9.1 para cada escalón (y 240 → "te llevás 250") | Test + pantalla | 2 | ⬜ |
 | AC-C4 | *(RF-C6)* Se ven total, precio por calco y precio por transferencia | Inspección | 2 | ⬜ |
-| AC-C5 | *(RF-C7)* Cada cantidad muestra su % de descuento, derivado del monto con la referencia aprobada en P-2 de la 032 | Test | 2 | ⬜ |
-| AC-C6 | *(RF-C9)* "Más de 1.000" y DTF UV en 4 cm / 9 cm / varios diseños muestran **Pedir presupuesto**, sin precio | Inspección + test | 2 | ⬜ |
+| AC-C5 | *(RF-C7)* 250 / 500 / 1.000 muestran 10 / 20 / 30 % OFF derivados del monto; 100 muestra MUESTRA GRATIS y ningún % | Test | 2 | ⬜ |
+| AC-C6 | *(RF-C9)* "Más de 1.000" muestra **Pedir presupuesto**, sin precio; DTF UV con varios diseños cotiza igual que vinilo blanco | Inspección + test | 2 | ⬜ |
 | AC-C7 | *(RF-C10)* Subir 3 archivos y agregar: el carrito tiene las líneas de §3.3 y el checkout por MP **no** devuelve `price_mismatch` | Recorrido local con `create-preference` | 2 | ⬜ |
 | AC-C8 | *(RF-C10)* Las URLs de Cloudinary llegan al mail/CRM una sola vez, en un bloque | `resumenPedido.test.js` + pedido de prueba | 2 | ⬜ |
 | AC-C9 | *(RF-C11)* Formatos, peso y cantidad de archivos iguales a `/personalizados`; "✓ archivo cargado", nombre y "Cambiar archivo" | Subir PNG, PDF, un .txt (rechazado) y uno de 11 MB (rechazado) | 2 | ⬜ |
@@ -68,19 +68,19 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 | AC-C12 | *(RF-C14)* Se completa con teclado solo; el lector de pantalla anuncia el precio al cambiar | Teclado + VoiceOver | 2 | ⬜ |
 | AC-C13 | *(RF-C15)* Cambiar un escalón en local (los dos lados) cambia el precio del cotizador sin tocar otro archivo | Prueba local | 2 | ⬜ |
 | AC-C15 | *(RF-C16)* Sin razón social no se puede agregar al carrito; con razón social y CUIT, los dos llegan al mail y al CRM | Recorrido + pedido de prueba | 2 | ⬜ |
-| AC-P2 | *(RF-P3)* Checkout y mail de un pedido de negocio dicen 5 días hábiles de producción; los de la tienda, el plazo de la tienda | Pedido de prueba de cada tipo | 2 | ⬜ |
+| AC-P2 | *(RF-P3)* Pedido de 100+ calcos (cualquier producto): checkout, mail y FAQ dicen 3 a 5 días hábiles; con menos de 100, 2 a 3 | Pedido de prueba de 120 sueltas, de 30 y de una línea de escala | 1 | ⬜ |
 | AC-C14 | *(D-11)* Agregar dos veces seguidas no duplica el pedido sin querer | Recorrido | 2 | ⬜ |
 
 ### Precios y contenido
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
-| AC-E1 | *(RF-E1)* La escala muestra 100 · 250 · 500 · 1.000 con total, por calco, % y transferencia, del config; el titular dice "Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad." | Cambiar un escalón en local | 2 | ⬜ |
+| AC-E1 | *(RF-E1)* La escala muestra 100 · 250 · 500 · 1.000 con total, por calco y transferencia; etiquetas **MUESTRA GRATIS / 10 % OFF / 20 % OFF / 30 % OFF**; titular "Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad." | Cambiar un escalón en local | 2 | ⬜ |
 | AC-E2 | *(RF-E2/3)* La suelta aparece como referencia; no hay "MÁS ELEGIDO" | Inspección | 2 | ⬜ |
 | AC-U1 | *(RF-U1)* 6 usos; ninguna imagen de stock | Inspección | 3 | ⬜ |
 | AC-G1 | *(RF-G1)* Con la lista de fotos vacía, la galería no está ni en el DOM ni en el HTML | `curl` + DOM | 3 | ⬜ |
 | AC-M1 | *(RF-M1/2/3)* Una card por material de `MATERIALES`; el holográfico dice packs de 100 en 4 y 6 cm | Inspección | 3 | ⬜ |
-| AC-P1 | *(RF-P1/2)* 4 pasos; plazo del config; ni una mención a boceto, muestra o aprobación | Test de copy | 1 | ⬜ |
+| AC-P1 | *(RF-P1/2, RF-F3)* 4 pasos con la vista previa gratis en el paso 3; plazo del config; "muestra" siempre aclarada como vista previa digital; `/personalizados` y la tienda no mencionan la vista previa | Test de copy + inspección | 1 | ⬜ |
 | AC-R1 | *(RF-R1)* "¿Pedís calcos todos los meses?" no se monta sin N-4 resuelto | Inspección | 3 | ⬜ |
 | AC-S1 | *(RF-S1)* Marcas, cifras y testimonios reales; un componente sin datos no se monta | Inspección | 1–3 | ⬜ |
 | AC-K1 | *(RF-K1)* Banda de pedidos grandes con Pedir presupuesto y Hablar por WhatsApp | Inspección | 2 | ⬜ |

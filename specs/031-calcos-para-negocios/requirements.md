@@ -199,7 +199,7 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-T1 | Cuatro datos debajo del hero, todos verificables: desde 100 unidades · +120.000 calcos vendidas · 35 marcas que ya confiaron (el número sale de la lista de logos) · **producción en 5 días hábiles** (plazo de negocio, leído de la configuración; N-3) | 🔴 must |
+| RF-T1 | Cuatro datos debajo del hero, todos verificables: **desde 100 unidades** · **muestra gratis antes de producir** (vista previa digital, RF-P4) · **producción en 3 a 5 días hábiles** (de la configuración, N-3/N-19) · **35 marcas que ya confiaron** (el número sale de la lista de logos). "+120.000 calcos vendidas" va en la sección de marcas | 🔴 must |
 
 ### 7.5 Cotizador
 
@@ -207,11 +207,11 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 |---|---|---|
 | RF-C1 | Título "¿Cuántas calcos necesitás?" y subtexto que no prometa escala inexistente (N-1) | 🔴 must |
 | RF-C2 | Paso 1, cantidad: **100 · 250 · 500 · 1.000 · Más de 1.000** | 🔴 must |
-| RF-C3 | Paso 2, tamaño: solo los que se venden (4, 6 y 9 cm), con su uso típico | 🔴 must |
-| RF-C4 | Paso 3, material: solo los que se venden (vinilo blanco, DTF UV, vinilo holográfico). Una combinación que no se vende (holográfico en 9 cm) no se puede elegir | 🔴 must |
+| RF-C3 | Paso 2, tamaño: **4 y 6 cm**, con su uso típico. **9 cm no se vende por mayor** (spec 032 §9.4) | 🔴 must |
+| RF-C4 | Paso 3, material: vinilo blanco, DTF UV y vinilo holográfico. **Vinilo blanco viene elegido y con la etiqueta "Recomendado"**; DTF UV vale lo mismo (spec 032 P-4) | 🔴 must |
 | RF-C5 | Paso 4, diseños: **uno** o **varios** (con la cantidad de diseños). Con varios, las calcos se reparten según N-9 | 🔴 must |
 | RF-C6 | Muestra **total** y **precio por calco**, en vivo, con el precio de Mercado Pago y debajo el de transferencia | 🔴 must |
-| RF-C7 | Muestra el **% de descuento de la cantidad elegida**, calculado a partir de su monto con la referencia que apruebe Mariano en la spec 032 (P-2) | 🔴 must |
+| RF-C7 | Muestra el **% de descuento de la cantidad elegida contra el precio de 100** (10 / 20 / 30 %). En **100 no se muestra descuento: se muestra MUESTRA GRATIS** (spec 032 §9.2) | 🔴 must |
 | RF-C8 | **El precio es el de la escala por volumen** (spec 032) y es exactamente lo que se cobra en el checkout. Si conviene el escalón siguiente, lo dice ("pedís 240, te llevás 250") | 🔴 must |
 | RF-C9 | "Más de 1.000" (N-8) y toda combinación que la escala de la 032 no cubra (N-10) muestran **Pedir presupuesto** en lugar de un precio | 🔴 must |
 | RF-C10 | El CTA **Subir diseño y continuar** abre la subida de archivos ahí mismo; con los archivos subidos, **Agregar al carrito** suma el pedido con sus archivos adentro | 🔴 must |
@@ -226,7 +226,7 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-E1 | Sección de la escala: **"Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad."** Una fila por escalón (100 · 250 · 500 · 1.000) con total, **precio por calco**, **% de descuento** y precio por transferencia, para el tamaño y material elegidos. Todo leído de la escala (spec 032) | 🔴 must |
+| RF-E1 | Sección de la escala: **"Mientras más cantidad, más barato te sale. Lo único que no cambia es la calidad."** Una fila por escalón con total, **precio por calco**, transferencia y su etiqueta: **100 → MUESTRA GRATIS**, **250 → 10 % OFF**, **500 → 20 % OFF**, **1.000 → 30 % OFF**. Todo leído de la escala (spec 032) | 🔴 must |
 | RF-E2 | La calco suelta aparece como referencia (precio por tamaño), leída de las reglas de precio | 🟡 should |
 | RF-E3 | Ninguna etiqueta "MÁS ELEGIDO" sin dato que la respalde. "MEJOR PRECIO POR CALCO" en el escalón de 1.000 sí es verificable | 🔴 must |
 
@@ -239,14 +239,15 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 | RF-M1 | **Materiales**: una card por material que se vende, con beneficio, usos y en qué tamaños existe | 🟡 should |
 | RF-M2 | El holográfico dice que va en packs de 100 en 4 y 6 cm | 🔴 must |
 | RF-M3 | La foto de cada material se muestra solo si existe | 🟡 should |
-| RF-P1 | **Cómo funciona**, 4 pasos: elegí cantidad y tamaño → subí tu diseño → revisamos tu archivo y te escribimos si hay algo para ajustar → producimos **en 5 días hábiles desde que se confirma y se abona el pedido** y te lo enviamos (o lo retirás). Plazo leído de la configuración | 🔴 must |
-| RF-P3 | El checkout y el mail de confirmación de un pedido de negocio prometen el plazo de negocio (5 días hábiles de producción), no el de la tienda | 🔴 must |
-| RF-P2 | Ningún texto menciona boceto, muestra, prueba ni aprobación previa — ni para decir que no hay | 🔴 must |
+| RF-P1 | **Cómo funciona**, 4 pasos: **1** Elegí cantidad, tamaño y material → **2** Subí tu diseño → **3** Te mandamos una **vista previa gratis** por WhatsApp y la aprobás → **4** Producimos en **3 a 5 días hábiles** desde que se confirma y se abona el pedido, y te lo enviamos (o lo retirás). Plazo leído de la configuración | 🔴 must |
+| RF-P3 | **Todo pedido de 100 calcos o más** (de cualquier producto: escala, Negocio, packs, catálogo, personalizados) promete **3 a 5 días hábiles de producción** en el checkout, en el mail de confirmación y en la FAQ general. Con menos de 100 sigue el plazo de la tienda (2 a 3 días hábiles) — Mariano, 5/10/2026: *"aplica para todo, los 3 a 5 días siendo 100 calcos o más"* | 🔴 must |
+| RF-P2 | **MUESTRA GRATIS = vista previa digital.** Todo pedido de 100 calcos o más incluye una vista previa por WhatsApp antes de producir; se produce cuando el cliente la aprueba (Mariano, 5/10/2026). Se nombra "MUESTRA GRATIS" con la aclaración "vista previa digital antes de producir", para que nadie espere una calco física. En los pedidos de **menos de 100** no hay vista previa y no se menciona (sigue la regla del 14/9/2026) | 🔴 must |
 | RF-R1 | **¿Pedís calcos todos los meses?** con CTA de WhatsApp precargado. Solo enumera beneficios confirmados (N-4) | 🟡 should |
 | RF-S1 | **Social proof**: logos reales de clientes, cifras de marca reales, testimonios reales (preferir los de negocios). Un componente sin datos no se monta | 🔴 must |
 | RF-K1 | **Pedidos grandes**: "¿Necesitás 1.000, 5.000 o más?" con **Pedir presupuesto** y **Hablar por WhatsApp** | 🔴 must |
 | RF-F1 | **Preguntas de negocio**: pedido mínimo, varios diseños, tamaños, materiales, agua y sol, cómo mandar el diseño, calidad del archivo, más de 1.000, plazo, envíos, retiro, precio para empresas, volver a pedir el mismo diseño. Cada respuesta sale de un dato verificable; las que dependen de un TODO **no se publican** hasta confirmarlo | 🔴 must |
 | RF-F2 | "¿Puedo pedir factura?" → **"Sí, emitimos factura C."** (N-7, 5/10/2026) | 🔴 must |
+| RF-F3 | "¿Veo cómo queda antes de que lo impriman?" → "Sí. Con 100 calcos o más te mandamos gratis una vista previa por WhatsApp, y producimos cuando la aprobás." | 🔴 must |
 | RF-Z1 | **CTA final**: "Tu marca también puede ser calco." + Cotizar mis calcos + Hablar por WhatsApp | 🟡 should |
 
 ### 7.8 Pedido de presupuesto (lead B2B)
@@ -309,7 +310,7 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 | ID | Requisito | Prioridad |
 |---|---|---|
 | RF-CO1 | Tono argentino, directo y concreto. Prohibidas las frases genéricas que lista el pedido ("llevá tu marca al siguiente nivel", "potenciá tu identidad"…) | 🔴 must |
-| RF-CO2 | Prohibidas también: "archivo perfecto", "boceto", "muestra previa", "aprobación previa", "envío gratis" como beneficio de un pack, cualquier código de cupón | 🔴 must |
+| RF-CO2 | Prohibidas: "archivo perfecto", "boceto" (no se diseña desde cero), "muestra" sin aclarar que es digital, cualquier mención a vista previa en páginas o pasos de menos de 100, "envío gratis" como beneficio de un pack, cualquier código de cupón | 🔴 must |
 | RF-CO3 | Ningún monto, porcentaje, plazo ni cifra escrito a mano: todo sale de la configuración o de un dato confirmado en `BUSINESS-TODOS.md` | 🔴 must |
 | RF-CO4 | "Mayorista" aparece como argumento de precio, keyword y sección; el nombre del camino principal es **calcos para negocios** | 🟡 should |
 | RF-CO5 | Ortografía RAE ("hacelo", "mandalo", sin tilde) | 🔴 must |
@@ -343,7 +344,7 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 | 20 % OFF por transferencia en todo | §2 | no |
 | Ninguna promo regala el envío | §5 | no |
 | Sin pedido mínimo | §6 | no — "desde 100" es el mínimo **del precio de negocio**, no de la tienda |
-| Revisión de cada archivo antes de producir | memoria de decisiones de copy | no |
+| Revisión de cada archivo antes de producir | memoria de decisiones de copy | **sí** — desde el 5/10/2026, con 100+ calcos se manda además una vista previa digital gratis (RF-P2) |
 | Experimentos solo de presentación | §7 | no |
 
 - [ ] ~~Requiere cambio espejado en `pricing.js`~~ — **no**
@@ -358,8 +359,9 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 |---|---|
 | Pide 250 de un diseño en 6 cm | Escalón de 250 de la escala |
 | Pide 100 con 3 diseños en 4 cm | Escalón de 100; reparto según N-9 |
-| Pide DTF UV en 4 o 9 cm, o con varios diseños | Precio de escala si Mariano aprueba P-4 de la 032; si no, Pedir presupuesto |
-| Holográfico + 9 cm | La opción 9 cm no se puede elegir con holográfico |
+| Pide DTF UV con varios diseños | Mismo precio que vinilo blanco (escala) |
+| Busca 9 cm para 100 o más | El cotizador no ofrece 9 cm; dice que para 100+ hay 4 y 6 cm |
+| Pedido de 120 calcos sueltas de catálogo | Checkout y mail: 3 a 5 días hábiles de producción (RF-P3) |
 | La escala cambia mientras cotiza | Muestra la vigente al próximo render; el checkout cobra la vigente |
 | No completa razón social | No puede agregar al carrito; el campo dice por qué lo pedimos (factura) |
 | Sube 40 archivos para un pedido de 100 | Se acepta (tope 100 archivos); reparto según N-9 |
@@ -420,9 +422,10 @@ recomendación.
 - [x] **N-2** — *"Poner el % de descuento según el monto que se haga por cada
       cantidad"*: cada escalón muestra su %. La referencia (contra la suelta o
       contra el precio de 100) es P-2 de la spec 032.
-- [x] **N-3** — **Producción: 5 días hábiles desde confirmado y abonado el
-      pedido.** ⚠️ Se aplica a los pedidos de negocio; la tienda sigue
-      prometiendo 2 a 3 días hasta que Mariano diga si también cambia (N-19).
+- [x] **N-3 / N-19** — **Producción: 3 a 5 días hábiles desde confirmado y
+      abonado, para todo pedido de 100 calcos o más** (primero dijo 5 días; el
+      mismo día lo precisó: *"aplica para todo, los 3 a 5 días siendo 100
+      calcos o más"*). Con menos de 100, 2 a 3 días como hoy.
 - [x] **N-7** — **Factura C.**
 - [x] **N-11** — **Obligatorios para negocios: nombre y apellido, razón social
       / empresa, mail y teléfono.**
@@ -435,5 +438,7 @@ recomendación.
 - [ ] **N-8** corte de +1.000 (default: presupuesto)
 - [ ] **N-9** reparto con varios diseños (default: partes iguales)
 - [ ] **N-17** Home como A/B (default) o reemplazo directo
-- [ ] **N-19** ¿los 5 días hábiles también para la tienda (calcos sueltas)?
-- [ ] Spec 032: P-1 a P-5
+- [x] Spec 032: **opción B** aprobada, sin 9 cm, sin descuento en 100 (va **MUESTRA GRATIS**), $52.999 es el precio fijo, DTF UV = vinilo blanco y se recomienda vinilo blanco
+- [x] **MUESTRA GRATIS** = **vista previa digital por WhatsApp antes de producir** (RF-P2)
+- [ ] ¿La vista previa también para menos de 100? (asumido: no)
+- [ ] ¿Los 3 a 5 días cuentan desde que se aprueba la vista previa? (asumido: "confirmado" = vista previa aprobada y pago acreditado)
