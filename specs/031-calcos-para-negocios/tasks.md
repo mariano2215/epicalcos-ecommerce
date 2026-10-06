@@ -179,7 +179,7 @@ Pedida por Mariano en el chat el 5/10/2026 (ver `requirements.md` §7.15).
 | FAQ general sin el plazo de 100+ (el mayorista ya dice 3 a 5, que es el correcto) | `components/FAQ.jsx:84` | Se resuelve en la tarea 1.8b |
 | FAQ promete beneficios por recompra y ajuste de logos sin confirmar | `components/FAQ.jsx:126,136` | Q-3 tras N-4 y N-5 |
 | Dos referencias de ahorro para Negocio (59 % vs. 75 %) | `NegocioForm.jsx:15` | Unificar con la referencia que se elija en P-2 de la 032 |
-| Los Términos muestran en producción una nota "[REVISAR] … (CUIL persona humana)" que no cuadra con la factura C | `routes/legal/Terminos.jsx:100-104`, `site.taxIdType` | Texto: actualizar con la condición fiscal real (N-20) |
+| ~~Los Términos muestran en producción una nota "[REVISAR] … (CUIL persona humana)" que no cuadra con la factura C~~ — la nota se sacó el 6/10/2026 (también la de Privacidad) | `site.taxIdType` | Sigue abierto: declarar la condición fiscal real (N-20) |
 | El mail al cliente escribe los plazos a mano (2–3 / 5–7 días) | `netlify/functions/lib/notify.js` `customerTimeline()` | Se resuelve en la tarea 1.8b (100+ desde los ids) |
 
 ---

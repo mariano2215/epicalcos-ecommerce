@@ -55,7 +55,7 @@ a este archivo, con fecha.
 | N-17 | ¿El Home B2B sale como A/B (recomendado) o reemplaza directo al actual? | Riesgo R-1 de la auditoría |
 | N-18 | Horario de atención por WhatsApp, si querés publicarlo | Expectativa de respuesta en el CTA de "Hablar por WhatsApp" |
 | N-21 | ¿La vista previa también para pedidos de menos de 100? (asumido: no) y ¿los 3 a 5 días cuentan desde que se aprueba? (asumido: sí) | Copy del paso 3 y del plazo |
-| N-20 | Factura C implica monotributo: ¿actualizamos la condición fiscal en los Términos? Hoy muestran en producción una nota "[REVISAR] … (CUIL persona humana)" | Texto legal; no lo cambio sin tu OK |
+| N-20 | Factura C implica monotributo: ¿actualizamos la condición fiscal en los Términos? (La nota "[REVISAR] … (CUIL persona humana)" ya se sacó el 6/10/2026.) | Texto legal; no lo cambio sin tu OK |
 
 ---
 

@@ -62,11 +62,6 @@ export default function Privacidad() {
         Esta política se rige por la <strong>Ley 25.326 de Protección de Datos Personales</strong> de la
         República Argentina y normativa complementaria.
       </p>
-
-      <p className="text-xs text-white/40 italic">
-        [REVISAR] Esta política es un borrador estándar para e-commerce argentino. Recomendamos que la revise un
-        abogado/a si el volumen de operación crece o si empezás a tratar categorías sensibles de datos.
-      </p>
     </LegalLayout>
   );
 }

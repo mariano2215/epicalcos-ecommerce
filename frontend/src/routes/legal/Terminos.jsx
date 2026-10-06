@@ -96,12 +96,6 @@ export default function Terminos() {
         Estas condiciones se rigen por las leyes de la República Argentina. Cualquier controversia se
         someterá a los tribunales ordinarios de la ciudad de Rosario, Santa Fe.
       </p>
-
-      <p className="text-xs text-white/40 italic">
-        [REVISAR] Estos términos son un borrador estándar para e-commerce argentino de bajo volumen
-        (CUIL persona humana). Si el volumen crece, conviene revisarlos con un abogado/a y considerar
-        inscripción tributaria adecuada.
-      </p>
     </LegalLayout>
   );
 }
