@@ -69,6 +69,14 @@
 - [x] WIP ajeno sin commitear intacto (spec 030)
 - [x] Deploy en verde y menú verificado en producción (ver abajo)
 
+### Producción (16/10/2026)
+
+Deploys `19b7f986` (menú y tornasolado) y `042af5b3` (flotantes, imagen del
+recargo, docs), los dos en verde. El mismo arnés CDP corrido contra
+**epicalcos.com** —con GA4, Meta, Clarity, `track-cart` y `capture-lead`
+bloqueados para no ensuciar la analítica—: **40/40**. A 375 px el menú del
+celular llega hasta "Cotizar mis calcos" sin WhatsApp encima.
+
 ### Fuera de lo verificado
 
 - ⚠️ Lector de pantalla: el patrón y los atributos están verificados en el
