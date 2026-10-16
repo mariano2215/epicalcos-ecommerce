@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `033-menu-principal-mayorista-minorista` |
-| **Estado** | `READY FOR REVIEW` |
+| **Estado** | `DONE` — implementada el 15–16/10/2026 ("Implementá la spec 033") y validada contra `acceptance.md`. Quedan dos confirmaciones de texto abiertas (§12) |
 | **Fecha** | 15/10/2026 |
 | **Autor** | Claude Code, a pedido de Mariano |
 

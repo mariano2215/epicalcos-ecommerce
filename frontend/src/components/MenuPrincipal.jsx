@@ -18,6 +18,23 @@ import { trackMenu } from '../lib/analytics.js';
  * así los links del menú quedan en el HTML que recorre un buscador.
  */
 
+/** `id` del menú del celular mientras está abierto (lo pone Header.jsx). */
+export const ID_MENU_MOVIL = 'menu-movil';
+
+/**
+ * Para lo que flota abajo de la pantalla en el celular (WhatsApp, "🎁 10% OFF",
+ * la barra fija de /personalizados): se esconde mientras el menú del celular
+ * está abierto. Son `fixed` con z-40, igual que el header y después de él en
+ * el DOM, así que pintaban ENCIMA del menú: con Minorista desplegado tapaban
+ * opciones y el botón Cotizar del final (spec 033). Con `:has()` no hace falta
+ * pasar estado entre componentes; un navegador sin `:has()` los muestra como
+ * antes.
+ *
+ * ⚠️ El id va escrito a mano en la clase porque Tailwind la lee del código tal
+ * cual: si cambia ID_MENU_MOVIL, cambiar también acá.
+ */
+export const OCULTO_CON_MENU_MOVIL = '[body:has(#menu-movil)_&]:hidden';
+
 /** Las categorías del grupo con nombre y emoji. Un slug que ya no existe se saltea. */
 const categoriasDe = (g) => (g.categorias || []).map(getCategory).filter(Boolean);
 

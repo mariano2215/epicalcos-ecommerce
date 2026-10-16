@@ -6,6 +6,7 @@ import { formatPrice } from '../../lib/formato.js';
 import BotonCta from './BotonCta.jsx';
 import { useBorrador } from './useBorrador.js';
 import { IDS } from './acciones.js';
+import { OCULTO_CON_MENU_MOVIL } from '../MenuPrincipal.jsx';
 
 /**
  * Barra fija inferior, solo < lg (RF-M1…M3). Es el MISMO CTA del hero.
@@ -64,7 +65,7 @@ export default function BarraFijaMovil() {
 
   return (
     <div
-      className={`lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-bg-deep/95 backdrop-blur px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-transform duration-200 motion-reduce:transition-none ${
+      className={`lg:hidden fixed inset-x-0 bottom-0 z-40 ${OCULTO_CON_MENU_MOVIL} border-t border-white/10 bg-bg-deep/95 backdrop-blur px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-transform duration-200 motion-reduce:transition-none ${
         visible ? 'translate-y-0' : 'translate-y-full invisible'
       }`}
       aria-hidden={!visible}

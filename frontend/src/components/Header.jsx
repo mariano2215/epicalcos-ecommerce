@@ -12,7 +12,7 @@ import {
 } from '../config/pricing.js';
 import { site } from '../config/site.js';
 import BotonCotizar from './BotonCotizar.jsx';
-import { MenuEscritorio, MenuMovil } from './MenuPrincipal.jsx';
+import { MenuEscritorio, MenuMovil, ID_MENU_MOVIL } from './MenuPrincipal.jsx';
 
 /** Páginas de negocio: ahí la tira suma "desde 100 unidades" (spec 031, RF-N5). */
 const PAGINAS_NEGOCIO = ['/negocio', '/mayorista'];
@@ -234,6 +234,7 @@ export default function Header() {
       {open && (
         <div
           ref={menuRef}
+          id={ID_MENU_MOVIL}
           className="lg:hidden border-t border-white/10 bg-black/80 overflow-y-auto overscroll-contain"
           style={altoMenu ? { maxHeight: altoMenu } : undefined}
           data-popup-bloqueo=""

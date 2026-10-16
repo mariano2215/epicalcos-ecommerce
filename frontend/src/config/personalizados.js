@@ -74,6 +74,19 @@ export const MATERIAL_HOLOGRAFICO_ID = 'vinilo-holografico';
 export const RECARGO_HOLOGRAFICO = { id: 'material-holografico', precio: 20000 };
 
 /**
+ * Imagen de la línea del recargo en el carrito, el checkout y /carrito: un
+ * degradé tornasolado. Sin imagen, esas tres pantallas dibujaban un `<img>`
+ * roto con el nombre como texto alternativo (pasaba desde el 22/9/2026 con el
+ * recargo del configurador; arreglado el 16/10/2026, spec 033). Los carritos
+ * guardados antes de eso siguen sin imagen hasta que se vacían.
+ */
+export const IMAGEN_HOLOGRAFICO =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#a5f3fc'/><stop offset='.35' stop-color='#f0abfc'/><stop offset='.7' stop-color='#fde68a'/><stop offset='1' stop-color='#a7f3d0'/></linearGradient></defs><rect width='200' height='200' rx='24' fill='url(#h)'/></svg>`
+  );
+
+/**
  * Pack holográfico (enmienda 26/9/2026, spec 023 RF-MAT11…15). Mariano: "el
  * recargo holográfico de $15.000 es por 100 calcos en el pedido de $39.999,
  * no por cada sticker. La compra mínima para HOLOGRÁFICOS es de 100 calcos."

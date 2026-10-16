@@ -13,7 +13,7 @@
 | Pregunta | Hallazgo |
 |---|---|
 | ¿Ya existe algo parecido? | El nav plano `navLinks` de `config/site.js` (spec 031, D-6) que dibuja `components/Header.jsx` dos veces: `<nav>` desde `lg` y el menú hamburguesa debajo de `lg`. No hay submenús en ningún lado del sitio. `components/CategoryMenu.jsx` es un desplegable de categorías **dentro** de páginas (PackBuilder, Categoría), no sirve para el header |
-| ¿Quién importa `navLinks`? | Solo `Header.jsx` y el test `config/negocios.test.js` (AC-N1 de la 031) |
+| ¿Quién importa `navLinks`? | `Header.jsx`, el test `config/negocios.test.js` (AC-N1 de la 031) y —encontrado al implementar, ver H-5— `lib/personalizadosEstatico.js` |
 | ¿El tornasolado ya existe? | **Sí, entero.** El configurador de /personalizados vende el "pack holográfico" como `negocio:vinilo-holografico:{tamano}:{ts}` (cobrado a `NEGOCIO_PRICE`) + `fixed:material-holografico:{ts}` ($20.000). El servidor valida las dos líneas y su emparejamiento (`recargo_material_faltante`); `CartContext.removeItem` saca el recargo junto con la línea `negocio:`; el carrito no deja editar ni quitar el recargo solo. 6 cm está en `HOLOGRAFICO_TAMANOS` |
 | ¿Toca el camino de precios? | **No se cambia ningún precio ni regla.** /negocio va a emitir un id (`negocio:vinilo-holografico:6cm:{ts}`) que el servidor ya acepta. Se agrega un test de paridad para el caso nuevo (§7) |
 | ¿Hay comentarios que expliquen por qué está así? | Ver H-1 a H-4 |
@@ -49,6 +49,32 @@ desenfoca lo de atrás de forma confiable).
 **H-4 — El comentario de `lg` en el `<nav>`** ("con 7 links el nav no entra en
 768 px") sigue valiendo: el menú nuevo tiene 5 entradas pero 3 con flecha. Se
 mantiene el corte en `lg` y se verifica a 1024 px (RNF-2).
+
+### Hallazgos de la implementación (16/10/2026)
+
+**H-5 — `navLinks` tenía un tercer consumidor.** `lib/personalizadosEstatico.js`
+arma con él los links internos del HTML prerenderizado de /personalizados (lo
+corre `scripts/prerender.mjs` en Node). Se agregó `navMenuPlano` (todos los
+links del menú en una lista, sin categorías) y ese módulo lo usa en su lugar.
+
+**H-6 — A 1024 px el logo se aplastaba.** Menú + Buscar + Cotizar + Carrito
+sumaban 1.003 px en 984 de lugar, y el flex le sacaba la diferencia al logo
+(quedaba de 25 px de ancho). Arreglo: el logo con `shrink-0` y los ítems del
+menú con 0.75rem de padding entre lg y xl (0.9rem desde xl).
+
+**H-7 — Lo que flota abajo pintaba encima del menú del celular.** WhatsApp, el
+acceso "🎁 10% OFF" y la barra fija de /personalizados son `fixed` z-40,
+después del header en el DOM: con Minorista abierto tapaban opciones y el
+Cotizar del final. Se esconden con `[body:has(#menu-movil)_&]:hidden`
+(`OCULTO_CON_MENU_MOVIL` en `MenuPrincipal.jsx`); un navegador sin `:has()` los
+muestra como antes. La barra de la ficha de producto es z-30 y el menú ya la
+tapaba.
+
+**H-8 — El recargo holográfico se veía con imagen rota en el carrito.** La
+línea `fixed:material-holografico:…` no tenía `image` desde el 22/9/2026
+(también la del configurador). Se agregó `IMAGEN_HOLOGRAFICO` (un degradé, en
+`config/personalizados.js`) y la usan /negocio y el configurador. Los carritos
+guardados antes siguen sin imagen hasta vaciarse.
 
 ---
 
@@ -101,12 +127,16 @@ NegocioForm.jsx ── lineasNegocio({ business, archivos, tornasolado, ts })
 | Archivo | Cambio | Riesgo |
 |---|---|---|
 | `frontend/src/config/site.js` | `navLinks` → `navMenu` (grupos) + `NAV_CATEGORIAS`. Se actualiza el comentario de la 031 diciendo qué cambió y por qué | 🟡 módulo compartido; solo cambia el bloque de nav. **Envíos, umbrales y `HIDDEN_SECTIONS` no se tocan** |
-| `frontend/src/components/Header.jsx` | Nav de compu con grupos y paneles; menú del celular con acordeones; cierre por Escape / click afuera / cambio de ruta; `trackMenu` | 🟡 está en todas las páginas |
+| `frontend/src/components/Header.jsx` | Dibuja `MenuEscritorio` y `MenuMovil`; el menú del celular cierra al cambiar de ruta y scrollea por dentro (alto medido); logo con `shrink-0` (H-6) | 🟡 está en todas las páginas |
+| `frontend/src/lib/personalizadosEstatico.js` | Usa `navMenuPlano` en lugar de `navLinks` (H-5) | 🟢 |
+| `frontend/src/components/WhatsAppButton.jsx`, `popup/AccesoBeneficio.jsx`, `personalizados/BarraFijaMovil.jsx` | `OCULTO_CON_MENU_MOVIL` (H-7) | 🟢 una clase |
+| `frontend/src/components/personalizados/BotonCta.jsx` | El recargo lleva `image: IMAGEN_HOLOGRAFICO` (H-8) | 🟢 |
+| `frontend/src/config/personalizados.js` | `IMAGEN_HOLOGRAFICO` junto a `RECARGO_HOLOGRAFICO` (H-8). **Precios sin cambios** | 🟢 |
 | `frontend/src/components/NegocioForm.jsx` | Opción "tornasolado" + total del resumen; usa `lineasNegocio()` para armar las líneas | 🟡 camino de compra de /negocio |
 | `frontend/src/lib/resumenPedido.js` | La rama del Negocio del formulario imprime `meta.materialLabel` si está | 🟢 |
 | `frontend/src/lib/analytics.js` | `trackMenu({ accion, grupo, destino, vista })` | 🟢 una función nueva, mismo patrón que `trackCotizar` |
 | `frontend/src/config/negocios.test.js` | El test de AC-N1 (nav de la 031) pasa a verificar el menú nuevo; se borra el de "Precios" del nav (el ancla `#precios` y `COTIZAR_FORM_HREF` se siguen verificando) | 🟢 |
-| `frontend/src/lib/resumenPedido.test.js` | Caso nuevo: Negocio tornasolado | 🟢 |
+| ~~`frontend/src/lib/resumenPedido.test.js`~~ | La nota del Negocio tornasolado se prueba en `lineasNegocio.test.js`, armando las líneas con la misma función que usa el formulario | — |
 | `docs/analytics.md` | Sección `menu_nav` | 🟢 (⚠️ tiene WIP ajeno de la spec 030 sin commitear: ver tasks 6.2) |
 | `specs/031-calcos-para-negocios/requirements.md` | Nota en RF-N1: reemplazado por la spec 033 | 🟢 |
 
@@ -114,7 +144,8 @@ NegocioForm.jsx ── lineasNegocio({ business, archivos, tornasolado, ts })
 
 | Archivo | Responsabilidad |
 |---|---|
-| `frontend/src/lib/lineasNegocio.js` | `lineasNegocio({ business, archivos, tornasolado, ts })` → las líneas de carrito de la Promo Negocio (1 sin tornasolado, 2 con) |
+| `frontend/src/components/MenuPrincipal.jsx` | `MenuEscritorio` (paneles, hover solo con mouse, Escape, click afuera, Tab) y `MenuMovil` (acordeones); `grupoActivo()`; `OCULTO_CON_MENU_MOVIL` |
+| `frontend/src/lib/lineasNegocio.js` | `lineasNegocio({ business, archivos, tornasolado, ts, imagen })` → `{ linea, recargo }` (recargo `null` sin tornasolado) |
 | `frontend/src/lib/lineasNegocio.test.js` | Forma de las líneas + paridad con `validateAndPriceOrder` del servidor (MP y transferencia) |
 | `frontend/src/config/navMenu.test.js` | Orden y contenido del menú, filtro por `HIDDEN_SECTIONS`, que las 8 categorías existan |
 
@@ -225,8 +256,9 @@ y el menú del celular llevan `data-popup-bloqueo` (RF-C9).
 ]
 ```
 
-`NegocioForm` llama `addNegocio` con la primera y `addFixed(…, 1)` con la
-segunda. El `ts` es el mismo en las dos: es lo que las liga (servidor y
+Implementado como `{ linea, recargo }` en vez de un array (el recargo va a
+`addFixed`, no a `addNegocio`), y el recargo lleva `image: IMAGEN_HOLOGRAFICO`
+(H-8). `NegocioForm` llama `addNegocio(linea)` y, si hay, `addFixed(recargo, 1)`. El `ts` es el mismo en las dos: es lo que las liga (servidor y
 `removeItem`). `materialLabel` sale de `getMaterial(MATERIAL_HOLOGRAFICO_ID).label`,
 no escrito a mano.
 
@@ -286,7 +318,7 @@ sin PII. El precio del tornasolado lo pone el servidor, no el cliente.
 |---|---|
 | `config/navMenu.test.js` | Orden Home · Mayorista · Minorista · Otros productos · Contacto; opciones de cada grupo; rutas que existen en `App.jsx`; las 8 categorías existen en `data/categories.js`; ningún texto dice "más vendid"/"popular"; con una ruta en `HIDDEN_SECTIONS` sale del menú y un grupo vacío desaparece (función de filtro probada aparte) |
 | `lib/lineasNegocio.test.js` | Sin tornasolado = la línea de hoy; con tornasolado = 2 líneas ligadas por el mismo `ts`, sin `meta.material`; **paridad**: `validateAndPriceOrder` del servidor acepta las dos y cobra `NEGOCIO.price + RECARGO_HOLOGRAFICO.precio` (= `ESCALA_VOLUMEN.holografico[100]`), con MP y con transferencia; sin el recargo → `recargo_material_faltante` |
-| `lib/resumenPedido.test.js` | La nota dice `Negocio "X": 100u 6cm Vinilo Holográfico (logo…)` |
+| `lib/lineasNegocio.test.js` (nota) | La nota dice `Negocio "X": 100u 6cm Vinilo Holográfico (logo…)`; sin tornasolado, igual que antes |
 | `config/negocios.test.js` | Se actualiza el caso del nav de la 031 |
 | `npm test` | Toda la suite en verde |
 | Navegador | 375, 768, 1024, 1440 px; teclado; tap; hover; agregar Negocio tornasolado y llegar al checkout |

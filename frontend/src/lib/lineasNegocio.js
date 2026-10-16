@@ -1,16 +1,5 @@
 import { NEGOCIO } from '../config/pricing.js';
-import { MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO, getMaterial } from '../config/personalizados.js';
-
-/**
- * Imagen de la línea del recargo en el carrito: un degradé tornasolado. Sin
- * imagen, el carrito dibuja un `<img>` roto con el nombre como texto
- * alternativo (le pasa hoy al recargo del configurador de /personalizados).
- */
-export const IMAGEN_HOLOGRAFICO =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><linearGradient id='h' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#a5f3fc'/><stop offset='.35' stop-color='#f0abfc'/><stop offset='.7' stop-color='#fde68a'/><stop offset='1' stop-color='#a7f3d0'/></linearGradient></defs><rect width='200' height='200' rx='24' fill='url(#h)'/></svg>`
-  );
+import { MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO, IMAGEN_HOLOGRAFICO, getMaterial } from '../config/personalizados.js';
 
 /**
  * Las líneas de carrito de la Promo Negocio de /negocio (spec 033): 100 calcos

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { copiarCodigo } from './copiar.js';
+import { OCULTO_CON_MENU_MOVIL } from '../MenuPrincipal.jsx';
 
 /**
  * El acceso fijo del popup de bienvenida (spec 026), abajo a la izquierda.
@@ -57,7 +58,7 @@ export default function AccesoBeneficio({ tipo, pct, codigo, pathname, onAbrir }
 
   if (tipo === 'oferta') {
     return (
-      <div className={`fixed left-4 sm:left-6 ${bottom} z-40`}>
+      <div className={`fixed left-4 sm:left-6 ${bottom} z-40 ${OCULTO_CON_MENU_MOVIL}`}>
         <button
           type="button"
           onClick={onAbrir}
@@ -70,7 +71,7 @@ export default function AccesoBeneficio({ tipo, pct, codigo, pathname, onAbrir }
   }
 
   return (
-    <div ref={cajaRef} className={`fixed left-4 sm:left-6 ${bottom} z-40`}>
+    <div ref={cajaRef} className={`fixed left-4 sm:left-6 ${bottom} z-40 ${OCULTO_CON_MENU_MOVIL}`}>
       {abierto && (
         <div
           id={panelId}

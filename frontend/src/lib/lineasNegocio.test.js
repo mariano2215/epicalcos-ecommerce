@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { lineasNegocio, IMAGEN_HOLOGRAFICO } from './lineasNegocio.js';
+import { lineasNegocio } from './lineasNegocio.js';
 import { buildDesignSummary } from './resumenPedido.js';
 import { NEGOCIO, ESCALA_VOLUMEN, TRANSFER_DISCOUNT, round } from '../config/pricing.js';
-import { RECARGO_HOLOGRAFICO } from '../config/personalizados.js';
+import { RECARGO_HOLOGRAFICO, IMAGEN_HOLOGRAFICO } from '../config/personalizados.js';
 import { validateAndPriceOrder } from '../../../netlify/functions/lib/pricing.js';
 
 /**

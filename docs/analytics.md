@@ -328,6 +328,35 @@ nueva. Los eventos del juego del termo (`hero_sticker_stick`) dejan de llegar.
 día. El mismo día la transferencia bajó de 20 % a 10 % (todas las páginas): una
 diferencia en conversión por transferencia no se le puede atribuir al hero.
 
+#### Menú principal (spec 033, desde el 16/10/2026)
+
+El menú de arriba pasó a ser **Home · Mayorista ▾ · Minorista ▾ · Otros
+productos ▾ · Contacto** (antes: Para negocios · Precios · Con tu diseño ·
+Tienda · Preguntas). Un evento nuevo, solo a GA4 (no es una señal de compra y
+en Meta ensuciaría las audiencias):
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `menu_nav` | Al abrir un grupo del menú y al elegir cualquier opción | `accion` (`abrir` / `click`), `grupo` (`mayorista` / `minorista` / `otros`, o `raiz` para Home y Contacto), `destino` (la ruta elegida; vacío en `abrir`), `vista` (`desktop` / `mobile`) |
+
+Para verlo en los informes, registrar `accion`, `grupo`, `destino` y `vista`
+como dimensiones de evento en GA4.
+
+**Cómo leerlo:**
+- `click` por `grupo` dice qué parte del tráfico del menú va a comprar por mayor
+  y qué parte por menor; cruzado con `vista`, si cambia entre celular y compu.
+- Muchos `abrir` de un grupo sin `click` después: ese grupo no tiene lo que se
+  buscaba.
+- `destino` empezando con `/categoria/` mide las 8 categorías del menú (salen
+  de `NAV_CATEGORIAS` en `config/site.js`; no son "las más vendidas").
+- Los clicks del header a `/negocio#precios` y `/#faq` dejan de existir ese día.
+
+**Negocio tornasolado** (mismo deploy): sin evento propio. El `add_to_cart` de
+/negocio llega con `item_id` `negocio:vinilo-holografico:6cm:…` en vez de
+`negocio:…`, más un segundo `add_to_cart` del recargo
+(`fixed:material-holografico:…`). En el CRM, la nota del pedido dice
+`Vinilo Holográfico`.
+
 #### Formulario de contacto (spec 012)
 
 | Evento | Cuándo | Parámetro |

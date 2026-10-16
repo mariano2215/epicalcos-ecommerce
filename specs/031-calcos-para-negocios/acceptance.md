@@ -32,7 +32,7 @@ reporta el resultado **real** (`CLAUDE.md` regla 15).
 
 | ID | Criterio | Cómo se verifica | Fase | Resultado |
 |---|---|---|---|---|
-| AC-N1 | *(RF-N1)* El nav dice Para negocios · Precios · Con tu diseño · Tienda · Preguntas + Cotizar | Inspección a 1024 y 1440 px | 1 | ✅ test + navegador |
+| AC-N1 | *(RF-N1)* El nav dice Para negocios · Precios · Con tu diseño · Tienda · Preguntas + Cotizar | Inspección a 1024 y 1440 px | 1 | ✅ test + navegador · ⚠️ reemplazado por la spec 033 (16/10/2026): lo verifica `navMenu.test.js` |
 | AC-N2 | *(RF-N3)* A 1024 px el nav entra en una línea; a 375 px "Cotizar" está en el menú | Captura | 1 | ✅ 1024 px: nav de 40 px de alto, sin desborde · 375 px: "Cotizar mis calcos" en el menú |
 | AC-N3 | *(RF-N4)* Footer en 4 grupos; una sección agregada a `HIDDEN_SECTIONS` desaparece del footer | Agregar `negocio` a mano en local y mirar | 1 | ✅ 4 grupos; "Armá tu pack" e "Imprimibles" (ocultas) no aparecen |
 | AC-N4 | *(RF-N5)* En `/negocio` la tira suma "Calcos con tu logo desde 100 unidades" y conserva envío gratis, garantía y transferencia | Inspección | 1 | ✅ test + navegador (/negocio y /mayorista) |

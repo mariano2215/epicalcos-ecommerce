@@ -176,7 +176,7 @@ Lo que **sí** entra, repartido en fases (detalle en `WHOLESALE-MIGRATION.md`):
 
 | ID | Requisito | Prioridad |
 |---|---|---|
-| RF-N1 | El menú principal ordena: **Para negocios · Precios · Con tu diseño · Tienda · Preguntas**, más el botón destacado **Cotizar**. ("Con tu diseño" = calcos personalizadas desde 1 unidad: es el camino del negocio que necesita menos de 100. "Cómo funciona" queda en la página y en el footer; ver `design.md` D-6) | 🔴 must |
+| RF-N1 | El menú principal ordena: **Para negocios · Precios · Con tu diseño · Tienda · Preguntas**, más el botón destacado **Cotizar**. ("Con tu diseño" = calcos personalizadas desde 1 unidad: es el camino del negocio que necesita menos de 100. "Cómo funciona" queda en la página y en el footer; ver `design.md` D-6). ⚠️ **Reemplazado por la spec 033 el 16/10/2026**: el menú pasó a ser Home · Mayorista · Minorista · Otros productos · Contacto, con Cotizar aparte | 🔴 must |
 | RF-N2 | "Tienda" lleva al catálogo actual; el buscador y el carrito siguen en el header | 🔴 must |
 | RF-N3 | El menú entra en una línea desde el ancho donde deja de haber hamburguesa; en celular, "Cotizar" está dentro del menú y en la barra fija (RF-B1) | 🔴 must |
 | RF-N4 | El footer se agrupa en **Productos** (calcos para negocios, grandes pedidos, calcos con tu diseño, tienda, tatuajes, Polaroid), **Ayuda** (cómo funciona, preguntas, envíos, cambios), **EPICALCOS** (contacto, Instagram, WhatsApp) y **Legal** (términos, privacidad) | 🟡 should |

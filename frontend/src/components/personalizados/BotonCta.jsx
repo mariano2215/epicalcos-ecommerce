@@ -12,7 +12,7 @@ import {
 import { precioEfectivoTanda } from '../../lib/precioPersonalizados.js';
 import { trackPersonalizedAddToCart } from '../../lib/analytics.js';
 import { CTA } from '../../config/personalizadosLanding.js';
-import { MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO } from '../../config/personalizados.js';
+import { MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO, IMAGEN_HOLOGRAFICO } from '../../config/personalizados.js';
 import { customImageDataUri } from './swatches.jsx';
 import { borrador } from './useBorrador.js';
 import { IDS, abrirSelector, irA } from './acciones.js';
@@ -24,6 +24,7 @@ function agregarRecargoHolografico(addFixed, idLigado) {
       id: `${RECARGO_HOLOGRAFICO.id}:${idLigado}`,
       name: 'Recargo · Vinilo Holográfico',
       categoryLabel: 'Personalizados',
+      image: IMAGEN_HOLOGRAFICO, // sin esto, imagen rota en el carrito (ver IMAGEN_HOLOGRAFICO)
       price: RECARGO_HOLOGRAFICO.precio
     },
     1
