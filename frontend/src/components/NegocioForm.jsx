@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
 import { NEGOCIO } from '../config/pricing.js';
 import { contact } from '../config/site.js';
+import { MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO, getMaterial } from '../config/personalizados.js';
+import { lineasNegocio } from '../lib/lineasNegocio.js';
 import SubidaArchivo from './personalizados/SubidaArchivo.jsx';
 
 const NEGOCIO_IMG =
@@ -14,6 +16,9 @@ const NEGOCIO_IMG =
 /** % de descuento contra el precio de lista, para el badge. */
 const NEGOCIO_OFF = Math.round((1 - NEGOCIO.price / NEGOCIO.listPrice) * 100);
 
+/** Vinilo Holográfico: nombre y descripción salen del mismo lugar que en /personalizados. */
+const HOLOGRAFICO = getMaterial(MATERIAL_HOLOGRAFICO_ID);
+
 /** Foto real de una tirada de calcos de logo. Si falta el archivo, la card va sin foto. */
 const MUESTRA_SRC = '/images/negocio-muestra.webp';
 
@@ -22,17 +27,24 @@ const MUESTRA_SRC = '/images/negocio-muestra.webp';
  * (precio de lista $96.999). El logo se sube acá (va con el pedido) o, si no, se
  * coordina por WhatsApp después de la compra.
  *
+ * Tornasolado (spec 033): opcional y apagado. Suma el recargo del Vinilo
+ * Holográfico como línea aparte —las líneas las arma `lineasNegocio()`, que
+ * explica por qué—. El precio grande de la card sigue siendo el de la promo:
+ * el recargo se ve en la opción y en el total.
+ *
  * `conFoto={false}` (spec 031): /negocio ya muestra esta misma foto en su hero,
  * y repetida dos pantallas más abajo no suma nada. El título es `h2` porque el
  * `h1` de la página es el del hero.
  */
 export default function NegocioForm({ conFoto = true }) {
-  const { addNegocio } = useCart();
+  const { addNegocio, addFixed } = useCart();
   const navigate = useNavigate();
   const [business, setBusiness] = useState('');
   const [error, setError] = useState('');
   const [muestraOk, setMuestraOk] = useState(true);
   const [archivos, setArchivos] = useState([]); // [{ nombre, pesoMB, url }]
+  const [tornasolado, setTornasolado] = useState(false);
+  const total = NEGOCIO.price + (tornasolado ? RECARGO_HOLOGRAFICO.precio : 0);
 
   const onArchivosChange = useCallback((items) => setArchivos(items), []);
 
@@ -42,21 +54,9 @@ export default function NegocioForm({ conFoto = true }) {
       setError('Poné el nombre de tu negocio');
       return;
     }
-    addNegocio({
-      id: `negocio:${Date.now()}`,
-      name: `Negocio · ${business.trim()} · 100u 6 cm`,
-      categoryLabel: 'Negocio',
-      image: NEGOCIO_IMG,
-      size: NEGOCIO.size,
-      basePrice: NEGOCIO.price,
-      quantity: 1,
-      meta: {
-        business: business.trim(),
-        qty: NEGOCIO.qty,
-        size: NEGOCIO.size,
-        archivos: archivos.length ? archivos : null
-      }
-    });
+    const { linea, recargo } = lineasNegocio({ business, archivos, tornasolado, imagen: NEGOCIO_IMG });
+    addNegocio(linea);
+    if (recargo) addFixed(recargo, 1);
     navigate('/carrito');
   };
 
@@ -135,17 +135,62 @@ export default function NegocioForm({ conFoto = true }) {
             {error && <span className="text-xs text-brand-pink mt-1 block">{error}</span>}
           </label>
 
+          {/* Tornasolado (spec 033, RF-T1/T2): opcional, apagado de entrada.
+              El recargo sale de RECARGO_HOLOGRAFICO —el mismo que cobra el
+              servidor—, nunca escrito a mano. */}
+          <label
+            className={`flex items-start gap-3 rounded-xl p-4 border cursor-pointer transition-colors ${
+              tornasolado ? 'border-brand-fuchsia bg-brand-fuchsia/10' : 'border-white/10 bg-white/5 hover:border-white/25'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={tornasolado}
+              onChange={(e) => setTornasolado(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[#FF1B8D]"
+            />
+            {/* La descripción va debajo y a todo el ancho: al lado del precio,
+                a 375 px quedaba en una columna de tres palabras por renglón. */}
+            <span className="flex-1 min-w-0">
+              <span className="flex items-start justify-between gap-3">
+                <span className="flex items-center gap-2 font-semibold text-white">
+                  <span
+                    aria-hidden
+                    className="h-4 w-4 shrink-0 rounded-full border border-white/20"
+                    style={{ background: 'linear-gradient(135deg,#a5f3fc,#f0abfc,#fde68a,#a7f3d0)' }}
+                  />
+                  Hacelas tornasoladas
+                </span>
+                <span className="font-semibold text-white whitespace-nowrap">+{formatPrice(RECARGO_HOLOGRAFICO.precio)}</span>
+              </span>
+              <span className="block text-xs text-white/60 mt-1">
+                {HOLOGRAFICO.label}. {HOLOGRAFICO.descripcion} Opcional.
+              </span>
+            </span>
+          </label>
+
           <div className="rounded-xl p-4 border border-white/10 bg-white/5 text-sm space-y-1.5">
             <div className="flex justify-between"><span className="text-white/60">Cantidad</span><span>100 calcos</span></div>
             <div className="flex justify-between"><span className="text-white/60">Tamaño</span><span>6 cm</span></div>
             <div className="flex justify-between"><span className="text-white/60">Diseño</span><span>1 (tu logo)</span></div>
+            {tornasolado && (
+              <div className="flex justify-between">
+                <span className="text-white/60">Tornasoladas</span>
+                <span>+{formatPrice(RECARGO_HOLOGRAFICO.precio)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-baseline font-display font-extrabold text-lg pt-1">
               <span>Total</span>
               <span className="flex items-baseline gap-2">
-                <span className="text-sm font-normal text-white/40 line-through decoration-white/40">
-                  {formatPrice(NEGOCIO.listPrice)}
-                </span>
-                <span>{formatPrice(NEGOCIO.price)}</span>
+                {/* El tachado es el precio de lista de la PROMO. Con tornasolado
+                    no se tacha nada: no hay un "precio de lista" holográfico, y
+                    sumarle el recargo sería inventar uno. */}
+                {!tornasolado && (
+                  <span className="text-sm font-normal text-white/40 line-through decoration-white/40">
+                    {formatPrice(NEGOCIO.listPrice)}
+                  </span>
+                )}
+                <span>{formatPrice(total)}</span>
               </span>
             </div>
           </div>

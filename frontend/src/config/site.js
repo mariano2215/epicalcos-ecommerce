@@ -323,30 +323,101 @@ export const isSectionHidden = (slugOrPath) =>
 const visibles = (links) => links.filter((l) => !isSectionHidden(l.to));
 
 /**
- * Navegación con jerarquía de negocio (spec 031, RF-N1 / D-6): primero lo que
- * vende a marcas y negocios, la tienda después y a un click.
+ * Categorías del grupo Minorista del menú (spec 033, RF-M7): las 8 primeras de
+ * las destacadas del Home (`FEATURED_SLUGS` en routes/Home.jsx).
  *
- * Hasta el 5/10/2026 eran Inicio · Categorías · Personalizados · Mayorista ·
- * Negocio · Contacto · FAQ: siete puertas del mismo peso, y la de negocios era
- * la quinta. Lo que salió del nav no desapareció: Mayorista y Contacto están en
- * el footer, y el logo lleva al inicio.
+ * ⚠️ NO son "las más vendidas" y el menú no puede decirlo: de ventas por
+ * categoría no hay dato (ver lib/searchCatalog.js). Si Mariano sabe cuáles
+ * venden más, se cambian acá y listo. Un slug que no exista en
+ * data/categories.js no rompe nada (el header lo saltea), pero lo frena
+ * navMenu.test.js.
+ */
+export const NAV_CATEGORIAS = [
+  'argentina',
+  'anime',
+  'disney',
+  'escudos-futbol',
+  'harry-potter',
+  'marvel',
+  'memes',
+  'los-simpsons'
+];
+
+/**
+ * Saca del menú las opciones que apuntan a una sección oculta, y el grupo que
+ * se queda sin ninguna (RF-M9). `oculta` es parámetro solo para poder probarlo
+ * sin tocar HIDDEN_SECTIONS.
+ */
+export function menuVisible(menu, oculta = isSectionHidden) {
+  return menu
+    .map((e) => (e.items ? { ...e, items: e.items.filter((l) => !oculta(l.to)) } : e))
+    .filter((e) => (e.items ? e.items.length > 0 : !oculta(e.to)));
+}
+
+/**
+ * Menú principal por tipo de compra (spec 033, 15/10/2026):
  *
- * "Con tu diseño" (/personalizados) se queda a propósito: es el camino del
- * negocio que necesita MENOS de 100 calcos, y tiene tráfico propio.
- * "Precios" y "Preguntas" son anclas: `hash` hace que el header use un Link
- * común (no NavLink) y `ScrollToHash` (App.jsx) baje hasta la sección.
- * Mientras no exista el FAQ de negocios (Fase 3), "Preguntas" va al del Home.
+ *   Home · Mayorista ▾ · Minorista ▾ · Otros productos ▾ · Contacto
+ *
+ * Mariano: "quedó muy confuso". El de la spec 031 (Para negocios · Precios ·
+ * Con tu diseño · Tienda · Preguntas) ponía al mismo nivel lugares, anclas
+ * dentro de un lugar ("Precios" bajaba a /negocio, "Preguntas" al FAQ del Home)
+ * y un nombre que no se entendía solo ("Con tu diseño"); y Mayorista, Polaroid,
+ * Tatuajes y Contacto no tenían entrada fuera del footer. Ahora el menú repite
+ * la misma decisión que el selector POR MENOR / POR MAYOR del hero del Home:
+ * ¿muchas o pocas?
+ *
+ * Una entrada con `to` es un link directo; una con `items`, un grupo que se
+ * despliega (components/MenuPrincipal.jsx). `detalle` es la línea chica debajo
+ * de la opción.
+ * `categorias` (solo Minorista) son slugs: nombre y emoji los pone el header
+ * desde data/categories.js, para no sumarle el catálogo a este módulo.
+ * `activoEn` son prefijos de ruta que también marcan al grupo como activo
+ * (una categoría o un producto son Minorista aunque no estén en `items`).
  *
  * ⚠️ El botón "Cotizar" NO está acá: es un CTA, no un link de navegación, y el
  * header lo dibuja aparte (ver Header.jsx y BotonCotizar.jsx).
  */
-export const navLinks = visibles([
-  { to: '/negocio', label: 'Para negocios' },
-  { to: '/negocio#precios', label: 'Precios', hash: true },
-  { to: '/personalizados', label: 'Con tu diseño' },
-  { to: '/categorias', label: 'Tienda' },
-  { to: '/#faq', label: 'Preguntas', hash: true }
+export const navMenu = menuVisible([
+  { to: '/', label: 'Home' },
+  {
+    id: 'mayorista',
+    label: 'Mayorista',
+    items: [
+      { to: '/mayorista', label: 'Mayorista +100 calcos', detalle: 'Elegí 100 diseños del catálogo o subí los tuyos' },
+      { to: '/negocio', label: 'Negocio', detalle: '100 calcos con tu logo, también tornasoladas' }
+    ]
+  },
+  {
+    id: 'minorista',
+    label: 'Minorista',
+    items: [
+      { to: '/personalizados', label: 'Personalizados', detalle: 'Con tu diseño, desde 1 calco' },
+      // `verTodas`: el header la dibuja debajo de las categorías, como cierre de
+      // esa lista, y no junto a Personalizados.
+      { to: '/categorias', label: 'Ver todas las categorías', verTodas: true }
+    ],
+    categorias: NAV_CATEGORIAS,
+    activoEn: ['/categoria/', '/producto/']
+  },
+  {
+    id: 'otros',
+    label: 'Otros productos',
+    items: [
+      { to: '/polaroid', label: 'Fotos Polaroid' },
+      { to: '/tatuajes', label: 'Tatuajes temporales' }
+    ]
+  },
+  { to: '/contacto', label: 'Contacto' }
 ]);
+
+/**
+ * Todos los links del menú en una lista plana (sin las categorías). Lo lee
+ * lib/personalizadosEstatico.js para los links internos del HTML
+ * prerenderizado de /personalizados, que antes salían de la lista plana de la
+ * spec 031.
+ */
+export const navMenuPlano = navMenu.flatMap((e) => e.items || [e]);
 
 /**
  * "Dejar mis datos" del botón Cotizar (spec 031, enmienda E-1): el formulario

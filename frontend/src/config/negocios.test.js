@@ -4,7 +4,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as copy from './negocios.js';
 import { NEGOCIO, priceForSize } from './pricing.js';
-import { shipping, navLinks, footerLinks, COTIZAR_FORM_HREF } from './site.js';
+import { shipping, footerLinks, COTIZAR_FORM_HREF } from './site.js';
 import { formatPrice } from '../lib/formato.js';
 import { MARCAS } from '../data/marcas.js';
 import { FOTO_HERO } from '../data/negociosFotos.js';
@@ -98,15 +98,13 @@ describe('ningún número escrito a mano (RF-CO3)', () => {
   });
 });
 
-describe('navegación y footer (RF-N1, RF-N4)', () => {
-  it('el nav dice Para negocios · Precios · Con tu diseño · Tienda · Preguntas', () => {
-    expect(navLinks.map((l) => l.label)).toEqual(['Para negocios', 'Precios', 'Con tu diseño', 'Tienda', 'Preguntas']);
-  });
-
-  it('"Precios" lleva a un ancla que /negocio tiene; "Dejar mis datos" de Cotizar, al formulario de /contacto', () => {
+// El nav de la RF-N1 (Para negocios · Precios · Con tu diseño · Tienda ·
+// Preguntas) lo reemplazó el menú de la spec 033 el 15/10/2026: lo prueba
+// navMenu.test.js. Las anclas siguen: `#precios` y `#cotizar` las usan los CTAs.
+describe('navegación y footer (RF-N4)', () => {
+  it('/negocio tiene el ancla #precios; "Dejar mis datos" de Cotizar va al formulario de /contacto', () => {
     const negocio = readFileSync(join(AQUI, '..', 'routes', 'Negocio.jsx'), 'utf8');
     const contacto = readFileSync(join(AQUI, '..', 'routes', 'Contact.jsx'), 'utf8');
-    expect(navLinks.find((l) => l.label === 'Precios').to).toBe('/negocio#precios');
     expect(negocio).toContain('id="precios"');
     expect(COTIZAR_FORM_HREF).toBe('/contacto?motivo=cotizar#formulario');
     expect(contacto).toContain('id="formulario"');

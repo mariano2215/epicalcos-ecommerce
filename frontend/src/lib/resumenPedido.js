@@ -136,7 +136,11 @@ export function buildDesignSummary(items) {
       // Sin `business`: una línea de Negocio que armó el configurador antes del
       // 26/9/2026 (no tenía material en meta). Sin esto la nota decía `Negocio "undefined"`.
       const negocio = it.meta.business ? `Negocio "${it.meta.business}"` : 'Negocio';
-      parts.push(`${negocio}: ${it.meta.qty}u ${it.meta.size} (${logo})`);
+      // Tornasolado de /negocio (spec 033): viene en `materialLabel` (no en
+      // `material`, que la mandaría a los packs de arriba). Sin esto el taller
+      // lo imprimiría en vinilo común.
+      const material = it.meta.materialLabel ? ` ${it.meta.materialLabel}` : '';
+      parts.push(`${negocio}: ${it.meta.qty}u ${it.meta.size}${material} (${logo})`);
     } else if (it.type === 'digital') {
       // Sin adjuntos ni producción: lo único que el vendedor necesita ver en el
       // CRM es que ESTE pedido se entrega por mail y no sale del taller.

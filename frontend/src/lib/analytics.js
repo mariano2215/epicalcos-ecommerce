@@ -677,6 +677,19 @@ export function trackCotizar({ origen, via }) {
 }
 
 /**
+ * El menú principal (spec 033): `accion` 'abrir' al desplegar un grupo y
+ * 'click' al elegir cualquier opción (`destino` = la ruta; vacío al abrir).
+ * `grupo`: 'mayorista' / 'minorista' / 'otros', o 'raiz' para Home y
+ * Contacto. `vista`: 'desktop' / 'mobile'. Abrir sin un click después dice
+ * que el grupo no tiene lo que se buscaba.
+ * Solo GA4: no es una señal de compra y en Meta ensuciaría las audiencias.
+ */
+export function trackMenu({ accion, grupo, destino = '', vista }) {
+  pushDataLayer({ event: 'menu_nav', accion, grupo, destino, vista });
+  debug('menu_nav', accion, grupo, destino, vista);
+}
+
+/**
  * El carrito cruzó un umbral y desbloqueó un beneficio.
  *
  * ⚠️ `promo` es SIEMPRE el nombre del beneficio real ('envio_gratis' /

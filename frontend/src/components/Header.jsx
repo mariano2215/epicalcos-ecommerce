@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import AnnouncementBar from './AnnouncementBar.jsx';
 import BuscadorModal from './BuscadorModal.jsx';
 import { useCart } from '../context/CartContext.jsx';
@@ -10,8 +10,9 @@ import {
   PROMO_ARGENTINA,
   PROMO_ARGENTINA_END_MS
 } from '../config/pricing.js';
-import { navLinks, site } from '../config/site.js';
+import { site } from '../config/site.js';
 import BotonCotizar from './BotonCotizar.jsx';
+import { MenuEscritorio, MenuMovil } from './MenuPrincipal.jsx';
 
 /** Páginas de negocio: ahí la tira suma "desde 100 unidades" (spec 031, RF-N5). */
 const PAGINAS_NEGOCIO = ['/negocio', '/mayorista'];
@@ -77,6 +78,33 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Cambio de página → el menú del celular se cierra. Los links ya lo cierran
+  // al tocarlos; esto cubre el "atrás" del navegador con el menú abierto.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // El menú del celular scrollea POR DENTRO (spec 033, RF-C8). Con Minorista
+  // abierto (Personalizados + 8 categorías) ya no entra en 667 px de alto, y
+  // como cuelga de un header sticky, lo que quedara abajo de la pantalla no se
+  // podía alcanzar de ninguna forma: la página scrolleaba atrás del header.
+  // El alto se mide y no se escribe en CSS: arriba puede haber banner de promo
+  // o no, y abajo cuelga la tira de anuncios, que se recoge al compactar.
+  const menuRef = useRef(null);
+  const [altoMenu, setAltoMenu] = useState(null);
+  useLayoutEffect(() => {
+    if (!open) return;
+    const medir = () => {
+      const el = menuRef.current;
+      if (!el) return;
+      const tira = tiraRef.current?.offsetHeight ?? 0;
+      setAltoMenu(Math.max(240, window.innerHeight - el.getBoundingClientRect().top - tira));
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    return () => window.removeEventListener('resize', medir);
+  }, [open, compacto]);
+
   return (
     /* El modal de búsqueda va FUERA del <header>, no adentro.
        El header tiene `backdrop-filter`, y un elemento con backdrop-filter se
@@ -131,7 +159,7 @@ export default function Header() {
           compacto ? 'py-2' : 'py-4'
         }`}
       >
-        <Link to="/" className="flex items-center" onClick={() => setOpen(false)} aria-label={site.name}>
+        <Link to="/" className="flex items-center shrink-0" onClick={() => setOpen(false)} aria-label={site.name}>
           {/* El logo está arriba del fold en todas las páginas: eager + tamaño
               declarado para que el header no salte al cargar. */}
           <img
@@ -144,27 +172,10 @@ export default function Header() {
           />
         </Link>
 
-        {/* lg y no md: con 7 links el nav no entra en 768 px y desbordaba la página */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {navLinks.map((l) =>
-            l.hash ? (
-              <Link key={l.to} to={l.to} className="btn-ghost !text-white font-semibold whitespace-nowrap">
-                {l.label}
-              </Link>
-            ) : (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                className={({ isActive }) =>
-                  `btn-ghost !text-white font-semibold whitespace-nowrap ${isActive ? 'bg-white/10' : ''}`
-                }
-                end={l.to === '/'}
-              >
-                {l.label}
-              </NavLink>
-            )
-          )}
-        </nav>
+        {/* lg y no md: con 7 links el nav no entraba en 768 px y desbordaba la
+            página. Con el menú de la spec 033 son 5 entradas, pero 3 con flecha:
+            el corte sigue en lg. */}
+        <MenuEscritorio />
 
         <div className="flex items-center gap-2">
           {/* BUSCAR, antes que el carrito y bastante antes que la hamburguesa.
@@ -221,32 +232,14 @@ export default function Header() {
       {/* `data-popup-bloqueo`: con el menú abierto el popup de bienvenida
           espera (spec 026). */}
       {open && (
-        <div className="lg:hidden border-t border-white/10 bg-black/80" data-popup-bloqueo="">
-          <div className="container-app py-3 flex flex-col gap-1">
-            {navLinks.map((l) =>
-              l.hash ? (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2 rounded-lg text-white font-semibold"
-                >
-                  {l.label}
-                </Link>
-              ) : (
-                <NavLink
-                  key={l.to}
-                  to={l.to}
-                  onClick={() => setOpen(false)}
-                  end={l.to === '/'}
-                  className={({ isActive }) =>
-                    `block px-3 py-2 rounded-lg text-white font-semibold ${isActive ? 'bg-white/10' : ''}`
-                  }
-                >
-                  {l.label}
-                </NavLink>
-              )
-            )}
+        <div
+          ref={menuRef}
+          className="lg:hidden border-t border-white/10 bg-black/80 overflow-y-auto overscroll-contain"
+          style={altoMenu ? { maxHeight: altoMenu } : undefined}
+          data-popup-bloqueo=""
+        >
+          <div className="container-app py-3">
+            <MenuMovil onElegir={() => setOpen(false)} />
             <BotonCotizar
               origen="menu"
               modo="en-linea"

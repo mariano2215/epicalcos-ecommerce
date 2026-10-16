@@ -12,7 +12,7 @@
  * ⚠️ Corre en Node (lo importa `scripts/prerender.mjs`): sin React, `window` ni
  * `import.meta.env`. Por eso el breadcrumb se arma acá y no con `lib/seo.js`.
  */
-import { site, navLinks, footerLinks } from '../config/site.js';
+import { site, navMenuPlano, footerLinks } from '../config/site.js';
 import { SIZES } from '../config/pricing.js';
 import { META_LINE_SKU } from '../config/metaCatalog.js';
 import { TAMANOS } from '../config/personalizados.js';
@@ -93,7 +93,7 @@ export function cuerpoPersonalizados() {
   const tamanos = TAMANOS.map(
     (t) => `<strong>${esc(t.label)}</strong> — ${esc(formatPrice(t.precio))} por calco · ideal para ${esc(USOS_POR_TAMANO[t.id]?.para.join(', ') || '')}`
   );
-  const links = [...navLinks.filter((l) => !l.hash && l.to !== RUTA), ...footerLinks.ayuda];
+  const links = [...navMenuPlano.filter((l) => l.to !== RUTA), ...footerLinks.ayuda];
 
   return [
     '<div class="page-gradient"><div class="container-app pt-4 pb-16">',
