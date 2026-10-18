@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HeroSelector from '../components/HeroSelector.jsx';
 import BuscadorSeccion from '../components/BuscadorSeccion.jsx';
@@ -20,6 +20,13 @@ import { CATEGORIES } from '../data/categories.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { useSeo } from '../lib/seo.js';
 import { useReducedMotion } from '../lib/motion.js';
+import { useExperiment } from '../lib/experiments.js';
+
+/**
+ * Variante B2B del Home (spec 034): chunk aparte. Con `home_b2b` apagado nadie
+ * la baja, y el Home de control no carga el cotizador (031 D-8).
+ */
+const HomeB2B = lazy(() => import('./HomeB2B.jsx'));
 
 const FEATURED_SLUGS = ['argentina', 'anime', 'disney', 'escudos-futbol', 'harry-potter', 'marvel', 'memes', 'los-simpsons', 'taylor-swift', 'frases'];
 
@@ -41,8 +48,27 @@ const FEATURED_SLUGS = ['argentina', 'anime', 'disney', 'escudos-futbol', 'harry
  * Con eso se fue también `IntentSelector` ("¿Qué querés hacer?", tres cards):
  * hacía la misma pregunta una pantalla más abajo. El componente queda en el
  * repo por si se lo quiere volver a montar.
+ *
+ * DESDE LA SPEC 034 hay un A/B del Home entero (`home_b2b`, apagado): este
+ * componente elige la variante y el de abajo (`HomeControl`) es el Home de
+ * siempre, sin un cambio. El título y la descripción son los mismos para las
+ * dos (031 RF-SEO7: el HTML inicial es uno solo).
  */
 export default function Home() {
+  const variante = useExperiment('home_b2b');
+  useSeo({ title: undefined, description: undefined });
+
+  if (variante === 'b2b') {
+    return (
+      <Suspense fallback={<div className="min-h-[80vh]" aria-busy="true" />}>
+        <HomeB2B />
+      </Suspense>
+    );
+  }
+  return <HomeControl />;
+}
+
+function HomeControl() {
   const [catalog, setCatalog] = useState({});
   const [rotation, setRotation] = useState(0);
   const featuredRef = useRef(null);
@@ -51,8 +77,6 @@ export default function Home() {
   // El buscador va siempre en su sección. Hasta el 5/10/2026 lo decidía el
   // experimento `hero_buscador` (cerrado desde la spec 028): el hero nuevo no
   // tiene buscador, así que leerlo podía dejar el Home sin ninguno.
-
-  useSeo({ title: undefined, description: undefined });
 
   // portadas.json dice qué diseños de cada categoría tienen fondo gris uniforme:
   // son los únicos que sirven de portada (ver lib/portadas.js). Va en paralelo y
