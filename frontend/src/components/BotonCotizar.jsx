@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { COTIZAR_FORM_HREF } from '../config/site.js';
-import { WHATSAPP } from '../config/negocios.js';
+import { COTIZAR_FORM_HREF, isSectionHidden } from '../config/site.js';
+// De `negociosBase` y no de `negocios`: este botón está en el header de todas
+// las rutas, y el copy completo de negocios pesa (ver negociosBase.js).
+import { WHATSAPP, COTIZADOR_ACTIVO } from '../config/negociosBase.js';
 import { hrefWhatsapp } from '../lib/whatsapp.js';
 import { trackCotizar, trackWhatsappClick } from '../lib/analytics.js';
 
@@ -24,7 +26,16 @@ import { trackCotizar, trackWhatsappClick } from '../lib/analytics.js';
  * `alinear` ('izquierda' | 'derecha'): de qué borde del botón cuelga el menú.
  * `alAbrir` / `alElegir`: para que quien lo usa sume su propio tracking o
  * cierre su menú.
+ *
+ * TERCERA SALIDA (spec 034, D-9): "Ver el precio ahora", que lleva al
+ * cotizador de /negocio. Va primera porque es la única que no depende de que
+ * alguien conteste: con un cotizador real, mandar a todo el mundo a WhatsApp
+ * o a un formulario era esconderle el precio. `conPrecio={false}` la saca (lo
+ * usan los botones que están en la misma página que un cotizador apagado), y
+ * no aparece si el cotizador o /negocio están apagados.
  */
+const PRECIO_HREF = '/negocio#cotizador';
+
 export default function BotonCotizar({
   origen,
   label = 'Cotizar mis calcos',
@@ -33,9 +44,11 @@ export default function BotonCotizar({
   alinear = 'izquierda',
   className = 'btn-primary min-h-[48px]',
   contenedorClassName = '',
+  conPrecio = true,
   alAbrir,
   alElegir
 }) {
+  const ofrecePrecio = conPrecio && COTIZADOR_ACTIVO && !isSectionHidden('/negocio');
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef(null);
   const botonRef = useRef(null);
@@ -73,6 +86,8 @@ export default function BotonCotizar({
   const elegir = (via) => {
     trackCotizar({ origen, via });
     if (via === 'whatsapp') trackWhatsappClick(`cotizar_${origen}`);
+    // Ya en /negocio#cotizador, el router no ve un cambio de hash y no bajaría.
+    if (via === 'precio') document.getElementById('cotizador')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setAbierto(false);
     alElegir?.();
   };
@@ -107,6 +122,17 @@ export default function BotonCotizar({
 
       {abierto && (
         <ul id={panelId} className={panel}>
+          {ofrecePrecio && (
+            <li>
+              <Link to={PRECIO_HREF} onClick={() => elegir('precio')} className={opcion}>
+                <span aria-hidden className="text-xl leading-none mt-0.5">⚡</span>
+                <span>
+                  <span className="block font-semibold text-white">Ver el precio ahora</span>
+                  <span className="block text-xs text-white/60 mt-0.5">Elegí cantidad, tamaño y material</span>
+                </span>
+              </Link>
+            </li>
+          )}
           <li>
             <a
               href={hrefWhatsapp(mensaje)}
