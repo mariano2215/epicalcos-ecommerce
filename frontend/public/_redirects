@@ -19,6 +19,17 @@
 /calcos-para-negocios    /negocio         301
 /pack-100-calcos         /mayorista       301
 /armá-tu-pack            /armar-pack      301
+# Spec 031 RF-SEO4 / spec 034: más alias para anuncios de negocio y por mayor.
+/para-negocios                       /negocio         301
+/calcos-para-empresas                /negocio         301
+/calcos-con-logo                     /negocio         301
+/stickers-para-emprendedores         /negocio         301
+/cotizar                             /negocio         301
+/calcos-por-mayor                    /mayorista       301
+/calcos-mayoristas                   /mayorista       301
+/stickers-personalizados-mayoristas  /mayorista       301
+/tienda                              /categorias      301
+/calcos-personalizados               /personalizados  301
 
 # ── Categorías dadas de baja el 23/8/2026 → 301 ──────────────────────────────
 # El catálogo se reemplazó entero (94 categorías → 61) y estas 79 URLs quedaron
