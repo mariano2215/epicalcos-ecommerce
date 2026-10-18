@@ -118,3 +118,46 @@ describe('experiments', () => {
     expect(EXPERIMENTS.ahorro_pack.variants).toContain(getVariant('ahorro_pack'));
   });
 });
+
+/**
+ * Spec 034: el Home B2B se construye APAGADO y Mariano lo tiene que poder ver
+ * antes de prenderlo. `previsualizable` abre el override por URL para ese
+ * experimento sin aflojar el kill switch de los demás.
+ */
+describe('experimento apagado y previsualizable (home_b2b)', () => {
+  let store;
+
+  beforeEach(() => {
+    store = montarNavegador();
+    vi.resetModules();
+  });
+
+  it('está apagado: sin parámetro, todos ven el control', async () => {
+    const { getVariant, EXPERIMENTS } = await cargarModulo();
+    expect(EXPERIMENTS.home_b2b.active).toBe(false);
+    expect(getVariant('home_b2b')).toBe('control');
+  });
+
+  it('con ?exp_home_b2b=b2b se ve la variante, sin guardarla', async () => {
+    globalThis.window.location.search = '?exp_home_b2b=b2b';
+    const { getVariant } = await cargarModulo();
+    expect(getVariant('home_b2b')).toBe('b2b');
+    expect(store.has('epicalcos.exp.v1')).toBe(false);
+
+    // Volver sin el parámetro: otra vez el control.
+    globalThis.window.location.search = '';
+    expect(getVariant('home_b2b')).toBe('control');
+  });
+
+  it('una variante inventada no se muestra', async () => {
+    globalThis.window.location.search = '?exp_home_b2b=inventada';
+    const { getVariant } = await cargarModulo();
+    expect(getVariant('home_b2b')).toBe('control');
+  });
+
+  it('un experimento apagado SIN previsualizable sigue ignorando el override (kill switch duro)', async () => {
+    globalThis.window.location.search = '?exp_hero_cta=encontra_calcos';
+    const { getVariant } = await cargarModulo();
+    expect(getVariant('hero_cta')).toBe('ver_disenos');
+  });
+});
