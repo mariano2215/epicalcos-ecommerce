@@ -677,6 +677,43 @@ export function trackCotizar({ origen, via }) {
 }
 
 /**
+ * Embudo del cotizador de pedidos por volumen (spec 031 §11, spec 034):
+ *   cotizador_start (primera opción tocada) → cotizador_complete ("Continuar
+ *   con mi pedido") → add_to_cart (`item_list_name: 'cotizador_negocio'`).
+ * `pagina` dice qué cotizador ('negocio' / 'home_b2b'). Solo la configuración:
+ * nada de razón social, CUIT ni nombres de archivo (PII, el dataLayer es
+ * público). Solo GA4: en Meta, la señal de intención ya es el AddToCart.
+ */
+export function trackCotizadorStart({ pagina }) {
+  pushDataLayer({ event: 'cotizador_start', pagina });
+  debug('cotizador_start', pagina);
+}
+
+export function trackCotizadorComplete({ pagina, cantidad, tamano, material, disenos, value }) {
+  pushDataLayer({
+    event: 'cotizador_complete',
+    pagina,
+    cantidad: String(cantidad),
+    tamano,
+    material,
+    disenos,
+    currency: 'ARS',
+    value: Number(value) || 0
+  });
+  debug('cotizador_complete', pagina, cantidad, tamano, material, disenos, value);
+}
+
+/**
+ * Una pregunta de negocio abierta (spec 031 §11). `pregunta_id` es un id
+ * estable del config, no el texto: si se reescribe la pregunta, el informe
+ * sigue sumando en la misma fila.
+ */
+export function trackFaqOpen({ pregunta_id, pagina }) {
+  pushDataLayer({ event: 'faq_open', pregunta_id, pagina });
+  debug('faq_open', pregunta_id, pagina);
+}
+
+/**
  * El menú principal (spec 033): `accion` 'abrir' al desplegar un grupo y
  * 'click' al elegir cualquier opción (`destino` = la ruta; vacío al abrir).
  * `grupo`: 'mayorista' / 'minorista' / 'otros', o 'raiz' para Home y
