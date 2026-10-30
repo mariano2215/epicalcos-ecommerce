@@ -11,6 +11,9 @@ import {
   findCoupon,
   couponBundle,
   couponAnulaTodo,
+  CYBER,
+  isCyberPreview,
+  packCyberDeLinea,
   esPromoArgentina,
   PROMO_ARGENTINA,
   TRANSFER_PCT,
@@ -202,6 +205,8 @@ export default function Checkout() {
     // línea decía "Descuento" a secas, sin explicar de dónde salía el 50 %.
     // El texto sale del config, no escrito a mano.
     if (tienePromoCategoria) parts.push(PROMO_ARGENTINA.titulo);
+    // Lo mismo con un pack de campaña, y solo si de verdad está descontado.
+    if (items.some((i) => packCyberDeLinea(i.id) && i.price < i.basePrice)) parts.push(CYBER.nombre);
     if (appliedCoupon) parts.push(appliedCoupon);
     // Transferencia + cupón de % se suman desde la spec 017; solo un cupón que
     // anula todo (bundle, que ya salió arriba, o exclusivo) la deja afuera.
@@ -309,6 +314,12 @@ export default function Checkout() {
   }
 
   const handleSubmit = async ({ payer, shipping, paymentMethod: method }) => {
+    // Vista previa de EPICYBER (spec 036): el servidor no conoce esos precios y
+    // rechazaría con `price_mismatch`. Mejor decir qué pasa antes de intentarlo.
+    if (isCyberPreview() && items.some((i) => packCyberDeLinea(i.id))) {
+      setErrorMsg('Estás en la vista previa de EPICYBER: los packs todavía no se pueden pagar.');
+      return;
+    }
     setSubmitting(true);
     setErrorMsg('');
     // Tracking best-effort: si el píxel falla (típico en el navegador embebido de

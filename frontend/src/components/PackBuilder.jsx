@@ -21,6 +21,17 @@ const CUSTOM_IMG =
  * `price`, solo en los tamaños de `sizes`. Mientras esté activa Y el tamaño
  * elegido entre en la promo, el pack pasa a ser de cantidad EXACTA (`qty`) y
  * precio fijo; en cualquier otro tamaño el armador vuelve solo al pack normal.
+ * Campos opcionales de `promo` (spec 036, EPICYBER; sin ellos, todo igual):
+ *   `tipo`        → tipo de línea (default `mayorista100`).
+ *   `habitualDe`  → (size) => el precio tachado. Desde 100 calcos no es la lista
+ *                   × cantidad: compararlo contra eso inventaría un descuento.
+ *   `nota`        → reemplaza el aviso del 9 cm.
+ *
+ * `soloTamanos` limita el selector de tamaño (la campaña no incluye 9 cm).
+ *
+ * `semilla` = `{ size, items, reemplazar }`: arranca con esos diseños y, al
+ * confirmar, saca del carrito las líneas de `reemplazar`. Es lo que deja pasarse
+ * a un pack más grande sin volver a elegir todo.
  *
  * `emit` decide QUÉ va al carrito:
  *   'pack'     (default) → UNA línea `pack:…` con su propio precio ya
@@ -34,30 +45,37 @@ const CUSTOM_IMG =
  *                          aplica solo, sin inventar descuentos ni tocar el
  *                          espejo de precios del servidor.
  *
- * @param {{ packType:'mayorista'|'personalizados'|'catalogo', target?:number, min?:number,
+ * @param {{ packType:'mayorista'|'personalizados'|'catalogo'|'cyber', target?:number, min?:number,
  *           discount:number, title:string, subtitle:string, allowCustom?:boolean,
- *           emit?:'pack'|'stickers', packSizeLabel?:string,
- *           promo?:{ active:boolean, qty:number, price:number, sizes:string[] } }} props
+ *           emit?:'pack'|'stickers', packSizeLabel?:string, soloTamanos?:string[],
+ *           semilla?:{ size:string, items:Array, reemplazar:string[] },
+ *           promo?:{ active:boolean, qty:number, price:number, sizes:string[], tipo?:string,
+ *                    habitualDe?:(size:string)=>number, nota?:string } }} props
  */
 export default function PackBuilder({
   packType, target, min, discount, title, subtitle, allowCustom, defaultSize, promo,
-  emit = 'pack', packSizeLabel
+  emit = 'pack', packSizeLabel, soloTamanos, semilla
 }) {
-  const { addPack, addSticker } = useCart();
+  const { addPack, addSticker, removeItem } = useCart();
   const navigate = useNavigate();
 
-  const [size, setSize] = useState(defaultSize || DEFAULT_SIZE);
+  const [size, setSize] = useState(semilla?.size || defaultSize || DEFAULT_SIZE);
   const [cats, setCats] = useState([]);
   const [activeCat, setActiveCat] = useState(null);
   const [catItems, setCatItems] = useState([]);
   const [visible, setVisible] = useState(60);
-  const [selection, setSelection] = useState({}); // id -> { id, image, name, category, qty }
+  // id -> { id, image, name, category, qty }
+  const [selection, setSelection] = useState(() =>
+    Object.fromEntries((semilla?.items || []).map((s) => [s.id, s]))
+  );
   const [customCount, setCustomCount] = useState(0);
   const [customFiles, setCustomFiles] = useState([]); // [{ nombre, pesoMB, url }] subidos a Cloudinary
   const [showCustom, setShowCustom] = useState(false);
 
   // ¿Este tamaño está bajo la promo de precio fijo? (4 y 6 cm sí, 9 cm no).
   const promoOn = !!promo?.active && promo.sizes.includes(size);
+  const esCyber = promoOn && promo.tipo === 'cyber';
+  const tamanos = soloTamanos ? SIZES.filter((s) => soloTamanos.includes(s.id)) : SIZES;
   // Con la promo, el pack es de cantidad EXACTA (100). Sin promo, manda `target`.
   const effTarget = promoOn ? promo.qty : target;
 
@@ -134,8 +152,10 @@ export default function PackBuilder({
   const totalTransferencia = promoOn
     ? round(promo.price * (1 - TRANSFER_DISCOUNT))
     : unitTransferencia * totalSelected;
-  /** % off real de la promo contra el precio de lista de ESTE tamaño (67% en 4cm, 75% en 6cm). */
-  const promoOff = promoOn ? Math.round((1 - promo.price / (listUnit * promo.qty)) * 100) : 0;
+  /** Contra qué se compara la promo: el habitual si lo trae; si no, la lista de ESTE tamaño. */
+  const listaPromo = promoOn ? promo.habitualDe?.(size) ?? listUnit * promo.qty : 0;
+  /** % off real de la promo (67% en 4cm, 75% en 6cm con la de $52.999). */
+  const promoOff = promoOn ? Math.round((1 - promo.price / listaPromo) * 100) : 0;
   const offLabel = promoOn ? promoOff : Math.round(discount * 100);
   const valid = effTarget ? totalSelected === effTarget : totalSelected >= (min || 1);
 
@@ -174,10 +194,33 @@ export default function PackBuilder({
     if (!last) return;
     setSelection((sel) => ({ ...sel, [last.id]: { ...last, qty: last.qty + remaining } }));
   };
+  /**
+   * Completa con diseños al azar de la categoría abierta (spec 036). Un pack de 30
+   * son 30 toques en un celular: esta es la fricción que más pesa en un pack
+   * chico. Si faltan más que los diseños disponibles, reparte de nuevo.
+   */
+  const fillRandom = () => {
+    if (!effTarget || remaining <= 0 || !catItems.length) return;
+    const mezcla = [...catItems].sort(() => Math.random() - 0.5);
+    setSelection((sel) => {
+      const next = { ...sel };
+      for (let i = 0; i < remaining; i++) {
+        const it = mezcla[i % mezcla.length];
+        const name = `${categoryName(activeCat)} #${it.id.split('-').pop()}`;
+        const cur = next[it.id];
+        next[it.id] = cur
+          ? { ...cur, qty: cur.qty + 1 }
+          : { id: it.id, sku: it.sku, image: it.file, name, category: activeCat, qty: 1 };
+      }
+      return next;
+    });
+  };
 
   const confirm = () => {
     if (!valid) return;
     const seleccionados = Object.values(selection);
+    // Pasarse de pack: la línea vieja sale antes de que entre la nueva.
+    semilla?.reemplazar?.forEach(removeItem);
 
     trackPackCompleted({
       packSize: packSizeLabel || (effTarget ? `x${effTarget}` : packType),
@@ -203,29 +246,46 @@ export default function PackBuilder({
       return;
     }
 
-    const items = seleccionados.map((s) => ({ id: s.id, name: s.name, qty: s.qty }));
+    // Los packs de EPICYBER guardan también imagen y SKU: son lo que hace falta
+    // para volver a abrirlos en el armador desde el upsell del carrito.
+    const items = seleccionados.map((s) =>
+      esCyber
+        ? { id: s.id, sku: s.sku, name: s.name, image: s.image, category: s.category, qty: s.qty }
+        : { id: s.id, name: s.name, qty: s.qty }
+    );
     const sizeObj = SIZES.find((s) => s.id === size);
     const cover = Object.values(selection)[0]?.image || CUSTOM_IMG;
     // Con la promo, la línea es UN pack de precio fijo (quantity 1, `qty` calcos
     // adentro); sin promo, es la de siempre (precio por calco × cantidad).
-    const lineType = promoOn ? 'mayorista100' : packType;
-    const label = promoOn
+    const lineType = promoOn ? promo.tipo || 'mayorista100' : packType;
+    const label = esCyber
+      ? `Pack Cyber x${promo.qty} · ${sizeObj.label}`
+      : promoOn
       ? `Pack Mayorista PROMO x${promo.qty} · ${sizeObj.label}`
       : packType === 'mayorista'
       ? `Pack Mayorista x${totalSelected} · ${sizeObj.label}`
       : `Personalizados x${totalSelected} · ${sizeObj.label}`;
     addPack({
-      id: `pack:${lineType}:${size}:${Date.now()}`,
+      // La cantidad va en el id de un pack Cyber: el servidor solo confía en el id.
+      id: esCyber
+        ? `pack:cyber:${size}:${promo.qty}:${Date.now()}`
+        : `pack:${lineType}:${size}:${Date.now()}`,
       name: label,
-      categoryLabel: packType === 'mayorista' ? 'Pack Mayorista' : 'Personalizados',
+      categoryLabel: esCyber ? 'EPICYBER WEEK' : packType === 'mayorista' ? 'Pack Mayorista' : 'Personalizados',
       image: cover,
       size,
-      basePrice: promoOn ? promo.price : unit,
+      // `basePrice` de un pack Cyber es el habitual: el carrito tacha ese número
+      // y el precio de campaña sale de `precioVidrieraLinea`, por fecha.
+      basePrice: esCyber ? listaPromo : promoOn ? promo.price : unit,
       quantity: promoOn ? 1 : totalSelected,
       meta: {
         packType: lineType,
         size,
-        ...(promoOn ? { qty: promo.qty, promo: '100x39999' } : { discount }),
+        ...(esCyber
+          ? { qty: promo.qty, promo: 'epicyber_2026' }
+          : promoOn
+          ? { qty: promo.qty, promo: '100x39999' }
+          : { discount }),
         items,
         customCount,
         archivos: customFiles.length ? customFiles : null
@@ -252,8 +312,8 @@ export default function PackBuilder({
         {/* Paso 1: tamaño */}
         <div className="card-glass p-5">
           <div className="text-sm font-semibold mb-3">1 · Elegí el tamaño del pack</div>
-          <div className="grid grid-cols-3 gap-2 max-w-md">
-            {SIZES.map((s) => {
+          <div className={`grid gap-2 max-w-md ${tamanos.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            {tamanos.map((s) => {
               const active = s.id === size;
               const enPromo = !!promo?.active && promo.sizes.includes(s.id);
               // En un pack de catálogo el precio del selector es el de LISTA:
@@ -276,7 +336,11 @@ export default function PackBuilder({
                   )}
                   <span className="block text-sm font-bold">{s.label}</span>
                   <span className="block text-[11px] text-white/50">
-                    {enPromo ? `${promo.qty} × ${formatPrice(promo.price)}` : `${formatPrice(u)} c/u`}
+                    {enPromo
+                      ? promo.tipo === 'cyber'
+                        ? `x${promo.qty} a ${formatPrice(promo.price)}`
+                        : `${promo.qty} × ${formatPrice(promo.price)}`
+                      : `${formatPrice(u)} c/u`}
                   </span>
                 </button>
               );
@@ -284,7 +348,9 @@ export default function PackBuilder({
           </div>
           {promo?.active && (
             <p className="text-xs text-white/50 mt-3">
-              {promoOn
+              {promo.nota && promoOn
+                ? promo.nota
+                : promoOn
                 ? `La promo son ${promo.qty} calcos exactas a ${formatPrice(promo.price)}. En 9 cm no aplica: ahí el pack sigue siendo desde ${min || promo.qty} calcos con ${Math.round(discount * 100)}% off.`
                 : `El 9 cm queda fuera de la promo: pack desde ${min || promo.qty} calcos con ${Math.round(discount * 100)}% off. Elegí 4 o 6 cm para llevarte ${promo.qty} calcos a ${formatPrice(promo.price)}.`}
             </p>
@@ -427,6 +493,11 @@ export default function PackBuilder({
             </button>
           )}
         </div>
+        {esCyber && remaining > 0 && catItems.length > 0 && (
+          <button onClick={fillRandom} className="btn-secondary w-full min-h-[44px] text-sm">
+            🎲 Completar al azar con {categoryName(activeCat)}
+          </button>
+        )}
 
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
           {Object.values(selection).map((s) => (
@@ -489,7 +560,7 @@ export default function PackBuilder({
             <span className="flex items-baseline gap-2">
               {promoOn && (
                 <span className="text-sm font-normal text-white/40 line-through decoration-white/40">
-                  {formatPrice(listUnit * promo.qty)}
+                  {formatPrice(listaPromo)}
                 </span>
               )}
               <span>{formatPrice(totalPrice)}</span>

@@ -6,6 +6,7 @@ import { META_LINE_SKU } from '../config/metaCatalog.js';
 import { SEO, TAMANO_MAS_ELEGIDO } from '../config/personalizadosLanding.js';
 import { FOTOS } from '../data/personalizadosFotos.js';
 import { jsonLdPersonalizados } from '../lib/personalizadosEstatico.js';
+import { CyberAvisoPagina } from '../components/cyber/CyberAvisos.jsx';
 import HeroConfigurador from '../components/personalizados/HeroConfigurador.jsx';
 import BarraFijaMovil from '../components/personalizados/BarraFijaMovil.jsx';
 import BarraConfianza from '../components/personalizados/secciones/BarraConfianza.jsx';
@@ -56,6 +57,7 @@ export default function Personalizados() {
 
   return (
     <div className="page-gradient">
+      <CyberAvisoPagina qty={10} texto="con tus propios diseños" />
       <HeroConfigurador />
       <BarraConfianza />
       {!hayTrios && <Testimonios />}

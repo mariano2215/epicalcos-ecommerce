@@ -12,6 +12,7 @@
  * `ga4()` de acá abajo, todos los eventos se escriben en un array que nadie
  * consume — que es exactamente lo que pasaba antes de instalar el tag.
  */
+import { CYBER, WHOLESALE_QTY, packCyberDeLinea } from '../config/pricing.js';
 
 const GTM_ID = import.meta.env.VITE_GTM_ID || '';
 const GA4_ID = 'G-04CJ1WQRSJ'; // espejado en el snippet de index.html
@@ -132,13 +133,35 @@ export function nombreParaAnalytics(item) {
   return ['Personalizado', tam, cor].filter(Boolean).join(' · ');
 }
 
+/**
+ * Campos de una línea de EPICYBER (spec 036). Van en el ÍTEM y no en un evento
+ * aparte: `add_to_cart`, `begin_checkout` y `purchase` siguen siendo uno solo, y
+ * cada compra queda atribuida a su pack sin armar embudos a mano.
+ *
+ * `discount` es por unidad, como pide GA4: habitual menos lo que se cobró (en el
+ * `purchase`, con la transferencia adentro).
+ */
+function camposCyber(i) {
+  const pack = packCyberDeLinea(i.id);
+  if (!pack) return {};
+  return {
+    promotion_id: CYBER.id,
+    promotion_name: CYBER.nombre,
+    item_variant: `x${pack.qty}`,
+    item_category2: pack.qty < WHOLESALE_QTY ? 'pack_chico' : 'pack_mayorista',
+    pack_units: pack.qty,
+    discount: Math.max(0, (i.basePrice ?? i.price) - i.price)
+  };
+}
+
 const toItems = (items) =>
   items.map((i) => ({
     item_id: i.id,
     item_name: nombreParaAnalytics(i),
     item_category: i.categoryLabel || i.category,
     price: i.price,
-    quantity: i.quantity || 1
+    quantity: i.quantity || 1,
+    ...camposCyber(i)
   }));
 
 const sum = (items) => items.reduce((acc, i) => acc + i.price * (i.quantity || 1), 0);
@@ -223,6 +246,52 @@ export function trackAddPaymentInfo(items, paymentMethod, coupon) {
     }
   });
   debug('add_payment_info', paymentMethod);
+}
+
+// ─── EPICYBER WEEK (spec 036) ─────────────────────────────────────────────────
+
+/** Un pack de la campaña como ítem de GA4, antes de que exista una línea de carrito. */
+const itemDePack = (pack) => ({
+  item_id: `epicyber-x${pack.qty}`,
+  item_name: `Pack Cyber x${pack.qty}`,
+  item_variant: `x${pack.qty}`,
+  item_category2: pack.qty < WHOLESALE_QTY ? 'pack_chico' : 'pack_mayorista',
+  pack_units: pack.qty,
+  price: pack.price
+});
+
+/**
+ * Se vieron ofertas de la campaña. Son los eventos recomendados de GA4 para esto:
+ * los informes de promociones internas ya saben leerlos. `ubicacion` es la
+ * superficie (`home_chicos`, `epicyber_mayoristas`…).
+ */
+export function trackViewPromotion({ ubicacion, packs = [] }) {
+  pushDataLayer({ ecommerce: null });
+  pushDataLayer({
+    event: 'view_promotion',
+    ecommerce: {
+      promotion_id: CYBER.id,
+      promotion_name: CYBER.nombre,
+      creative_slot: ubicacion,
+      items: packs.map(itemDePack)
+    }
+  });
+  debug('view_promotion', ubicacion);
+}
+
+/** Eligió un pack de la campaña: en una card, en el selector o en un upsell. */
+export function trackSelectPromotion({ ubicacion, pack }) {
+  pushDataLayer({ ecommerce: null });
+  pushDataLayer({
+    event: 'select_promotion',
+    ecommerce: {
+      promotion_id: CYBER.id,
+      promotion_name: CYBER.nombre,
+      creative_slot: ubicacion,
+      items: [itemDePack(pack)]
+    }
+  });
+  debug('select_promotion', ubicacion, pack.qty);
 }
 
 // ─── Armador de packs ─────────────────────────────────────────────────────────

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import PackBuilder from '../components/PackBuilder.jsx';
+import CyberSelectorPack from '../components/cyber/CyberSelectorPack.jsx';
 import { PromoCountdown, endLabel } from '../components/PromoBanner.jsx';
 import { formatPrice } from '../context/CartContext.jsx';
 import {
@@ -8,7 +10,8 @@ import {
   PROMO_MAYORISTA_100,
   PROMO_MAYORISTA_END_MS
 } from '../config/pricing.js';
-import { useMayoristaPromoActive } from '../lib/promo.js';
+import { EPICYBER_COPY, promoDePack, separarPacks } from '../config/epicyber.js';
+import { useMayoristaPromoActive, usePacksCyber } from '../lib/promo.js';
 import { useSeo } from '../lib/seo.js';
 
 /** Cierre de la promo, derivado de `endsAt` (ej. "viernes 14/8"). */
@@ -27,17 +30,28 @@ const PROMO_END_LABEL = CON_FECHA ? endLabel(PROMO_MAYORISTA_END_MS, 'que se ago
 
 export default function Mayorista() {
   const promoActive = useMayoristaPromoActive();
+  // EPICYBER (spec 036): con el x100 aprobado, esta página no puede seguir
+  // vendiendo 100 calcos más caras que el Home. Si no está aprobado, todo queda
+  // como siempre. El 9 cm no entra en la campaña y sigue con su pack normal,
+  // porque se reusa la `promo` del armador, que ya sabe caer ahí.
+  const { mayoristas } = separarPacks(usePacksCyber());
+  const hayCyber = mayoristas.some((p) => p.qty === WHOLESALE_QTY);
+  const [qtyCyber, setQtyCyber] = useState(WHOLESALE_QTY);
+  const packCyber = hayCyber ? mayoristas.find((p) => p.qty === qtyCyber) || mayoristas[0] : null;
 
   // Spec 031: "mayorista" queda como keyword y argumento de precio, así que va
   // en el título. ⚠️ La fecha de cierre se nombra SOLO si la promo la tiene:
   // desde la spec 017 no tiene, y hasta el 5/10/2026 la descripción y el
   // subtítulo de la página decían "hasta el null" (en producción, a la vista).
+  const precio100 = hayCyber
+    ? mayoristas.find((p) => p.qty === WHOLESALE_QTY).price
+    : PROMO_MAYORISTA_100.price;
   useSeo({
     title: promoActive
-      ? `Calcos mayoristas · ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)}`
+      ? `Calcos mayoristas · ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(precio100)}`
       : 'Calcos mayoristas · Pack desde 100 calcos',
     description: promoActive
-      ? `Calcos mayoristas: ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)}, eligiendo ${PROMO_MAYORISTA_100.qty} diseños distintos del catálogo o subiendo los tuyos. En 4 y 6 cm${CON_FECHA ? `, hasta el ${PROMO_END_LABEL}` : ''}. Pagás con Mercado Pago o por transferencia.`
+      ? `Calcos mayoristas: ${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(precio100)}, eligiendo ${PROMO_MAYORISTA_100.qty} diseños distintos del catálogo o subiendo los tuyos. En 4 y 6 cm${CON_FECHA ? `, hasta el ${PROMO_END_LABEL}` : ''}. Pagás con Mercado Pago o por transferencia.`
       : 'Armá tu pack mayorista desde 100 calcos, eligiendo del catálogo o subiendo tus propios diseños. 50% de descuento en todos los tamaños. Pagás con Mercado Pago o por transferencia.'
   });
 
@@ -47,7 +61,18 @@ export default function Mayorista() {
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Categorías', to: '/categorias' }, { name: 'Pack Mayorista' }]} />
 
         {/* Promo por tiempo limitado: cartel + cuenta regresiva. Desaparece solo al vencer. */}
-        {promoActive && (
+        {packCyber && (
+          <div className="mt-6">
+            <CyberSelectorPack
+              packs={mayoristas}
+              qty={packCyber.qty}
+              onElegir={setQtyCyber}
+              ubicacion="mayorista"
+            />
+          </div>
+        )}
+
+        {promoActive && !packCyber && (
           <div className="mt-6 card-glass p-5 md:p-6 border border-brand-fuchsia/30">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="min-w-0">
@@ -83,10 +108,12 @@ export default function Mayorista() {
             discount={WHOLESALE_DISCOUNT}
             defaultSize="4cm"
             allowCustom
-            promo={{ active: promoActive, ...PROMO_MAYORISTA_100 }}
+            promo={packCyber ? promoDePack(packCyber) : { active: promoActive, ...PROMO_MAYORISTA_100 }}
             title="Pack Mayorista"
             subtitle={
-              promoActive
+              packCyber
+                ? `Elegí ${packCyber.qty} calcos (del catálogo o con tus propios diseños) en 4 o 6 cm y pagás ${formatPrice(packCyber.price)}. ${EPICYBER_COPY.mayoristas.subtitulo}.`
+                : promoActive
                 ? `Elegí ${PROMO_MAYORISTA_100.qty} calcos (del catálogo o con tus propios diseños) en 4 o 6 cm y pagás ${formatPrice(PROMO_MAYORISTA_100.price)}.${CON_FECHA ? ` Promo hasta el ${PROMO_END_LABEL}.` : ''}`
                 : 'Elegí 100 calcos o más (del catálogo o con tus propios diseños), en un solo tamaño, y llevate un 50% de descuento. Aprovechá el 4 cm.'
             }

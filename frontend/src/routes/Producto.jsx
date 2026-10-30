@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import DiscountNote from '../components/DiscountNote.jsx';
+import { CyberAvisoProducto } from '../components/cyber/CyberAvisos.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
 import SizeGuide from '../components/SizeGuide.jsx';
 import SocialProof from '../components/SocialProof.jsx';
@@ -314,6 +315,7 @@ export default function Producto() {
                     Total: <strong className="text-white">{formatPrice(unit * qty)}</strong>
                   </span>
                 </div>
+                <CyberAvisoProducto size={size} />
               </div>
 
               {/* CTAs */}

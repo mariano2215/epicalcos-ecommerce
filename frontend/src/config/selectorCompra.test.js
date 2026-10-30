@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HERO_SELECTOR, TIPOS } from './selectorCompra.js';
-import { SIZES, NEGOCIO, WHOLESALE_QTY } from './pricing.js';
+import { SIZES, NEGOCIO, WHOLESALE_QTY, packCyberVigente } from './pricing.js';
 import { formatPrice } from '../lib/formato.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { validarConsulta, TOPES, CONSULTA_COTIZAR } from '../lib/contacto.js';
@@ -43,7 +43,10 @@ describe('selector del hero del Home', () => {
     const [menor, mayor] = TIPOS;
     expect(menor.detalle.join(' ')).toContain(formatPrice(Math.min(...SIZES.map((s) => s.price))));
     expect(mayor.detalle.join(' ')).toContain(`${NEGOCIO.qty} calcos`);
-    expect(mayor.detalle.join(' ')).toContain(formatPrice(Math.round(NEGOCIO.price / NEGOCIO.qty)));
+    // Con el precio VIGENTE: del 2 al 8/11 el x100 de EPICYBER baja este "c/u", y
+    // comparar contra NEGOCIO a secas frenaría todo deploy de esa semana.
+    const precio100 = packCyberVigente(NEGOCIO.qty)?.price ?? NEGOCIO.price;
+    expect(mayor.detalle.join(' ')).toContain(formatPrice(Math.round(precio100 / NEGOCIO.qty)));
     expect(menor.destinos[0].texto).toContain(String(CATEGORY_COUNT));
     expect(mayor.destinos[1].texto).toContain(String(WHOLESALE_QTY));
 

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import CyberBanner from '../components/cyber/CyberBanner.jsx';
 import HeroSelector from '../components/HeroSelector.jsx';
 import BuscadorSeccion from '../components/BuscadorSeccion.jsx';
 import RecentCategories from '../components/RecentCategories.jsx';
@@ -20,6 +21,13 @@ import { CATEGORIES } from '../data/categories.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 import { useSeo } from '../lib/seo.js';
 import { useReducedMotion } from '../lib/motion.js';
+import { usePacksCyber } from '../lib/promo.js';
+import { separarPacks } from '../config/epicyber.js';
+
+// Lazy: el Home es eager por LCP y estas secciones solo existen una semana.
+const seccionesCyber = () => import('../components/cyber/CyberSecciones.jsx');
+const CyberPacksChicos = lazy(() => seccionesCyber().then((m) => ({ default: m.CyberPacksChicos })));
+const CyberMayoristas = lazy(() => seccionesCyber().then((m) => ({ default: m.CyberMayoristas })));
 
 const FEATURED_SLUGS = ['argentina', 'anime', 'disney', 'escudos-futbol', 'harry-potter', 'marvel', 'memes', 'los-simpsons', 'taylor-swift', 'frases'];
 
@@ -47,6 +55,7 @@ export default function Home() {
   const [rotation, setRotation] = useState(0);
   const featuredRef = useRef(null);
   const reducedMotion = useReducedMotion();
+  const { chicos, mayoristas } = separarPacks(usePacksCyber());
 
   // El buscador va siempre en su sección. Hasta el 5/10/2026 lo decidía el
   // experimento `hero_buscador` (cerrado desde la spec 028): el hero nuevo no
@@ -104,6 +113,15 @@ export default function Home() {
 
   return (
     <>
+      {/* ── EPICYBER (spec 036) ──────────────────────────────────────────── */}
+      {/* Sin campaña no renderiza nada y las secciones no se descargan. */}
+      <CyberBanner />
+      {chicos.length > 0 && (
+        <Suspense fallback={<div className="min-h-[440px]" />}>
+          <CyberPacksChicos soloPrioritarios />
+        </Suspense>
+      )}
+
       {/* ── ELECCIÓN ─────────────────────────────────────────────────────── */}
       <HeroSelector />
 
@@ -174,7 +192,15 @@ export default function Home() {
       <Beneficios />
 
       {/* ── OFERTA ───────────────────────────────────────────────────────── */}
-      <OfertaPrincipal />
+      {/* Una sola oferta dominante: durante EPICYBER, la de campaña. Si no, el
+          Home diría "100 calcos a $52.999" debajo de una oferta más barata. */}
+      {mayoristas.length > 0 ? (
+        <Suspense fallback={<div className="min-h-[440px]" />}>
+          <CyberMayoristas soloPrioritarios />
+        </Suspense>
+      ) : (
+        <OfertaPrincipal />
+      )}
 
       {/* ── PRUEBA ───────────────────────────────────────────────────────── */}
       <Testimonials />

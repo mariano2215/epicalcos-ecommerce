@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import './lib/cyberPreview.js'; // antes que App: ver el comentario del módulo
 import App from './App.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import { getStoredAdvancedMatching } from './lib/advancedMatching.js';

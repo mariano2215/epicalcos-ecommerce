@@ -40,6 +40,8 @@ export function stashPurchase(order) {
           categoryLabel: i.categoryLabel,
           catalogSku: i.catalogSku,
           size: i.size,
+          // El `discount` de una línea de EPICYBER en el `purchase` (spec 036).
+          basePrice: i.basePrice,
           price: i.price,
           quantity: i.quantity
         })),
