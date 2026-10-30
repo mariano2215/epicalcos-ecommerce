@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildDesignSummary, groupCustomItems, especificacionDisenos } from './resumenPedido.js';
+import { buildDesignSummary, groupCustomItems, groupPackItems, especificacionDisenos } from './resumenPedido.js';
+import { lineaVolumen } from './cotizadorNegocio.js';
 
 /** Línea de personalizado como la emite el configurador: UN diseño por línea. */
 const linea = (archivo, { url = null, copias = 1, tamanoLabel = '4 cm', corteLabel = 'Silueta', instrucciones = null } = {}) => ({
@@ -218,5 +219,62 @@ describe('nota del pedido con personalizados', () => {
       { type: 'fixed', name: 'Polaroid x10', meta: { archivos: [{ nombre: 'foto.jpg', url: 'https://cdn/foto.jpg' }] } }
     ]);
     expect(nota).toBe('PEDIDO: Polaroid x10 | archivos (1): https://cdn/foto.jpg');
+  });
+});
+
+/**
+ * Líneas de la escala por volumen (spec 034). Las arma el mismo `lineaVolumen()`
+ * que usan el cotizador de /negocio y el armador de /mayorista.
+ */
+describe('líneas de la escala por volumen (spec 034)', () => {
+  it('la nota del cotizador dice escalón, tamaño, material, negocio con CUIT, reparto y links — sin "undefined"', () => {
+    const l = lineaVolumen({
+      tamano: '6cm',
+      cantidad: 250,
+      disenos: 3,
+      razonSocial: 'Bar La Esquina',
+      cuit: '20-12345678-3',
+      archivos: [{ nombre: 'a.png', url: 'https://res.cloudinary.com/x/a.png' }, { nombre: 'b.png', url: null }],
+      ts: 1
+    });
+    const nota = buildDesignSummary([l]);
+    expect(nota).toContain('Escala 250u 6 cm Vinilo Blanco');
+    expect(nota).toContain('Negocio "Bar La Esquina" (CUIT 20-12345678-3)');
+    expect(nota).toContain('3 diseños, reparto a coordinar por WhatsApp');
+    // Con indicaciones del cliente, van esas (sin regla por defecto inventada: N-9 sigue abierta).
+    const conIndicaciones = buildDesignSummary([{ ...l, meta: { ...l.meta, indicaciones: '150 del logo y 100 del isotipo' } }]);
+    expect(conIndicaciones).toContain('3 diseños | indicaciones: 150 del logo y 100 del isotipo');
+    expect(nota).toContain('https://res.cloudinary.com/x/a.png');
+    expect(nota).toContain('b.png (por WhatsApp)');
+    expect(nota).not.toMatch(/undefined|null/);
+    // Un solo renglón: no cae también en los packs del configurador.
+    expect(nota.match(/Escala/g)).toHaveLength(1);
+    expect(groupPackItems([l])).toEqual([]);
+  });
+
+  it('sin archivos avisa que los diseños van por WhatsApp', () => {
+    const nota = buildDesignSummary([lineaVolumen({ tamano: '4cm', cantidad: 100, razonSocial: 'X', ts: 1 })]);
+    expect(nota).toContain('diseños: se envían por WhatsApp');
+  });
+
+  it('desde /mayorista la nota trae los diseños del catálogo y los propios', () => {
+    const l = lineaVolumen({
+      tamano: '4cm',
+      cantidad: 100,
+      origen: 'mayorista',
+      items: [{ id: 'a-1', name: 'Anime #1', qty: 60 }, { id: 'a-2', name: 'Anime #2', qty: 30 }],
+      customCount: 10,
+      ts: 1
+    });
+    const nota = buildDesignSummary([l]);
+    expect(nota).toContain('Escala 100u 4 cm (armado en /mayorista)');
+    expect(nota).toContain('Anime #1 x60, Anime #2 x30 + 10 diseño(s) propio(s)');
+    expect(nota).not.toMatch(/undefined|null/);
+  });
+
+  it('/pago-exitoso lista los archivos con la cantidad de calcos del pedido, no "1"', () => {
+    const l = lineaVolumen({ tamano: '6cm', cantidad: 500, archivos: [{ nombre: 'logo.ai', url: 'https://x' }], razonSocial: 'X', ts: 1 });
+    const [spec] = especificacionDisenos([l]);
+    expect(spec).toMatchObject({ tipo: 'fixed', cantidad: 500, archivos: [{ nombre: 'logo.ai', subido: true }] });
   });
 });

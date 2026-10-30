@@ -505,6 +505,54 @@ que incluye una línea `custom:` / sesiones con `personalized_view`). Hasta el
 14/9/2026 el funnel documentado arrancaba en `view_item`, que la página nunca
 disparaba.
 
+### Pedidos por volumen — negocio y por mayor (spec 034)
+
+```
+Compra:       page_view /negocio (o Home B2B) → cotizador_start → cotizador_complete
+              → add_to_cart (item_id volumen:…) → begin_checkout → purchase
+Presupuesto:  cotizar_click {via: 'formulario'} → generate_lead {lead_source: 'contacto_form',
+              motivo: 'cotizar', origen: 'cotizador'}
+Por mayor:    page_view /mayorista → pack_builder_start → pack_completed → add_to_cart → purchase
+```
+
+| Evento | Cuándo | Parámetros |
+|---|---|---|
+| `cotizador_start` | primera opción tocada en el cotizador | `pagina` (`negocio` / `home_b2b`) |
+| `cotizador_complete` | "Continuar con mi pedido" | `cantidad`, `tamano`, `material`, `disenos`, `value` |
+| `cotizar_click` | salida elegida en Cotizar | `origen`, `via`: `abrir` / **`precio`** (nuevo) / `whatsapp` / `formulario` |
+| `faq_open` | abrir una pregunta de negocio | `pregunta_id` (id estable del config), `pagina` |
+| `generate_lead` | formulario de contacto enviado | `origen: 'cotizador'` cuando la consulta vino armada del cotizador |
+| `whatsapp_click` | WhatsApp del cotizador / pedidos grandes | `cotizador_negocio`, `pedidos_grandes_negocio`, `pedidos_grandes_mayorista`… |
+
+Cómo leerlo:
+- **Las líneas de escala se reconocen por el `item_id`**: empiezan con
+  `volumen:` (el tamaño, el material y la cantidad van adentro). En GA4,
+  *Exploración* → dimensión "ID del artículo" que comienza con `volumen:`.
+  `add_to_cart` no lleva `item_list_name` propio porque sale por `addNegocio`
+  del `CartContext`, que no se tocó.
+- **Sin PII**: ni razón social, ni CUIT, ni nombres de archivo. La cantidad
+  viaja como escalón (`100`/`250`/`500`/`1000`).
+- **A/B del Home (`home_b2b`)**: apagado. Cuando se prenda, `experiment_view`
+  sale una vez por carga con la variante; la vista previa con
+  `?exp_home_b2b=b2b` **no** cuenta como exposición. Métrica principal:
+  facturación por sesión; secundarias: `generate_lead` con `motivo: 'cotizar'`,
+  `add_to_cart` de `volumen:` y compras de catálogo.
+- **Atribución de Meta**: el `fbclid` con el que se llegó se guarda en
+  `sessionStorage` y el checkout arma el `fbc` con él si no hay cookie `_fbc`
+  (`lib/atribucion.js`). Los UTM se guardan igual pero todavía no viajan al
+  pedido (necesita cambiar el servidor de pagos: propuesto en
+  `AUDITORIA_EPICALCOS.md`).
+
+**Configuración que falta en los paneles (no es código):**
+1. GA4 → Administrar → Flujos de datos → Etiquetado → *Referencias no
+   deseadas*: `mercadopago.com.ar` y `mercadopago.com`. Sin eso, la vuelta de
+   Mercado Pago abre una sesión nueva y la compra se atribuye a "referral /
+   mercadopago" en vez de al anuncio.
+2. GA4 → marcar `generate_lead` como **evento clave** (si no lo está) y crear
+   las dos exploraciones de embudo de arriba.
+3. Meta → audiencia personalizada "visitó /negocio o /mayorista sin
+   Purchase" para remarketing B2B, separada de la B2C.
+
 ---
 
 ## 5. KPIs

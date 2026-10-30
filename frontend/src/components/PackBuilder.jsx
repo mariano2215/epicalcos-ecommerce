@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart, formatPrice } from '../context/CartContext.jsx';
-import { SIZES, DEFAULT_SIZE, priceForSize, round, TRANSFER_DISCOUNT, TRANSFER_PCT } from '../config/pricing.js';
+import {
+  SIZES,
+  DEFAULT_SIZE,
+  priceForSize,
+  round,
+  TRANSFER_DISCOUNT,
+  TRANSFER_PCT,
+  ESCALA_MIN,
+  ESCALA_MAX,
+  precioVolumen
+} from '../config/pricing.js';
 import { categoryName } from '../data/categories.js';
 import { trackPackBuilderStart, trackPackCompleted } from '../lib/analytics.js';
+import { TAMANOS_ESCALA, filasEscala, lineaVolumen, precioTransferencia } from '../lib/cotizadorNegocio.js';
 import CategoryMenu from './CategoryMenu.jsx';
 import SubidaArchivo from './personalizados/SubidaArchivo.jsx';
 
@@ -45,21 +56,39 @@ const CUSTOM_IMG =
  *                          aplica solo, sin inventar descuentos ni tocar el
  *                          espejo de precios del servidor.
  *
+ * `escala` (spec 032 tarea 2.2, spec 034 §7.6) = la ESCALA POR VOLUMEN: de 100
+ * a 1.000 calcos, solo en los tamaños que se venden por mayor (4 y 6 cm), al
+ * precio de `precioVolumen()`. Va al carrito UNA línea `volumen:` por
+ * `addNegocio` (la arma `lineaVolumen()`, probada contra el servidor). Con la
+ * escala, `promo`, `discount`, `target` y `min` no se usan: la promo de 100 a
+ * precio fijo ES el primer escalón (mismo monto), y armar de a packs de 100 ya
+ * no hace falta. Solo la usa /mayorista, que la apaga durante EPICYBER para
+ * vender los packs de campaña; `/armar-pack` sigue como estaba.
+ *
+ * `encabezado` = etiqueta del título. /mayorista pasa 'h2': tiene su H1 arriba.
+ *
  * @param {{ packType:'mayorista'|'personalizados'|'catalogo'|'cyber', target?:number, min?:number,
  *           discount:number, title:string, subtitle:string, allowCustom?:boolean,
  *           emit?:'pack'|'stickers', packSizeLabel?:string, soloTamanos?:string[],
+ *           escala?:boolean, encabezado?:'h1'|'h2',
  *           semilla?:{ size:string, items:Array, reemplazar:string[] },
  *           promo?:{ active:boolean, qty:number, price:number, sizes:string[], tipo?:string,
  *                    habitualDe?:(size:string)=>number, nota?:string } }} props
  */
 export default function PackBuilder({
   packType, target, min, discount, title, subtitle, allowCustom, defaultSize, promo,
-  emit = 'pack', packSizeLabel, soloTamanos, semilla
+  emit = 'pack', packSizeLabel, soloTamanos, semilla, escala = false, encabezado: Titulo = 'h1'
 }) {
-  const { addPack, addSticker, removeItem } = useCart();
+  const { addPack, addSticker, addNegocio, removeItem } = useCart();
   const navigate = useNavigate();
 
-  const [size, setSize] = useState(semilla?.size || defaultSize || DEFAULT_SIZE);
+  // Con la escala, solo los tamaños que se venden por mayor (el 9 cm va suelto).
+  const permitidos = soloTamanos || (escala ? TAMANOS_ESCALA : null);
+  const tamanos = permitidos ? SIZES.filter((s) => permitidos.includes(s.id)) : SIZES;
+  const [size, setSize] = useState(() => {
+    const pedido = semilla?.size || defaultSize || DEFAULT_SIZE;
+    return tamanos.some((s) => s.id === pedido) ? pedido : tamanos[0].id;
+  });
   const [cats, setCats] = useState([]);
   const [activeCat, setActiveCat] = useState(null);
   const [catItems, setCatItems] = useState([]);
@@ -73,13 +102,14 @@ export default function PackBuilder({
   const [showCustom, setShowCustom] = useState(false);
 
   // ¿Este tamaño está bajo la promo de precio fijo? (4 y 6 cm sí, 9 cm no).
-  const promoOn = !!promo?.active && promo.sizes.includes(size);
+  // Con la escala no hay promo: su primer escalón cuesta lo mismo.
+  const promoOn = !escala && !!promo?.active && promo.sizes.includes(size);
   const esCyber = promoOn && promo.tipo === 'cyber';
-  const tamanos = soloTamanos ? SIZES.filter((s) => soloTamanos.includes(s.id)) : SIZES;
   // Con la promo, el pack es de cantidad EXACTA (100). Sin promo, manda `target`.
-  const effTarget = promoOn ? promo.qty : target;
+  const effTarget = escala ? undefined : promoOn ? promo.qty : target;
 
-  const cap = effTarget || Infinity; // con promo: tope 100
+  // Con la escala, el tope es el último escalón: más que eso es presupuesto.
+  const cap = escala ? ESCALA_MAX : effTarget || Infinity; // con promo: tope 100
 
   /**
    * Arranque del armador — primer escalón del funnel de packs. El ref lo hace
@@ -137,19 +167,39 @@ export default function PackBuilder({
    * del `basePrice` de la línea y no depende del medio de pago.
    */
   const esCatalogo = emit === 'stickers';
-  const unit = promoOn
+
+  /**
+   * Escala por volumen. `pv` es `null` debajo de 100. Si la cantidad elegida
+   * cuesta lo mismo que el escalón siguiente (240 → 250), `precioVolumen` lo
+   * dice con `cantidadLlevada`: el armador NO deja agregar 240 —el servidor
+   * solo acepta el id de 250— y ofrece completar los que faltan, que le salen
+   * gratis (spec 034, D-5).
+   */
+  const pv = escala && totalSelected >= ESCALA_MIN ? precioVolumen({ tamano: size, cantidad: totalSelected }) : null;
+  const faltanEscalon = pv ? pv.cantidadLlevada - totalSelected : 0;
+  const filas = escala ? filasEscala({ tamano: size }) : [];
+  // El siguiente escalón desde el que YA se paga: con 240 se paga 250, así que
+  // el empujón es hacia 500, no hacia 250.
+  const siguienteEscalon = escala ? filas.find((f) => f.cantidad > (pv?.cantidadLlevada ?? totalSelected)) : null;
+
+  const unit = escala
+    ? pv?.unitario ?? filas[0]?.unitario ?? 0
+    : promoOn
     ? promo.price / promo.qty
     : esCatalogo
     ? listUnit
     : round(listUnit * (1 - discount));
-  const totalPrice = promoOn ? promo.price : unit * totalSelected;
+  const totalPrice = escala ? pv?.total ?? 0 : promoOn ? promo.price : unit * totalSelected;
 
   // Precio pagando por transferencia (spec 027; 20 % desde la 029): sobre TODO pack, desde 1
   // calco — el de catálogo, el mayorista y el de personalizados. Por calco en
   // los que se cobran por calco (así redondea el servidor); la promo de precio
-  // fijo es UNA línea, así que se descuenta entera.
-  const unitTransferencia = promoOn ? null : round(unit * (1 - TRANSFER_DISCOUNT));
-  const totalTransferencia = promoOn
+  // fijo y la escala son UNA línea, así que se descuentan enteras.
+  const unaLinea = promoOn || escala;
+  const unitTransferencia = unaLinea ? null : round(unit * (1 - TRANSFER_DISCOUNT));
+  const totalTransferencia = escala
+    ? precioTransferencia(totalPrice)
+    : promoOn
     ? round(promo.price * (1 - TRANSFER_DISCOUNT))
     : unitTransferencia * totalSelected;
   /** Contra qué se compara la promo: el habitual si lo trae; si no, la lista de ESTE tamaño. */
@@ -157,7 +207,11 @@ export default function PackBuilder({
   /** % off real de la promo (67% en 4cm, 75% en 6cm con la de $52.999). */
   const promoOff = promoOn ? Math.round((1 - promo.price / listaPromo) * 100) : 0;
   const offLabel = promoOn ? promoOff : Math.round(discount * 100);
-  const valid = effTarget ? totalSelected === effTarget : totalSelected >= (min || 1);
+  const valid = escala
+    ? Boolean(pv) && faltanEscalon === 0
+    : effTarget
+    ? totalSelected === effTarget
+    : totalSelected >= (min || 1);
 
   const addOne = (item) => {
     if (totalSelected >= cap) return;
@@ -187,12 +241,16 @@ export default function PackBuilder({
       return { ...sel, [id]: { ...cur, qty: n } };
     });
   };
-  const fillRemaining = () => {
-    // Completa hasta el target con el último diseño seleccionado (o el primero)
-    if (!effTarget || remaining <= 0) return;
+  const fillRemaining = (cuantas = remaining) => {
+    // Completa hasta el target con el último diseño seleccionado (o el primero).
+    // Con la escala, completa hasta el escalón que ya se está pagando.
+    if ((!effTarget && !escala) || cuantas <= 0) return;
     const last = Object.values(selection).slice(-1)[0];
-    if (!last) return;
-    setSelection((sel) => ({ ...sel, [last.id]: { ...last, qty: last.qty + remaining } }));
+    if (!last) {
+      if (customCount > 0) setCustomCount((c) => c + cuantas);
+      return;
+    }
+    setSelection((sel) => ({ ...sel, [last.id]: { ...last, qty: last.qty + cuantas } }));
   };
   /**
    * Completa con diseños al azar de la categoría abierta (spec 036). Un pack de 30
@@ -247,14 +305,35 @@ export default function PackBuilder({
     }
 
     // Los packs de EPICYBER guardan también imagen y SKU: son lo que hace falta
-    // para volver a abrirlos en el armador desde el upsell del carrito.
+    // para volver a abrirlos en el armador desde el upsell del carrito. Las
+    // líneas de la escala, igual: un pedido armado antes de la campaña se ofrece
+    // pasar al pack Cyber de esa cantidad (`sugerenciaCyber`).
     const items = seleccionados.map((s) =>
-      esCyber
+      esCyber || escala
         ? { id: s.id, sku: s.sku, name: s.name, image: s.image, category: s.category, qty: s.qty }
         : { id: s.id, name: s.name, qty: s.qty }
     );
     const sizeObj = SIZES.find((s) => s.id === size);
     const cover = Object.values(selection)[0]?.image || CUSTOM_IMG;
+
+    // Escala: UNA línea `volumen:` con los diseños adentro, por addNegocio
+    // (precio fijo, fuera de cupones, con transferencia). `lineaVolumen` no la
+    // arma si el servidor la fuera a rechazar; `valid` ya lo evita antes.
+    if (escala) {
+      const linea = lineaVolumen({
+        tamano: size,
+        cantidad: totalSelected,
+        origen: 'mayorista',
+        items,
+        customCount,
+        archivos: customFiles,
+        imagen: cover
+      });
+      if (!linea) return;
+      addNegocio(linea);
+      navigate('/carrito');
+      return;
+    }
     // Con la promo, la línea es UN pack de precio fijo (quantity 1, `qty` calcos
     // adentro); sin promo, es la de siempre (precio por calco × cantidad).
     const lineType = promoOn ? promo.tipo || 'mayorista100' : packType;
@@ -303,9 +382,15 @@ export default function PackBuilder({
               por transferencia, con condición. Prometerlo suelto en un badge
               sería la misma trampa que el viejo "10% off automático". */}
           <span className="badge badge-hot mb-3">
-            {esCatalogo ? `${totalSelected || effTarget || min} calcos` : `${offLabel}% OFF`}
+            {escala
+              ? pv?.pct > 0
+                ? `−${pv.pct}% por calco`
+                : 'Precios por cantidad'
+              : esCatalogo
+              ? `${totalSelected || effTarget || min} calcos`
+              : `${offLabel}% OFF`}
           </span>
-          <h1 className="font-display font-extrabold text-3xl md:text-4xl">{title}</h1>
+          <Titulo className="font-display font-extrabold text-3xl md:text-4xl">{title}</Titulo>
           <p className="text-white/80 mt-2 max-w-xl">{subtitle}</p>
         </header>
 
@@ -315,10 +400,15 @@ export default function PackBuilder({
           <div className={`grid gap-2 max-w-md ${tamanos.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {tamanos.map((s) => {
               const active = s.id === size;
-              const enPromo = !!promo?.active && promo.sizes.includes(s.id);
+              const enPromo = !escala && !!promo?.active && promo.sizes.includes(s.id);
               // En un pack de catálogo el precio del selector es el de LISTA:
               // el % por transferencia depende del medio de pago y se aclara abajo, en el total.
-              const u = esCatalogo ? s.price : round(s.price * (1 - discount));
+              // Con la escala, el precio por calco del primer escalón.
+              const u = escala
+                ? filasEscala({ tamano: s.id })[0]?.unitario
+                : esCatalogo
+                ? s.price
+                : round(s.price * (1 - discount));
               return (
                 <button
                   key={s.id}
@@ -340,13 +430,20 @@ export default function PackBuilder({
                       ? promo.tipo === 'cyber'
                         ? `x${promo.qty} a ${formatPrice(promo.price)}`
                         : `${promo.qty} × ${formatPrice(promo.price)}`
+                      : escala
+                      ? `${formatPrice(u)} c/u con ${ESCALA_MIN}`
                       : `${formatPrice(u)} c/u`}
                   </span>
                 </button>
               );
             })}
           </div>
-          {promo?.active && (
+          {escala && (
+            <p className="text-xs text-white/50 mt-3">
+              El 9 cm no se vende por mayor: lo encontrás suelto en la tienda.
+            </p>
+          )}
+          {!escala && promo?.active && (
             <p className="text-xs text-white/50 mt-3">
               {promo.nota && promoOn
                 ? promo.nota
@@ -361,7 +458,12 @@ export default function PackBuilder({
         <div className="card-glass p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm font-semibold">
-              2 · Elegí los diseños {effTarget ? `(${effTarget} en total)` : `(mínimo ${min})`}
+              2 · Elegí los diseños{' '}
+              {escala
+                ? `(de ${ESCALA_MIN} a ${ESCALA_MAX.toLocaleString('es-AR')})`
+                : effTarget
+                ? `(${effTarget} en total)`
+                : `(mínimo ${min})`}
             </div>
             {allowCustom && (
               <button
@@ -484,12 +586,21 @@ export default function PackBuilder({
           <div>
             <div className="text-3xl font-display font-extrabold">{totalSelected}</div>
             <div className="text-xs text-white/50">
-              {effTarget ? `de ${effTarget} calcos` : `calcos (mín. ${min})`}
+              {escala
+                ? `calcos (de ${ESCALA_MIN} a ${ESCALA_MAX.toLocaleString('es-AR')})`
+                : effTarget
+                ? `de ${effTarget} calcos`
+                : `calcos (mín. ${min})`}
             </div>
           </div>
           {effTarget && remaining > 0 && Object.keys(selection).length > 0 && (
-            <button onClick={fillRemaining} className="btn-secondary !py-1.5 !px-3 text-xs">
+            <button onClick={() => fillRemaining()} className="btn-secondary !py-1.5 !px-3 text-xs">
               Completar {remaining}
+            </button>
+          )}
+          {escala && faltanEscalon > 0 && (
+            <button onClick={() => fillRemaining(faltanEscalon)} className="btn-secondary !py-1.5 !px-3 text-xs">
+              Completar {faltanEscalon}
             </button>
           )}
         </div>
@@ -497,6 +608,27 @@ export default function PackBuilder({
           <button onClick={fillRandom} className="btn-secondary w-full min-h-[44px] text-sm">
             🎲 Completar al azar con {categoryName(activeCat)}
           </button>
+        )}
+
+        {/* La escala a la vista, con el escalón alcanzado marcado: es el
+            argumento de la página ("mientras más, más barato") y el empujón
+            al siguiente. */}
+        {escala && (
+          <ol className="grid grid-cols-4 gap-1 text-center" aria-label="Precio por calco según la cantidad">
+            {filas.map((f) => {
+              const alcanzado = pv?.escalon === f.cantidad;
+              return (
+                <li
+                  key={f.cantidad}
+                  className={`rounded-lg px-1 py-1.5 border ${alcanzado ? 'border-brand-fuchsia bg-brand-fuchsia/15' : 'border-white/10'}`}
+                  aria-current={alcanzado ? 'true' : undefined}
+                >
+                  <span className="block text-[11px] text-white/55">{f.cantidad.toLocaleString('es-AR')}</span>
+                  <span className="block text-xs font-bold">{formatPrice(f.unitario)}</span>
+                </li>
+              );
+            })}
+          </ol>
         )}
 
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -551,6 +683,11 @@ export default function PackBuilder({
         </div>
 
         <div className="border-t border-white/10 pt-3">
+          {escala && faltanEscalon > 0 && (
+            <p className="text-xs text-amber-300 mb-2">
+              Con {totalSelected} pagás lo mismo que con {pv.cantidadLlevada}: sumá {faltanEscalon} y te las llevás sin costo.
+            </p>
+          )}
           <div className="flex justify-between text-white/70 text-sm mb-1">
             <span>Precio por calco</span>
             <span>{promoOn ? `≈ ${formatPrice(unit)}` : formatPrice(unit)}</span>
@@ -563,44 +700,67 @@ export default function PackBuilder({
                   {formatPrice(listaPromo)}
                 </span>
               )}
-              <span>{formatPrice(totalPrice)}</span>
+              {/* Con la escala, debajo de 100 no hay precio: un "$0" parecería gratis. */}
+              <span>{escala && !pv ? '—' : formatPrice(totalPrice)}</span>
             </span>
           </div>
-          {totalSelected > 0 ? (
+          {(escala ? Boolean(pv) : totalSelected > 0) ? (
             <div className="mt-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-2">
               <div className="flex justify-between text-sm text-emerald-400 font-semibold">
                 <span>Pagando por transferencia</span>
                 <span>{formatPrice(totalTransferencia)}</span>
               </div>
               <p className="text-[11px] text-emerald-400/80 mt-0.5">
-                {promoOn ? `${TRANSFER_PCT}% off sobre el precio de la promo` : `${formatPrice(unitTransferencia)} por calco · ${TRANSFER_PCT}% off`}.
+                {escala
+                  ? `${TRANSFER_PCT}% off sobre el total`
+                  : promoOn
+                  ? `${TRANSFER_PCT}% off sobre el precio de la promo`
+                  : `${formatPrice(unitTransferencia)} por calco · ${TRANSFER_PCT}% off`}.
                 {' '}Elegís el medio de pago en el checkout.
               </p>
             </div>
           ) : (
             <p className="text-xs text-white/50 mt-1">{TRANSFER_PCT}% off pagando por transferencia bancaria, desde 1 calco.</p>
           )}
-          {!esCatalogo && (
+          {escala ? (
             <p className="text-xs text-emerald-400 mt-1">
-              {promoOn
-                ? `Precio fijo de la promo · ${promoOff}% de descuento`
-                : `${Math.round(discount * 100)}% de descuento aplicado`}
+              {pv?.pct > 0 ? `${pv.pct}% menos por calco que con ${ESCALA_MIN}` : ''}
+              {siguienteEscalon && totalSelected >= ESCALA_MIN
+                ? `${pv?.pct > 0 ? ' · ' : ''}Con ${siguienteEscalon.cantidad.toLocaleString('es-AR')}: ${formatPrice(siguienteEscalon.unitario)} por calco`
+                : ''}
             </p>
+          ) : (
+            !esCatalogo && (
+              <p className="text-xs text-emerald-400 mt-1">
+                {promoOn
+                  ? `Precio fijo de la promo · ${promoOff}% de descuento`
+                  : `${Math.round(discount * 100)}% de descuento aplicado`}
+              </p>
+            )
           )}
         </div>
 
-        <button onClick={confirm} disabled={!valid} className="btn-primary w-full">
+        <button onClick={confirm} disabled={!valid} className="btn-primary w-full min-h-[48px]">
           {valid
             ? 'Agregar al carrito →'
+            : escala
+            ? totalSelected < ESCALA_MIN
+              ? `Faltan ${ESCALA_MIN - totalSelected} para el mínimo`
+              : `Sumá ${faltanEscalon}: pagás lo mismo`
             : excess > 0
             ? `Quitá ${excess} calco${excess === 1 ? '' : 's'}`
             : effTarget
             ? `Faltan ${remaining} calcos`
             : `Mínimo ${min} calcos`}
         </button>
+        {escala && totalSelected >= ESCALA_MAX && (
+          <p className="text-xs text-white/60 text-center">
+            Llegaste al máximo online. Para más, pedí un presupuesto más abajo.
+          </p>
+        )}
         {allowCustom && (
           <p className="text-xs text-white/50 text-center">
-            Subí tus diseños propios en “+ Diseño propio” o coordinálos por WhatsApp después de la compra.
+            Subí tus diseños propios en “+ Diseño propio” o coordinalos por WhatsApp después de la compra.
           </p>
         )}
       </aside>

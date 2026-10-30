@@ -121,6 +121,60 @@
   to     = "/armar-pack"
   status = 301
 
+# Spec 031 RF-SEO4 / spec 034: más URLs lindas para anuncios de negocio y por
+# mayor. Misma regla de arriba: NO son páginas nuevas (serían gemelas de
+# /negocio y /mayorista), son mudanzas a la página real. Espejadas en
+# frontend/public/_redirects (lo verifica src/lib/redirects.test.js).
+[[redirects]]
+  from   = "/para-negocios"
+  to     = "/negocio"
+  status = 301
+
+[[redirects]]
+  from   = "/calcos-para-empresas"
+  to     = "/negocio"
+  status = 301
+
+[[redirects]]
+  from   = "/calcos-con-logo"
+  to     = "/negocio"
+  status = 301
+
+[[redirects]]
+  from   = "/stickers-para-emprendedores"
+  to     = "/negocio"
+  status = 301
+
+[[redirects]]
+  from   = "/cotizar"
+  to     = "/negocio"
+  status = 301
+
+[[redirects]]
+  from   = "/calcos-por-mayor"
+  to     = "/mayorista"
+  status = 301
+
+[[redirects]]
+  from   = "/calcos-mayoristas"
+  to     = "/mayorista"
+  status = 301
+
+[[redirects]]
+  from   = "/stickers-personalizados-mayoristas"
+  to     = "/mayorista"
+  status = 301
+
+[[redirects]]
+  from   = "/tienda"
+  to     = "/categorias"
+  status = 301
+
+[[redirects]]
+  from   = "/calcos-personalizados"
+  to     = "/personalizados"
+  status = 301
+
 # ── Categorías dadas de baja el 23/8/2026 → 301 ──────────────────────────────
 # El catálogo se reemplazó entero (94 categorías → 61) y estas 79 URLs quedaron
 # sin destino. El SPA ya las mandaba a /categorias, pero recién en el navegador:

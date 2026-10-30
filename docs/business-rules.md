@@ -490,6 +490,42 @@ Línea `pack:personalizados:{size}:{ts}`, mínimo 10 unidades, 10 % ya incluido.
 $52.999 (spec 029; $47.999 desde la 027, antes $39.999). `listPrice` es solo el tachado de display. Línea `negocio:{ts}`,
 **1 unidad por línea**. Paga envío por umbral, como todo.
 
+> Desde la spec 034, `/negocio` vende con el **cotizador** (abajo): 100 · 6 cm ·
+> vinilo blanco cuesta lo mismo que esta promo, así que nadie paga distinto.
+> `NegocioForm` sigue en el repo detrás de `COTIZADOR_ACTIVO`
+> (`config/negociosBase.js`), y el servidor sigue cobrando `negocio:` para los
+> carritos guardados.
+
+### Escala por volumen (spec 032 — se compra desde la spec 034)
+`ESCALA_VOLUMEN` · `ESCALA_ESCALONES = [100, 250, 500, 1000]` · `precioVolumen()`
+
+Montos **totales** por escalón (Mercado Pago), aprobados el 5/10/2026 (opción B):
+
+| | 100 | 250 | 500 | 1.000 |
+|---|---|---|---|---|
+| 4 y 6 cm (vinilo blanco o DTF UV) | $52.999 | $118.999 | $211.999 | $370.999 |
+| Holográfico (4 y 6 cm) | $72.999 | $163.999 | $291.999 | $510.999 |
+| % por calco contra el de 100 | — (MUESTRA GRATIS) | −10 % | −20 % | −30 % |
+
+- **Sin 9 cm**: no se vende por mayor (sigue suelto). **Sin cupones** (precio
+  fijo); **con** el % por transferencia, sobre la línea entera.
+- Entre escalones se cobra el precio por calco del escalón alcanzado; si el
+  siguiente cuesta igual o menos, se cobra ESE y el cliente se lleva su
+  cantidad ("240 → 250"). El sitio nunca emite 240: el armador ofrece
+  completar los 10 y el servidor rechaza un id que no sea el de 250.
+- Línea `volumen:{tamano}:{material}:{cantidad}:{ts}`, `quantity: 1`, entra por
+  `addNegocio` (`lineaVolumen()` en `lib/cotizadorNegocio.js`). La cantidad va
+  en el id porque el servidor solo confía en el id.
+- **Quién la vende** (spec 034): el cotizador de `/negocio` y del Home B2B
+  (escalones exactos y "Más de 1.000" → presupuesto) y el armador de
+  `/mayorista` (cualquier cantidad de 100 a 1.000, catálogo y diseños propios).
+  El configurador de `/personalizados` **todavía no** (032 tarea 2.3).
+  Durante EPICYBER (spec 036) el armador de `/mayorista` vende los packs de
+  campaña en lugar de la escala; al vencer, vuelve solo.
+- Paridad: `escalaVolumen.test.js` (la tabla y cada cantidad 100–1.000) y
+  `cotizadorNegocio.test.js` (cada línea que emite el sitio, contra el
+  `validateAndPriceOrder()` real, con MP y transferencia).
+
 ---
 
 ## 5. Envíos
@@ -737,6 +773,7 @@ Qué está espejado y hay que cambiar en ambos lados:
 - `BULK_THRESHOLD`, `BULK_DISCOUNT`, `MAX_STICKER_DISCOUNT`
 - `PERSONALIZADOS_MIN`, `PERSONALIZADOS_DISCOUNT`
 - `WHOLESALE_QTY`, `WHOLESALE_DISCOUNT`
+- `ESCALA_VOLUMEN`, `ESCALA_ESCALONES`, `precioVolumen()` (spec 032)
 
 Verificación:
 ```bash

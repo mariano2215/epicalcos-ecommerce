@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import BotonCotizar from '../BotonCotizar.jsx';
-import { HERO, WHATSAPP } from '../../config/negocios.js';
+import { HERO, WHATSAPP, COTIZADOR } from '../../config/negocios.js';
 import { FOTO_HERO } from '../../data/negociosFotos.js';
 import { trackHeroCta } from '../../lib/analytics.js';
 
 /**
- * Hero de negocio (spec 031, RF-H1…H7; en el pedido, *WholesaleHero*).
+ * Hero de negocio (spec 031, RF-H1…H7; en el pedido, *WholesaleHero*). Lo usan
+ * /negocio y la variante B2B del Home (spec 034), cada uno con su copy.
  *
  * En cinco segundos tiene que quedar dicho: qué es (calcos), para quién
  * (negocios), con qué (tu logo), desde cuánto (100) y cuánto sale. Por eso el
@@ -13,51 +14,67 @@ import { trackHeroCta } from '../../lib/analytics.js';
  * anuncio decide ahí si sigue bajando.
  *
  * MOBILE PRIMERO: texto, precio y CTA van ANTES de la foto en el orden del
- * documento. A 375 × 667 el H1, el precio y "Cotizar mis calcos" entran sin
- * scrollear (RF-H7); la foto aparece abajo. En pantallas anchas pasa a la
- * derecha.
+ * documento. A 375 × 667 el H1, el precio y el CTA entran sin scrollear
+ * (RF-H7); la foto aparece abajo. En pantallas anchas pasa a la derecha.
  *
  * La foto es REAL (`data/negociosFotos.js`): una tirada de calcos con logo. Sin
  * etiquetas flotantes de "packaging" o "merch": esta foto no muestra eso, y
  * ponerlas sería prometer un uso que la imagen no prueba.
  *
- * CTAs (RF-CTA1): "Cotizar mis calcos" despliega WhatsApp o "Dejar mis datos"
- * (enmienda E-1: el que todavía no compra deja sus datos) y "Ver precios" baja
- * al bloque de compra. Hasta la enmienda, "Cotizar" llevaba a ese bloque y el
- * segundo botón era WhatsApp: ahora WhatsApp vive adentro de Cotizar.
+ * CTA primario (spec 034, RF-7): con el cotizador en la página, BAJA AL
+ * COTIZADOR. Entre el 5/10 y la spec 034 desplegaba WhatsApp o "Dejar mis
+ * datos" (enmienda E-1): sin precio online, era lo único que había. El
+ * cotizador ya ofrece las dos salidas al lado del precio. Con el cotizador
+ * apagado (`COTIZADOR.activo`), vuelve el comportamiento de E-1.
  */
-export default function HeroNegocio({ pagina = 'negocio' }) {
+export default function HeroNegocio({ pagina = 'negocio', copy = HERO, secundario = { to: '/negocio#precios', cta: 'precios' } }) {
+  const conCotizador = COTIZADOR.activo;
+
+  // El Link cambia el hash y `ScrollToHash` baja; pero si el hash YA es
+  // #cotizador (segundo toque), el router no se entera y no pasaría nada.
+  const bajarAlCotizador = () => {
+    trackHeroCta({ pagina, cta: 'cotizar' });
+    document.getElementById('cotizador')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <section className="pt-6 sm:pt-4 pb-10 md:pt-10 md:pb-16">
       <div className="container-app grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-center">
         <div>
-          <span className="badge badge-new">{HERO.eyebrow}</span>
+          <span className="badge badge-new">{copy.eyebrow}</span>
           <h1 className="font-display font-black text-4xl sm:text-5xl xl:text-6xl leading-[1.02] mt-4">
-            {HERO.h1}
+            {copy.h1}
           </h1>
-          <p className="text-white/75 mt-4 text-base md:text-lg max-w-xl">{HERO.bajada}</p>
+          <p className="text-white/75 mt-4 text-base md:text-lg max-w-xl">{copy.bajada}</p>
 
           <p className="mt-5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="font-display font-extrabold text-2xl md:text-3xl gradient-text">
-              {HERO.precio.principal}
+              {copy.precio.principal}
             </span>
-            <span className="text-white/55 text-sm">{HERO.precio.referencia}</span>
+            <span className="text-white/55 text-sm">{copy.precio.referencia}</span>
           </p>
 
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <BotonCotizar
-              origen={`${pagina}_hero`}
-              label={HERO.ctaPrimario}
-              mensaje={WHATSAPP.negocio}
-              alAbrir={() => trackHeroCta({ pagina, cta: 'cotizar' })}
-              className="btn-primary min-h-[48px] w-full sm:w-auto"
-            />
+            {conCotizador ? (
+              <Link to="#cotizador" onClick={bajarAlCotizador} className="btn-primary min-h-[48px] w-full sm:w-auto">
+                {copy.ctaPrimario}
+              </Link>
+            ) : (
+              <BotonCotizar
+                origen={`${pagina}_hero`}
+                label={copy.ctaPrimario}
+                mensaje={WHATSAPP.negocio}
+                conPrecio={false}
+                alAbrir={() => trackHeroCta({ pagina, cta: 'cotizar' })}
+                className="btn-primary min-h-[48px] w-full sm:w-auto"
+              />
+            )}
             <Link
-              to="/negocio#precios"
-              onClick={() => trackHeroCta({ pagina, cta: 'precios' })}
+              to={secundario.to}
+              onClick={() => trackHeroCta({ pagina, cta: secundario.cta })}
               className="btn-secondary min-h-[48px]"
             >
-              {HERO.ctaSecundario}
+              {copy.ctaSecundario}
             </Link>
           </div>
         </div>

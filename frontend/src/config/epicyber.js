@@ -128,12 +128,33 @@ export function textoUpsell(pack, diferencia) {
 const nombreSinTamano = (nombre) => String(nombre || '').split(' · ')[0];
 
 /**
+ * El pack de campaña que le ganaría a esta línea de antes de la campaña, o null.
+ *
+ * Son las líneas que /mayorista emite fuera de la semana: `pack:mayorista100:`
+ * (carritos viejos) y `volumen:` del armador (spec 034; con cualquier cantidad,
+ * por eso se compara contra el pack de ESA cantidad). Las `volumen:` del
+ * cotizador de /negocio quedan afuera, igual que las de diseños propios: traen
+ * archivos, razón social y CUIT que el armador no sabe recibir.
+ */
+function packMasBaratoQue(linea, packs) {
+  if (!CYBER.sizes.includes(linea.size) || Number(linea.meta?.customCount) > 0) return null;
+  const id = String(linea.id);
+  const qty = id.startsWith('pack:mayorista100:')
+    ? WHOLESALE_QTY
+    : id.startsWith('volumen:') && linea.meta?.origen === 'mayorista'
+    ? Number(linea.meta?.qty)
+    : null;
+  const pack = packs.find((p) => p.qty === qty);
+  return pack && pack.price < linea.price ? pack : null;
+}
+
+/**
  * Qué sugerirle a alguien con este carrito. Pura, sin React.
  *
- * - Con un pack de 100 a $52.999 guardado desde antes de la campaña: el mismo
- *   pack a precio Cyber. Sin esto pagaría de más sin enterarse, y esa línea sigue
- *   siendo válida para el servidor. Es lo único que hace falta: `/mayorista` ya
- *   no la emite durante la campaña.
+ * - Con un pack guardado desde antes de la campaña (100 a $52.999, o la misma
+ *   cantidad por la escala): el mismo pack a precio Cyber. Sin esto pagaría de
+ *   más sin enterarse, y esa línea sigue siendo válida para el servidor. Es lo
+ *   único que hace falta: `/mayorista` ya no las emite durante la campaña.
  * - Con un pack de campaña: el siguiente, conservando sus diseños. Las líneas
  *   con diseños propios quedan afuera: `SubidaArchivo` no recibe archivos ya
  *   subidos, así que sembrarlas se los perdería.
@@ -146,19 +167,14 @@ const nombreSinTamano = (nombre) => String(nombre || '').split(' · ')[0];
 export function sugerenciaCyber(items, packs) {
   if (!packs.length) return null;
 
-  const pack100 = packs.find((p) => p.qty === WHOLESALE_QTY);
-  const viejo = items.find(
-    (i) =>
-      String(i.id).startsWith('pack:mayorista100:') &&
-      CYBER.sizes.includes(i.size) &&
-      !(Number(i.meta?.customCount) > 0)
-  );
-  if (pack100 && viejo && pack100.price < viejo.price) {
-    const diferencia = pack100.price - viejo.price;
+  const viejo = items.find((i) => packMasBaratoQue(i, packs));
+  if (viejo) {
+    const pack = packMasBaratoQue(viejo, packs);
+    const diferencia = pack.price - viejo.price;
     return {
-      pack: pack100,
+      pack,
       diferencia,
-      texto: textoUpsell(pack100, diferencia),
+      texto: textoUpsell(pack, diferencia),
       semilla: { size: viejo.size, items: viejo.meta?.items || [], reemplazar: [viejo.id] }
     };
   }
