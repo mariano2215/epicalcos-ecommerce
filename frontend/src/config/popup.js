@@ -94,7 +94,7 @@ export const POPUP_OFERTA = {
  * El test `regaloCyber.test.js` frena el deploy si se separan.
  */
 export const POPUP_CYBER = {
-  activo: false,
+  activo: true,
   variante: 'cyber_regalo',
   regalo: { qty: 10, tamano: '4 cm', minimoCompra: 8000 },
   umbrales: {

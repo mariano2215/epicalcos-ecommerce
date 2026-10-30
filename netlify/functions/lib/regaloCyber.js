@@ -22,7 +22,7 @@ import { CYBER, isCyberActive, isDigitalOnly } from './pricing.js';
  */
 export const REGALO_CYBER = {
   /** Interruptor. Se prende en el mismo commit que `POPUP_CYBER.activo`. */
-  activo: false,
+  activo: true,
   qty: 10,
   tamano: '4 cm',
   /**

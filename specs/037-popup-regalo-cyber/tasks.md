@@ -25,7 +25,8 @@
 - [x] Suite con el reloj antes, durante y después de la campaña.
 - [x] Navegador a 375 px.
 - [x] Docs.
-- [ ] Aprobación de Mariano y orden de publicar.
+- [x] Aprobación de Mariano y orden de publicar.
+- [ ] Primer regalo real, con la campaña en curso.
 
 ## Hallazgos fuera de scope
 

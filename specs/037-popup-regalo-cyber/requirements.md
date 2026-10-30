@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `037-popup-regalo-cyber` |
-| **Estado** | `IN PROGRESS` — en rama sin publicar, apagada |
+| **Estado** | `IN PROGRESS` — publicada el 30/10/2026 por orden de Mariano; se cierra con el primer regalo real |
 | **Fecha** | 30/10/2026 |
 | **Autor** | Mariano (pedido) · Claude (spec) |
 
@@ -116,7 +116,7 @@ fórmula `$5.000 + $119 × calcos`, 5 calcos de 4 cm son $8.000 y dejan $1.215; 
 | x30 | $15.990 | $9.760 | $6.230 |
 | x50 | $21.990 | $12.140 | $9.850 |
 
-**Pendientes de aprobación:** el tamaño del pack, el mínimo y publicar.
+**Aprobado por Mariano el 30/10/2026:** pack de 10 calcos sorpresa de 4 cm, con compra desde $8.000.
 
 ## 8. Edge cases
 

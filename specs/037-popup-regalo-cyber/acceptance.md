@@ -41,4 +41,4 @@
 - [x] `npm test` en verde: 959 pasan y 17 se saltean, apagada y prendida con el reloj en 6 fechas.
 - [x] Build de producción sin errores.
 - [ ] **Sin verificar:** un registro real en Blobs y un mail real de Resend. Se prueban con la primera carga en producción.
-- [ ] Mariano aprobó y dio la orden de publicar.
+- [x] Mariano aprobó y dio la orden de publicar, 30/10/2026.

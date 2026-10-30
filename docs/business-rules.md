@@ -451,7 +451,7 @@ Holográficos, DTF UV, Polaroid y tatuajes no tienen precio: faltan sus costos.
 
 ---
 
-### 3.6 Regalo de EPICYBER por dejar el mail (spec 037) — ⏸️ APAGADO
+### 3.6 Regalo de EPICYBER por dejar el mail (spec 037) — ✅ VIVO hasta el 8/11/2026
 
 El popup reemplaza al del 10 % desde que se publica hasta el 8/11 a las 23:59:59.
 Quien deja el mail y compra del 2 al 8/11 con ese mail, desde $8.000 en productos,
