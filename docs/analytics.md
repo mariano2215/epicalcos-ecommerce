@@ -651,3 +651,5 @@ entrar en pantalla) y `select_promotion`, con `creative_slot` = la superficie
 ⚠️ `pack_units` es un parámetro propio: para verlo en los informes de GA4 hay que
 registrarlo como dimensión personalizada de ítem. El Pixel no cambia.
 
+**Popup de regalo (spec 037):** `popup_view`, `popup_close` y `popup_email_submit` con
+`popup_variant: cyber_regalo`, y `generate_lead` con `promotion_id: epicyber_2026`.

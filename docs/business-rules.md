@@ -451,6 +451,21 @@ Holográficos, DTF UV, Polaroid y tatuajes no tienen precio: faltan sus costos.
 
 ---
 
+### 3.6 Regalo de EPICYBER por dejar el mail (spec 037) — ⏸️ APAGADO
+
+El popup reemplaza al del 10 % desde que se publica hasta el 8/11 a las 23:59:59.
+Quien deja el mail y compra del 2 al 8/11 con ese mail, desde $8.000 en productos,
+recibe 1 pack de 10 calcos sorpresa de 4 cm. Uno por mail.
+
+- **No es una línea del pedido:** es una nota en `shipping.comments`. No toca precios.
+- **Base:** Netlify Blobs, store `cyber-regalo`, clave el mail normalizado.
+- **Cuándo se aplica:** Mercado Pago, con el pago aprobado; transferencia, al crear el
+  pedido. Vale la fecha del pedido.
+- **Interruptores:** `POPUP_CYBER.activo` y `REGALO_CYBER.activo`, en el mismo commit.
+- **Si Blobs falla:** el pedido sigue y el aviso interno dice `REGALO SIN VERIFICAR`.
+
+---
+
 ## 4. Packs
 
 ### Escalera de packs de catálogo (`/armar-pack`)
