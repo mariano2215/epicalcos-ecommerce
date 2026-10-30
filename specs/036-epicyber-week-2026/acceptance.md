@@ -56,4 +56,4 @@
 - [ ] **Sin verificar:** un pago real de punta a punta. `netlify dev` no corre en esta máquina, así que el camino del servidor está probado contra `validateAndPriceOrder`, no contra Mercado Pago.
 - [x] Packs chicos aprobados: opción B, 30/10/2026. Verificado en vivo simulado, con los mayoristas sin aprobar.
 - [x] Mayoristas aprobados a los precios candidatos, 30/10/2026. Verificado en vivo simulado: Home, `/mayorista`, `/negocio`, hero y carrito viejo.
-- [ ] Mariano dio la orden de publicar (`activa: true` de los dos lados).
+- [x] Mariano dio la orden de publicar, 30/10/2026 (`activa: true` de los dos lados). Suite verde con el reloj en 6 fechas, antes, durante y después de la campaña.

@@ -42,7 +42,8 @@
 - [x] Opción B cargada en los dos lados del espejo.
 - [x] Mayoristas cargados en los dos lados del espejo.
 - [x] El carrito con un pack de 100 a $52.999 ve el precio Cyber.
-- [ ] Orden de publicar (Mariano).
+- [x] Orden de publicar (Mariano, 30/10/2026).
+- [ ] Primer pago real el 2/11.
 
 ## Hallazgos fuera de scope
 

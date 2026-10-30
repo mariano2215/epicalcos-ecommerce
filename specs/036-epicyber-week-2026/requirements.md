@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `036-epicyber-week-2026` |
-| **Estado** | `IN PROGRESS` — en rama sin publicar. Packs chicos (opción B) y mayoristas aprobados el 30/10/2026; falta la orden de publicar |
+| **Estado** | `IN PROGRESS` — publicada el 30/10/2026 por orden de Mariano; corre sola del 2 al 8/11. Se cierra con el primer pago real |
 | **Fecha** | 30/10/2026 |
 | **Autor** | Mariano (pedido) · Claude (spec) |
 

@@ -424,7 +424,7 @@ formulario no cambia ninguna conducta.
 
 ---
 
-### 3.5 EPICYBER WEEK 2026 (spec 036) — ⏸️ APAGADA, con todos los packs aprobados
+### 3.5 EPICYBER WEEK 2026 (spec 036) — ⏰ PROGRAMADA, corre sola del 2 al 8/11/2026
 
 Del 2/11/2026 00:00 al 8/11/2026 23:59:59, hora Argentina. Se prende y se apaga
 sola por fecha, sin deploy ni cron.

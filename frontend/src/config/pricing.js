@@ -977,8 +977,8 @@ export function precioVolumen({ tamano, material = 'vinilo-blanco', cantidad }) 
 export const CYBER = {
   id: 'epicyber_2026',
   nombre: 'EPICYBER WEEK',
-  /** Interruptor general. Se prende en el mismo commit que los del servidor. */
-  activa: false,
+  /** Interruptor general. Se prende y se apaga en el mismo commit que el del servidor. */
+  activa: true,
   startsAt: '2026-11-02T00:00:00-03:00',
   endsAt: '2026-11-08T23:59:59-03:00',
   /** El 9 cm no se vende por mayor desde la spec 032 y su costo no está validado. */

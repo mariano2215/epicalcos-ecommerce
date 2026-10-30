@@ -472,7 +472,7 @@ export function precioVolumen({ tamano, material = CUSTOM_MATERIAL_POR_DEFECTO, 
 // No hay vista previa de este lado, a propósito: es lo que hace seguro el
 // `?epicyber=preview` del frontend en producción.
 export const CYBER = {
-  activa: false,
+  activa: true,
   startMs: Date.parse('2026-11-02T00:00:00-03:00'),
   endMs: Date.parse('2026-11-08T23:59:59-03:00'),
   sizes: ['4cm', '6cm'],
