@@ -24,7 +24,15 @@ import {
 import { calcosDeLinea, esPedidoVolumen } from './plazoProduccion.js';
 import { calcosDeLinea as calcosServidor } from '../../../netlify/functions/lib/plazoProduccion.js';
 import { precioBaseVigente } from './precioVigente.js';
-import { separarPacks, sugerenciaCyber, textoBanner } from '../config/epicyber.js';
+import {
+  CONDICIONES_CYBER,
+  EPICYBER_COPY,
+  RANGO_FECHAS,
+  rangoFechas,
+  separarPacks,
+  sugerenciaCyber,
+  textoBanner
+} from '../config/epicyber.js';
 
 /**
  * Spec 036. Los interruptores vienen apagados: acá se prenden LOS DOS objetos
@@ -104,6 +112,20 @@ describe('EPICYBER — espejo', () => {
   it('la ventana es del 2/11 00:00 al 8/11 23:59:59, hora Argentina', () => {
     expect(new Date(CYBER_START_MS).toISOString()).toBe('2026-11-02T03:00:00.000Z');
     expect(new Date(CYBER_END_MS).toISOString()).toBe('2026-11-09T02:59:59.000Z');
+  });
+
+  // Barrera del deploy: las fechas que ve el cliente no pueden salir distintas de
+  // las de la campaña. Una simulación con fechas movidas tiene que frenar acá.
+  it('la barra y las condiciones dicen las fechas reales', () => {
+    expect(RANGO_FECHAS).toBe('del 2 al 8 de noviembre');
+    expect(EPICYBER_COPY.barra.subtitulo).toBe('Ofertas especiales del 2 al 8 de noviembre');
+    expect(CONDICIONES_CYBER).toContain('del 2 al 8 de noviembre');
+  });
+
+  it('un rango que cruza de mes nombra los dos meses', () => {
+    const inicio = Date.parse('2026-10-30T00:00:00-03:00');
+    const fin = Date.parse('2026-11-02T23:59:59-03:00');
+    expect(rangoFechas(inicio, fin)).toBe('del 30 de octubre al 2 de noviembre');
   });
 });
 

@@ -20,8 +20,19 @@ const ZONA = 'America/Argentina/Buenos_Aires';
 const parte = (ms, opciones) =>
   new Intl.DateTimeFormat('es-AR', { timeZone: ZONA, ...opciones }).format(new Date(ms));
 
-/** "del 2 al 8 de noviembre". */
-export const RANGO_FECHAS = `del ${parte(CYBER_START_MS, { day: 'numeric' })} al ${parte(CYBER_END_MS, { day: 'numeric' })} de ${parte(CYBER_END_MS, { month: 'long' })}`;
+/**
+ * "del 2 al 8 de noviembre", o con los dos meses si el rango cruza de uno a otro.
+ * Con un solo mes, octubre a diciembre se leía "del 1 al 31 de diciembre".
+ */
+export function rangoFechas(inicioMs, finMs) {
+  const dia = (ms) => parte(ms, { day: 'numeric' });
+  const mes = (ms) => parte(ms, { month: 'long' });
+  return mes(inicioMs) === mes(finMs)
+    ? `del ${dia(inicioMs)} al ${dia(finMs)} de ${mes(finMs)}`
+    : `del ${dia(inicioMs)} de ${mes(inicioMs)} al ${dia(finMs)} de ${mes(finMs)}`;
+}
+
+export const RANGO_FECHAS = rangoFechas(CYBER_START_MS, CYBER_END_MS);
 
 export const EPICYBER_COPY = {
   barra: {
