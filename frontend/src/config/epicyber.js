@@ -31,9 +31,6 @@ export const EPICYBER_COPY = {
   banner: {
     titulo: CYBER.nombre,
     subtitulo: 'Tus calcos favoritos con precios especiales',
-    // El brief agrega "holográficos y mucho más". Va cuando esa promo tenga
-    // precio aprobado: hoy sería anunciar algo que el carrito no cobra.
-    texto: 'Promociones en packs chicos, calcos personalizados y packs para tu marca',
     cta: 'VER OFERTAS'
   },
   chicos: {
@@ -47,6 +44,17 @@ export const EPICYBER_COPY = {
     cta: 'PERSONALIZAR MI PEDIDO'
   }
 };
+
+/**
+ * El texto del banner nombra solo lo que se vende: anunciar "packs para tu marca"
+ * sin un mayorista aprobado sería prometer algo que el carrito no cobra. Por lo
+ * mismo falta el "holográficos y mucho más" del brief: va cuando tenga precio.
+ */
+export function textoBanner(packs) {
+  return packs.some((p) => p.qty >= WHOLESALE_QTY)
+    ? 'Promociones en packs chicos, calcos personalizados y packs para tu marca'
+    : 'Promociones en packs chicos y calcos personalizados';
+}
 
 /** La letra chica, junto a la oferta y con los números reales. */
 export const CONDICIONES_CYBER =

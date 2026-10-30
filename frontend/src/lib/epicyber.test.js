@@ -24,7 +24,7 @@ import {
 import { calcosDeLinea, esPedidoVolumen } from './plazoProduccion.js';
 import { calcosDeLinea as calcosServidor } from '../../../netlify/functions/lib/plazoProduccion.js';
 import { precioBaseVigente } from './precioVigente.js';
-import { separarPacks, sugerenciaCyber } from '../config/epicyber.js';
+import { separarPacks, sugerenciaCyber, textoBanner } from '../config/epicyber.js';
 
 /**
  * Spec 036. Los interruptores vienen apagados: acá se prenden LOS DOS objetos
@@ -36,6 +36,9 @@ import { separarPacks, sugerenciaCyber } from '../config/epicyber.js';
  * Fórmula de Mariano (30/10/2026), con el fijo una vez por pedido.
  */
 const costo = (qty) => 5000 + 119 * qty;
+
+/** Los montos salen de la tabla: escritos a mano, cada precio aprobado rompía este archivo. */
+const P = (qty) => CYBER.packs.find((p) => p.qty === qty).price;
 
 const MARTES = '2026-11-03T12:00:00-03:00';
 const retiro = { methodValue: 'retiro' };
@@ -157,7 +160,7 @@ describe('EPICYBER — apagada', () => {
 
   it('el servidor rechaza el precio de campaña y acepta el habitual', () => {
     enFecha(MARTES);
-    expect(validateAndPriceOrder(orden(linea(10), 9990)).error).toBe('price_mismatch');
+    expect(validateAndPriceOrder(orden(linea(10), P(10))).error).toBe('price_mismatch');
     expect(validateAndPriceOrder(orden(linea(10), 16000)).ok).toBe(true);
   });
 });
@@ -172,7 +175,7 @@ describe('EPICYBER — ventana, en los cuatro bordes', () => {
     ['un ms después', CYBER_END_MS + 1, false]
   ])('%s', (_, ms, vigente) => {
     enFecha(ms);
-    const esperado = vigente ? 9990 : 16000;
+    const esperado = vigente ? P(10) : 16000;
     expect(isCyberActive()).toBe(vigente);
     expect(isCyberActiveServidor()).toBe(vigente);
     expect(precioPackCyber({ qty: 10, size: '4cm' })).toBe(esperado);
@@ -187,7 +190,7 @@ describe('EPICYBER — aprobación por pack', () => {
     enFecha(MARTES);
     expect(packsCyberVigentes().map((p) => p.qty)).not.toContain(15);
     expect(precioPackCyber({ qty: 15, size: '4cm' })).toBe(24000);
-    expect(validateAndPriceOrder(orden(linea(15), 10990)).error).toBe('price_mismatch');
+    expect(validateAndPriceOrder(orden(linea(15), P(15))).error).toBe('price_mismatch');
     expect(validateAndPriceOrder(orden(linea(15), 24000)).ok).toBe(true);
   });
 
@@ -216,25 +219,24 @@ describe('EPICYBER — compra contra el servidor', () => {
   it('la vidriera y el servidor dan el mismo precio', () => {
     const id = linea(30, '6cm');
     const line = { id, basePrice: precioBaseVigente({ id, basePrice: 0 }) };
-    expect(precioVidrieraLinea(line)).toBe(13990);
+    expect(precioVidrieraLinea(line)).toBe(P(30));
     expect(line.basePrice).toBe(63000);
   });
 
   it('la transferencia corre sobre el precio de campaña', () => {
-    const unit = round(9990 * (1 - TRANSFER_DISCOUNT));
-    expect(unit).toBe(8991);
+    const unit = round(P(10) * (1 - TRANSFER_DISCOUNT));
     const res = validateAndPriceOrder(orden(linea(10), unit, { paymentMethod: 'transferencia' }));
     expect(res.ok).toBe(true);
   });
 
   it('EPICA10 no toca el pack', () => {
-    expect(validateAndPriceOrder(orden(linea(10), 9990, { couponCode: 'EPICA10' })).ok).toBe(true);
-    expect(validateAndPriceOrder(orden(linea(10), 8991, { couponCode: 'EPICA10' })).error).toBe('price_mismatch');
+    expect(validateAndPriceOrder(orden(linea(10), P(10), { couponCode: 'EPICA10' })).ok).toBe(true);
+    expect(validateAndPriceOrder(orden(linea(10), round(P(10) * 0.9), { couponCode: 'EPICA10' })).error).toBe('price_mismatch');
   });
 
   it('EPI50 no toca el pack y anula la transferencia', () => {
     const res = validateAndPriceOrder(
-      orden(linea(10), 9990, { couponCode: 'EPI50', paymentMethod: 'transferencia' })
+      orden(linea(10), P(10), { couponCode: 'EPI50', paymentMethod: 'transferencia' })
     );
     expect(res.ok).toBe(true);
   });
@@ -245,7 +247,7 @@ describe('EPICYBER — compra contra el servidor', () => {
     ['sin cantidad', 'pack:cyber:4cm', 1]
   ])('rechaza %s', (_, id, quantity) => {
     const res = validateAndPriceOrder({
-      items: [{ id, title: 'x', quantity, unit_price: 9990 }],
+      items: [{ id, title: 'x', quantity, unit_price: P(10) }],
       shipping: retiro
     });
     expect(res.ok).toBe(false);
@@ -254,29 +256,29 @@ describe('EPICYBER — compra contra el servidor', () => {
 
   it('rechaza dos unidades en una misma línea', () => {
     const res = validateAndPriceOrder({
-      items: [{ id: linea(10), title: 'x', quantity: 2, unit_price: 9990 }],
+      items: [{ id: linea(10), title: 'x', quantity: 2, unit_price: P(10) }],
       shipping: retiro
     });
     expect(res.error).toBe('item_invalid');
   });
 
   it('el envío sigue las reglas de siempre', () => {
-    expect(validateAndPriceOrder({ ...orden(linea(30), 13990), shipping: rosario }).shippingCost).toBe(4500);
-    expect(validateAndPriceOrder({ ...orden(linea(30), 13990), shipping: interior }).shippingCost).toBe(8500);
-    expect(validateAndPriceOrder({ ...orden(linea(100), 39900), shipping: rosario }).shippingCost).toBe(0);
-    expect(validateAndPriceOrder({ ...orden(linea(100), 39900), shipping: interior }).shippingCost).toBe(8500);
-    expect(validateAndPriceOrder({ ...orden(linea(200), 74900), shipping: interior }).shippingCost).toBe(0);
+    expect(validateAndPriceOrder({ ...orden(linea(30), P(30)), shipping: rosario }).shippingCost).toBe(4500);
+    expect(validateAndPriceOrder({ ...orden(linea(30), P(30)), shipping: interior }).shippingCost).toBe(8500);
+    expect(validateAndPriceOrder({ ...orden(linea(100), P(100)), shipping: rosario }).shippingCost).toBe(0);
+    expect(validateAndPriceOrder({ ...orden(linea(100), P(100)), shipping: interior }).shippingCost).toBe(8500);
+    expect(validateAndPriceOrder({ ...orden(linea(200), P(200)), shipping: interior }).shippingCost).toBe(0);
   });
 
   it('dos packs en el carrito son dos líneas válidas', () => {
     const res = validateAndPriceOrder({
       items: [
-        { id: linea(10, '4cm', 1), title: 'a', quantity: 1, unit_price: 9990 },
-        { id: linea(20, '6cm', 2), title: 'b', quantity: 1, unit_price: 11990 }
+        { id: linea(10, '4cm', 1), title: 'a', quantity: 1, unit_price: P(10) },
+        { id: linea(20, '6cm', 2), title: 'b', quantity: 1, unit_price: P(20) }
       ],
       shipping: retiro
     });
-    expect(res.itemsTotal).toBe(21980);
+    expect(res.itemsTotal).toBe(P(10) + P(20));
   });
 
   it('de 1 a 9 calcos sueltas el precio no cambia', () => {
@@ -296,7 +298,7 @@ describe('EPICYBER — carrito guardado después de la campaña', () => {
     const line = { id, basePrice: 32000, quantity: 1 };
     expect(precioVidrieraLinea(line)).toBe(32000);
     expect(validateAndPriceOrder(orden(id, 32000)).ok).toBe(true);
-    expect(validateAndPriceOrder(orden(id, 11990)).error).toBe('price_mismatch');
+    expect(validateAndPriceOrder(orden(id, P(20))).error).toBe('price_mismatch');
   });
 
   it('el pack de 100 vuelve a $52.999, no a la lista', () => {
@@ -319,7 +321,7 @@ describe('EPICYBER — vista previa', () => {
     enFecha('2026-10-30T12:00:00-03:00');
     setCyberPreview(true);
     expect(isCyberActiveServidor()).toBe(false);
-    expect(validateAndPriceOrder(orden(linea(10), 9990)).error).toBe('price_mismatch');
+    expect(validateAndPriceOrder(orden(linea(10), P(10))).error).toBe('price_mismatch');
   });
 });
 
@@ -370,25 +372,25 @@ describe('EPICYBER — línea y upsell', () => {
   });
 
   it('con un pack en el carrito sugiere el siguiente con la diferencia real', () => {
-    const s = sugerenciaCyber([lineaPack(20, 11990)], packs);
+    const s = sugerenciaCyber([lineaPack(20, P(20))], packs);
     expect(s.pack.qty).toBe(25);
-    expect(s.diferencia).toBe(1000);
+    expect(s.diferencia).toBe(P(25) - P(20));
     expect(s.semilla.reemplazar).toEqual([linea(20)]);
     expect(s.semilla.size).toBe('4cm');
   });
 
   it('con diseños propios no sugiere: se perderían los archivos', () => {
-    expect(sugerenciaCyber([lineaPack(20, 11990, { customCount: 2 })], packs)).toBeNull();
+    expect(sugerenciaCyber([lineaPack(20, P(20), { customCount: 2 })], packs)).toBeNull();
   });
 
   it('el último pack no tiene siguiente', () => {
-    expect(sugerenciaCyber([lineaPack(500, 164900)], packs)).toBeNull();
+    expect(sugerenciaCyber([lineaPack(500, P(500))], packs)).toBeNull();
   });
 
   it('con 7 calcos de 4 cm, el pack de 10 es más barato y lo dice', () => {
     const s = sugerenciaCyber([sticker('a', '4cm', 4), sticker('b', '4cm', 3)], packs);
     expect(s.pack.qty).toBe(10);
-    expect(s.diferencia).toBe(9990 - 7 * 1600);
+    expect(s.diferencia).toBe(P(10) - 7 * 1600);
     expect(s.diferencia).toBeLessThan(0);
     expect(s.semilla.size).toBe('4cm');
     expect(s.semilla.items).toHaveLength(2);
@@ -397,7 +399,7 @@ describe('EPICYBER — línea y upsell', () => {
 
   it('con 2 calcos, muestra cuánto más sale el pack', () => {
     const s = sugerenciaCyber([sticker('a', '6cm', 2)], packs);
-    expect(s.diferencia).toBe(9990 - 4200);
+    expect(s.diferencia).toBe(P(10) - 4200);
   });
 
   it('el 9 cm queda afuera y con tamaños mezclados siembra el que más pesa', () => {
@@ -405,6 +407,12 @@ describe('EPICYBER — línea y upsell', () => {
     const s = sugerenciaCyber([sticker('a', '4cm', 1), sticker('b', '6cm', 3)], packs);
     expect(s.semilla.size).toBe('6cm');
     expect(s.semilla.reemplazar).toEqual(['sticker:b:6cm']);
+  });
+
+  it('el banner nombra solo lo que se vende', () => {
+    const { chicos } = separarPacks(packs);
+    expect(textoBanner(chicos)).not.toMatch(/marca/);
+    expect(textoBanner(packs)).toMatch(/packs para tu marca/);
   });
 
   it('sin packs vigentes no sugiere nada', () => {

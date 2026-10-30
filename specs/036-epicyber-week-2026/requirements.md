@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `036-epicyber-week-2026` |
-| **Estado** | `IN PROGRESS` — implementada en rama sin publicar, con los precios **sin aprobar** |
+| **Estado** | `IN PROGRESS` — en rama sin publicar. Packs chicos aprobados (opción B, 30/10/2026); mayoristas sin aprobar |
 | **Fecha** | 30/10/2026 |
 | **Autor** | Mariano (pedido) · Claude (spec) |
 
@@ -156,7 +156,7 @@ variable igual en 4 y 6 cm, aunque el 6 cm tiene 2,25 veces la superficie.
 y un x30, 7,3. El margen tampoco cubre mucho de Meta: es el CPA máximo por pedido,
 antes de comisión de Mercado Pago, impuestos y packaging.
 
-**Ajuste propuesto (opción B):** deja el gancho de $9.990 y sube el medio de la
+**Ajuste aprobado por Mariano el 30/10/2026 (opción B):** deja el gancho de $9.990 y sube el medio de la
 escalera, donde hoy cada 5 calcos más agregan solo $405 de margen.
 
 | Pack | Candidato | Opción B | c/u | Margen B | % | Con transf. |
@@ -203,12 +203,17 @@ se toca (RF-9); se anota para decidir aparte.
 
 | Promo | Estado | Qué falta |
 |---|---|---|
-| Packs chicos | Listos para activar | Elegir candidatos u opción B |
-| Packs mayoristas | Listos para activar | Aprobar |
+| Packs chicos | **Aprobados: opción B** (30/10/2026) | Nada |
+| Packs mayoristas | Sin aprobar | Aprobar. Ver el aviso de abajo |
 | Calcos holográficos, hasta 20 % | Sin precio | Costo del material |
 | DTF UV, hasta 15 % | Sin precio | Costo del material |
 | Polaroid 3×2 | Sin precio | Costo por pack y cruce con su descuento por volumen |
 | Tatuajes | Sin precio | Costo por hoja y definir la promo |
+
+**Aviso:** con los chicos aprobados y el x100 sin aprobar, la escalera se da
+vuelta. El x50 queda en $440 por calco y el x100 sigue en $530: 2 x50 salen $43.980
+por 100 calcos, contra $52.999. Con el x100 a $39.900 ($399) la escalera vuelve a
+bajar.
 
 ## 10. Edge cases
 

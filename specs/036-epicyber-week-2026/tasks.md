@@ -39,7 +39,8 @@
 - [x] `docs/business-rules.md` y `docs/analytics.md`.
 - [x] Recorrer `acceptance.md` punto por punto.
 - [x] Commits en `feat/036-epicyber-week-2026`, sin push.
-- [ ] Aprobación de precios y orden de publicar (Mariano).
+- [x] Opción B cargada en los dos lados del espejo.
+- [ ] Aprobación de mayoristas y orden de publicar (Mariano).
 
 ## Hallazgos fuera de scope
 
@@ -49,3 +50,4 @@
 - Un x10 a $9.990 paga $8.500 de envío al interior: $18.490 en total. La decisión del 11/8/2026 de no tocar tarifas sigue vigente; se anota porque pesa más en esta campaña que en ninguna otra.
 - `pack_units` necesita registrarse como dimensión personalizada en GA4.
 - La rama 034 toca `PackBuilder` y `Mayorista`: habrá conflicto si se mergea después.
+- GA4 y Clarity reales cargan en localhost: las pruebas locales mandan eventos a la propiedad de producción. Se filtran por hostname.

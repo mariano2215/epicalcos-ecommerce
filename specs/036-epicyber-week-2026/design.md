@@ -144,8 +144,10 @@ El Pixel no cambia, para no alterar los eventos que ya optimizan los anuncios.
 
 ## 10. Activación y reversión
 
-1. Cargar los precios aprobados en los dos `CYBER`.
-2. Poner `aprobado: true` y `activa: true` de los dos lados, en el mismo commit.
+1. Cargar precio y `aprobado: true` de cada pack en los dos `CYBER`. Hecho con los
+   packs chicos: es lo que no publica nada.
+2. Poner `activa: true` de los dos lados, en el mismo commit: esa es la orden de
+   publicar.
 3. `npm test`, merge y push a `main` antes del 2/11.
 
 Para bajarla: `activa: false` de los dos lados.
@@ -160,4 +162,5 @@ Para bajarla: `activa: false` de los dos lados.
   reloj real.
 - **Los tests de la campaña apagan a mano.** Exigir "viene apagada" habría frenado
   el push que la prende.
-
+- **El texto del banner depende de lo que se vende:** sin mayoristas aprobados no
+  nombra "packs para tu marca".

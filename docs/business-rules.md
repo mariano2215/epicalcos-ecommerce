@@ -424,7 +424,7 @@ formulario no cambia ninguna conducta.
 
 ---
 
-### 3.5 EPICYBER WEEK 2026 (spec 036) — ⏸️ APAGADA, con los precios sin aprobar
+### 3.5 EPICYBER WEEK 2026 (spec 036) — ⏸️ APAGADA, packs chicos aprobados y mayoristas sin aprobar
 
 Del 2/11/2026 00:00 al 8/11/2026 23:59:59, hora Argentina. Se prende y se apaga
 sola por fecha, sin deploy ni cron.
@@ -442,6 +442,9 @@ sola por fecha, sin deploy ni cron.
   queda a pérdida o más caro que su habitual. No van en `config/`: se publica.
 - **Vista previa:** `?epicyber=preview` en cualquier ambiente. Es segura porque el
   servidor no la conoce y `Checkout` corta el pago. `?epicyber=off` la saca.
+
+Precios aprobados (opción B, 30/10/2026): x10 $9.990 · x15 $11.990 · x20 $12.990 ·
+x25 $14.990 · x30 $15.990 · x40 $18.990 · x50 $21.990.
 
 Holográficos, DTF UV, Polaroid y tatuajes no tienen precio: faltan sus costos.
 

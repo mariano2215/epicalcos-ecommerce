@@ -10,7 +10,7 @@ import {
   CyberPendientes
 } from '../components/cyber/CyberSecciones.jsx';
 import { CYBER, DEFAULT_SIZE, WHOLESALE_QTY } from '../config/pricing.js';
-import { EPICYBER_COPY, RANGO_FECHAS, promoDePack, separarPacks } from '../config/epicyber.js';
+import { EPICYBER_COPY, RANGO_FECHAS, promoDePack, separarPacks, textoBanner } from '../config/epicyber.js';
 import { usePacksCyber } from '../lib/promo.js';
 import { useSeo } from '../lib/seo.js';
 
@@ -34,7 +34,7 @@ export default function Epicyber() {
 
   useSeo({
     title: pack ? `Pack Cyber x${pack.qty}` : CYBER.nombre,
-    description: `${EPICYBER_COPY.banner.subtitulo}, ${RANGO_FECHAS}. ${EPICYBER_COPY.banner.texto}.`
+    description: `${EPICYBER_COPY.banner.subtitulo}, ${RANGO_FECHAS}. ${textoBanner(packs)}.`
   });
 
   if (!packs.length) return <Navigate to="/categorias" replace />;

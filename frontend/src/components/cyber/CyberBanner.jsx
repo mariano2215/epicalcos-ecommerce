@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { PromoCountdown } from '../PromoBanner.jsx';
 import { CYBER_END_MS, isCyberPreview } from '../../config/pricing.js';
-import { EPICYBER_COPY } from '../../config/epicyber.js';
-import { useCyberActive } from '../../lib/promo.js';
+import { EPICYBER_COPY, textoBanner } from '../../config/epicyber.js';
+import { usePacksCyber } from '../../lib/promo.js';
 
 /** Negro, fucsia, naranja y amarillo: la paleta de marca, sin imagen que esperar. */
 export const FONDO_CYBER = {
@@ -18,9 +18,9 @@ export const FONDO_CYBER = {
  * la campaña apagada no renderiza nada.
  */
 export default function CyberBanner({ soloTitulo = false }) {
-  const activa = useCyberActive();
-  if (!activa) return null;
-  const { titulo, subtitulo, texto, cta } = EPICYBER_COPY.banner;
+  const packs = usePacksCyber();
+  if (!packs.length) return null;
+  const { titulo, subtitulo, cta } = EPICYBER_COPY.banner;
 
   return (
     <section aria-label={titulo} className="container-app pt-4 md:pt-6">
@@ -34,7 +34,7 @@ export default function CyberBanner({ soloTitulo = false }) {
           {titulo}
         </h2>
         <p className="mt-2 font-display font-extrabold text-sm md:text-2xl">{subtitulo}</p>
-        <p className="mt-1 text-xs md:text-base text-white/75 max-w-xl mx-auto">{texto}</p>
+        <p className="mt-1 text-xs md:text-base text-white/75 max-w-xl mx-auto">{textoBanner(packs)}</p>
         <div className="mt-3 flex flex-col md:flex-row items-center justify-center gap-3">
           <PromoCountdown endMs={CYBER_END_MS} />
           {/* En /epicyber las ofertas ya están abajo: el botón no llevaría a ningún lado. */}
@@ -61,7 +61,7 @@ export function CyberAvisoPreview() {
       className="fixed bottom-0 inset-x-0 z-40 bg-brand-yellow text-black text-[11px] md:text-sm font-semibold pl-4 pr-24 py-1.5 flex items-center gap-3"
     >
       {/* `pr-24`: a la derecha flota el botón de WhatsApp. */}
-      <span>VISTA PREVIA · Sin aprobar · No se puede pagar</span>
+      <span>VISTA PREVIA · No se puede pagar</span>
       <a href="/?epicyber=off" className="underline underline-offset-2 whitespace-nowrap">
         Salir
       </a>
