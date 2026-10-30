@@ -459,6 +459,60 @@ export function precioVolumen({ tamano, material = CUSTOM_MATERIAL_POR_DEFECTO, 
   return { total, cantidadLlevada, escalon };
 }
 
+// --- EPICYBER WEEK 2026 (spec 036) ---
+// ⚠️ ESPEJO de CYBER en frontend/src/config/pricing.js, campo por campo: prender
+// un solo lado rechaza todo checkout con un pack de campaña. Lo verifica
+// frontend/src/lib/epicyber.test.js, que además prende los dos objetos y corre
+// el flujo completo: por eso es un objeto y no constantes sueltas.
+//
+// La línea es `pack:cyber:{tamano}:{cantidad}:{ts}`. Fuera de ventana, o sin
+// aprobar, vale el HABITUAL: un carrito guardado no se traba y un precio de
+// campaña vencido se rechaza con `price_mismatch`.
+//
+// No hay vista previa de este lado, a propósito: es lo que hace seguro el
+// `?epicyber=preview` del frontend en producción.
+export const CYBER = {
+  activa: true,
+  startMs: Date.parse('2026-11-02T00:00:00-03:00'),
+  endMs: Date.parse('2026-11-08T23:59:59-03:00'),
+  sizes: ['4cm', '6cm'],
+  packs: {
+    10: { price: 9990, aprobado: true },
+    15: { price: 11990, aprobado: true },
+    20: { price: 12990, aprobado: true },
+    25: { price: 14990, aprobado: true },
+    30: { price: 15990, aprobado: true },
+    40: { price: 18990, aprobado: true },
+    50: { price: 21990, aprobado: true },
+    100: { price: 39900, aprobado: true },
+    200: { price: 74900, aprobado: true },
+    300: { price: 104900, aprobado: true },
+    500: { price: 164900, aprobado: true }
+  }
+};
+
+export function isCyberActive(now = Date.now()) {
+  return (
+    Object.values(CYBER.packs).some((p) => p.aprobado) &&
+    promoVigente({ activa: CYBER.activa, startMs: CYBER.startMs, endMs: CYBER.endMs }, now)
+  );
+}
+
+// Abajo de 100, lista × cantidad; desde 100, la escala de la spec 032. Ver el
+// porqué en precioHabitualPack() del frontend.
+export function precioHabitualPack({ qty, size }) {
+  if (!CYBER.sizes.includes(size) || !CYBER.packs[qty]) return null;
+  if (qty < ESCALA_MIN) return SIZE_PRICES[size] * qty;
+  return precioVolumen({ tamano: size, cantidad: qty })?.total ?? null;
+}
+
+export function precioPackCyber({ qty, size }, now = Date.now()) {
+  const habitual = precioHabitualPack({ qty, size });
+  if (habitual === null) return null;
+  const pack = CYBER.packs[qty];
+  return isCyberActive(now) && pack.aprobado ? pack.price : habitual;
+}
+
 // --- Espejo de frontend/src/config/site.js (envío) ---
 // ⚠️ El test frontend/src/lib/envio.test.js verifica que estos números sean los
 // mismos que los de frontend/src/config/site.js.
@@ -551,6 +605,14 @@ function lineBase(id, quantity) {
     const packType = parts[1];
     const base = SIZE_PRICES[parts[2]];
     if (!base) return { error: `tamaño inválido en "${id}"` };
+    if (packType === 'cyber') {
+      // pack:cyber:{tamano}:{cantidad}:{ts} — 1 línea = 1 pack a precio cerrado.
+      // Ver CYBER: fuera de ventana el precio esperado es el habitual.
+      if (quantity !== 1) return { error: 'pack de campaña: 1 unidad por línea' };
+      const precio = precioPackCyber({ qty: Number(parts[3]), size: parts[2] });
+      if (precio === null) return { error: 'ese pack no existe — recargá la página' };
+      return { base: precio, kind, discountable: false };
+    }
     if (packType === 'mayorista') {
       if (quantity < WHOLESALE_QTY)
         return { error: `pack mayorista: mínimo ${WHOLESALE_QTY} calcos` };

@@ -4,12 +4,13 @@ import AnnouncementBar from './AnnouncementBar.jsx';
 import BuscadorModal from './BuscadorModal.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import PromoBanner, { endLabel } from './PromoBanner.jsx';
-import { usePromoActive, useMayoristaPromoActive, useArgentinaPromoActive } from '../lib/promo.js';
+import { usePromoActive, useMayoristaPromoActive, useArgentinaPromoActive, useCyberActive } from '../lib/promo.js';
 import {
   PROMO_MAYORISTA_100,
   PROMO_ARGENTINA,
   PROMO_ARGENTINA_END_MS
 } from '../config/pricing.js';
+import { EPICYBER_COPY } from '../config/epicyber.js';
 import { site } from '../config/site.js';
 import BotonCotizar from './BotonCotizar.jsx';
 import { MenuEscritorio, MenuMovil, ID_MENU_MOVIL } from './MenuPrincipal.jsx';
@@ -34,6 +35,7 @@ export default function Header() {
   const promoActive = usePromoActive();
   const mayoristaPromoActive = useMayoristaPromoActive();
   const argentinaPromoActive = useArgentinaPromoActive();
+  const cyberActive = useCyberActive();
   const { pathname } = useLocation();
   const esNegocio = PAGINAS_NEGOCIO.includes(pathname);
 
@@ -118,7 +120,18 @@ export default function Header() {
        desplegable cuelga pegado al nav, y meterle una tira de color en el medio
        lo parte al abrirlo. */}
     <header className="sticky top-0 z-40 backdrop-blur-md bg-black/40 border-b border-white/10">
-      {promoActive ? (
+      {cyberActive ? (
+        // EPICYBER (spec 036) gana a todas: es la campaña de la semana. Se oculta
+        // sola al vencer y el if/else vuelve a lo de siempre. Va SIN contador: el
+        // header es sticky y en 375 px eran 45 px menos de producto en cada
+        // pantalla. El contador vive en el banner.
+        <PromoBanner
+          title={EPICYBER_COPY.barra.titulo}
+          subtitle={EPICYBER_COPY.barra.subtitulo}
+          to="/epicyber"
+          ariaLabel={`${EPICYBER_COPY.barra.titulo}: ${EPICYBER_COPY.barra.subtitulo}`}
+        />
+      ) : promoActive ? (
         /* ⚠️ P-1 de la spec 017: con las TRES promos vivas este if/else muestra
            una sola, y es el 3x2 — el de mayor alcance, porque toca todo el
            catálogo. El 2x1 se anuncia en sus cuatro categorías y el mayorista en

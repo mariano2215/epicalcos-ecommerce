@@ -675,3 +675,27 @@ spec, como correspondía.
       cada rotación es una impresión nueva o no antes de instrumentarlo).
 - [ ] Marcar `purchase` de transferencia como cobrado cuando llega el comprobante
       (hoy requiere cruce manual con el CRM).
+
+---
+
+## 10. EPICYBER WEEK 2026 (spec 036)
+
+Sin scripts ni eventos de compra nuevos: `add_to_cart`, `begin_checkout` y
+`purchase` siguen siendo uno solo y suman campos en el ítem.
+
+| Campo del ítem | Valor |
+|---|---|
+| `promotion_id` | `epicyber_2026` |
+| `promotion_name` | `EPICYBER WEEK` |
+| `item_variant` | `x30` |
+| `item_category2` | `pack_chico` / `pack_mayorista` |
+| `pack_units` | calcos del pack |
+| `discount` | habitual menos lo cobrado, por unidad |
+
+Eventos recomendados de GA4, nuevos: `view_promotion` (una vez por sección, al
+entrar en pantalla) y `select_promotion`, con `creative_slot` = la superficie
+(`home_chicos`, `armador`, `carrito_upsell`, `producto`…).
+
+⚠️ `pack_units` es un parámetro propio: para verlo en los informes de GA4 hay que
+registrarlo como dimensión personalizada de ítem. El Pixel no cambia.
+

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useState, useCallback } from 'react';
 import { trackAddToCart, trackRemoveFromCart } from '../lib/analytics.js';
-import { usePromoActive, use2x1PromoActive } from '../lib/promo.js';
+import { usePromoActive, use2x1PromoActive, useCyberActive } from '../lib/promo.js';
 import { useAvisoDesbloqueo } from '../lib/promoUnlock.js';
 import { META_LINE_SKU, FIXED_SKU, DIGITAL_SKU } from '../config/metaCatalog.js';
 import { getTamano, MATERIAL_HOLOGRAFICO_ID, RECARGO_HOLOGRAFICO } from '../config/personalizados.js';
@@ -349,6 +349,9 @@ export function CartProvider({ children }) {
    */
   const promoActive = usePromoActive();
   const promo2x1Active = use2x1PromoActive();
+  // Mismo motivo: a las 23:59:59 del 8/11 una pestaña abierta tiene que pasar sola
+  // al precio habitual, o el checkout manda uno que el servidor ya no acepta.
+  const cyberActive = useCyberActive();
 
   /**
    * Precios derivados. Hay que distinguir DOS tipos de descuento, porque se
@@ -468,7 +471,7 @@ export function CartProvider({ children }) {
       promoProxima:
         promo2x1Active && unidadesCategoria.length > 0 ? '2x1' : promoActive ? '3x2' : null
     };
-  }, [state.items, promoActive, promo2x1Active]);
+  }, [state.items, promoActive, promo2x1Active, cyberActive]);
 
   /**
    * Recalcula los items con el precio real según el medio de pago y el cupón

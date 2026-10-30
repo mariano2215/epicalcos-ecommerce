@@ -5,6 +5,7 @@ import Footer from './components/Footer.jsx';
 import CartDrawer from './components/CartDrawer.jsx';
 import WelcomePopup from './components/WelcomePopup.jsx';
 import WhatsAppButton from './components/WhatsAppButton.jsx';
+import { CyberAvisoPreview } from './components/cyber/CyberBanner.jsx';
 import Home from './routes/Home.jsx'; // Home eager (LCP)
 import { isSectionHidden } from './config/site.js';
 import { LANDING_SLUGS } from './config/landings.js';
@@ -17,6 +18,7 @@ const Personalizados = lazy(() => import('./routes/Personalizados.jsx'));
 const ArmaTuPack = lazy(() => import('./routes/ArmaTuPack.jsx'));
 const LandingUso = lazy(() => import('./routes/LandingUso.jsx'));
 const Mayorista = lazy(() => import('./routes/Mayorista.jsx'));
+const Epicyber = lazy(() => import('./routes/Epicyber.jsx'));
 const Negocio = lazy(() => import('./routes/Negocio.jsx'));
 const Imprimibles = lazy(() => import('./routes/Imprimibles.jsx'));
 const Tatuajes = lazy(() => import('./routes/Tatuajes.jsx'));
@@ -65,6 +67,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToHash />
+      <CyberAvisoPreview />
       <Header />
       <CartDrawer />
       <WelcomePopup />
@@ -92,6 +95,7 @@ export default function App() {
             {LANDING_SLUGS.map((s) => (
               <Route key={s} path={`/${s}`} element={<LandingUso slug={s} />} />
             ))}
+            <Route path="/epicyber" element={<Epicyber />} />
             <Route path="/mayorista" element={<Mayorista />} />
             <Route path="/negocio" element={<Negocio />} />
             <Route

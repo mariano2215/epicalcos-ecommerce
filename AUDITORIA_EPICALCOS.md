@@ -220,7 +220,7 @@ El detalle criterio por criterio está en [`specs/034-b2b-cotizador-y-mayorista/
 
 1. **Revisar** la rama `feat/034-b2b-conversion` (o abrir un PR para verla en GitHub).
 2. **Cuidado con el WIP de la spec 030**: la carpeta principal tiene cambios sin commitear en `netlify.toml`, `docs/analytics.md`, `Reveal.jsx`, `index.css` y la spec 030. Esta rama toca `netlify.toml` (alias, otra sección) y `docs/analytics.md` (otra sección): al mergear puede haber conflicto. Commitear o apartar ese WIP antes.
-3. Mergear a `main` desde la carpeta principal y resolver conflictos conservando las dos partes.
+3. Mergear a `main` desde la carpeta principal y resolver conflictos conservando las dos partes. La rama ya incluye `main` con EPICYBER (spec 036): por la nota de esa spec, conviene publicarla **después del 8/11**, para no cambiar `/mayorista` en plena campaña.
 4. `npm test` (el hook de `pre-push` lo corre si está activo: `git config core.hooksPath .githooks`).
 5. `git push` → Netlify corre `npm test` y el build; si algo falla, no publica.
 6. Después del deploy:

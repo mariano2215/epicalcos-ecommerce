@@ -6,6 +6,7 @@ import { useSeo } from '../lib/seo.js';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import FreeShippingProgress from '../components/FreeShippingProgress.jsx';
 import AvisoTransferencia from '../components/AvisoTransferencia.jsx';
+import { CyberUpsellCarrito } from '../components/cyber/CyberAvisos.jsx';
 import ShippingInfo from '../components/ShippingInfo.jsx';
 import { esPedidoVolumen } from '../lib/plazoProduccion.js';
 import SocialProof from '../components/SocialProof.jsx';
@@ -92,6 +93,7 @@ export default function Cart() {
         {/* El mismo componente va en el carrito lateral, así las dos pantallas
             no pueden decir cosas distintas. */}
         <AvisoTransferencia className="mt-4" />
+        <CyberUpsellCarrito className="mt-3" />
 
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-4">

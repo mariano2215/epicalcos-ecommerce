@@ -424,6 +424,33 @@ formulario no cambia ninguna conducta.
 
 ---
 
+### 3.5 EPICYBER WEEK 2026 (spec 036) — ⏰ PROGRAMADA, corre sola del 2 al 8/11/2026
+
+Del 2/11/2026 00:00 al 8/11/2026 23:59:59, hora Argentina. Se prende y se apaga
+sola por fecha, sin deploy ni cron.
+
+- **Línea:** `pack:cyber:{tamano}:{cantidad}:{ts}`, `quantity: 1`, solo 4 y 6 cm.
+- **Fuera de ventana o sin aprobar** vale el habitual: un carrito guardado no se
+  traba y un precio vencido se rechaza con `price_mismatch`.
+- **Habitual (el tachado):** lista × cantidad abajo de 100; escala de la spec 032
+  desde 100.
+- **Acumulación:** no corren cupones ni promos N x M. El % por transferencia sí.
+- **Envío:** por umbral, como todo. Ningún pack lo regala.
+- **Dos llaves:** `activa` (general) y `aprobado` (por pack), en `CYBER` de los dos
+  lados del espejo y en el mismo commit.
+- **Costos:** solo en `src/lib/epicyber.test.js`, que frena el deploy si un pack
+  queda a pérdida o más caro que su habitual. No van en `config/`: se publica.
+- **Vista previa:** `?epicyber=preview` en cualquier ambiente. Es segura porque el
+  servidor no la conoce y `Checkout` corta el pago. `?epicyber=off` la saca.
+
+Precios aprobados el 30/10/2026: x10 $9.990 · x15 $11.990 · x20 $12.990 · x25
+$14.990 · x30 $15.990 · x40 $18.990 · x50 $21.990 · x100 $39.900 · x200 $74.900 ·
+x300 $104.900 · x500 $164.900.
+
+Holográficos, DTF UV, Polaroid y tatuajes no tienen precio: faltan sus costos.
+
+---
+
 ## 4. Packs
 
 ### Escalera de packs de catálogo (`/armar-pack`)
@@ -493,6 +520,8 @@ Montos **totales** por escalón (Mercado Pago), aprobados el 5/10/2026 (opción 
   (escalones exactos y "Más de 1.000" → presupuesto) y el armador de
   `/mayorista` (cualquier cantidad de 100 a 1.000, catálogo y diseños propios).
   El configurador de `/personalizados` **todavía no** (032 tarea 2.3).
+  Durante EPICYBER (spec 036) el armador de `/mayorista` vende los packs de
+  campaña en lugar de la escala; al vencer, vuelve solo.
 - Paridad: `escalaVolumen.test.js` (la tabla y cada cantidad 100–1.000) y
   `cotizadorNegocio.test.js` (cada línea que emite el sitio, contra el
   `validateAndPriceOrder()` real, con MP y transferencia).

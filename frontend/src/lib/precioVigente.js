@@ -24,6 +24,8 @@ import {
   PERSONALIZADOS_DISCOUNT,
   precioPolaroidLista,
   precioVolumen,
+  precioHabitualPack,
+  packCyberDeLinea,
   round
 } from '../config/pricing.js';
 import { RECARGO_HOLOGRAFICO } from '../config/personalizados.js';
@@ -42,6 +44,9 @@ export function precioBaseVigente(line) {
     case 'pack': {
       const base = precioTamano(parts[2]);
       if (base == null) return guardado;
+      // EPICYBER (spec 036): `basePrice` es el habitual, y por eso el carrito
+      // muestra el tachado solo. El precio de campaña lo pone la vidriera.
+      if (parts[1] === 'cyber') return precioHabitualPack(packCyberDeLinea(line.id)) ?? guardado;
       if (parts[1] === 'mayorista') return round(base * (1 - WHOLESALE_DISCOUNT));
       if (parts[1] === 'mayorista100') return PROMO_MAYORISTA_100.price;
       if (parts[1] === 'personalizados') return round(base * (1 - PERSONALIZADOS_DISCOUNT));

@@ -1,10 +1,16 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import PackBuilder from '../components/PackBuilder.jsx';
+import CyberSelectorPack from '../components/cyber/CyberSelectorPack.jsx';
 import EscalaVolumen from '../components/negocios/EscalaVolumen.jsx';
 import PedidosGrandes from '../components/negocios/PedidosGrandes.jsx';
+import { formatPrice } from '../context/CartContext.jsx';
 import { WHOLESALE_QTY, WHOLESALE_DISCOUNT } from '../config/pricing.js';
 import { MAYORISTA, SEO } from '../config/negocios.js';
+import { EPICYBER_COPY, promoDePack, separarPacks } from '../config/epicyber.js';
+import { usePacksCyber } from '../lib/promo.js';
+import { TAMANOS_ESCALA } from '../lib/cotizadorNegocio.js';
 import { useSeo } from '../lib/seo.js';
 import { jsonLdMayorista } from '../lib/negociosEstatico.js';
 import { trackWholesaleClick } from '../lib/analytics.js';
@@ -26,6 +32,13 @@ import { trackWholesaleClick } from '../lib/analytics.js';
  * paga más; el que lleva más, paga menos por calco. El 9 cm sale de la venta
  * por mayor (spec 032 §9.4) y se dice.
  *
+ * DURANTE EPICYBER (spec 036) la página vende los packs de campaña: con el x100
+ * aprobado no puede seguir vendiendo 100 calcos más caras que el Home. El
+ * armador pasa a cantidad exacta por pack y se saca la tabla de la escala, que
+ * pondría $52.999 al lado del precio Cyber. Al vencer la campaña, todo vuelve
+ * solo: `usePacksCyber` re-renderiza en el borde de la ventana. Si el x100 no
+ * está aprobado, la escala sigue como siempre.
+ *
  * Las condiciones van ANTES del armador: el que compra 500 calcos para
  * revender quiere saber plazo, envío y pago antes de elegir el primer diseño.
  *
@@ -33,11 +46,25 @@ import { trackWholesaleClick } from '../lib/analytics.js';
  * dice "por mayor" y el slug no cambia.
  */
 export default function Mayorista() {
+  const { mayoristas } = separarPacks(usePacksCyber());
+  const pack100 = mayoristas.find((p) => p.qty === WHOLESALE_QTY) || null;
+  const [qtyCyber, setQtyCyber] = useState(WHOLESALE_QTY);
+  const packCyber = pack100 ? mayoristas.find((p) => p.qty === qtyCyber) || pack100 : null;
+
+  // El JSON-LD es el de la escala aunque corra la campaña: es el mismo que lleva
+  // el HTML prerenderizado, y una semana de oferta no cambia el precio habitual.
   useSeo({
-    title: SEO.mayorista.title,
-    description: SEO.mayorista.description,
+    title: pack100
+      ? `Calcos por mayor · ${pack100.qty} calcos a ${formatPrice(pack100.price)}`
+      : SEO.mayorista.title,
+    description: pack100
+      ? `Calcos por mayor: ${pack100.qty} calcos a ${formatPrice(pack100.price)}, del catálogo o con tus diseños, en 4 y 6 cm. ${EPICYBER_COPY.mayoristas.subtitulo}.`
+      : SEO.mayorista.description,
     jsonLd: jsonLdMayorista()
   });
+
+  // "De 100 a 1.000" es la escala: con la campaña se venden los packs de arriba.
+  const condiciones = MAYORISTA.condiciones.filter((c) => !(packCyber && c.soloEscala));
 
   return (
     <div className="page-gradient min-h-screen">
@@ -54,7 +81,7 @@ export default function Mayorista() {
             UNA tarjeta con renglones y no siete tarjetas: a 375 px, siete
             cards apiladas empujaban el armador casi 800 px hacia abajo. */}
         <ul className="mt-6 card-glass p-4 md:p-6 grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-          {MAYORISTA.condiciones.map((c) => (
+          {condiciones.map((c) => (
             <li key={c.t} className="flex items-start gap-3 text-sm leading-snug">
               <span className="text-lg leading-none mt-0.5" aria-hidden>{c.icono}</span>
               <span className="min-w-0">
@@ -65,18 +92,30 @@ export default function Mayorista() {
         </ul>
       </div>
 
-      <EscalaVolumen id="precios" conHolografico={false} />
+      {!packCyber && <EscalaVolumen id="precios" conHolografico={false} />}
 
-      <div id="armar" className="container-app pb-10 scroll-mt-24">
+      <div id="armar" className={`container-app pb-10 scroll-mt-24 ${packCyber ? 'pt-6' : ''}`}>
+        {packCyber && (
+          <div className="mb-6">
+            <CyberSelectorPack packs={mayoristas} qty={packCyber.qty} onElegir={setQtyCyber} ubicacion="mayorista" />
+          </div>
+        )}
         <PackBuilder
           packType="mayorista"
-          escala
+          escala={!packCyber}
+          promo={packCyber ? promoDePack(packCyber) : undefined}
+          soloTamanos={TAMANOS_ESCALA}
+          encabezado="h2"
           min={WHOLESALE_QTY}
           discount={WHOLESALE_DISCOUNT}
           defaultSize="4cm"
           allowCustom
           title={MAYORISTA.armadorTitulo}
-          subtitle={MAYORISTA.armadorBajada}
+          subtitle={
+            packCyber
+              ? `Elegí ${packCyber.qty} calcos (del catálogo o con tus propios diseños) en 4 o 6 cm y pagás ${formatPrice(packCyber.price)}. ${EPICYBER_COPY.mayoristas.subtitulo}.`
+              : MAYORISTA.armadorBajada
+          }
         />
       </div>
 

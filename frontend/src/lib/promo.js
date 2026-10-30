@@ -11,7 +11,11 @@ import {
   is2x1PromoActive,
   PROMO_ARGENTINA_START_MS,
   PROMO_ARGENTINA_END_MS,
-  isArgentinaPromoActive
+  isArgentinaPromoActive,
+  CYBER_START_MS,
+  CYBER_END_MS,
+  isCyberActive,
+  packsCyberVigentes
 } from '../config/pricing.js';
 
 /**
@@ -135,6 +139,21 @@ export function use2x1PromoActive() {
 /** ¿Está vigente la promo de Argentina 50 %? (lun 17 a mié 19 de agosto). */
 export function useArgentinaPromoActive() {
   return useVentanaActiva(isArgentinaPromoActive, PROMO_ARGENTINA_START_MS, PROMO_ARGENTINA_END_MS);
+}
+
+/** ¿Hay EPICYBER ahora mismo? (spec 036). Se prende y se apaga sola. */
+export function useCyberActive() {
+  return useVentanaActiva(isCyberActive, CYBER_START_MS, CYBER_END_MS);
+}
+
+/**
+ * Los packs de EPICYBER que se venden ahora. El hook está para re-renderizar en
+ * el borde de la ventana; la lista la decide `packsCyberVigentes`, la misma
+ * función que precia el carrito.
+ */
+export function usePacksCyber() {
+  useCyberActive();
+  return packsCyberVigentes();
 }
 
 /**

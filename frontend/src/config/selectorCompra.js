@@ -15,13 +15,15 @@
  * en el servidor) y de la lista de categorías. Lo verifica `selectorCompra.test.js`.
  * Una opción cuya sección esté en HIDDEN_SECTIONS no se muestra.
  */
-import { SIZES, NEGOCIO, WHOLESALE_QTY } from './pricing.js';
+import { SIZES, NEGOCIO, WHOLESALE_QTY, packCyberVigente } from './pricing.js';
 import { isSectionHidden } from './site.js';
 import { formatPrice } from '../lib/formato.js';
 import { CATEGORY_COUNT } from '../data/catalogStats.js';
 
 const PRECIO_SUELTA_MINIMO = Math.min(...SIZES.map((s) => s.price));
-const PRECIO_POR_MAYOR = Math.round(NEGOCIO.price / NEGOCIO.qty);
+// Durante EPICYBER (spec 036) el x100 aprobado baja este "c/u": si no, el Home se
+// contradice entre el hero y la oferta de campaña.
+const PRECIO_POR_MAYOR = Math.round((packCyberVigente(NEGOCIO.qty)?.price ?? NEGOCIO.price) / NEGOCIO.qty);
 
 export const HERO_SELECTOR = {
   // Partido en dos: el hero resalta la segunda mitad con `gradient-text`. El H1

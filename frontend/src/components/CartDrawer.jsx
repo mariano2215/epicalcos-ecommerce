@@ -3,6 +3,7 @@ import { useCart, formatPrice } from '../context/CartContext.jsx';
 import FreeShippingProgress from './FreeShippingProgress.jsx';
 import AvisoTransferencia from './AvisoTransferencia.jsx';
 import OrderBump from './OrderBump.jsx';
+import { CyberUpsellCarrito } from './cyber/CyberAvisos.jsx';
 import { useCuponEnCarrito, CuponEnCarritoLinea } from './popup/CuponEnCarrito.jsx';
 
 // `custom`: cada línea es UN diseño personalizado y su cantidad son las copias.
@@ -115,6 +116,7 @@ export default function CartDrawer() {
               de `compacto` en FreeShippingProgress). Acá además cae donde
               corresponde en la lectura: primero lo que ya elegiste, después
               "y esto también". */}
+          {items.length > 0 && <CyberUpsellCarrito onNavegar={closeDrawer} />}
           {items.length > 0 && <OrderBump />}
         </div>
 

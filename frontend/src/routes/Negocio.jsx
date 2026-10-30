@@ -1,5 +1,6 @@
 import Breadcrumbs from '../components/Breadcrumbs.jsx';
 import MarcasConfiaron from '../components/MarcasConfiaron.jsx';
+import { CyberAvisoPagina } from '../components/cyber/CyberAvisos.jsx';
 import NegocioForm from '../components/NegocioForm.jsx';
 import HeroNegocio from '../components/negocios/HeroNegocio.jsx';
 import BarraConfianza from '../components/negocios/BarraConfianza.jsx';
@@ -57,6 +58,7 @@ export default function Negocio() {
         <Breadcrumbs items={[{ name: 'Inicio', to: '/' }, { name: 'Calcos para negocios' }]} />
       </div>
 
+      <CyberAvisoPagina qty={100} texto="con tu logo o tus diseños" />
       <HeroNegocio />
       <BarraConfianza />
       <MarcasConfiaron />

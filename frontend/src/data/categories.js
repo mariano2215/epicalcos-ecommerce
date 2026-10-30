@@ -1,6 +1,7 @@
 import { isSectionHidden } from '../config/site.js';
 import {
   isMayoristaPromoActive,
+  packCyberVigente,
   PROMO_MAYORISTA_100,
   WHOLESALE_QTY,
   WHOLESALE_DISCOUNT,
@@ -129,7 +130,7 @@ const ALL_SPECIALS = [
     // Mientras corre la promo el blurb anuncia el precio fijo; después vuelve el
     // 50% off. Cantidad, precio y % salen de config/pricing.js.
     blurb: isMayoristaPromoActive()
-      ? `${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(PROMO_MAYORISTA_100.price)} · 4 y 6 cm`
+      ? `${PROMO_MAYORISTA_100.qty} calcos a ${formatPrice(packCyberVigente(PROMO_MAYORISTA_100.qty)?.price ?? PROMO_MAYORISTA_100.price)} · 4 y 6 cm`
       : `Armá ${WHOLESALE_QTY} calcos · ${Math.round(WHOLESALE_DISCOUNT * 100)}% off`,
     accent: 'from-amber-400 to-orange-500'
   },

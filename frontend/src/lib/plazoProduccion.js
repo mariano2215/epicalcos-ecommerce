@@ -23,6 +23,7 @@ import { NEGOCIO, PROMO_MAYORISTA_100 } from '../config/pricing.js';
  * Cuántas calcos trae una línea.
  * - `sticker:` / `custom:` / `pack:mayorista:` / `pack:personalizados:` → una por unidad.
  * - `pack:mayorista100:` → un pack de 100 por unidad.
+ * - `pack:cyber:{tamano}:{cantidad}:{ts}` (spec 036) → la cantidad del id.
  * - `negocio:` (Promo Negocio y pack holográfico) → 100 por unidad.
  * - `volumen:{tamano}:{material}:{cantidad}:{ts}` (escala de la spec 032) → la cantidad del id.
  * - Fijos (Polaroid, tatuajes, recargo holográfico), digitales y el envío → 0:
@@ -36,6 +37,7 @@ export function calcosDeLinea(linea) {
     case 'custom':
       return q;
     case 'pack':
+      if (parts[1] === 'cyber') return (Number(parts[3]) || 0) * q;
       return parts[1] === 'mayorista100' ? PROMO_MAYORISTA_100.qty * q : q;
     case 'negocio':
       return NEGOCIO.qty * q;

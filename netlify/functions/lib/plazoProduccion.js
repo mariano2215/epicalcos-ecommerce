@@ -25,6 +25,7 @@ export function calcosDeLinea(linea) {
     case 'custom':
       return q;
     case 'pack':
+      if (parts[1] === 'cyber') return (Number(parts[3]) || 0) * q;
       return parts[1] === 'mayorista100' ? CALCOS_MAYORISTA100 * q : q;
     case 'negocio':
       return CALCOS_NEGOCIO * q;

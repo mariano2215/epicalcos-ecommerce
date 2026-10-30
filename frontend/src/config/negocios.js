@@ -368,7 +368,7 @@ export const MAYORISTA = {
     `Elegí los diseños del catálogo, subí los tuyos o mezclá, en ${TAMANOS_POR_MAYOR}. ` +
     'Mientras más cantidad, menos pagás por calco.',
   condiciones: [
-    { icono: '🔢', t: 'Cantidad', d: `De ${ESCALA_MIN} a ${num(ESCALA_MAX)} calcos online. Para más, te armamos un presupuesto.` },
+    { icono: '🔢', t: 'Cantidad', d: `De ${ESCALA_MIN} a ${num(ESCALA_MAX)} calcos online. Para más, te armamos un presupuesto.`, soloEscala: true },
     { icono: '📏', t: 'Tamaños', d: `${TAMANOS_POR_MAYOR}. El de 9 cm va suelto, en la tienda.` },
     { icono: '🎨', t: 'Diseños', d: 'Los elegís vos: del catálogo, propios o mezclados. Podés repetir el mismo.' },
     { icono: '👀', t: MUESTRA_GRATIS.titulo, d: `${MUESTRA_GRATIS.aclaracion}, por WhatsApp.` },
