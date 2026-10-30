@@ -984,8 +984,8 @@ export const CYBER = {
   /** El 9 cm no se vende por mayor desde la spec 032 y su costo no está validado. */
   sizes: ['4cm', '6cm'],
   packs: [
-    // Packs chicos: opción B, aprobada por Mariano el 30/10/2026. Los mayoristas
-    // siguen siendo candidatos: sin `aprobado` no se venden a este precio.
+    // Aprobados por Mariano el 30/10/2026: la opción B en los chicos y los
+    // candidatos en los mayoristas. Un pack sin `aprobado` no se vende a este precio.
     { qty: 10, price: 9990, aprobado: true, prioritario: true },
     { qty: 15, price: 11990, aprobado: true },
     { qty: 20, price: 12990, aprobado: true, prioritario: true },
@@ -993,10 +993,10 @@ export const CYBER = {
     { qty: 30, price: 15990, aprobado: true, prioritario: true },
     { qty: 40, price: 18990, aprobado: true },
     { qty: 50, price: 21990, aprobado: true, prioritario: true },
-    { qty: 100, price: 39900, aprobado: false, prioritario: true },
-    { qty: 200, price: 74900, aprobado: false, prioritario: true },
-    { qty: 300, price: 104900, aprobado: false },
-    { qty: 500, price: 164900, aprobado: false }
+    { qty: 100, price: 39900, aprobado: true, prioritario: true },
+    { qty: 200, price: 74900, aprobado: true, prioritario: true },
+    { qty: 300, price: 104900, aprobado: true },
+    { qty: 500, price: 164900, aprobado: true }
   ]
 };
 

@@ -40,7 +40,9 @@
 - [x] Recorrer `acceptance.md` punto por punto.
 - [x] Commits en `feat/036-epicyber-week-2026`, sin push.
 - [x] Opción B cargada en los dos lados del espejo.
-- [ ] Aprobación de mayoristas y orden de publicar (Mariano).
+- [x] Mayoristas cargados en los dos lados del espejo.
+- [x] El carrito con un pack de 100 a $52.999 ve el precio Cyber.
+- [ ] Orden de publicar (Mariano).
 
 ## Hallazgos fuera de scope
 

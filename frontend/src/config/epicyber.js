@@ -119,6 +119,10 @@ const nombreSinTamano = (nombre) => String(nombre || '').split(' · ')[0];
 /**
  * Qué sugerirle a alguien con este carrito. Pura, sin React.
  *
+ * - Con un pack de 100 a $52.999 guardado desde antes de la campaña: el mismo
+ *   pack a precio Cyber. Sin esto pagaría de más sin enterarse, y esa línea sigue
+ *   siendo válida para el servidor. Es lo único que hace falta: `/mayorista` ya
+ *   no la emite durante la campaña.
  * - Con un pack de campaña: el siguiente, conservando sus diseños. Las líneas
  *   con diseños propios quedan afuera: `SubidaArchivo` no recibe archivos ya
  *   subidos, así que sembrarlas se los perdería.
@@ -130,6 +134,23 @@ const nombreSinTamano = (nombre) => String(nombre || '').split(' · ')[0];
  */
 export function sugerenciaCyber(items, packs) {
   if (!packs.length) return null;
+
+  const pack100 = packs.find((p) => p.qty === WHOLESALE_QTY);
+  const viejo = items.find(
+    (i) =>
+      String(i.id).startsWith('pack:mayorista100:') &&
+      CYBER.sizes.includes(i.size) &&
+      !(Number(i.meta?.customCount) > 0)
+  );
+  if (pack100 && viejo && pack100.price < viejo.price) {
+    const diferencia = pack100.price - viejo.price;
+    return {
+      pack: pack100,
+      diferencia,
+      texto: textoUpsell(pack100, diferencia),
+      semilla: { size: viejo.size, items: viejo.meta?.items || [], reemplazar: [viejo.id] }
+    };
+  }
 
   const conPack = items.filter((i) => packCyberDeLinea(i.id));
   if (conPack.length) {

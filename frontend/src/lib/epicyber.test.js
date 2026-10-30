@@ -409,6 +409,47 @@ describe('EPICYBER — línea y upsell', () => {
     expect(s.semilla.reemplazar).toEqual(['sticker:b:6cm']);
   });
 
+  it('un pack de 100 viejo en el carrito ve el precio Cyber y conserva sus diseños', () => {
+    const viejo = {
+      id: 'pack:mayorista100:4cm:1',
+      type: 'pack',
+      size: '4cm',
+      price: 52999,
+      quantity: 1,
+      meta: { items: [{ id: 'anime-1', name: 'Goku', qty: 100 }], customCount: 0 }
+    };
+    const s = sugerenciaCyber([viejo], packs);
+    expect(s.pack.qty).toBe(100);
+    expect(s.diferencia).toBe(P(100) - 52999);
+    expect(s.texto).toMatch(/te sale .* menos/);
+    expect(s.semilla).toMatchObject({ size: '4cm', reemplazar: [viejo.id] });
+    expect(s.semilla.items).toHaveLength(1);
+  });
+
+  it('un pack de 100 viejo con diseños propios no se toca: se perderían los archivos', () => {
+    const viejo = {
+      id: 'pack:mayorista100:4cm:1',
+      type: 'pack',
+      size: '4cm',
+      price: 52999,
+      quantity: 1,
+      meta: { items: [], customCount: 100 }
+    };
+    expect(sugerenciaCyber([viejo], packs)).toBeNull();
+  });
+
+  it('sin el x100 aprobado, el pack viejo no recibe ninguna sugerencia', () => {
+    const viejo = {
+      id: 'pack:mayorista100:6cm:1',
+      type: 'pack',
+      size: '6cm',
+      price: 52999,
+      quantity: 1,
+      meta: { items: [], customCount: 0 }
+    };
+    expect(sugerenciaCyber([viejo], packs.filter((p) => p.qty < 100))).toBeNull();
+  });
+
   it('el banner nombra solo lo que se vende', () => {
     const { chicos } = separarPacks(packs);
     expect(textoBanner(chicos)).not.toMatch(/marca/);

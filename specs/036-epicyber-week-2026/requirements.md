@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `036-epicyber-week-2026` |
-| **Estado** | `IN PROGRESS` — en rama sin publicar. Packs chicos aprobados (opción B, 30/10/2026); mayoristas sin aprobar |
+| **Estado** | `IN PROGRESS` — en rama sin publicar. Packs chicos (opción B) y mayoristas aprobados el 30/10/2026; falta la orden de publicar |
 | **Fecha** | 30/10/2026 |
 | **Autor** | Mariano (pedido) · Claude (spec) |
 
@@ -204,16 +204,11 @@ se toca (RF-9); se anota para decidir aparte.
 | Promo | Estado | Qué falta |
 |---|---|---|
 | Packs chicos | **Aprobados: opción B** (30/10/2026) | Nada |
-| Packs mayoristas | Sin aprobar | Aprobar. Ver el aviso de abajo |
+| Packs mayoristas | **Aprobados: candidatos** (30/10/2026) | Nada |
 | Calcos holográficos, hasta 20 % | Sin precio | Costo del material |
 | DTF UV, hasta 15 % | Sin precio | Costo del material |
 | Polaroid 3×2 | Sin precio | Costo por pack y cruce con su descuento por volumen |
 | Tatuajes | Sin precio | Costo por hoja y definir la promo |
-
-**Aviso:** con los chicos aprobados y el x100 sin aprobar, la escalera se da
-vuelta. El x50 queda en $440 por calco y el x100 sigue en $530: 2 x50 salen $43.980
-por 100 calcos, contra $52.999. Con el x100 a $39.900 ($399) la escalera vuelve a
-bajar.
 
 ## 10. Edge cases
 
@@ -225,6 +220,8 @@ bajar.
 - Cambiar de pack con el armador a medias → conserva los diseños; si sobran, lo
   avisa.
 - Con el pack x100 sin aprobar → sigue la promo de $52.999 tal como está.
+- Pack de 100 a $52.999 guardado antes de la campaña → sigue siendo válido, y el
+  carrito muestra cuánto se ahorra pasándose al pack Cyber.
 
 ## 11. Analytics
 

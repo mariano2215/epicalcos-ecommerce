@@ -484,10 +484,10 @@ export const CYBER = {
     30: { price: 15990, aprobado: true },
     40: { price: 18990, aprobado: true },
     50: { price: 21990, aprobado: true },
-    100: { price: 39900, aprobado: false },
-    200: { price: 74900, aprobado: false },
-    300: { price: 104900, aprobado: false },
-    500: { price: 164900, aprobado: false }
+    100: { price: 39900, aprobado: true },
+    200: { price: 74900, aprobado: true },
+    300: { price: 104900, aprobado: true },
+    500: { price: 164900, aprobado: true }
   }
 };
 
