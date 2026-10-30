@@ -760,6 +760,10 @@ export function precioVidriera(stickerId, sizeId, now = Date.now()) {
  */
 export function precioVidrieraLinea(line, now = Date.now()) {
   const base = Number(line?.basePrice) || 0;
+  // Pack de EPICYBER (spec 036): el precio sale del id y de la fecha, igual que
+  // en el servidor. Fuera de ventana vuelve solo al habitual.
+  const packCyber = packCyberDeLinea(line?.id);
+  if (packCyber) return precioPackCyber(packCyber, now) ?? base;
   // Fotos Polaroid (spec 019): el precio depende de la CANTIDAD —desde 20 fotos
   // baja $200 por foto—, así que no puede salir de `basePrice` a secas. Se
   // reconstruye desde el ID y la cantidad, que son exactamente los dos datos
@@ -940,6 +944,124 @@ export function precioVolumen({ tamano, material = 'vinilo-blanco', cantidad }) 
     cantidadLlevada = siguiente;
   }
   return { total, cantidadLlevada, escalon, unitario: Math.round(total / cantidadLlevada), pct: pctEscalon(fila, escalon) };
+}
+
+/**
+ * ─── EPICYBER WEEK 2026 (spec 036) ────────────────────────────────────────────
+ * Packs a precio cerrado del 2 al 8 de noviembre. Se prende y se apaga sola por
+ * fecha (`useVentanaActiva` re-renderiza en el borde), sin deploy ni cron.
+ *
+ * La línea es `pack:cyber:{tamano}:{cantidad}:{ts}` con `quantity: 1`.
+ *
+ * POR QUÉ UN PACK Y NO UN PRECIO POR CANTIDAD SOBRE CALCOS SUELTAS: $10.990 / 15
+ * da $732,67. Redondeado por unidad, el carrito cobraría $10.995 con el cartel
+ * diciendo $10.990. Una línea única cobra el número exacto (mismo motivo por el
+ * que existe `pack:mayorista100`).
+ *
+ * POR QUÉ NO TRABA UN CARRITO VENCIDO: el precio se deriva del id y de la fecha,
+ * nunca se guarda. Fuera de ventana, o sin aprobar, la línea vale el HABITUAL:
+ * la persona conserva sus diseños y el servidor la acepta. Mismo criterio que
+ * `precioVidrieraLinea` — ver su aviso sobre no persistir el resultado.
+ *
+ * `aprobado` es por pack: un precio candidato no se vende aunque la campaña esté
+ * prendida. Sin ningún pack aprobado no hay campaña.
+ *
+ * ⚠️ Los COSTOS no van acá: este archivo se publica en el bundle. Viven solo en
+ * `src/lib/epicyber.test.js`, que frena el deploy si un pack queda a pérdida o
+ * más caro que su habitual (un tachado falso).
+ *
+ * ⚠️ ESPEJO OBLIGATORIO en netlify/functions/lib/pricing.js (CYBER,
+ * isCyberActive, precioHabitualPack y precioPackCyber). Prender solo un lado
+ * rechaza con `price_mismatch` todo checkout con un pack de campaña.
+ */
+export const CYBER = {
+  id: 'epicyber_2026',
+  nombre: 'EPICYBER WEEK',
+  /** Interruptor general. Se prende en el mismo commit que los del servidor. */
+  activa: false,
+  startsAt: '2026-11-02T00:00:00-03:00',
+  endsAt: '2026-11-08T23:59:59-03:00',
+  /** El 9 cm no se vende por mayor desde la spec 032 y su costo no está validado. */
+  sizes: ['4cm', '6cm'],
+  packs: [
+    { qty: 10, price: 9990, aprobado: false, prioritario: true },
+    { qty: 15, price: 10990, aprobado: false },
+    { qty: 20, price: 11990, aprobado: false, prioritario: true },
+    { qty: 25, price: 12990, aprobado: false },
+    { qty: 30, price: 13990, aprobado: false, prioritario: true },
+    { qty: 40, price: 17990, aprobado: false },
+    { qty: 50, price: 20990, aprobado: false, prioritario: true },
+    { qty: 100, price: 39900, aprobado: false, prioritario: true },
+    { qty: 200, price: 74900, aprobado: false, prioritario: true },
+    { qty: 300, price: 104900, aprobado: false },
+    { qty: 500, price: 164900, aprobado: false }
+  ]
+};
+
+export const CYBER_START_MS = Date.parse(CYBER.startsAt);
+export const CYBER_END_MS = Date.parse(CYBER.endsAt);
+
+/**
+ * Vista previa (`?epicyber=preview`, ver lib/cyberPreview.js). Fuerza la campaña
+ * SOLO EN ESTE NAVEGADOR, y por eso es segura en producción: el servidor no sabe
+ * de vista previa y rechaza cualquier precio Cyber fuera de ventana.
+ */
+let cyberPreview = false;
+export function setCyberPreview(valor) {
+  cyberPreview = Boolean(valor);
+}
+export function isCyberPreview() {
+  return cyberPreview;
+}
+
+/** ¿Hay campaña ahora mismo? Sin un pack aprobado no hay nada que anunciar. */
+export function isCyberActive(now = Date.now()) {
+  if (cyberPreview) return true;
+  return (
+    CYBER.packs.some((p) => p.aprobado) &&
+    promoVigente({ activa: CYBER.activa, startMs: CYBER_START_MS, endMs: CYBER_END_MS }, now)
+  );
+}
+
+/** Los packs que se pueden vender ahora. En vista previa, también los sin aprobar. */
+export function packsCyberVigentes(now = Date.now()) {
+  if (!isCyberActive(now)) return [];
+  return cyberPreview ? CYBER.packs : CYBER.packs.filter((p) => p.aprobado);
+}
+
+/** El pack de esa cantidad si se vende ahora, o null. */
+export function packCyberVigente(qty, now = Date.now()) {
+  return packsCyberVigentes(now).find((p) => p.qty === qty) || null;
+}
+
+/** `{ size, qty }` de una línea de campaña, o null si es otra cosa. */
+export function packCyberDeLinea(lineId) {
+  const parts = String(lineId || '').split(':');
+  if (parts[0] !== 'pack' || parts[1] !== 'cyber') return null;
+  return { size: parts[2], qty: Number(parts[3]) };
+}
+
+/**
+ * Lo que esa cantidad cuesta sin campaña: el ancla del tachado y del %.
+ *
+ * Abajo de 100, lista × cantidad. Desde 100, la escala de la spec 032 y NO la
+ * lista: 100 calcos ya se venden a $52.999, así que tachar $160.000 sería un
+ * descuento inventado. Es la cuenta más baja de las dos que hay: un cliente
+ * puede comprar 300 hoy a 3 × $52.999, y la escala da menos.
+ *
+ * @returns {number|null} `null` si no es un pack de la campaña
+ */
+export function precioHabitualPack({ qty, size }) {
+  if (!CYBER.sizes.includes(size) || !CYBER.packs.some((p) => p.qty === qty)) return null;
+  if (qty < ESCALA_MIN) return priceForSize(size) * qty;
+  return precioVolumen({ tamano: size, cantidad: qty })?.total ?? null;
+}
+
+/** Precio vigente del pack: el de campaña si corre y está aprobado; si no, el habitual. */
+export function precioPackCyber({ qty, size }, now = Date.now()) {
+  const habitual = precioHabitualPack({ qty, size });
+  if (habitual === null) return null;
+  return packCyberVigente(qty, now)?.price ?? habitual;
 }
 
 /** Productos de precio fijo. */
