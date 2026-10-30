@@ -11,6 +11,7 @@ import { saveOrder } from './lib/orderStore.js';
 import { borrarCarrito } from './lib/abandonedStore.js';
 import { crearLeadEnCRM } from './_notion.js';
 import { validateAndPriceOrder } from './lib/pricing.js';
+import { reclamarRegalo, sumarNota } from './lib/regaloCyber.js';
 import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
 import { buildOrderView, notifyOrder } from './lib/notify.js';
 
@@ -106,6 +107,16 @@ export const handler = async (event) => {
   const shippingCost = order.shippingCost;
   shipping.method = order.shippingMethod;
 
+  // Regalo de EPICYBER (spec 037): antes del mail, que es la única constancia de
+  // este pedido. Acá no hay aviso de pago, así que se aplica al crearlo. Nunca lanza.
+  const regalo = await reclamarRegalo({
+    email: payer.email,
+    orderId,
+    itemsTotal: order.itemsTotal,
+    items: order.items
+  });
+  shipping.comments = sumarNota(shipping.comments, regalo);
+
   const storedOrder = {
     orderId,
     createdAt: new Date().toISOString(),
@@ -115,7 +126,8 @@ export const handler = async (event) => {
     shipping: { ...shipping, cost: shippingCost },
     items: order.items,
     itemsTotal: order.itemsTotal,
-    total: order.itemsTotal + shippingCost
+    total: order.itemsTotal + shippingCost,
+    ...(regalo ? { regalo } : {})
   };
 
   // ── 1) EL MAIL PRIMERO ──────────────────────────────────────────────────────

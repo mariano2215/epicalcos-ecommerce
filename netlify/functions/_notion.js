@@ -203,7 +203,7 @@ export async function crearLeadEnCRM({ payer, shipping, items, total, orderId })
  * mismo CRM de pedidos, distinguible por Estado="Lead 10% OFF". No es un
  * pedido: no lleva N° de orden ni monto. Nunca lanza. Devuelve el pageId o null.
  */
-export async function crearLeadNewsletter(email) {
+export async function crearLeadNewsletter(email, origen = 'el popup de 10% OFF (cupón EPICA10)') {
   if (!getToken()) {
     console.warn('[notion] NOTION_TOKEN no configurado — salteando CRM (lead)');
     return null;
@@ -221,7 +221,7 @@ export async function crearLeadNewsletter(email) {
         rich_text: [
           {
             text: {
-              content: `Dejó el mail en el popup de 10% OFF (cupón EPICA10) — ${new Date(fecha).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour12: false })}`,
+              content: `Dejó el mail en ${origen} — ${new Date(fecha).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour12: false })}`,
             },
           },
         ],

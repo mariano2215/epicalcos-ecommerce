@@ -73,6 +73,41 @@ export const POPUP_OFERTA = {
 };
 
 /**
+ * ─── OFERTA DE EPICYBER (spec 037) ────────────────────────────────────────────
+ *
+ * Mientras esté vigente reemplaza al 10 %: EPICA10 no se aplica a los packs Cyber,
+ * así que anunciarlo durante la campaña sería prometer algo que el producto
+ * principal no recibe. El cupón de quien ya lo tiene sigue andando.
+ *
+ * Es otra oferta sobre este mismo popup, como dejó anotado la spec 025. Vence sola
+ * con la campaña (`CYBER_END_MS`) y vuelve el 10 %.
+ *
+ * `disparo` abre a los 3 s y no a los 12 o 15: el pedido es que salga "cuando la
+ * gente ingrese". No baja de ahí a propósito: antes de eso no compite con la carga
+ * de la página. Lo demás (no abrir mientras escribe o agrega algo) es lo de siempre.
+ *
+ * `cooldownCerradoDias`: la campaña dura días, no semanas. Con los 7 del popup
+ * normal, el que lo cierra hoy no lo vuelve a ver hasta que terminó.
+ *
+ * ⚠️ `activo`, `qty`, `tamano` y `minimoCompra` están espejados en `REGALO_CYBER` de
+ * netlify/functions/lib/regaloCyber.js: lo que el popup promete lo cumple el servidor.
+ * El test `regaloCyber.test.js` frena el deploy si se separan.
+ */
+export const POPUP_CYBER = {
+  activo: false,
+  variante: 'cyber_regalo',
+  regalo: { qty: 10, tamano: '4 cm', minimoCompra: 8000 },
+  umbrales: {
+    escritorio: { demoraMs: 3_000, scrollPct: 30 },
+    movil: { demoraMs: 3_000, scrollPct: 50 }
+  },
+  disparo: { ...POPUP_CONFIG, minMsEnPagina: 3_000 },
+  cooldownCerradoDias: 2,
+  /** Además del Home: `/epicyber` es a donde van los anuncios de la campaña. */
+  rutas: ['/', '/epicyber']
+};
+
+/**
  * "¿Qué querés personalizar?" del paso 2.
  *
  * Mate y celular no tienen landing propia (spec 026 P-4): van al catálogo de

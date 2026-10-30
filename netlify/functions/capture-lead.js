@@ -6,7 +6,8 @@
  */
 import { crearLeadNewsletter } from './_notion.js';
 import { notifyCrmLead } from './lib/crmWebhook.js';
-import { sendLeadEmail, sendLeadCouponEmail } from './lib/notify.js';
+import { sendLeadEmail, sendLeadCouponEmail, sendLeadRegaloEmail } from './lib/notify.js';
+import { regaloVigente, registrarRegalo } from './lib/regaloCyber.js';
 
 // Exportado para el test de paridad (popupReglas.test.js): el popup muestra
 // `POPUP_OFERTA.codigo` antes de que responda el servidor, y los dos tienen
@@ -58,6 +59,28 @@ export const handler = async (event) => {
   const email = String(body?.email ?? '').trim().slice(0, 254);
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
     return json(400, { error: 'email_invalid' });
+  }
+
+  // Oferta de EPICYBER (spec 037): se anota el mail y no se entrega cupón. Si venció
+  // con la pestaña abierta, cae al 10 % de abajo: nadie se queda sin nada.
+  if (body?.oferta === 'cyber' && regaloVigente()) {
+    // Va antes que todo y frena: sin este registro, el regalo no se puede reconocer
+    // al comprar, y confirmarlo igual sería prometer algo que no vamos a cumplir.
+    if (!(await registrarRegalo(email))) {
+      return json(503, { error: 'regalo_no_guardado' });
+    }
+    try {
+      await Promise.all([
+        crearLeadNewsletter(email, 'el popup de EPICYBER (pack de regalo)'),
+        notifyCrmLead({ email, context: 'Popup EPICYBER (pack de regalo)' }),
+        sendLeadEmail(email, { regalo: true }),
+        sendLeadRegaloEmail(email)
+      ]);
+    } catch (err) {
+      // El mail ya quedó anotado: lo que falló es un aviso, no el regalo.
+      console.error('[capture-lead] error inesperado (regalo):', err);
+    }
+    return json(200, { ok: true, regalo: true });
   }
 
   try {

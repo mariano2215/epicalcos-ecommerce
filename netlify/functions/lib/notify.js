@@ -31,6 +31,7 @@
  */
 
 import { digitalDeliveries, needsManualDelivery, tieneArchivosDigitales, linkEntrega } from './digital.js';
+import { REGALO_CYBER, rangoCompra } from './regaloCyber.js';
 import { esPedidoVolumen, PRODUCCION_VOLUMEN, PRODUCCION_VOLUMEN_DESDE } from './plazoProduccion.js';
 
 const DEFAULT_TO = 'epicalcos@gmail.com';
@@ -134,6 +135,9 @@ export function buildOrderView(order, payment) {
         ? shipping.cost
         : Number(meta.shipping_cost) || 0,
     comments: shipping.comments || meta.comments || '',
+    // Regalo de EPICYBER (spec 037). Lo que hay que hacer va en `comments`; esto es
+    // para confirmárselo al cliente.
+    regalo: order?.regalo,
     items,
     itemsTotal,
     total: order?.total ?? payment?.transaction_amount,
@@ -540,6 +544,16 @@ function buildCustomerEmailHtml(o) {
       </table>
 
       ${
+        // `verificar` = no se pudo consultar la base: al cliente no se le promete
+        // nada hasta revisarlo a mano (spec 037, RF-17).
+        o.regalo && !o.regalo.verificar
+          ? `<p style="margin:14px 0;padding:12px;background:#fdf2f8;border-left:3px solid #ff1b8d;font-size:14px">
+               🎁 <strong>Tu regalo de EPICYBER va con este pedido:</strong> 1 pack de ${esc(o.regalo.qty)} calcos sorpresa de ${esc(o.regalo.tamano)}.
+             </p>`
+          : ''
+      }
+
+      ${
         pendingTransfer
           ? `<h3 style="margin:18px 0 6px;border-bottom:2px solid #111;padding-bottom:4px">Datos para transferir</h3>
              ${bankTransferHtml()}
@@ -609,7 +623,7 @@ TU PEDIDO
 ${itemsText(o.items)}
 
 ${pendingTransfer ? 'Total a transferir' : 'Total pagado'}: ${money(o.amountPaid ?? o.total)}
-${
+${o.regalo && !o.regalo.verificar ? `\nTu regalo de EPICYBER va con este pedido: 1 pack de ${o.regalo.qty} calcos sorpresa de ${o.regalo.tamano}.\n` : ''}${
   pendingTransfer
     ? `\nDATOS PARA TRANSFERIR\n${bankTransferText()}\n\nCuando hagas la transferencia, enviá el comprobante por WhatsApp al ${CONTACT.whatsappDisplay} para que empecemos a producir tu pedido.\n`
     : ''
@@ -944,8 +958,9 @@ export async function createNotionRow(o) {
  * Notifica internamente (mail a EPICALCOS) que el popup de bienvenida capturó
  * un mail nuevo. No-op si falta RESEND_API_KEY. Nunca lanza.
  * @param {string} email
+ * @param {{ regalo?: boolean }} [opciones] `regalo` = lo dejó en el popup de EPICYBER
  */
-export async function sendLeadEmail(email) {
+export async function sendLeadEmail(email, { regalo = false } = {}) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.log('[notify] RESEND_API_KEY no configurada — se omite el mail de lead.');
@@ -969,9 +984,13 @@ export async function sendLeadEmail(email) {
         from,
         to,
         reply_to: email,
-        subject: `📧 Nuevo lead (popup 10% OFF) — ${email}`,
-        html: `<p>Alguien dejó su mail en el popup de bienvenida.</p><p><strong>Mail:</strong> ${esc(email)}</p><p>Se le mandó el cupón <strong>EPICA10</strong> (si el remitente está verificado en Resend).</p>`,
-        text: `Nuevo lead (popup 10% OFF)\nMail: ${email}\nCupón enviado: EPICA10`
+        subject: `📧 Nuevo lead (${regalo ? 'popup EPICYBER' : 'popup 10% OFF'}) — ${email}`,
+        html: regalo
+          ? `<p>Alguien dejó su mail en el popup de EPICYBER.</p><p><strong>Mail:</strong> ${esc(email)}</p><p>Si compra en fecha, el aviso del pedido te dice que sumes el regalo.</p>`
+          : `<p>Alguien dejó su mail en el popup de bienvenida.</p><p><strong>Mail:</strong> ${esc(email)}</p><p>Se le mandó el cupón <strong>EPICA10</strong> (si el remitente está verificado en Resend).</p>`,
+        text: regalo
+          ? `Nuevo lead (popup EPICYBER)\nMail: ${email}\nSi compra en fecha, el aviso del pedido te dice que sumes el regalo.`
+          : `Nuevo lead (popup 10% OFF)\nMail: ${email}\nCupón enviado: EPICA10`
       })
     });
     if (!res.ok) {
@@ -1030,6 +1049,60 @@ export async function sendLeadCouponEmail(email, code) {
             </div>
           </div>`,
         text: `¡Gracias por sumarte a EPICALCOS!\n\nTu código de 10% OFF: ${code}\n\nUsalo en el checkout de epicalcos.com.`
+      })
+    });
+    if (!res.ok) return { sent: false, reason: `resend_${res.status}` };
+    return { sent: true };
+  } catch (err) {
+    return { sent: false, reason: 'exception', detail: err?.message };
+  }
+}
+
+/**
+ * Le confirma el regalo de EPICYBER a quien dejó el mail en el popup (spec 037).
+ * Mismo requisito de remitente que `sendLeadCouponEmail`. Nunca lanza: el popup ya
+ * le mostró las condiciones en pantalla.
+ * @param {string} email
+ */
+export async function sendLeadRegaloEmail(email) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { sent: false, reason: 'no_api_key' };
+
+  const from = process.env.NOTIFY_EMAIL_FROM || DEFAULT_FROM;
+  if (from.includes('resend.dev')) {
+    return { sent: false, reason: 'unverified_sender' };
+  }
+
+  const { qty, tamano, minimoCompra } = REGALO_CYBER;
+  const fechas = rangoCompra();
+  const regalo = `1 pack de ${qty} calcos sorpresa de ${tamano}`;
+  const condiciones = `Vale para compras ${fechas}, desde ${money(minimoCompra)} en productos, con este mismo mail. Un regalo por mail.`;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: [email],
+        reply_to: CONTACT.email,
+        subject: `🎁 Tu regalo para la EPICYBER WEEK, ${fechas}`,
+        html: `
+          <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:0 auto;color:#111">
+            <div style="background:#111;color:#fff;padding:18px 24px;border-radius:12px 12px 0 0">
+              <h1 style="margin:0;font-size:22px;letter-spacing:1px">EPICALCOS</h1>
+            </div>
+            <div style="padding:24px;border:1px solid #eee;border-top:0;border-radius:0 0 12px 12px">
+              <h2 style="margin:0 0 10px">🎁 Tu regalo ya está reservado</h2>
+              <p style="font-size:14px;color:#444">Comprá en la EPICYBER WEEK con este mail y sumamos a tu pedido <strong>${esc(regalo)}</strong>.</p>
+              <p style="font-size:13px;color:#666">${esc(condiciones)}</p>
+              <p style="font-size:14px;margin-top:18px"><a href="https://epicalcos.com" style="color:#111"><strong>Ir a epicalcos.com</strong></a></p>
+            </div>
+          </div>`,
+        text: `Tu regalo ya está reservado.\n\nComprá en la EPICYBER WEEK con este mail y sumamos a tu pedido ${regalo}.\n\n${condiciones}\n\nhttps://epicalcos.com`
       })
     });
     if (!res.ok) return { sent: false, reason: `resend_${res.status}` };
