@@ -50,7 +50,7 @@
 
 ## Definition of Done
 
-- [x] `npm test` en verde: 906 pasan y 17 se saltean. Simulada prendida y en fecha, solo fallan los 2 tests que dependen de las fechas movidas para simular.
+- [x] `npm test` en verde: 912 pasan y 17 se saltean. Simulada prendida y en fecha, solo fallan los tests que dependen de las fechas movidas para simular, y es a propósito: atan el texto de la barra a la campaña.
 - [x] Build de producción sin errores.
 - [x] Vencimiento en vivo: con una pestaña abierta, sin recargar, $13.990 pasó a $48.000 y la barra volvió a la de siempre.
 - [ ] **Sin verificar:** un pago real de punta a punta. `netlify dev` no corre en esta máquina, así que el camino del servidor está probado contra `validateAndPriceOrder`, no contra Mercado Pago.

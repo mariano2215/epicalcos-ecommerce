@@ -48,7 +48,7 @@
 
 - Con la fórmula de costo, los pedidos de 1 a 3 calcos en 4 cm no cubren el fijo. Sin mínimo desde la spec 023.
 - El popup entrega EPICA10, que no toca los packs (pasa igual con el mayorista hoy).
-- `CLAUDE.md` dice 682 tests: esta rama tiene 923.
+- `CLAUDE.md` dice 682 tests: esta rama tiene 929.
 - Un x10 a $9.990 paga $8.500 de envío al interior: $18.490 en total. La decisión del 11/8/2026 de no tocar tarifas sigue vigente; se anota porque pesa más en esta campaña que en ninguna otra.
 - `pack_units` necesita registrarse como dimensión personalizada en GA4.
 - La rama 034 toca `PackBuilder` y `Mayorista`: habrá conflicto si se mergea después.
