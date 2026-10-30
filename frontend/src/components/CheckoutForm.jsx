@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { leerMailRegalo } from '../lib/popupEstado.js';
 import {
   shippingMethods,
   shipping as shippingCfg,
@@ -58,7 +59,9 @@ function validate(form, digitalOnly = false) {
  * netlify/functions/lib/pricing.js, que además lo re-decide del lado del server).
  */
 export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMethodChange, onEmailValid, submitting, errorMsg, percentBlocked = false, digitalOnly = false, pedidoVolumen = false }) {
-  const [form, setForm] = useState(initial);
+  // Con el mail del popup de EPICYBER: comprar con otro es la forma más fácil de
+  // quedarse sin el regalo (spec 037, RF-9).
+  const [form, setForm] = useState(() => ({ ...initial, email: leerMailRegalo() }));
   const [errors, setErrors] = useState({});
   const shippingMethod = digitalOnly ? 'digital' : form.shippingMethod;
 

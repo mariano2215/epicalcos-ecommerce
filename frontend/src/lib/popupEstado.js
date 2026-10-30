@@ -26,7 +26,17 @@ export const POPUP_SESION_KEY = 'epicalcos.popup.sesion.v1';
 /** Lo que guardaba el popup anterior. Se lee para migrar y NO se borra (ver design §8). */
 export const POPUP_VIEJO_KEY = 'epicalcos.welcomePopup.seen';
 
-const VACIO = { primeraVisitaEn: null, vistoEn: null, cerradoEn: null, convertidoEn: null, compradoEn: null };
+const VACIO = {
+  primeraVisitaEn: null,
+  vistoEn: null,
+  cerradoEn: null,
+  convertidoEn: null,
+  compradoEn: null,
+  // La oferta de EPICYBER (spec 037) tiene memoria propia: ver `puedeAbrirCyber`.
+  cyberVistoEn: null,
+  cyberCerradoEn: null,
+  cyberConvertidoEn: null
+};
 /** Alcanza con 2 para decidir; se guardan unas más por si se sube el umbral. */
 const MAX_PRODUCTOS = 10;
 
@@ -43,7 +53,10 @@ function normalizarEstado(data) {
     vistoEn: ts(data?.vistoEn),
     cerradoEn: ts(data?.cerradoEn),
     convertidoEn: ts(data?.convertidoEn),
-    compradoEn: ts(data?.compradoEn)
+    compradoEn: ts(data?.compradoEn),
+    cyberVistoEn: ts(data?.cyberVistoEn),
+    cyberCerradoEn: ts(data?.cyberCerradoEn),
+    cyberConvertidoEn: ts(data?.cyberConvertidoEn)
   };
 }
 
@@ -187,6 +200,33 @@ export function marcarAutoAbierto() {
 export const registrarVisto = (ahora = Date.now()) => guardarEstado({ vistoEn: ahora });
 export const registrarCerrado = (ahora = Date.now()) => guardarEstado({ cerradoEn: ahora });
 export const registrarConvertido = (ahora = Date.now()) => guardarEstado({ convertidoEn: ahora });
+
+export const registrarVistoCyber = (ahora = Date.now()) => guardarEstado({ cyberVistoEn: ahora });
+export const registrarCerradoCyber = (ahora = Date.now()) => guardarEstado({ cyberCerradoEn: ahora });
+export const registrarConvertidoCyber = (ahora = Date.now()) => guardarEstado({ cyberConvertidoEn: ahora });
+
+/**
+ * El mail del popup, para precargarlo en el checkout (spec 037, RF-9). Comprar con
+ * otro mail es la forma más fácil de quedarse sin el regalo. Queda solo en este
+ * dispositivo: nunca viaja por URL.
+ */
+export const REGALO_MAIL_KEY = 'epicalcos.regaloCyber.mail';
+
+export function guardarMailRegalo(email) {
+  try {
+    localStorage.setItem(REGALO_MAIL_KEY, email);
+  } catch {
+    /* sin storage no se precarga: el regalo igual se reconoce por el mail */
+  }
+}
+
+export function leerMailRegalo() {
+  try {
+    return localStorage.getItem(REGALO_MAIL_KEY) || '';
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Compró. El popup no se vuelve a abrir solo y el acceso "🎁 10% OFF" (el que

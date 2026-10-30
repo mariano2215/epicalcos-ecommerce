@@ -19,9 +19,9 @@ import { leerSesion } from '../../lib/popupEstado.js';
  * alcanza con los 5 s del piso.
  *
  * @param {{ activo: boolean, esMovil: boolean, umbrales: object, drawerOpen: boolean,
- *           itemsCount: number, onDisparo: (disparo: string) => void }} args
+ *           itemsCount: number, onDisparo: (disparo: string) => void, config?: object }} args
  */
-export function usePopupDisparo({ activo, esMovil, umbrales, drawerOpen, itemsCount, onDisparo }) {
+export function usePopupDisparo({ activo, esMovil, umbrales, drawerOpen, itemsCount, onDisparo, config }) {
   // Todo lo que cambia seguido va en refs: si fueran dependencias del efecto,
   // cada cambio desarmaría el intervalo y reiniciaría el piso de 5 s.
   const drawerRef = useRef(drawerOpen);
@@ -113,7 +113,8 @@ export function usePopupDisparo({ activo, esMovil, umbrales, drawerOpen, itemsCo
             busqueda: Boolean(sesion?.busqueda),
             categoria: Boolean(sesion?.categoria)
           },
-          salida
+          salida,
+          ...(config ? { config } : {})
         });
         // Una salida que cae antes del piso de 5 s no queda guardada: se
         // cuenta la próxima vez que el mouse se vaya.

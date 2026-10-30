@@ -24,7 +24,7 @@ import { OCULTO_CON_MENU_MOVIL } from '../MenuPrincipal.jsx';
 const ELEVADO = 'bottom-[calc(6rem+env(safe-area-inset-bottom))]';
 const NORMAL = 'bottom-[calc(1.25rem+env(safe-area-inset-bottom))] sm:bottom-6';
 
-export default function AccesoBeneficio({ tipo, pct, codigo, pathname, onAbrir }) {
+export default function AccesoBeneficio({ tipo, pct, etiqueta, codigo, pathname, onAbrir }) {
   const [abierto, setAbierto] = useState(false);
   const [copia, setCopia] = useState(null);
   const cajaRef = useRef(null);
@@ -64,7 +64,7 @@ export default function AccesoBeneficio({ tipo, pct, codigo, pathname, onAbrir }
           onClick={onAbrir}
           className={`${chip} bg-gradient-to-r from-brand-fuchsia to-brand-orange`}
         >
-          <span aria-hidden="true">🎁</span> {pct}% OFF
+          <span aria-hidden="true">🎁</span> {etiqueta || `${pct}% OFF`}
         </button>
       </div>
     );
