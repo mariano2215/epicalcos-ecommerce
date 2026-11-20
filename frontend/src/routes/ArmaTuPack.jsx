@@ -135,9 +135,11 @@ export default function ArmaTuPack() {
             qty={WHOLESALE_QTY}
             size={promoMayorista ? PROMO_MAYORISTA_100.sizes[1] : DEFAULT_SIZE}
             label={promoMayorista ? 'Promo mayorista' : 'Mayorista'}
+            // Sin "por tiempo limitado": la promo corre sin fecha desde el
+            // 7/9/2026 (ver PROMO_CON_FECHA en OfertaPrincipal.jsx).
             tagline={
               promoMayorista
-                ? 'Cien calcos a precio fijo. Solo en 4 y 6 cm, por tiempo limitado.'
+                ? 'Cien calcos a precio fijo. Solo en 4 y 6 cm.'
                 : 'El mejor precio por calco. Para revender o para tu negocio.'
             }
             to="/mayorista"

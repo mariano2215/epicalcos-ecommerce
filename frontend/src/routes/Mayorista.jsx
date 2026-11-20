@@ -76,7 +76,11 @@ export default function Mayorista() {
           <div className="mt-6 card-glass p-5 md:p-6 border border-brand-fuchsia/30">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="min-w-0">
-                <span className="badge badge-hot mb-2">Promo por tiempo limitado</span>
+                {/* Sin fecha de fin no hay "tiempo limitado" que anunciar: ver
+                    PROMO_CON_FECHA en components/OfertaPrincipal.jsx. */}
+                <span className="badge badge-hot mb-2">
+                  {CON_FECHA ? 'Promo por tiempo limitado' : 'Promo mayorista'}
+                </span>
                 <h2 className="font-display font-extrabold text-2xl md:text-3xl">
                   {PROMO_MAYORISTA_100.qty} calcos a{' '}
                   <span className="gradient-text">{formatPrice(PROMO_MAYORISTA_100.price)}</span>
