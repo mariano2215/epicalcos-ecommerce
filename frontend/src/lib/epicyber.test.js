@@ -460,6 +460,29 @@ describe('EPICYBER — línea y upsell', () => {
     expect(sugerenciaCyber([viejo], packs)).toBeNull();
   });
 
+  it('una línea de la escala armada en /mayorista antes de la campaña ve el pack Cyber de ESA cantidad', () => {
+    const viejo = {
+      id: 'volumen:4cm:vinilo-blanco:500:1',
+      type: 'negocio',
+      size: '4cm',
+      price: 211999,
+      quantity: 1,
+      meta: { qty: 500, origen: 'mayorista', items: [{ id: 'anime-1', name: 'Goku', qty: 500 }], customCount: 0 }
+    };
+    const s = sugerenciaCyber([viejo], packs);
+    expect(s.pack.qty).toBe(500);
+    expect(s.diferencia).toBe(P(500) - 211999);
+    expect(s.semilla).toMatchObject({ size: '4cm', reemplazar: [viejo.id] });
+  });
+
+  it('la escala sin pack de esa cantidad, o del cotizador de /negocio, no se toca: el cotizador trae archivos y razón social', () => {
+    const base = { type: 'negocio', size: '6cm', price: 118999, quantity: 1 };
+    const sinPack = { ...base, id: 'volumen:6cm:vinilo-blanco:250:1', meta: { qty: 250, origen: 'mayorista', customCount: 0 } };
+    expect(sugerenciaCyber([sinPack], packs)).toBeNull();
+    const delCotizador = { ...base, id: 'volumen:6cm:vinilo-blanco:100:1', price: 52999, meta: { qty: 100, origen: 'cotizador', razonSocial: 'Bar' } };
+    expect(sugerenciaCyber([delCotizador], packs)).toBeNull();
+  });
+
   it('sin el x100 aprobado, el pack viejo no recibe ninguna sugerencia', () => {
     const viejo = {
       id: 'pack:mayorista100:6cm:1',

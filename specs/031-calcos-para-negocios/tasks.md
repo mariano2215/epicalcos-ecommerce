@@ -85,6 +85,14 @@ Pedida por Mariano en el chat el 5/10/2026 (ver `requirements.md` §7.15).
 
 ## Fase 2 — Conversión
 
+> **17/10/2026** — hecha en la rama `feat/034-b2b-conversion` a través de la
+> spec [`034`](../034-b2b-cotizador-y-mayorista/requirements.md), **sin
+> publicar**. Desvíos: el presupuesto usa el formulario de `/contacto`
+> precargado (034 D-1) en vez de `/api/presupuesto` (2.10–2.14 no se hacen);
+> sin barra fija móvil (2.17); el botón Cotizar suma "Ver el precio ahora" en
+> vez de ir directo al cotizador (2.19). Las casillas de abajo quedan como
+> estaban: el estado vive en la 034.
+
 ### Motor
 - [ ] **2.0** Confirmar que la **Fase 1 de la spec 032** (escala en el config y en el servidor) está en `main`; si no, **parar**
 - [ ] **2.1** `lib/cotizadorNegocio.js`: `cotizarPedidoNegocio()` (§3.1) sobre `precioVolumen()`
@@ -127,6 +135,11 @@ Pedida por Mariano en el chat el 5/10/2026 (ver `requirements.md` §7.15).
 
 ## Fase 3 — B2B completo y Home
 
+> **17/10/2026** — `/negocio` completa (sin galería ni recurrentes: faltan
+> fotos y N-4), `/mayorista` con pedidos grandes y `HomeB2B` con `home_b2b`
+> apagado, en la misma rama de la spec 034. La 030 sigue sin cerrar: el Home
+> B2B no toca `index.css` ni `Reveal.jsx`.
+
 - [ ] **3.0** Confirmar que la spec 030 está cerrada y su WIP commiteado; si no, **parar**
 - [ ] **3.1** `UsosNegocio.jsx`, `Materiales.jsx` (desde `MATERIALES`; holográfico: packs de 100 en 4 y 6 cm), `PreguntasNegocio.jsx` (solo `publicar: true`, JSON-LD con esas mismas), `GaleriaNegocios.jsx` (no monta sin fotos), `Recurrentes.jsx` (solo con N-4), `trackFaqOpen`
 - [ ] **3.2** `/negocio` completa en el orden de RF-NE1
@@ -142,6 +155,9 @@ Pedida por Mariano en el chat el 5/10/2026 (ver `requirements.md` §7.15).
 ---
 
 ## Fase 4 — SEO
+
+> **17/10/2026** — 4.1 (prerender de `/negocio` y `/mayorista`) y 4.2 (alias
+> 301) hechos en la rama de la spec 034. 4.3 (packaging) y 4.4 sin empezar.
 
 - [ ] **4.1** `lib/negociosEstatico.js` + `scripts/prerender.mjs` genera `negocio.html` y `mayorista.html` (patrón `.html`, no carpeta) + tests en `prerender.test.js`
   - *Verificación*: `curl -s https://epicalcos.com/negocio | grep -o '<title>[^<]*'` devuelve el título de `/negocio`, no el del Home

@@ -2,6 +2,8 @@
  * En producción (Netlify) usa ruta relativa: /api/create-preference → Netlify Function.
  * En dev local podés setear VITE_API_URL=http://localhost:3001 para apuntar al backend Express.
  */
+import { fbcGuardado } from '../lib/atribucion.js';
+
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 function getCookie(name) {
@@ -14,6 +16,11 @@ function getCookie(name) {
  * Cookies del píxel de Meta para la API de conversiones (el webhook de MP manda
  * el Purchase server-side con estas señales). Si no hay cookie _fbc pero la URL
  * trae fbclid (click reciente en un anuncio), la armamos con el formato de Meta.
+ *
+ * Y si tampoco está en la URL —lo normal: el `fbclid` viene en la página a la
+ * que llegó el anuncio, no en el checkout—, con el que se guardó al llegar
+ * (lib/atribucion.js, spec 034). Antes de eso, una compra con el Píxel caído
+ * viajaba a la API de conversiones sin ningún rastro del anuncio.
  */
 function metaTracking() {
   const fbp = getCookie('_fbp');
@@ -22,6 +29,7 @@ function metaTracking() {
     const fbclid = new URLSearchParams(window.location.search).get('fbclid');
     if (fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
   }
+  if (!fbc) fbc = fbcGuardado();
   const tracking = {};
   if (fbp) tracking.fbp = fbp;
   if (fbc) tracking.fbc = fbc;

@@ -1,7 +1,19 @@
 import { useState } from 'react';
 import { shipping, devoluciones } from '../config/site.js';
 import { formatPrice } from '../lib/formato.js';
-import { TRANSFER_PCT } from '../config/pricing.js';
+import { TRANSFER_PCT, ESCALA_MIN, ESCALA_MAX, ESCALA_ESCALONES, filaEscala, pctEscalon, NEGOCIO } from '../config/pricing.js';
+
+/**
+ * La escala por volumen en una frase (spec 034, RF-19): "con 250 un 10%, con
+ * 500 un 20% y con 1.000 un 30%". Leída de la tabla aprobada (spec 032): si un
+ * escalón cambia, cambia la respuesta. Directo de `pricing.js` y no de
+ * `lib/cotizadorNegocio.js`: este FAQ va en el chunk del Home.
+ */
+const ESCALA_FRASE = ESCALA_ESCALONES.map((q) => [q, pctEscalon(filaEscala(NEGOCIO.size), q)])
+  .filter(([, pct]) => pct > 0)
+  .map(([q, pct]) => `con ${q.toLocaleString('es-AR')} un ${pct}%`)
+  .join(', ')
+  .replace(/, ([^,]*)$/, ' y $1');
 
 const faqs = [
   {
@@ -72,7 +84,10 @@ const faqs = [
   {
     tag: 'personalizados',
     q: '¿Qué pasa si mi archivo tiene mala calidad?',
-    a: 'No lo imprimimos. Miramos cada diseño antes de producir y, si la resolución no da o hay algo raro con el corte, te escribimos por WhatsApp para resolverlo antes de que se imprima nada. No hace falta que nos mandes el archivo perfecto.'
+    // Sin la última frase que tenía ("No hace falta que nos mandes el archivo
+    // perfecto"): Mariano la sacó el 15/8 y la prohibió el 14/9/2026 —siembra la
+    // duda justo al subir— y había quedado acá (spec 034, RF-16).
+    a: 'No lo imprimimos. Miramos cada diseño antes de producir y, si la resolución no da o hay algo raro con el corte, te escribimos por WhatsApp para resolverlo antes de que se imprima nada.'
   },
   {
     tag: 'personalizados',
@@ -122,12 +137,16 @@ const faqs = [
   {
     tag: 'mayorista',
     q: '¿Cuál es el pedido mínimo para mayorista?',
-    a: 'El Pack Mayorista parte de 100 calcos con 50% de descuento. Para pedidos más grandes o negocio personalizado, cotizamos por WhatsApp sin compromiso.'
+    // Hasta la spec 034 decía "parte de 100 calcos con 50% de descuento": desde
+    // que /mayorista cobra con la escala (spec 032), el precio sale de ahí.
+    a: `Por mayor, desde ${ESCALA_MIN} calcos, y mientras más cantidad, menos pagás por calco: ${ESCALA_FRASE} menos que con ${ESCALA_MIN}. Para más de ${ESCALA_MAX.toLocaleString('es-AR')}, te armamos un presupuesto.`
   },
   {
     tag: 'mayorista',
     q: '¿Aceptan archivo con mi logo en cualquier formato?',
-    a: 'Sí. Aceptamos PNG, JPG, SVG, AI y PDF. Si el archivo tiene fondo transparente, mejor. Si no, te ayudamos a adaptarlo antes de producir.'
+    // "Si no, te ayudamos a adaptarlo" prometía un servicio que Mariano no
+    // confirmó (BUSINESS-TODOS N-5): queda la política publicada (spec 034, RF-18).
+    a: 'Sí. Aceptamos PNG, JPG, SVG, AI y PDF. Si el archivo tiene fondo transparente, mejor. Antes de producir revisamos cada archivo y, si hay algo para ajustar, te escribimos por WhatsApp.'
   },
   {
     tag: 'mayorista',
@@ -136,8 +155,11 @@ const faqs = [
   },
   {
     tag: 'mayorista',
-    q: '¿Hacen descuento por recompra para negocios?',
-    a: 'Sí, los clientes que repiten pedido tienen condiciones especiales. Hablanos por WhatsApp y te armamos una propuesta a medida.'
+    // Era "¿Hacen descuento por recompra?" → "Sí, condiciones especiales": un
+    // beneficio que Mariano todavía no definió (BUSINESS-TODOS N-4). Lo que sí
+    // existe y se puede prometer es la escala (spec 034, RF-17).
+    q: '¿Hay descuento por cantidad?',
+    a: `Sí: desde ${ESCALA_MIN} calcos, mientras más pedís, menos pagás por calco (${ESCALA_FRASE} menos). Si pedís seguido, escribinos por WhatsApp.`
   }
 ];
 

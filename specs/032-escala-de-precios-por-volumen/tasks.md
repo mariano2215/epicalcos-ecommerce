@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | `032-escala-de-precios-por-volumen` |
 | **Design** | [`design.md`](design.md) |
-| **Estado** | `EN CURSO` — Fase 1 publicada el 05/10/2026; Fase 2 sin empezar |
+| **Estado** | `EN CURSO` — Fase 1 publicada el 05/10/2026; Fase 2 (2.1, 2.2, 2.4 y la 1.7 pendiente) hecha el 17/10/2026 en la rama `feat/034-b2b-conversion`, **sin publicar**; 2.3 (configurador) sin empezar |
 
 ---
 
@@ -28,17 +28,17 @@ ajeno queda sin publicar.
   - *Verificación*: cambiar un monto en un solo lado hace fallar la suite
 - [x] **1.5** `lib/precioVigente.js` re-precia `volumen:` + test
 - [x] **1.6** Suite completa en verde, con las 4 combinaciones de interruptores 3x2/2x1 (memoria de precios)
-- [ ] **1.7** `docs/business-rules.md`: sección de la escala + fila en la tabla del espejo (§8)
+- [x] **1.7** `docs/business-rules.md`: sección de la escala + fila en la tabla del espejo (§8)
 - [ ] **1.8** Commit + push
 
 ## Fase 2 — Caminos que la usan
 
-- [ ] **2.1** Cotizador de la spec 031 (su Fase 2) emite `volumen:`
-- [ ] **2.2** `PackBuilder`: con 100+ emite `volumen:` con los diseños del catálogo en `meta.items`; en `/mayorista` sin opción de 9 cm
+- [x] **2.1** Cotizador de la spec 031 (su Fase 2) emite `volumen:`
+- [x] **2.2** `PackBuilder`: con 100+ emite `volumen:` con los diseños del catálogo en `meta.items`; en `/mayorista` sin opción de 9 cm
   - *Verificación*: 250 calcos de 6 cm en `/mayorista` cobran lo mismo que en el cotizador ($118.999); el selector de tamaño de `/mayorista` no muestra 9 cm
 - [ ] **2.3** Configurador: 100+ unidades en 4 o 6 cm (uno o varios diseños) → `volumen:`; en 9 cm sigue suelta con la sugerencia de 4 o 6 cm (coordinado con la spec 023)
   - *Verificación*: 3 diseños × 100 en 6 cm ya no se cotizan como sueltas
-- [ ] **2.4** `resumenPedido.js`: rótulo de la línea + test
+- [x] **2.4** `resumenPedido.js`: rótulo de la línea + test
 - [ ] **2.5** Validar contra `acceptance.md` · commit + push
 
 ## Hallazgos fuera de scope

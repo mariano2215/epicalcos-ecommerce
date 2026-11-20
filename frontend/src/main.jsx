@@ -5,7 +5,13 @@ import './lib/cyberPreview.js'; // antes que App: ver el comentario del módulo
 import App from './App.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import { getStoredAdvancedMatching } from './lib/advancedMatching.js';
+import { capturarAtribucion } from './lib/atribucion.js';
 import './styles/index.css';
+
+// De qué anuncio vino la visita, antes de que el router cambie la URL: el
+// `fbclid` llega en la página de entrada y el checkout está tres páginas
+// después (spec 034). Nunca tira: si no hay storage, no guarda nada.
+capturarAtribucion(window.location.search);
 
 // ─── Analytics bootstrap (solo si hay IDs en .env) ───────────────────────────
 const GTM_ID = import.meta.env.VITE_GTM_ID;

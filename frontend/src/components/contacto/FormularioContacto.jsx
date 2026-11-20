@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { provinces, contact } from '../../config/site.js';
 import { validarConsulta, TOPES, CONSULTA_COTIZAR } from '../../lib/contacto.js';
+import { leerConsultaCotizar } from '../../lib/cotizadorNegocio.js';
 import { trackLeadCapture, trackContactoFormError, trackWhatsappClick } from '../../lib/analytics.js';
 import { whatsappHref } from './CardWhatsapp.jsx';
 
@@ -35,7 +36,14 @@ export default function FormularioContacto() {
   // Llegó desde "Dejar mis datos" del botón Cotizar: la consulta viene armada.
   const [params] = useSearchParams();
   const motivo = params.get('motivo') === 'cotizar' ? 'cotizar' : null;
-  const [form, setForm] = useState(() => (motivo ? { ...INICIAL, consulta: CONSULTA_COTIZAR } : INICIAL));
+  // Si viene del cotizador ("Pedir presupuesto", spec 034), la consulta trae la
+  // configuración que eligió —cantidad, tamaño, material, diseños— y no la
+  // plantilla vacía: Mariano puede contestar con un precio en el primer mensaje.
+  // Se lee una vez, en el inicializador; sin storage, cae a la plantilla.
+  const [delCotizador] = useState(() => (motivo ? leerConsultaCotizar() : null));
+  const [form, setForm] = useState(() =>
+    motivo ? { ...INICIAL, consulta: delCotizador || CONSULTA_COTIZAR } : INICIAL
+  );
   const [errores, setErrores] = useState({});
   const [estado, setEstado] = useState('idle'); // idle | enviando | ok | error
 
@@ -92,7 +100,7 @@ export default function FormularioContacto() {
         throw new Error(`http_${res.status}`);
       }
       setEstado('ok');
-      trackLeadCapture('contacto_form', motivo ? { motivo } : {});
+      trackLeadCapture('contacto_form', motivo ? { motivo, ...(delCotizador ? { origen: 'cotizador' } : {}) } : {});
     } catch (err) {
       setEstado('error');
       // 'red' si el fetch ni salió; 'servidor' si contestó mal.

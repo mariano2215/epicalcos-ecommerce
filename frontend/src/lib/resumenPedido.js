@@ -57,7 +57,7 @@ export function groupCustomItems(items) {
 export function groupPackItems(items) {
   const grupos = new Map();
   for (const it of items) {
-    if (it.type !== 'negocio' || !it.meta?.material) continue;
+    if (it.type !== 'negocio' || !it.meta?.material || esLineaEscala(it)) continue;
     const m = it.meta;
     const files = m.archivos || [];
     const key = [m.materialLabel, m.tamanoLabel, m.corteLabel, m.instrucciones || '', ...files.map((f) => f.url || f.nombre)].join('|');
@@ -73,6 +73,42 @@ export function groupPackItems(items) {
     grupos.set(key, grupo);
   }
   return [...grupos.values()];
+}
+
+/**
+ * ¿Es una línea de la escala por volumen (spec 032)? Va por el id y no por
+ * `meta`: es el dato que también ve el servidor, y una línea de escala NUNCA
+ * puede caer en `groupPackItems` — saldría como un pack del configurador, con
+ * el tamaño y el corte en `undefined`.
+ */
+const esLineaEscala = (it) => String(it?.id || '').startsWith('volumen:');
+
+/**
+ * La línea de la escala en la nota (spec 034): escalón, tamaño, material, el
+ * negocio con su CUIT, los diseños con su reparto y los links. Desde el armador
+ * de /mayorista, además, los diseños del catálogo — sin eso el taller no sabe
+ * qué imprimir.
+ */
+function notaEscala(it) {
+  const m = it.meta || {};
+  const e = m.escala || {};
+  const cabeza = [`Escala ${m.qty}u`, e.tamanoLabel, e.materialLabel].filter(Boolean).join(' ');
+  const partes = [m.origen === 'mayorista' ? `${cabeza} (armado en /mayorista)` : cabeza];
+  if (m.razonSocial) partes.push(`Negocio "${m.razonSocial}"${m.cuit ? ` (CUIT ${m.cuit})` : ''}`);
+  if (m.items?.length) {
+    const catalogo = m.items.map((d) => `${d.name} x${d.qty}`).join(', ');
+    partes.push(`${catalogo}${m.customCount ? ` + ${m.customCount} diseño(s) propio(s)` : ''}`);
+  } else if (m.customCount) {
+    partes.push(`${m.customCount} diseño(s) propio(s)`);
+  }
+  if (m.disenos) {
+    const reparto = m.disenos > 1 && !m.indicaciones ? ', reparto a coordinar por WhatsApp' : '';
+    partes.push(`${m.disenos > 1 ? `${m.disenos} diseños` : '1 diseño'}${reparto}`);
+  }
+  if (m.indicaciones) partes.push(`indicaciones: ${m.indicaciones}`);
+  const files = m.archivos || [];
+  if (files.length || !m.items?.length) partes.push(disenosLabel(files.map((f) => ({ nombre: f.nombre, url: f.url || null }))));
+  return partes.join(' | ');
 }
 
 /** Los diseños de un grupo, para la nota: links de Cloudinary o nombres + WhatsApp. */
@@ -110,7 +146,9 @@ export function buildDesignSummary(items) {
   }
 
   for (const it of items) {
-    if (it.type === 'pack' && it.meta) {
+    if (esLineaEscala(it)) {
+      parts.push(notaEscala(it));
+    } else if (it.type === 'pack' && it.meta) {
       const designs = (it.meta.items || []).map((d) => `${d.name} x${d.qty}`).join(', ');
       const custom = it.meta.customCount ? ` + ${it.meta.customCount} diseño(s) propio(s)` : '';
       const files = it.meta.archivos || [];
@@ -183,6 +221,13 @@ export function especificacionDisenos(items) {
     });
   }
   for (const it of items) {
+    if (esLineaEscala(it)) {
+      // `quantity` es 1 (un pedido por línea): lo que el cliente compró son las calcos de `meta.qty`.
+      if (it.meta?.archivos?.length) {
+        spec.push({ tipo: 'fixed', nombre: it.name, cantidad: it.meta.qty, archivos: archivosSpec(it.meta.archivos) });
+      }
+      continue;
+    }
     if (it.type === 'negocio' && it.meta?.material) continue; // ya va arriba
     if ((it.type === 'fixed' || it.type === 'negocio') && it.meta?.archivos?.length) {
       spec.push({ tipo: 'fixed', nombre: it.name, cantidad: it.quantity, archivos: archivosSpec(it.meta.archivos) });

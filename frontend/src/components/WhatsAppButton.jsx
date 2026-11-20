@@ -1,11 +1,15 @@
 import { useLocation } from 'react-router-dom';
-import { contact } from '../config/site.js';
 import { trackWhatsappClick } from '../lib/analytics.js';
+import { hrefWhatsapp, mensajeWhatsapp } from '../lib/whatsapp.js';
 import { OCULTO_CON_MENU_MOVIL } from './MenuPrincipal.jsx';
 
 /**
  * Botón flotante de WhatsApp, presente en todas las páginas.
  * Usa el mismo número/enlace que la sección Contacto (contact.whatsappUrl).
+ *
+ * En /negocio y /mayorista sale con un mensaje precargado (spec 031 RF-W2,
+ * spec 034): Mariano sabe desde el primer mensaje que es un pedido por
+ * cantidad. En el resto, el chat vacío de siempre (`mensajeWhatsapp`).
  *
  * z-40: por encima del contenido, pero por debajo del CartDrawer (z-50) y el
  * WelcomePopup (z-60) — esos overlays lo tapan solos cuando están abiertos.
@@ -34,7 +38,7 @@ export default function WhatsAppButton() {
 
   return (
     <a
-      href={contact.whatsappUrl}
+      href={hrefWhatsapp(mensajeWhatsapp(pathname))}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escribinos por WhatsApp"

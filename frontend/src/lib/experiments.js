@@ -151,6 +151,28 @@ export const EXPERIMENTS = {
     active: false,
     variants: ['b_12s', 'a_8s', 'c_scroll'],
     descripcion: 'Popup: 12 s (control) vs 8 s vs solo scroll/intención'
+  },
+
+  /**
+   * Spec 031 Fase 3 / spec 034 — ¿el Home que le habla primero a los negocios
+   * vende más que el selector POR MENOR / POR MAYOR?
+   * Hipótesis: el tráfico de anuncios B2B compra más si el Home abre con el
+   * precio de un pedido de negocio y el cotizador, sin que el B2C pierda
+   * (la tienda queda a un click).
+   * KPI: FACTURACIÓN POR SESIÓN (no clicks). Secundarios: generate_lead
+   * (motivo cotizar), add_to_cart de líneas de escala, compras B2C.
+   * Lectura: 14 días mínimo. Si la variante B2B no pierde facturación y suma
+   * leads, se deja; si pierde, se apaga y el B2B sigue viviendo en /negocio.
+   *
+   * ⚠️ APAGADO: lo prende Mariano, en un commit propio y anotando la fecha en
+   * docs/CRO-EXPERIMENTS.md. Mientras tanto se puede VER con
+   * `?exp_home_b2b=b2b` gracias a `previsualizable` (ver `getVariant`).
+   */
+  home_b2b: {
+    active: false,
+    previsualizable: true,
+    variants: ['control', 'b2b'],
+    descripcion: 'Home: selector por menor/por mayor (control) vs Home B2B con cotizador'
   }
 };
 
@@ -212,7 +234,7 @@ function visitorId() {
 export function getVariant(id) {
   const exp = EXPERIMENTS[id];
   if (!exp) return null;
-  if (!exp.active) return exp.variants[0]; // kill switch → todos a control
+  if (!exp.active) return exp.previsualizable ? variantePrevisualizada(id, exp) : exp.variants[0]; // kill switch → todos a control
 
   if (typeof window === 'undefined') return exp.variants[0];
 
@@ -240,6 +262,26 @@ export function getVariant(id) {
 }
 
 /**
+ * Un experimento APAGADO pero `previsualizable` (spec 034): el override por URL
+ * muestra la variante en ESTA carga y nada más. No se guarda —al volver sin el
+ * parámetro se ve el control— y no se cuenta como exposición (`useExperiment`).
+ *
+ * Existe para poder revisar una variante entera antes de prenderla con tráfico
+ * real. Los experimentos sin `previsualizable` conservan el kill switch duro de
+ * siempre (con `active: false` ni el override los mueve: ver `hero_cta`).
+ */
+function variantePrevisualizada(id, exp) {
+  if (typeof window === 'undefined') return exp.variants[0];
+  try {
+    const forzada = new URLSearchParams(window.location.search).get(`exp_${id}`);
+    if (forzada && exp.variants.includes(forzada)) return forzada;
+  } catch {
+    /* ignore */
+  }
+  return exp.variants[0];
+}
+
+/**
  * Experimentos ya reportados en esta carga de página. La exposición es "esta
  * persona vio el experimento", NO "montó un componente": `/armar-pack` renderiza
  * cuatro `PackCard`, y sin esta guarda el denominador del test quedaría
@@ -259,7 +301,9 @@ export function useExperiment(id) {
   const [variant] = useState(() => getVariant(id));
 
   useEffect(() => {
-    if (!variant || reportados.has(id)) return;
+    // Apagado no hay test: una vista previa por URL no es una exposición, y
+    // contarla ensuciaría la línea de base del día que se prenda (spec 034).
+    if (!variant || reportados.has(id) || !EXPERIMENTS[id]?.active) return;
     reportados.add(id);
     trackExperimentView({ id, variant });
   }, [id, variant]);
