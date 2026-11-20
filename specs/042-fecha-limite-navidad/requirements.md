@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Spec** | `042-fecha-limite-navidad` |
-| **Estado** | `READY FOR REVIEW` — ⛔ **no autoriza la implementación** |
+| **Estado** | `DONE` — implementada el 20/11/2026 a pedido de Mariano ("Implementá la 042") |
 | **Fecha** | 20/11/2026 |
 | **Autor** | Claude, a partir del Plan de conversión del 20/11/2026 |
 
@@ -105,11 +105,14 @@ de la fecha publicada.
 
 ## 12. Preguntas abiertas
 
-- [ ] **P-1** ¿Confirmás las cinco fechas de RF-1? ¿Las confirmaste con el
-      correo para diciembre?
-- [ ] **P-2** ¿El 7/12/2026 trabaja el taller y trabaja el correo? (figura como
-      día no laborable con fines turísticos; confirmar).
-- [ ] **P-3** ¿Hasta qué día se puede retirar en Rosario antes de Navidad?
+- [x] **P-1** ¿Confirmás las cinco fechas de RF-1? → **Sí, tal cual** (Mariano,
+      20/11/2026). La confirmación con el correo queda de su lado: si el correo
+      pide más margen, se adelantan en `NAVIDAD_2026`.
+- [x] **P-2** ¿El 7/12/2026 trabaja el taller? → **No produce** (Mariano,
+      20/11/2026). Las fechas ya no lo contaban.
+- [x] **P-3** ¿Hasta qué día se puede retirar en Rosario? → **18/12**, incluido
+      en las fechas aprobadas en P-1. Para 100+ el retiro comparte fecha con el
+      envío en Rosario (14/12).
 
 > Nota: el Plan de conversión del 20/11/2026 decía 9/12 (interior) y 15/12
 > (Rosario) porque sumó la producción dos veces. Esas fechas eran más tempranas,

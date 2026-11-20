@@ -4,6 +4,7 @@
  */
 import { formatPrice } from '../lib/formato.js';
 import { TRANSFER_OFF, esCategoriaEn2x1, NEGOCIO } from './pricing.js';
+import { fraseNavidad } from '../lib/navidad.js';
 
 export const site = {
   name: 'EPICALCOS',
@@ -88,6 +89,40 @@ export const shipping = {
    */
   produccionVolumen: '3 a 5 días hábiles',
   produccionVolumenDesde: 100
+};
+
+/**
+ * ─── NAVIDAD 2026: HASTA CUÁNDO SE PUEDE PEDIR (spec 042) ────────────────────
+ * Último día para pedir y recibir antes del 24/12, por zona. Corte a las 23:59
+ * de Argentina. Pasada cada fecha, el aviso de esa zona desaparece solo (tira,
+ * ficha y checkout); pasadas todas, no queda nada que apagar.
+ *
+ * Cómo se calcularon (Mariano las confirmó el 20/11/2026): días hábiles hacia
+ * atrás desde el miércoles 23/12, sin sábados ni domingos, sin el feriado del
+ * 8/12 y sin el 7/12 (día no laborable, el taller no produce).
+ * - interior: `deliveryInterior` (7 días, ya incluye la producción) + 2 de margen
+ * - rosario:  `deliveryRosario` (3 días) + 1 de margen
+ * - retiro:   3 días de producción, sin margen
+ * - volumen (100+): 5 de producción + ~4 de correo + 2 al interior; 5 + 1 + 1 en Rosario
+ *
+ * ⚠️ Una fecha publicada se puede ADELANTAR si el taller no llega, nunca
+ * atrasar: es una promesa a quien compra un regalo. Las funciones están en
+ * lib/navidad.js (testeadas en navidad.test.js).
+ */
+export const NAVIDAD_2026 = {
+  /** Interruptor: con `false` no hay aviso de Navidad en ningún lado. */
+  activa: true,
+  limites: {
+    interior: '2026-12-10T23:59:59-03:00',
+    rosario: '2026-12-17T23:59:59-03:00',
+    retiro: '2026-12-18T23:59:59-03:00'
+  },
+  /** Pedidos de `shipping.produccionVolumenDesde` calcos o más. */
+  limitesVolumen: {
+    interior: '2026-12-04T23:59:59-03:00',
+    rosario: '2026-12-14T23:59:59-03:00',
+    retiro: '2026-12-14T23:59:59-03:00'
+  }
 };
 
 /** Provincias y jurisdicciones de Argentina (orden alfabético) para el select del checkout. */
@@ -287,7 +322,11 @@ export function anunciosVigentes(now = Date.now(), { negocio = false } = {}) {
       `y desde ${formatPrice(shipping.freeShippingThresholdNational)} al resto del país`,
     esCategoriaEn2x1('argentina', now) && '🇦🇷 2x1 en calcos de Argentina',
     `🔄 ${devoluciones.dias} días de garantía y devolución`,
-    `💸 ${TRANSFER_OFF}, en cualquier compra`
+    `💸 ${TRANSFER_OFF}, en cualquier compra`,
+    // Spec 042. Va última: las fijas se leen primero y esta se va sola el 18/12.
+    // Con el 2x1 apagado la tira tiene 3 frases y la duración de la animación
+    // está pensada para 4 (ver `.anuncio-ticker__pista`): sumarla no la acelera.
+    fraseNavidad(now, NAVIDAD_2026)
   ].filter(Boolean);
 }
 

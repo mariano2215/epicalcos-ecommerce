@@ -579,6 +579,26 @@ umbral"*, con el caso de Buenos Aires como test de regresión.
   (`lib/plazoProduccion.js`): sueltas y personalizadas por unidad, Negocio y el
   pack x100 de a 100, la escala por la cantidad de su id; fijos y digitales no
   cuentan.
+- ⚠️ **La entrega ya incluye la producción**: "Rosario 2 a 3" y "interior 5 a 7"
+  son el total hasta la puerta. No se les suma la producción (el Plan de
+  conversión del 20/11/2026 lo hizo y dio fechas de Navidad más tempranas de lo
+  necesario).
+
+### Fecha límite de Navidad 2026 (spec 042) — ✅ VIVA hasta el 18/12/2026
+Último día para pedir y recibir antes del 24/12, confirmado por Mariano el
+20/11/2026 (`NAVIDAD_2026` en `config/site.js`, corte 23:59 de Argentina):
+
+| Destino | Pedidos comunes | 100 calcos o más |
+|---|---|---|
+| Interior | 10/12 | 4/12 |
+| Envío en Rosario (y ciudades próximas) | 17/12 | 14/12 |
+| Retiro en Rosario | 18/12 | 14/12 |
+
+Días hábiles hacia atrás desde el 23/12, sin el feriado del 8/12 ni el 7/12 (el
+taller no produce). Se ve en la tira de anuncios, la ficha, el carrito y el
+checkout (la de la zona elegida), y cada una desaparece sola al vencer. No
+habilita ningún descuento y no toca el mail de confirmación. Una fecha publicada
+se puede adelantar, nunca atrasar.
 
 ### Vista previa (MUESTRA GRATIS) — pedidos de 100+
 Desde el 5/10/2026 (spec 031, Mariano): con 100 calcos o más se manda una

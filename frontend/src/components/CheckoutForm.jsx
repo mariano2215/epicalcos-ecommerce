@@ -9,6 +9,8 @@ import {
   contact
 } from '../config/site.js';
 import { TRANSFER_PCT } from '../config/pricing.js';
+import AvisoNavidad from './AvisoNavidad.jsx';
+import { zonaNavidad } from '../lib/navidad.js';
 
 const paymentMethods = [
   { value: 'mercadopago', label: 'Mercado Pago', icon: '💳', blurb: 'Tarjetas, dinero en cuenta, Rapipago o Pago Fácil.' },
@@ -191,6 +193,7 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
           📍 El retiro es en la zona de <strong className="text-white">{shippingCfg.pickupZone}</strong>.
           Si no podés acercarte hasta ahí, elegí una opción de envío.
           <span className="block mt-1 text-white/60">{shippingCfg.pickupLabel}. Te contactamos al teléfono que dejes acá.</span>
+          <AvisoNavidad zona="retiro" volumen={pedidoVolumen} className="mt-1.5" />
         </div>
       )}
 
@@ -263,6 +266,10 @@ export default function CheckoutForm({ onSubmit, onShippingChange, onPaymentMeth
               {zone === 'interior' && ' (incluye el correo)'}
             </p>
           )}
+          {/* Spec 042: la fecha de ESTA zona y ESTE tamaño de pedido. Con la
+              ciudad todavía en blanco cae en interior (`shippingZone`), que es
+              la fecha más temprana: nunca promete de más. */}
+          <AvisoNavidad zona={zonaNavidad(zone, form.shippingMethod)} volumen={pedidoVolumen} />
         </>
       )}
 

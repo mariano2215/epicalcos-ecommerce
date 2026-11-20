@@ -8,6 +8,7 @@ import {
   freeShippingThresholdFor
 } from '../config/site.js';
 import { trackShippingCalculated } from '../lib/analytics.js';
+import { FechasNavidad } from './AvisoNavidad.jsx';
 
 /**
  * Plazos y costos de envío, disponibles ANTES del checkout.
@@ -91,6 +92,8 @@ export default function ShippingInfo({
             )}
           </dd>
         </div>
+        {/* Spec 042: hasta cuándo se pide para Navidad. Se va sola el 18/12. */}
+        <FilaNavidad volumen={pedidoVolumen} />
         <div className="flex gap-3">
           <dt className="text-white/50 shrink-0 w-24">🎁 Envío gratis</dt>
           <dd className="text-white/80">
@@ -173,6 +176,18 @@ export default function ShippingInfo({
           </p>
         </form>
       )}
+    </div>
+  );
+}
+
+/** Fila "🎄 Navidad": no ocupa lugar cuando ya no hay fecha vigente. */
+function FilaNavidad({ volumen }) {
+  const texto = FechasNavidad({ volumen });
+  if (!texto) return null;
+  return (
+    <div className="flex gap-3">
+      <dt className="text-white/50 shrink-0 w-24">🎄 Navidad</dt>
+      <dd className="text-white/80">{texto}</dd>
     </div>
   );
 }
