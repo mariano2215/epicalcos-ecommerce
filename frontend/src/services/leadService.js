@@ -7,8 +7,11 @@ const API_URL = import.meta.env.VITE_API_URL || '';
  * muestre el error y deje reintentar en vez de quedarse "Activando…" para
  * siempre con la red del celular colgada. El error lleva `status` (el HTTP, o
  * 0 si no hubo respuesta): el popup distingue el 400 de mail inválido del resto.
+ *
+ * `oferta: 'cyber'` (spec 037): el servidor anota el mail para el regalo y responde
+ * `{ regalo: true }` en vez de un código.
  */
-export async function captureLead(email, { timeoutMs } = {}) {
+export async function captureLead(email, { timeoutMs, oferta } = {}) {
   const ctrl = timeoutMs && typeof AbortController !== 'undefined' ? new AbortController() : null;
   const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
 
@@ -18,7 +21,7 @@ export async function captureLead(email, { timeoutMs } = {}) {
       res = await fetch(`${API_URL}/api/capture-lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify(oferta ? { email, oferta } : { email }),
         signal: ctrl?.signal
       });
     } catch (err) {

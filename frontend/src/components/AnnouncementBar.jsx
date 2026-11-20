@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { anunciosVigentes } from '../config/site.js';
 
 /**
@@ -25,10 +26,12 @@ import { anunciosVigentes } from '../config/site.js';
  *   pantalla lea cada mensaje UNA vez.
  * - Sin `aria-live`. La barra anterior lo tenía porque rotaba; esta no cambia de
  *   contenido, se mueve, y con `aria-live` se leería en loop.
- * - Se frena con el mouse encima. En el celular no hay cómo frenarla (WCAG 2.2.2
- *   lo pide para lo que se mueve más de 5 s): es el mismo compromiso que ya tomó
- *   el ticker de marcas. Con `prefers-reduced-motion` se entrega quieta, con
- *   todos los mensajes a la vista y sin la copia.
+ * - Se frena con el mouse encima, al recibir foco con el teclado y, en el
+ *   celular, con un toque (otro toque la suelta). WCAG 2.2.2 pide poder frenar
+ *   lo que se mueve más de 5 s; hasta el 20/11/2026 en el celular no había cómo.
+ *   Es un toggle sobre la tira y no un botón de pausa aparte: un blanco de 44 px
+ *   agrandaba el header en todas las páginas. Con `prefers-reduced-motion` se
+ *   entrega quieta, con todos los mensajes a la vista y sin la copia.
  * - Los mensajes son texto, no links: un blanco táctil que se mueve no se puede
  *   acertar en el celular. La política de cambios ya está enlazada desde la
  *   ficha de producto, el footer y el FAQ.
@@ -38,6 +41,7 @@ export default function AnnouncementBar({ negocio = false }) {
   // scrollear, y así un 2x1 que se apaga deja de anunciarse sin recargar.
   // `negocio`: en las páginas de negocio suma "desde 100 unidades" (spec 031).
   const anuncios = anunciosVigentes(Date.now(), { negocio });
+  const [pausada, setPausada] = useState(false);
   if (!anuncios.length) return null;
 
   const grupo = (copia) => (
@@ -51,7 +55,14 @@ export default function AnnouncementBar({ negocio = false }) {
   );
 
   return (
-    <section className="anuncio-ticker" aria-label="Envíos, promos y garantía">
+    <section
+      className="anuncio-ticker"
+      aria-label="Envíos, promos y garantía"
+      // Foco con el teclado = pausa (ver el CSS): es la vía para quien no usa mouse.
+      tabIndex={0}
+      data-pausado={pausada ? '' : undefined}
+      onClick={() => setPausada((p) => !p)}
+    >
       <div className="anuncio-ticker__pista">
         {grupo(false)}
         {grupo(true)}

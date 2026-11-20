@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Reveal from './Reveal.jsx';
 import { MARCAS } from '../data/marcas.js';
 
@@ -29,6 +30,7 @@ import { MARCAS } from '../data/marcas.js';
 const COPIAS = [0, 1];
 
 export default function MarcasConfiaron() {
+  const [pausada, setPausada] = useState(false);
   return (
     <section className="py-10">
       <div className="container-app">
@@ -44,7 +46,16 @@ export default function MarcasConfiaron() {
       </div>
 
       <Reveal delay={100} className="mt-8">
-        <div className="marcas-ticker">
+        {/* Se frena con hover, foco o un toque (WCAG 2.2.2): la mecánica y el
+            porqué están en AnnouncementBar.jsx, que usa la misma. */}
+        <div
+          className="marcas-ticker"
+          role="region"
+          aria-label="Logos de marcas que confiaron"
+          tabIndex={0}
+          data-pausado={pausada ? '' : undefined}
+          onClick={() => setPausada((p) => !p)}
+        >
           <div className="marcas-ticker__pista">
             {COPIAS.map((copia) => (
               <ul

@@ -17,10 +17,11 @@ const MENSAJES = {
 };
 
 /**
- * @param {{ premio?: boolean }} props `premio` = lo abrió el juego del hero
- *   (spec 028, ampliación C): cambia solo el título, lo demás es lo de siempre.
+ * @param {{ premio?: boolean, textos?: object }} props `premio` = lo abrió el juego
+ *   del hero (spec 028, ampliación C): cambia solo el título, lo demás es lo de
+ *   siempre. `textos` = otra oferta (EPICYBER, spec 037): mismo formulario, otro texto.
  */
-export default function PopupCaptura({ pct, premio = false, email, error, enviando, onEmail, onSubmit, tituloRef }) {
+export default function PopupCaptura({ pct, premio = false, textos, email, error, enviando, onEmail, onSubmit, tituloRef }) {
   return (
     <>
       <h2
@@ -33,7 +34,12 @@ export default function PopupCaptura({ pct, premio = false, email, error, envian
             usa todo el ancho: con los márgenes laterales, "Tenés 10% OFF" se
             partía en dos renglones a 375 px y el descuento dejaba de leerse de
             un vistazo. */}
-        {premio ? (
+        {textos ? (
+          <>
+            <span className="block text-2xl sm:text-4xl font-black uppercase">{textos.titulo}</span>
+            <span className="block text-base sm:text-xl mt-1">{textos.subtitulo}</span>
+          </>
+        ) : premio ? (
           <>
             <span className="block text-3xl sm:text-5xl font-black">¡Ganaste {pct}% OFF!</span>
             <span className="block text-lg sm:text-2xl mt-1">por vestir tu termo 🎉</span>
@@ -46,7 +52,7 @@ export default function PopupCaptura({ pct, premio = false, email, error, envian
         )}
       </h2>
       <p id="popup-bajada" className="text-white/70 text-sm mt-3">
-        Elegí tus calcos favoritas y usá tu descuento en tu primera compra.
+        {textos?.bajada || 'Elegí tus calcos favoritas y usá tu descuento en tu primera compra.'}
       </p>
 
       {/* noValidate: el globito nativo del navegador cambia de idioma y de
@@ -76,18 +82,18 @@ export default function PopupCaptura({ pct, premio = false, email, error, envian
           aria-busy={enviando || undefined}
           className="btn-primary w-full min-h-[48px] text-base"
         >
-          {enviando ? 'Activando…' : `Activar mi ${pct}% OFF`}
+          {enviando ? textos?.enviando || 'Activando…' : textos?.boton || `Activar mi ${pct}% OFF`}
         </button>
       </form>
 
       {error && (
         <p id="popup-error" role="alert" className="text-brand-pink text-sm mt-2">
-          {MENSAJES[error]}
+          {error === 'servidor' && textos ? textos.errorServidor : MENSAJES[error]}
         </p>
       )}
 
       <p className="text-white/45 text-xs mt-3">
-        Te mandamos novedades y promos. Podés darte de baja cuando quieras.
+        {textos?.pie || 'Te mandamos novedades y promos. Podés darte de baja cuando quieras.'}
       </p>
     </>
   );

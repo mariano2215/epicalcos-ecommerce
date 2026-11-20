@@ -34,6 +34,9 @@ export function rangoFechas(inicioMs, finMs) {
 
 export const RANGO_FECHAS = rangoFechas(CYBER_START_MS, CYBER_END_MS);
 
+/** "del 2 al 8/11", para donde no entra el mes escrito. */
+export const RANGO_CORTO = `del ${parte(CYBER_START_MS, { day: 'numeric' })} al ${parte(CYBER_END_MS, { day: 'numeric', month: 'numeric' }).replace('-', '/')}`;
+
 export const EPICYBER_COPY = {
   barra: {
     titulo: `⚡ ${CYBER.nombre}`,
@@ -65,6 +68,22 @@ export function textoBanner(packs) {
   return packs.some((p) => p.qty >= WHOLESALE_QTY)
     ? 'Promociones en packs chicos, calcos personalizados y packs para tu marca'
     : 'Promociones en packs chicos y calcos personalizados';
+}
+
+/**
+ * Lo que dice el popup de EPICYBER (spec 037). El regalo y el mínimo salen de
+ * `POPUP_CYBER`, espejado en el servidor: el texto no puede prometer otra cosa.
+ */
+export function textosPopupCyber({ qty, tamano, minimoCompra }) {
+  return {
+    titulo: 'Dejá tu mail y recibí un extra',
+    subtitulo: `para la ${CYBER.nombre}, ${RANGO_CORTO} 🎁`,
+    bajada: `Comprá con este mail y te regalamos un pack de ${qty} calcos sorpresa en tu pedido.`,
+    boton: 'Quiero mi regalo',
+    enviando: 'Guardando…',
+    errorServidor: 'No pudimos guardar tu mail. Intentá nuevamente.',
+    pie: `Compras desde ${formatPrice(minimoCompra)}, ${RANGO_CORTO}. Calcos de ${tamano}. Un regalo por mail. Te mandamos novedades y promos: podés darte de baja cuando quieras.`
+  };
 }
 
 /** La letra chica, junto a la oferta y con los números reales. */

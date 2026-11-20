@@ -5,8 +5,11 @@ import {
   trackPopupInterestSelected,
   trackPopupCtaClick
 } from '../../lib/analytics.js';
-import { POPUP_CONFIG, POPUP_OFERTA } from '../../config/popup.js';
+import { POPUP_CONFIG, POPUP_CYBER, POPUP_OFERTA } from '../../config/popup.js';
+import { isCyberPreview } from '../../config/pricing.js';
+import { textosPopupCyber } from '../../config/epicyber.js';
 import PopupCaptura from './PopupCaptura.jsx';
+import PopupCyberExito from './PopupCyberExito.jsx';
 import PopupExito from './PopupExito.jsx';
 
 /**
@@ -25,7 +28,7 @@ import PopupExito from './PopupExito.jsx';
 /** El mismo criterio que valida el servidor (netlify/functions/capture-lead.js). */
 const EMAIL_RE = /^\S+@\S+\.\S+$/;
 
-const INICIAL = { paso: 'captura', email: '', error: null, codigo: null };
+const INICIAL = { paso: 'captura', email: '', error: null, codigo: null, regaloDe: null };
 
 function reducer(s, a) {
   switch (a.type) {
@@ -39,7 +42,7 @@ function reducer(s, a) {
       // Nunca se cierra por un error, y el mail escrito queda en el campo.
       return { ...s, paso: 'captura', error: a.error };
     case 'ok':
-      return { paso: 'exito', email: '', error: null, codigo: a.codigo };
+      return { paso: 'exito', email: '', error: null, codigo: a.codigo, regaloDe: a.regaloDe || null };
     default:
       return s;
   }
@@ -50,9 +53,11 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabi
 /**
  * @param {{ pct: number, contexto: {variante, dispositivo}, hayCarrito: boolean,
  *           onCerrar: (metodo, paso) => void, onConvertido: (codigo) => void,
- *           onSalir: () => void }} props
+ *           onSalir: () => void, cyber?: boolean,
+ *           onConvertidoCyber?: (email) => void }} props
+ *        `cyber` = la oferta de EPICYBER (spec 037): mismo diálogo, otra promesa.
  */
-export default function PopupDialogo({ pct, disparo, contexto, hayCarrito, onCerrar, onConvertido, onSalir }) {
+export default function PopupDialogo({ pct, disparo, contexto, hayCarrito, onCerrar, onConvertido, onSalir, cyber = false, onConvertidoCyber }) {
   const [s, dispatch] = useReducer(reducer, INICIAL);
   const cajaRef = useRef(null);
   const tituloRef = useRef(null);
@@ -133,12 +138,23 @@ export default function PopupDialogo({ pct, disparo, contexto, hayCarrito, onCer
     dispatch({ type: 'enviar' });
     trackPopupEmailSubmit({
       variante: contexto.variante,
-      tipoDescuento: POPUP_OFERTA.tipo === 'porcentaje' ? 'percentage' : POPUP_OFERTA.tipo,
+      tipoDescuento: cyber ? 'regalo' : POPUP_OFERTA.tipo === 'porcentaje' ? 'percentage' : POPUP_OFERTA.tipo,
       dispositivo: contexto.dispositivo,
       pagina: window.location.pathname
     });
     try {
-      const { code } = await captureLead(email, { timeoutMs: POPUP_CONFIG.timeoutEnvioMs });
+      // En vista previa no se anota a nadie ni sale ningún mail.
+      const { code, regalo } =
+        cyber && isCyberPreview()
+          ? { regalo: true }
+          : await captureLead(email, { timeoutMs: POPUP_CONFIG.timeoutEnvioMs, oferta: cyber ? 'cyber' : undefined });
+      if (regalo) {
+        onConvertidoCyber?.(email);
+        dispatch({ type: 'ok', regaloDe: email });
+        return;
+      }
+      // Sin `regalo`, aun abriendo la oferta Cyber: venció con la pestaña abierta, y
+      // el servidor respondió con el 10 %. Sigue el camino de siempre.
       const codigo = code || POPUP_OFERTA.codigo;
       // Primero la conversión (cupón guardado, estado, eventos) y después la
       // pantalla: si la persona cerró el popup mientras esperaba, el cupón
@@ -193,7 +209,14 @@ export default function PopupDialogo({ pct, disparo, contexto, hayCarrito, onCer
         </button>
 
         <div className="relative">
-          {s.paso === 'exito' ? (
+          {s.regaloDe ? (
+            <PopupCyberExito
+              email={s.regaloDe}
+              regalo={POPUP_CYBER.regalo}
+              onIr={irA('epicyber')}
+              tituloRef={tituloRef}
+            />
+          ) : s.paso === 'exito' ? (
             <PopupExito
               pct={pct}
               codigo={s.codigo}
@@ -208,6 +231,7 @@ export default function PopupDialogo({ pct, disparo, contexto, hayCarrito, onCer
             <PopupCaptura
               pct={pct}
               premio={disparo === 'sticker_game'}
+              textos={cyber ? textosPopupCyber(POPUP_CYBER.regalo) : undefined}
               email={s.email}
               error={s.error}
               enviando={s.paso === 'enviando'}

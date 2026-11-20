@@ -1120,10 +1120,17 @@ a { color: inherit; text-decoration: none; }
   .anuncio-ticker__pista { animation-duration: 40s; }
 }
 
-/* Frenar con el mouse encima: es la única forma de leer con calma una frase
-   que se va. (En el celular no hay hover — ver AnnouncementBar.jsx.) */
-.anuncio-ticker:hover .anuncio-ticker__pista {
+/* Frenar con el mouse encima, con foco de teclado o con un toque (el toque
+   pone `data-pausado`; en el celular no hay hover). WCAG 2.2.2 — ver
+   AnnouncementBar.jsx. */
+.anuncio-ticker:hover .anuncio-ticker__pista,
+.anuncio-ticker:focus-visible .anuncio-ticker__pista,
+.anuncio-ticker[data-pausado] .anuncio-ticker__pista {
   animation-play-state: paused;
+}
+.anuncio-ticker:focus-visible {
+  outline: 2px solid #FF1B8D;
+  outline-offset: -2px;
 }
 
 /* `min-width: 100vw`: el loop funciona porque la animación corre exactamente
@@ -1179,9 +1186,16 @@ a { color: inherit; text-decoration: none; }
   will-change: transform;
 }
 
-/* Frenar al pasar el mouse: son 24 marcas y la gracia es poder mirar una. */
-.marcas-ticker:hover .marcas-ticker__pista {
+/* Frenar al pasar el mouse, con foco o con un toque: son 35 marcas y la
+   gracia es poder mirar una. */
+.marcas-ticker:hover .marcas-ticker__pista,
+.marcas-ticker:focus-visible .marcas-ticker__pista,
+.marcas-ticker[data-pausado] .marcas-ticker__pista {
   animation-play-state: paused;
+}
+.marcas-ticker:focus-visible {
+  outline: 2px solid #FF1B8D;
+  outline-offset: 2px;
 }
 
 .marcas-ticker__grupo {

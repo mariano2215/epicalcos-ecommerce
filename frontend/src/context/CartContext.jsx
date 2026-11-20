@@ -180,6 +180,16 @@ export function CartProvider({ children }) {
 
   const notify = useCallback((msg) => setToast(msg), []);
 
+  // Con el carrito abierto no hay toast: la línea nueva ya aparece en la lista,
+  // que es la confirmación. El toast va `fixed` abajo al centro con z-index 100
+  // y, al agregar desde la ficha (que abre el drawer), tapaba "Ir al checkout"
+  // ~2 s justo después del click de compra (auditoría del 20/11/2026). Se
+  // descarta en vez de esconderse: si no, reaparecía al cerrar el carrito.
+  // El order bump ya lo evitaba con `silent` (ver OrderBump.jsx).
+  useEffect(() => {
+    if (state.drawerOpen && toast) setToast(null);
+  }, [state.drawerOpen, toast]);
+
   /**
    * Agregar un calco del catálogo con tamaño elegido.
    * `opts.openDrawer === false` agrega sin abrir el carrito (ver reducer ADD).
@@ -664,7 +674,9 @@ export function CartProvider({ children }) {
   return (
     <CartContext.Provider value={value}>
       {children}
-      {toast && <div className="toast">{toast}</div>}
+      {/* `!drawerOpen` además del efecto de arriba: el efecto corre después de
+          pintar y, sin esto, el toast alcanzaba a verse un cuadro. */}
+      {toast && !state.drawerOpen && <div className="toast">{toast}</div>}
     </CartContext.Provider>
   );
 }

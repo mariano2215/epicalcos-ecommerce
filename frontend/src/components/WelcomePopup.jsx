@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
-import { POPUP_CONFIG, POPUP_OFERTA, POPUP_VARIANTES } from '../config/popup.js';
-import { CUPON_VENTANA_MS } from '../config/pricing.js';
+import { POPUP_CONFIG, POPUP_CYBER, POPUP_OFERTA, POPUP_VARIANTES } from '../config/popup.js';
+import { CUPON_VENTANA_MS, CYBER, isCyberPreview } from '../config/pricing.js';
 import { EXPERIMENTS, getVariant } from '../lib/experiments.js';
 import {
   popupPermitido,
@@ -10,6 +10,9 @@ import {
   porcentajeOferta,
   porcentajeCupon,
   beneficioActivo,
+  popupCyberPermitido,
+  popupCyberVigente,
+  puedeAbrirCyber,
   puedeAbrirSolo
 } from '../lib/popupReglas.js';
 import {
@@ -21,6 +24,10 @@ import {
   registrarVisto,
   registrarCerrado,
   registrarConvertido,
+  registrarVistoCyber,
+  registrarCerradoCyber,
+  registrarConvertidoCyber,
+  guardarMailRegalo,
   storageOk,
   usePopupVersion
 } from '../lib/popupEstado.js';
@@ -72,8 +79,12 @@ const cargarAcceso = () => import('./popup/AccesoBeneficio.jsx');
 let exposicionReportada = false;
 
 export default function WelcomePopup() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { totalItems, drawerOpen } = useCart();
+  // Oferta de EPICYBER (spec 037): mismo popup, otra promesa. Vence sola.
+  const cyber = popupCyberVigente();
+  const rutaOk = (ruta, query) => (cyber ? popupCyberPermitido(ruta, query) : popupPermitido(ruta));
+  const variante = (ctxVariante) => (cyber ? POPUP_CYBER.variante : ctxVariante);
   usePopupVersion(); // re-render cuando cambia el estado o el cupón
 
   // Lo que se decide UNA vez por carga: dispositivo, variante y si hay storage.
@@ -114,11 +125,12 @@ export default function WelcomePopup() {
 
   const cerrar = useCallback(
     (metodo, paso) => {
-      if (paso === 'capture') registrarCerrado();
-      trackPopupClose({ variante: ctx.variante, paso, metodo });
+      if (paso === 'capture') (cyber ? registrarCerradoCyber : registrarCerrado)();
+      trackPopupClose({ variante: variante(ctx.variante), paso, metodo });
       setAbierto(null);
     },
-    [ctx]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ctx, cyber]
   );
 
   // Atrás del navegador con el popup abierto: se cierra. Un CTA del paso 2 ya
@@ -136,14 +148,14 @@ export default function WelcomePopup() {
       cargarDialogo()
         .then((mod) => {
           // Mientras bajaba el chunk pudo haberse ido del Home.
-          if (!popupPermitido(window.location.pathname)) return;
+          if (!rutaOk(window.location.pathname, window.location.search)) return;
           if (auto) marcarAutoAbierto();
-          registrarVisto();
+          (cyber ? registrarVistoCyber : registrarVisto)();
           disparoRef.current = disparo;
           convirtioRef.current = false;
           setAbierto({ Dialogo: mod.default, disparo });
           trackPopupView({
-            variante: ctx.variante,
+            variante: variante(ctx.variante),
             disparador: disparo,
             dispositivo: ctx.dispositivo,
             visitante: leerSesion()?.visitante || 'new',
@@ -155,7 +167,8 @@ export default function WelcomePopup() {
           // visto, así no se pierde la oportunidad por un error nuestro.
         });
     },
-    [ctx]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ctx, cyber]
   );
 
   const convertir = useCallback(
@@ -170,6 +183,21 @@ export default function WelcomePopup() {
         user_properties: { popup_converted: 'true' }
       });
       trackCuponEmitido(codigo, POPUP_OFERTA.conVentana ? CUPON_VENTANA_MS : null);
+    },
+    [ctx]
+  );
+
+  const convertirCyber = useCallback(
+    (email) => {
+      convirtioRef.current = true;
+      registrarConvertidoCyber();
+      guardarMailRegalo(email);
+      trackLeadCapture('cyber_popup', {
+        popup_variant: POPUP_CYBER.variante,
+        popup_trigger: disparoRef.current,
+        device_type: ctx.dispositivo,
+        promotion_id: CYBER.id
+      });
     },
     [ctx]
   );
@@ -189,7 +217,7 @@ export default function WelcomePopup() {
 
   // ─── ¿Qué corresponde mostrar? ──────────────────────────────────────────────
   const pct = porcentajeOferta();
-  const habilitado = POPUP_CONFIG.activo && pct != null;
+  const habilitado = cyber || (POPUP_CONFIG.activo && pct != null);
   const cupon = leerCupon();
   const cuponActivo = beneficioActivo(cupon);
   const estado = leerEstado();
@@ -198,19 +226,28 @@ export default function WelcomePopup() {
     iniciado &&
     habilitado &&
     !abierto &&
-    popupPermitido(pathname) &&
-    puedeAbrirSolo({
-      estado,
-      sesion: leerSesion(),
-      cuponActivo,
-      storageOk: ctx.storageOk,
-      ahora: Date.now()
-    });
+    rutaOk(pathname, search) &&
+    (cyber
+      ? puedeAbrirCyber({
+          estado,
+          sesion: leerSesion(),
+          storageOk: ctx.storageOk,
+          ahora: Date.now(),
+          preview: isCyberPreview()
+        })
+      : puedeAbrirSolo({
+          estado,
+          sesion: leerSesion(),
+          cuponActivo,
+          storageOk: ctx.storageOk,
+          ahora: Date.now()
+        }));
 
   usePopupDisparo({
     activo: elegible,
     esMovil: ctx.esMovil,
-    umbrales: ctx.umbrales,
+    umbrales: cyber ? POPUP_CYBER.umbrales : ctx.umbrales,
+    config: cyber ? POPUP_CYBER.disparo : undefined,
     drawerOpen,
     itemsCount: totalItems,
     onDisparo: (disparo) => abrir(disparo, true)
@@ -223,10 +260,16 @@ export default function WelcomePopup() {
     ? null
     : cuponActivo
       ? 'activo'
-      : !estado.compradoEn && (!ctx.storageOk || estado.vistoEn || estado.cerradoEn)
-        ? 'oferta'
-        : null;
-  const mostrarAcceso = Boolean(iniciado && !abierto && tipoAcceso && accesoVisible(pathname, tipoAcceso));
+      : cyber
+        ? !estado.cyberConvertidoEn && (!ctx.storageOk || estado.cyberVistoEn || estado.cyberCerradoEn)
+          ? 'oferta'
+          : null
+        : !estado.compradoEn && (!ctx.storageOk || estado.vistoEn || estado.cerradoEn)
+          ? 'oferta'
+          : null;
+  // El chip de la oferta vive donde vive el popup, y con EPICYBER eso incluye /epicyber.
+  const accesoEnRuta = cyber && tipoAcceso === 'oferta' ? popupCyberPermitido(pathname, search) : accesoVisible(pathname, tipoAcceso);
+  const mostrarAcceso = Boolean(iniciado && !abierto && tipoAcceso && accesoEnRuta);
 
   // Con `import()` a mano y no `React.lazy`: sin un error boundary, un chunk que
   // no baja tiraría la app entera. Así, si falla, simplemente no hay acceso.
@@ -266,6 +309,7 @@ export default function WelcomePopup() {
         <Acceso
           tipo={tipoAcceso}
           pct={tipoAcceso === 'activo' ? porcentajeCupon(cupon.code) : pct}
+          etiqueta={cyber && tipoAcceso === 'oferta' ? 'Regalo Cyber' : undefined}
           codigo={cupon?.code}
           pathname={pathname}
           onAbrir={() => abrir('manual', false)}
@@ -275,10 +319,12 @@ export default function WelcomePopup() {
         <Dialogo
           pct={pct}
           disparo={abierto.disparo}
-          contexto={ctx}
+          contexto={cyber ? { ...ctx, variante: POPUP_CYBER.variante } : ctx}
           hayCarrito={totalItems > 0}
+          cyber={cyber}
           onCerrar={cerrar}
           onConvertido={convertir}
+          onConvertidoCyber={convertirCyber}
           onSalir={() => setAbierto(null)}
         />
       )}

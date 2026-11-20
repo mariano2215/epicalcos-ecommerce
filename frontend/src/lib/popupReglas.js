@@ -1,12 +1,13 @@
 import {
   POPUP_CONFIG,
+  POPUP_CYBER,
   POPUP_OFERTA,
   INTERESES,
   RUTAS_POPUP,
   RUTAS_FLUJO_COMPRA,
   RUTAS_SIN_DESCUENTO
 } from '../config/popup.js';
-import { findCoupon } from '../config/pricing.js';
+import { CYBER_END_MS, findCoupon, isCyberPreview } from '../config/pricing.js';
 import { cuponVigente } from './cuponVentana.js';
 
 /**
@@ -112,6 +113,38 @@ export function puedeAbrirSolo({ estado, sesion, cuponActivo, storageOk, ahora, 
     return false;
   }
   return true;
+}
+
+/**
+ * ¿La oferta de EPICYBER reemplaza al 10 % ahora? (spec 037). Corre desde que se
+ * publica hasta que cierra la campaña, sin esperar al 2/11: sirve para juntar mails
+ * antes de que arranque. Después del cierre vuelve el popup de siempre.
+ */
+export function popupCyberVigente(ahora = Date.now(), config = POPUP_CYBER) {
+  return Boolean(isCyberPreview() || (config.activo && ahora <= CYBER_END_MS));
+}
+
+/** Home y `/epicyber`, pero no el armador (`?n=30`): ahí la persona ya está eligiendo. */
+export function popupCyberPermitido(pathname, search = '') {
+  const ruta = normalizar(pathname);
+  if (ruta === '/epicyber' && new URLSearchParams(search).has('n')) return false;
+  return POPUP_CYBER.rutas.includes(ruta);
+}
+
+/**
+ * ¿Puede abrirse SOLO el popup de EPICYBER?
+ *
+ * Con memoria propia: la oferta es nueva, así que no cuenta haber visto o cerrado el
+ * del 10 %, ni tener ese cupón, ni haber comprado antes. Un cliente que ya compró es
+ * el mejor candidato para esta oferta.
+ */
+export function puedeAbrirCyber({ estado, sesion, storageOk, ahora, preview = false, config = POPUP_CYBER }) {
+  if (sesion?.autoAbierto) return false;
+  if (preview) return true;
+  if (!storageOk) return false;
+  if (estado?.cyberConvertidoEn) return false;
+  const ultimaVista = Math.max(estado?.cyberCerradoEn || 0, estado?.cyberVistoEn || 0);
+  return !ultimaVista || ahora - ultimaVista >= config.cooldownCerradoDias * DIA_MS;
 }
 
 /**

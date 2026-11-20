@@ -25,6 +25,7 @@ import { actualizarEstadoPedido, mapEstado } from './_notion.js';
 import { verifyMpSignature } from './lib/mpSignature.js';
 import { notifyCrm, buildCrmOrder } from './lib/crmWebhook.js';
 import { sendPurchaseEvent } from './lib/metaCapi.js';
+import { reclamarRegalo, sumarNota } from './lib/regaloCyber.js';
 
 /**
  * Corre una promesa con techo de tiempo. Netlify mata la función a los 10 s y
@@ -154,6 +155,24 @@ export const handler = async (event) => {
         if (stored?.notifiedAt) {
           console.log('[mp-webhook] pedido ya notificado, se omite:', orderId);
         } else {
+          // Regalo de EPICYBER (spec 037). Con el pago aprobado, así un pago caído
+          // no lo consume. Mail del CHECKOUT y no `payment.payer.email`: ver el
+          // porqué en buildOrderView. Fecha del pedido y no del pago: un Rapipago
+          // del 8/11 se acredita días después. Nunca lanza, y el reintento de MP
+          // sobre este mismo pedido no lo pierde.
+          const regalo = await reclamarRegalo({
+            email: stored?.payer?.email || meta.buyer_email,
+            orderId,
+            itemsTotal: stored?.itemsTotal ?? payment.transaction_amount - (Number(meta.shipping_cost) || 0),
+            items: stored?.items || items,
+            ahora: Date.parse(stored?.createdAt) || Date.now()
+          });
+          // Sobre el pedido guardado, así la nota llega también al CRM de abajo.
+          if (regalo && stored) {
+            stored.regalo = regalo;
+            stored.shipping = { ...stored.shipping, comments: sumarNota(stored.shipping?.comments, regalo) };
+          }
+
           // buildOrderView es puro pero toca datos que vienen de afuera: si
           // llegara a romper, no puede llevarse el mail puesto.
           let view;
@@ -172,6 +191,8 @@ export const handler = async (event) => {
               paymentId: payment.id
             };
           }
+          // Sin pedido guardado, la nota se suma directo al aviso.
+          if (regalo && !stored) view = { ...view, regalo, comments: sumarNota(view.comments, regalo) };
 
           // Los reintentos del webhook ya no dependen del dedup de Blobs (que
           // hoy no persiste): sendOrderEmail/sendCustomerEmail mandan con

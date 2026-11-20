@@ -6,10 +6,20 @@ import {
   WHOLESALE_QTY,
   WHOLESALE_DISCOUNT,
   TRANSFER_OFF,
-  PROMO_MAYORISTA_100
+  PROMO_MAYORISTA_100,
+  PROMO_MAYORISTA_END_MS
 } from '../config/pricing.js';
 import { useMayoristaPromoActive } from '../lib/promo.js';
 import { trackWholesaleClick } from '../lib/analytics.js';
+
+/**
+ * "Por tiempo limitado" solo si la promo tiene fecha de fin. Desde el 7/9/2026
+ * (spec 017) corre sin fecha, y el cartel quedó anunciando una urgencia que no
+ * existía durante meses: desgasta la credibilidad de las urgencias de verdad
+ * (campañas con fecha, fecha límite de Navidad) y es publicidad engañosa para
+ * Lealtad Comercial (DNU 274/2019). Auditoría del 20/11/2026.
+ */
+const PROMO_CON_FECHA = Number.isFinite(PROMO_MAYORISTA_END_MS);
 
 /** Slugs que se listan como "además del catálogo", en orden. */
 const OTROS = ['tatuajes', 'polaroid', 'archivos-imprimibles'];
@@ -53,7 +63,9 @@ export default function OfertaPrincipal() {
           >
             {promoActiva ? (
               <>
-                <span className="badge badge-hot mb-4">Por tiempo limitado</span>
+                <span className="badge badge-hot mb-4">
+                  {PROMO_CON_FECHA ? 'Por tiempo limitado' : 'Promo mayorista'}
+                </span>
                 <h2 className="font-display font-black text-3xl md:text-6xl leading-[1.02]">
                   {PROMO_MAYORISTA_100.qty} calcos a{' '}
                   <span className="gradient-text">{formatPrice(PROMO_MAYORISTA_100.price)}</span>
