@@ -164,8 +164,8 @@ resultado a los 3 días no probó nada.
 
 | Id | Qué compara | KPI | Estado |
 |---|---|---|---|
-| `ahorro_pack` | `PackCard`: "10% off" (control) vs "Ahorrás $3.200" | `pack_builder_start` / vistas de `/armar-pack` · 2°: `purchase` | 🟢 corriendo desde 8/8/2026 |
-| `guia_tamano` | `SizeGuide` en la ficha: colapsada (control) vs abierta | `add_to_cart` / `view_item` · 2°: mix de tamaños | 🟢 corriendo desde 8/8/2026 |
+| `ahorro_pack` | `PackCard`: "10% off" (control) vs "Ahorrás $3.200" | `pack_builder_start` / vistas de `/armar-pack` · 2°: `purchase` | ⛔ sin lectura posible (20/11/2026): `/armar-pack` está despublicada desde el 26/8 y la única otra `PackCard` fue la de EPICYBER (2–8/11), otro contexto. El flag sigue `active: true` solo porque `experiments.test.js` lo usa de fixture; no mide nada |
+| `guia_tamano` | `SizeGuide` en la ficha: colapsada (control) vs abierta | `add_to_cart` / `view_item` · 2°: mix de tamaños | 🟢 corriendo desde 8/8/2026 · ⏳ leer en GA4 y cerrar (Plan de conversión, 20/11/2026): más de 3 meses abierto |
 
 > La `SizeGuide` de las landings de uso queda **fuera** del test a propósito
 > (ahí va siempre abierta por diseño): mezclarla ensuciaría la muestra de la ficha.
@@ -241,7 +241,7 @@ AOV más de lo que canibaliza la compra suelta.
 ## CRO-007 · Ahorro en pesos vs. en porcentaje
 **Hipótesis.** "Ahorrás $12.000" pesa más que "50 % off" en tickets altos
 (mayorista, negocio); al revés en tickets chicos.
-**Cambio.** A/B `ahorro_pack` en `PackCard` *(🟢 corriendo desde 8/8/2026)*.
+**Cambio.** A/B `ahorro_pack` en `PackCard` *(corrió desde el 8/8/2026; ⛔ sin lectura posible desde que `/armar-pack` se despublicó el 26/8/2026 — ver la tabla de arriba)*.
 **KPI.** `pack_builder_start` / vistas de `/armar-pack`.
 **KPI 2°.** `purchase` y ticket promedio — si sube el interés pero baja la
 compra, el monto grande está asustando en vez de atraer.
